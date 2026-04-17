@@ -1,5 +1,7 @@
 # Hexbound — база знаний проекта (v2 — Mobile Edition)
 
+> **Status boundary:** legacy project-knowledge snapshot from an earlier web+Godot phase. Keep it as historical architecture context, but do not use it as current source of truth over the current iOS/Next.js codebase, audited `wiki/`, and modern operations/docs surfaces.
+
 Документ описывает реализованную и планируемую структуру, БД, переменные окружения, логику систем и API. Используется как единый источник истины для разработки и для AI.
 
 **Последнее обновление:** 5 марта 2026  

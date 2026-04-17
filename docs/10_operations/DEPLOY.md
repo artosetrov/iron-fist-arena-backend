@@ -1,6 +1,6 @@
 # Hexbound — Deploy Guide
 
-*Source of truth: this file + Vercel dashboard + vercel.json configs. Updated: 2026-03-19*
+*Source of truth: this file + Vercel dashboard + live repo config (`.github/workflows/ci.yml`, `backend/next.config.ts`, `admin/vercel.json`). Updated: 2026-04-16*
 
 ---
 
@@ -9,8 +9,8 @@
 | Service | Platform | Trigger | URL |
 |---------|----------|---------|-----|
 | Backend API | Vercel | Push to `origin/main` | `api.hexboundapp.com` |
-| Admin Panel | Vercel | Push to `admin-deploy/main` | Vercel project URL |
-| Landing Site | Vercel (manual) | Manual deploy | TBD |
+| Admin Panel | Vercel | Manual `git subtree push --prefix=admin admin-deploy main` | Vercel project URL |
+| Landing Site | Vercel (manual) | Push to `artosetrov/hexbound-landing` `main` | `hexboundapp.com` |
 | iOS App | TestFlight | `fastlane beta` (manual) | TestFlight |
 
 ## Backend Deploy
@@ -41,11 +41,19 @@ prisma generate && next build
 - `CORS_ORIGINS`
 - `NEXT_PUBLIC_APP_URL`
 
-**⚠️ Known issue**: `ignoreBuildErrors: true` in `backend/next.config.ts`. TypeScript errors are not caught at build time. Track in tech debt.
-
 ### Preview Deploys
 
 Every push to any branch creates a Vercel preview URL. Use for testing before merge to main.
+
+### Validation Gates
+
+GitHub Actions now runs `.github/workflows/ci.yml` on `push` and `pull_request` for `main`-relevant changes:
+
+- `Backend Build & Test` — `npm ci`, `prisma generate`, `vitest`, `docs:balance:check`, `next build`
+- `Admin Build` — `npm ci`, `prisma generate`, `next build`
+- `Prisma Schema & Migration Drift Check` — backend/admin schema diff + `scripts/check_schema_drift.py`
+
+This does **not** replace Vercel deploys, but it does catch build/test/schema regressions before or alongside production pushes.
 
 ## Admin Deploy
 
@@ -72,6 +80,10 @@ prisma generate && next build
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_API_URL` — backend API URL
 
+### Preview Deploys
+
+Admin preview deploys are tied to the `admin-deploy` repo, not to monorepo pushes on `origin`. If you only push `origin/main`, backend updates but admin does not.
+
 ## Database Migrations
 
 See `docs/10_operations/DATABASE_MIGRATIONS.md` for full guide.
@@ -84,9 +96,11 @@ cd backend && npm run db:migrate:dev -- --name add_feature_x
 # Copy schema to admin
 cp backend/prisma/schema.prisma admin/prisma/schema.prisma
 
-# Deploy migration to production (runs on next Vercel build, or manually):
+# Deploy migration to production explicitly:
 cd backend && npm run db:migrate:deploy
 ```
+
+`next build` does **not** run `prisma migrate deploy` automatically. Treat migration apply as a separate production step.
 
 ## iOS Deploy
 
@@ -113,6 +127,6 @@ See `docs/10_operations/RELEASE_IOS.md` for full guide.
 | Mistake | Impact | Fix |
 |---------|--------|-----|
 | Forgot admin subtree push | Admin panel stays on old version | `git subtree push --prefix=admin admin-deploy main` |
-| Prisma schema drift | Admin crashes on missing fields | Copy backend → admin schema |
+| Forgot backend/admin schema sync | CI drift check fails; admin Prisma can lag behind backend | Copy backend → admin schema before commit |
 | Pushed without testing | Broken production | Vercel instant rollback |
-| Migration not applied | New code references missing columns | `npm run db:migrate:deploy` |
+| Assumed Vercel build applies migrations | New code references missing columns | Run `cd backend && npm run db:migrate:deploy` explicitly |

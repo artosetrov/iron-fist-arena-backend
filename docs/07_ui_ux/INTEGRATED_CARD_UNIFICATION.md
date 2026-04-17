@@ -4,6 +4,8 @@
 **Автор:** Claude (по запросу Artem — "проверь чтобы эти блоки были идентичными")
 **Статус:** 🟡 ПРОПОЗАЛ — ждёт утверждения, код не трогаем
 
+> **Status boundary:** Это исторический proposal snapshot от `2026-04-10`. Документ полезен как rationale и forensic-разбор расхождения `HeroIntegratedCard` vs `OpponentIntegratedCard`, но не является текущей live-инструкцией по реализации. За актуальной правдой нужно идти в текущий Swift-код и audited `wiki/`.
+
 ---
 
 ## Проблема
@@ -233,7 +235,9 @@ IntegratedCharacterCard(
 
 ---
 
-## Риски и вопросы к Artem
+## Исторические вопросы к Artem
+
+Ниже оставлены исходные review-вопросы из proposal-момента. Они важны как контекст того, что тогда считалось спорным, но не должны читаться как текущий open approval queue без перепроверки live-кода.
 
 1. **XP-блок в портрете соперника.** В Hero-портрете есть XP-лейбл + полоска. У соперника поля `experience` / `xpNeeded` в `OpponentProfile` — есть ли они там? Если нет/не хотим показывать XP соперника → оставляем условный рендер по `experience != nil`, всё ок. **Нужен твой ответ: показываем XP соперника или нет?**
 
@@ -247,7 +251,9 @@ IntegratedCharacterCard(
 
 ---
 
-## План работ (когда утвердишь)
+## Исторический план работ
+
+Это исходный phased plan из proposal-момента. Он сохранён как след того, как предлагалось делать unification, а не как подтверждение, что этот exact план всё ещё должен выполняться без пересверки текущего состояния.
 
 1. **Фаза 1 — протокол и новый компонент** (не ломаем ничего)
    - Добавить `CharacterDisplay` protocol + extensions на `Character` и `OpponentProfile`
@@ -279,4 +285,4 @@ IntegratedCharacterCard(
 
 Два компонента делают одно и то же, но с расходящимися реализациями портрета, фасада, grid-sizing и footer-pills. Opponent-версия — **перепридумывает** DS-компоненты инлайн (`CardLevelBadge`, `ClassTagView`, `CornerBracketOverlay`), Hero-версия — **использует их правильно**. Unification = один компонент `IntegratedCharacterCard<Footer>` с адаптивной grid + премиум portrait-композицией + ViewBuilder footer. Hero передаёт просто HP-бар, Opponent — HP + rank/rating pills. Модели получают `CharacterDisplay` conformance.
 
-**Ждём твой ответ на 4 вопроса (XP соперника, Rank/Rating у героя, animations в list, двойной бордер) — после этого запускаю Фазу 1.**
+**На момент создания документа предложение ожидало ответа по 4 вопросам (XP соперника, Rank/Rating у героя, animations в list, двойной бордер) перед стартом Фазы 1.**

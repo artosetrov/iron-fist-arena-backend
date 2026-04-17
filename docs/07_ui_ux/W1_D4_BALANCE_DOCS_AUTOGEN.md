@@ -5,6 +5,8 @@
 **Скоуп:** W1.D4 Hexbound QA Fix Plan
 **Статус:** ✅ Завершено
 
+> **Status boundary:** historical completion report for the first balance-docs autogen rollout. Treat it as implementation history, not as the current docs/tooling status without rechecking the live generators and `wiki/`.
+
 ---
 
 ## TL;DR

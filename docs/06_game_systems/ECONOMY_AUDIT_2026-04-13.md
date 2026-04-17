@@ -5,6 +5,8 @@
 **Scope:** Complete economy — earnings, sinks, progression, shop, IAP, premium, passives
 **Source of truth:** Extracted from `backend/src/lib/game/*.ts`, `docs/06_game_systems/BALANCE_CONSTANTS.md`, `docs/02_product_and_features/ECONOMY.md`, W3.D5 state (2026-04-10)
 
+> **Status boundary:** historical economy audit/redesign snapshot from `2026-04-13`. Keep it as detailed reasoning and evidence, but do not treat every diagnosis or target rule below as live economy truth without revalidating against current backend constants, current `wiki/` audit blocks, and current runtime behavior.
+
 ---
 
 ## 0. How to read this document

@@ -4,6 +4,8 @@
 **Auditor:** Claude (Principal Design Systems Auditor + Senior UI Engineer)
 **Scope:** Full pipeline: Figma DS → Export → xcassets → Code → Runtime
 
+**Status boundary:** historical asset audit snapshot from `2026-04-03`. The concrete findings remain useful, but current asset health should be revalidated against live `Assets.xcassets`, export/sync scripts, and `wiki/` before using this document as an operational truth source.
+
 ---
 
 ## A. CRITICAL ISSUES

@@ -1,5 +1,7 @@
 # Hexbound — Project Rules
 
+> **Status boundary:** legacy assistant/project-rules snapshot from an earlier toolchain era. Preserve it as historical workflow context, but do not treat it as the current operational rulebook over the live `docs/rules/`, audited `wiki/`, and current repo conventions.
+
 ## Xcode Project File (CRITICAL)
 
 When creating ANY new `.swift` file in the `Hexbound/` iOS app, you MUST also add it to `Hexbound/Hexbound.xcodeproj/project.pbxproj`.

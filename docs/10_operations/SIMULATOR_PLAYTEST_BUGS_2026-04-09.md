@@ -1,5 +1,7 @@
 # Hexbound Simulator Playtest — Bug Report
 
+*Historical simulator session snapshot from 2026-04-09. Several findings here have since been fixed or superseded by later audit blocks, so treat this as evidence/history rather than the current bug backlog. For live status, use `wiki/log.md`, `wiki/audit/audit-index.md`, and the newer audit blocks covering auth, daily quests, shop metadata, tutorial overlays, and iOS contract/runtime parity. Updated: 2026-04-16*
+
 **Date:** 2026-04-09
 **Tester:** Claude (automated playthrough via iOS Simulator)
 **Device:** iPhone 17 Pro Max, iOS 26.3

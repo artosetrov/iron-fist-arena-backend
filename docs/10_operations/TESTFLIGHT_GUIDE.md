@@ -74,9 +74,14 @@ cd Hexbound/
 bundle install
 # или: gem install fastlane
 
-# 2. Отредактировать fastlane/Appfile — вписать свой Apple ID и Team ID
+# 2. Либо отредактировать fastlane/Appfile, либо подготовить FASTLANE_* env vars
 open fastlane/Appfile
 ```
+
+Поддерживаются оба варианта:
+
+- заполнить `fastlane/Appfile`
+- или передать `FASTLANE_APPLE_ID` + `FASTLANE_TEAM_ID` (и при необходимости `FASTLANE_ITC_TEAM_ID`)
 
 ### Загрузка на TestFlight (одна команда):
 ```bash
@@ -86,6 +91,11 @@ cd Hexbound/
 ```
 
 Fastlane автоматически: инкрементирует build number → соберёт архив → загрузит на TestFlight.
+
+`./scripts/deploy_testflight.sh` теперь валидирует оба setup-path:
+
+- заполненный `fastlane/Appfile`
+- или env-based Fastlane identity
 
 ### Другие полезные команды:
 ```bash

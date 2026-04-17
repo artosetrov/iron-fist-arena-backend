@@ -4,6 +4,8 @@
 **Статус:** ✅ CLOSED (no code changes)
 **Исходный plan item:** `QA_FIX_PLAN_2026-04-10.md` W2.D1 — *«ONB-02 part 1: compress gender + appearance into single screen»*
 
+> **Status boundary:** historical reality-check note for one closed onboarding plan item. Keep it as evidence of why that task was closed, not as a live description of the current onboarding flow without rechecking code and `wiki/`.
+
 ---
 
 ## TL;DR

@@ -36,6 +36,34 @@
 - [[screens]] — 70+ views, 46 Figma screens, navigation map
 - [[design-system]] — DarkFantasyTheme tokens, colors, typography, spacing, ornamental system
 
+## Features
+
+- [[auth]] — end-to-end feature map for guest/email/OAuth auth, upgrades, linking, and account deletion
+- [[characters]] — end-to-end feature map for creation, profile, appearance, stat allocation, and respec
+- [[daily-login]] — end-to-end feature map for streak rewards, popup gating, and calendar claims
+- [[achievements]] — end-to-end feature map for persistent achievement tracking and reward claims
+- [[battle-pass]] — end-to-end feature map for seasonal XP tracks, free/premium rewards, and weekly challenge feeds
+- [[events]] — end-to-end feature map for scheduled live events, banners, and time-boxed gameplay modifiers
+- [[gold-mine]] — end-to-end feature map for idle shafts, collect loops, and slot minigame flows
+- [[dungeons]] — end-to-end feature map for structured dungeon runs, room progression, and victory rewards
+- [[dungeon-rush]] — end-to-end feature map for endless rush runs, room shops, and abandon/resolve flows
+- [[inventory]] — end-to-end feature map for equipment, consumables, upgrades, selling, and bag expansion
+- [[mail]] — end-to-end feature map for inbox delivery, reward claims, unread badges, and admin broadcasts
+- [[passive-tree]] — end-to-end feature map for talent allocation, respec, and active-slot skill binding
+- [[prestige]] — end-to-end feature map for max-level resets, prestige multipliers, and prestige ceremony surfaces
+- [[pvp-combat]] — end-to-end feature map for matchmaking, classic/interactive combat, and rating resolution
+- [[interactive-combat]] — end-to-end feature map for active-slot rounds, strike resolver, and cooldown HUD
+- [[leaderboard]] — end-to-end feature map for rating boards, search, and profile drill-down surfaces
+- [[quests]] — end-to-end feature map for daily quest rotation, bonus claims, and tutorial quest overlap
+- [[referral]] — end-to-end feature map for invite codes, milestone-gated rewards, and both-sides reward claims
+- [[session-summary]] — end-to-end feature map for since-you-last-played diff summaries and aggregated progress reporting
+- [[shop]] — end-to-end feature map for item purchases, IAP, contraband, and offers
+- [[social]] — end-to-end feature map for friends, challenges, direct messages, and guild hall surfaces
+- [[stamina]] — end-to-end feature map for stamina regen, refill diminishing returns, and consumer routes
+- [[stash]] — end-to-end feature map for account-scoped shared storage, deposit/withdraw, and slot-cap enforcement
+- [[tutorial]] — end-to-end feature map for scripted steps, first-fight flow, tutorial quests, and skip path
+- [[minigames]] — end-to-end feature map for the Tavern hub, Shell Game, Fortune Wheel, and the shared `MinigameSession` table
+
 ## Audit
 
 - [[audit-index]] — File-by-file project audit tracker
@@ -148,7 +176,50 @@
 - [[block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity]] — iOS cache cleanup removing dead raw quest/layout bridges and narrowing bootstrap feature flags to the live bool contract
 - [[block-107-ios-dead-model-parse-bridge-cleanup]] — iOS dead Gold Mine/dungeon raw model parser cleanup plus validation of the last remaining daily-login cache compatibility edge
 - [[block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal]] — iOS cleanup removing the dead raw `GameConfig`/`APIResponse` tail and documenting the remaining intentional networking/keychain raw boundaries
+- [[block-109-operations-deploy-docs-reality-sync]] — operations/deploy docs sync for live CI, schema parity, explicit migration semantics, and the current release-risk inventory
+- [[block-110-operations-git-workflow-and-ios-release-doc-parity]] — operations runbook sync for git workflow, CI-vs-deploy semantics, Fastlane setup truth, and iOS staging/release wording parity
+- [[block-111-operations-database-migration-runbook-parity]] — operations migration runbook sync for explicit production apply semantics and parity with live deploy docs/build scripts
+- [[block-112-ios-testflight-helper-identity-validation-parity]] — iOS TestFlight helper and docs sync for Appfile-vs-env Fastlane identity setup and stricter team validation
+- [[block-113-wiki-generation-tooling-and-generated-indexes]] — wiki generation tooling audit, generated index parity, and preflight drift-check integration
+- [[block-114-wiki-feature-maps-and-index-visibility]] — wiki feature-map indexing, navigation visibility, and wiki-link style parity for new feature pages
+- [[block-115-operations-figma-and-historical-doc-boundaries]] — Figma handoff, screen inventory, historical progress/bug logs, and UI PR checklist source-of-truth boundaries
+- [[block-116-source-of-truth-doc-index-parity]] — documentation index and cleanup-report parity for current source-of-truth boundaries
+- [[block-117-source-of-truth-project-overview-parity]] — project overview parity for current stack, iOS minimum, and high-level operational semantics
+- [[block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity]] — admin capabilities and iOS screen inventory parity for stale counts, stack truth, and snapshot boundary wording
+- [[block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries]] — design system source-of-truth vs historical audit boundary cleanup for stale counts and milestone language
+- [[block-120-ui-audit-artifacts-historical-boundary-cleanup]] — UI audit artifact boundary cleanup for historical dashboards, UX reviews, and asset/design-system forensic snapshots
+- [[block-121-prototypes-link-parity-and-transition-state]] — prototype move link parity, combat-doc navigation repair, and prototype/legal transition-state capture
+- [[block-122-wiki-feature-map-visibility-and-related-link-gaps]] — full feature-atlas visibility sync in the main index plus revalidation of remaining related-page dead-ends
+- [[block-123-ui-review-and-plan-docs-historical-boundaries]] — historical-boundary cleanup for dated UI review, audit, redesign, and roadmap docs under `docs/07_ui_ux/`
+- [[block-124-w1-w3-plan-docs-historical-boundaries]] — historical-boundary cleanup for dated W1/W2/W3 checkpoint, review, and design-plan docs under `docs/07_ui_ux/`
+- [[block-125-ui-prototype-and-figma-workflow-boundaries]] — historical-boundary cleanup for residual UI prototype archives plus source-of-truth scoping for the strict Figma workflow playbook
+- [[block-126-design-system-roadmap-and-screen-inventory-live-parity]] — live-vs-historical parity cleanup for the UI audit dashboard, design-system migration appendix, and screen inventory component naming
+- [[block-127-dated-product-economy-and-architecture-doc-boundaries]] — historical-boundary cleanup for dated economy, architecture, migration, full-product, and interactive-combat plan docs
+- [[block-128-retro-log-historical-boundaries]] — historical-boundary cleanup applied across the full dated engineering retrospective log set under `docs/retro/`
+- [[block-129-archive-legacy-doc-boundaries]] — historical/legacy/duplicate boundary cleanup for residual archive docs under `docs/11_archive/`
+- [[block-130-top-level-source-of-truth-and-orchestration-boundaries]] — top-level docs navigator/source-of-truth refresh plus historical-boundary cleanup for orchestration and studio operating-framework docs
+- [[block-131-empty-doc-placeholders-and-deprecation-markers]] — empty placeholder-doc cleanup for silent zero-byte surfaces under `docs/` plus explicit deprecation markers
+- [[block-132-obsidian-base-artifacts]] — root-level `.base` editor-artifact audit and deprecation assessment for likely Obsidian residue under `docs/`
+- [[block-133-live-doc-tbd-and-url-cleanup]] — live-doc cleanup replacing residual `TBD`/placeholder wording in current progression and deploy docs
+- [[block-134-delete-placeholder-and-editor-artifact-files]] — deletion of confirmed placeholder docs and `.base` editor artifacts plus repo-wide `.DS_Store` sweep
+- [[block-135-delete-archive-duplicate-docs]] — deletion of pure duplicate archive docs plus archive-policy wording cleanup
+- [[block-136-delete-root-orphan-prototype-artifacts]] — deletion of orphan root-level guest-gating/Gold Mine prototype artifacts with no live imports or source-of-truth role
+- [[block-137-root-prototype-relocation-state-sync]] — inventory/root-audit sync for deleted root prototype/legal HTML paths now mirrored under `prototypes/` copies
+- [[block-138-delete-deprecated-prototype-residue]] — deletion of deprecated hero-card and Special Offer prototype residue while keeping only the latest historical reference variant
+- [[block-139-delete-superseded-combat-prototype-set]] — deletion of the superseded A/B/C combat prototype set plus the dead launcher and extra B2-v2 intermediate branch
+- [[block-140-delete-orphan-feature-prototype-residue]] — deletion of ownerless feature prototype residue that no longer had a live reference role
+- [[block-141-prototype-reference-doc-sync]] — docs sync removing live references to deleted prototype residue and closing one later-resolved retro cleanup task
+- [[block-142-delete-wiki-obsidian-editor-residue]] — deletion of local Obsidian editor-state files from `wiki/` to restore wiki inventory count parity
+- [[block-143-delete-final-special-offer-prototype-reference]] — deletion of the last retained Special Offer prototype after its remaining live-consumer role disappeared
+- [[block-144-delete-victory-rewards-prototype-set]] — deletion of the standalone victory-rewards animation prototype and its duplicate local reward-art bundle
+- [[block-145-delete-gold-mine-minigame-prototype-reference]] — deletion of the Gold Mine minigame HTML prototype after the historical plan stopped needing it as a live dependency
+- [[block-146-delete-legal-transition-prototype-copies]] — deletion of the local legal transition HTML copies plus operations-doc wording cleanup for hosted legal ownership
+- [[block-147-delete-final-combat-history-prototypes]] — deletion of the final B2/B2-v3 combat-history HTML artifacts after the implementation plans were converted to historical-reference mode
+- [[block-148-root-dated-qa-and-ui-audit-relocation]] — relocation of the dated root QA report and responsiveness audit into `qa-reports/` and `docs/07_ui_ux/`
+- [[block-149-root-combat-history-doc-relocation]] — relocation of the root combat audit/plan history into `docs/features/combat/` plus dead prototype-link cleanup
+- [[block-150-root-gold-mine-doc-relocation]] — relocation of the root Gold Mine plan/balance docs into `docs/features/gold-mine/` plus code-reference path parity
+- [[block-151-root-release-audit-relocation]] — relocation of the historical root pre-release audit into `docs/10_operations/`
 
 ---
 
-*140 in-scope wiki files | 138 wiki pages (13 systems, 11 decisions, 3 entities, 108 audit, 1 schema) + index/log | Last updated: 2026-04-16*
+*210 in-scope wiki markdown files | 206 wiki pages (13 systems, 11 decisions, 3 entities, 151 audit blocks, 25 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-17*

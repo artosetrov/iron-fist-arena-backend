@@ -1,7 +1,8 @@
-# Hexbound — Lead Orchestrator Framework
+# Hexbound — Lead Orchestrator Framework (Historical Snapshot)
 
+> **Status boundary:** historical operating-framework snapshot from the March 2026 agent-orchestration phase. Keep this file as a studio-process reference, not as the live source of truth for the current repo.
 > Версия: 1.0 | Дата: 2026-03-24
-> Оркестратор координирует команду специализированных AI-агентов для ведения разработки проекта Hexbound.
+> For current execution rules, file ownership, and audit progress, use `CLAUDE.md`, `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`.
 
 ---
 

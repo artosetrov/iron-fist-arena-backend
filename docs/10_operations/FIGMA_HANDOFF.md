@@ -1,5 +1,7 @@
 # Hexbound Figma Handoff
 
+*Source of truth: this file is a Figma handoff planning snapshot. For current screen coverage and design-system reality, also use `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`, `wiki/entities/screens.md`, `wiki/entities/design-system.md`, `Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift`, and the live admin design-system previews. Updated: 2026-04-16*
+
 Дата подготовки: 2026-03-12
 
 ## Что уже готово
@@ -10,7 +12,7 @@
 - foundation tokens для mobile и admin;
 - список базовых компонентов;
 - очередность переноса;
-- отдельный инвентарь экранов в `docs/FIGMA_SCREEN_INVENTORY.md`.
+- отдельный инвентарь экранов в `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`.
 
 Важно: прямой перенос в живой Figma-файл из этой среды пока не выполнен, потому что для этого нужен доступ к Figma-файлу или Figma API token. Но вся подготовка для ручного или полуавтоматического импорта уже собрана.
 
@@ -31,7 +33,7 @@
 - `admin/src/components/layout/sidebar.tsx`
 - `admin/src/components/layout/nav-items.ts`
 - `admin/src/app/globals.css`
-- `admin/src/components/ui/*`
+- `admin/src/components/ui/`
 
 ## Рекомендуемая структура Figma-файла
 
@@ -346,4 +348,4 @@ Suggested text styles:
 
 - создать реальный Figma файл по этой структуре;
 - начать с `01 Mobile Foundations` и `02 Mobile Components`;
-- затем переносить экраны пакетами по `docs/FIGMA_SCREEN_INVENTORY.md`.
+- затем переносить экраны пакетами по `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`.

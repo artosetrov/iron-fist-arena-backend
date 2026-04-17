@@ -2,6 +2,7 @@
 
 > **Date:** 2026-03-26
 > **Status:** Phase 1 + Phase 2 Complete
+> **Status boundary:** historical documentation migration plan from the initial docs reorganization push. Treat it as provenance for how the docs structure was introduced, not as the active documentation work queue without checking the current `wiki/`, `docs/`, and audit blocks.
 
 ---
 

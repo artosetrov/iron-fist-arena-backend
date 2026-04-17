@@ -1,5 +1,7 @@
 # HEXBOUND — Полный аудит админ-панели и системы управления игрой
 
+> **Status boundary:** historical admin-panel audit snapshot from `2026-03-16`. Keep it as forensic product/ops context, not as the current verdict on the shipped admin surface without rechecking live admin routes, backend contracts, and audited `wiki/`.
+
 **Дата:** 16 марта 2026
 **Аудитор:** Principal Game Systems Designer / LiveOps Architect / Backend Product Auditor
 **Стандарт:** AAA / Large Studio Production-Ready Game Operations

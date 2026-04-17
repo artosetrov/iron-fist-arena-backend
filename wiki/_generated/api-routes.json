@@ -1,0 +1,2341 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$generatedFrom": "backend/src/app/api/**/route.ts",
+  "$doNotEdit": "Regenerate with scripts/wiki/generate-api-routes.mjs",
+  "counts": {
+    "total": 185,
+    "withAuth": 135,
+    "admin": 29,
+    "rateLimited": 83,
+    "transactional": 76,
+    "namespaces": 38
+  },
+  "routes": {
+    "achievements": [
+      {
+        "url": "/api/achievements/:key/claim",
+        "file": "backend/src/app/api/achievements/[key]/claim/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/achievements/claim",
+        "file": "backend/src/app/api/achievements/claim/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/achievements",
+        "file": "backend/src/app/api/achievements/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "admin": [
+      {
+        "url": "/api/admin/achievements",
+        "file": "backend/src/app/api/admin/achievements/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/ban",
+        "file": "backend/src/app/api/admin/ban/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/characters",
+        "file": "backend/src/app/api/admin/characters/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/config/restore",
+        "file": "backend/src/app/api/admin/config/restore/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/admin/config",
+        "file": "backend/src/app/api/admin/config/route.ts",
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/admin/design-tokens",
+        "file": "backend/src/app/api/admin/design-tokens/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/dungeon-map-layout",
+        "file": "backend/src/app/api/admin/dungeon-map-layout/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/economy",
+        "file": "backend/src/app/api/admin/economy/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/events",
+        "file": "backend/src/app/api/admin/events/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/hub-layout",
+        "file": "backend/src/app/api/admin/hub-layout/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/iap",
+        "file": "backend/src/app/api/admin/iap/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/apply-suggestions",
+        "file": "backend/src/app/api/admin/item-balance/apply-suggestions/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/config",
+        "file": "backend/src/app/api/admin/item-balance/config/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/power-scores",
+        "file": "backend/src/app/api/admin/item-balance/power-scores/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/profiles",
+        "file": "backend/src/app/api/admin/item-balance/profiles/route.ts",
+        "methods": [
+          "GET",
+          "PUT"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/simulate/combat",
+        "file": "backend/src/app/api/admin/item-balance/simulate/combat/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/simulate/item-impact",
+        "file": "backend/src/app/api/admin/item-balance/simulate/item-impact/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/simulate/matchups",
+        "file": "backend/src/app/api/admin/item-balance/simulate/matchups/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/simulation-history",
+        "file": "backend/src/app/api/admin/item-balance/simulation-history/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/suggest",
+        "file": "backend/src/app/api/admin/item-balance/suggest/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/item-balance/validate",
+        "file": "backend/src/app/api/admin/item-balance/validate/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/matches",
+        "file": "backend/src/app/api/admin/matches/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/passives/connections",
+        "file": "backend/src/app/api/admin/passives/connections/route.ts",
+        "methods": [
+          "GET",
+          "POST",
+          "DELETE"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/passives",
+        "file": "backend/src/app/api/admin/passives/route.ts",
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/seasons",
+        "file": "backend/src/app/api/admin/seasons/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/skills",
+        "file": "backend/src/app/api/admin/skills/route.ts",
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/stats",
+        "file": "backend/src/app/api/admin/stats/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/unban",
+        "file": "backend/src/app/api/admin/unban/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/users",
+        "file": "backend/src/app/api/admin/users/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "appearances": [
+      {
+        "url": "/api/appearances",
+        "file": "backend/src/app/api/appearances/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "assets": [
+      {
+        "url": "/api/assets/manifest",
+        "file": "backend/src/app/api/assets/manifest/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "auth": [
+      {
+        "url": "/api/auth/apple",
+        "file": "backend/src/app/api/auth/apple/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/forgot-password",
+        "file": "backend/src/app/api/auth/forgot-password/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/google",
+        "file": "backend/src/app/api/auth/google/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/guest-login",
+        "file": "backend/src/app/api/auth/guest-login/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/guest",
+        "file": "backend/src/app/api/auth/guest/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/link-account",
+        "file": "backend/src/app/api/auth/link-account/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/login",
+        "file": "backend/src/app/api/auth/login/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/register",
+        "file": "backend/src/app/api/auth/register/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/sync-user",
+        "file": "backend/src/app/api/auth/sync-user/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/auth/upgrade-guest-oauth",
+        "file": "backend/src/app/api/auth/upgrade-guest-oauth/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/auth/upgrade-guest",
+        "file": "backend/src/app/api/auth/upgrade-guest/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "battle-pass": [
+      {
+        "url": "/api/battle-pass/buy-premium",
+        "file": "backend/src/app/api/battle-pass/buy-premium/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/battle-pass/claim/:level",
+        "file": "backend/src/app/api/battle-pass/claim/[level]/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/battle-pass",
+        "file": "backend/src/app/api/battle-pass/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/battle-pass/weekly-challenges/claim",
+        "file": "backend/src/app/api/battle-pass/weekly-challenges/claim/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/battle-pass/weekly-challenges",
+        "file": "backend/src/app/api/battle-pass/weekly-challenges/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "characters": [
+      {
+        "url": "/api/characters/:id/allocate-stats",
+        "file": "backend/src/app/api/characters/[id]/allocate-stats/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id/appearance",
+        "file": "backend/src/app/api/characters/[id]/appearance/route.ts",
+        "methods": [
+          "PATCH"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id/buy-stat-points",
+        "file": "backend/src/app/api/characters/[id]/buy-stat-points/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id/origin",
+        "file": "backend/src/app/api/characters/[id]/origin/route.ts",
+        "methods": [
+          "PATCH"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id/profile",
+        "file": "backend/src/app/api/characters/[id]/profile/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/characters/:id/respec-stats",
+        "file": "backend/src/app/api/characters/[id]/respec-stats/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id",
+        "file": "backend/src/app/api/characters/[id]/route.ts",
+        "methods": [
+          "GET",
+          "DELETE"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/characters/:id/set-bonuses",
+        "file": "backend/src/app/api/characters/[id]/set-bonuses/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/characters/:id/stance",
+        "file": "backend/src/app/api/characters/[id]/stance/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/characters/check-name",
+        "file": "backend/src/app/api/characters/check-name/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/characters",
+        "file": "backend/src/app/api/characters/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "combat": [
+      {
+        "url": "/api/combat/buy-extra",
+        "file": "backend/src/app/api/combat/buy-extra/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/combat/simulate",
+        "file": "backend/src/app/api/combat/simulate/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/combat/status",
+        "file": "backend/src/app/api/combat/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "consumables": [
+      {
+        "url": "/api/consumables",
+        "file": "backend/src/app/api/consumables/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/consumables/use",
+        "file": "backend/src/app/api/consumables/use/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "daily-login": [
+      {
+        "url": "/api/daily-login/claim",
+        "file": "backend/src/app/api/daily-login/claim/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/daily-login",
+        "file": "backend/src/app/api/daily-login/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "design-tokens": [
+      {
+        "url": "/api/design-tokens",
+        "file": "backend/src/app/api/design-tokens/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "dev": [
+      {
+        "url": "/api/dev/auth-test",
+        "file": "backend/src/app/api/dev/auth-test/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dev/balance",
+        "file": "backend/src/app/api/dev/balance/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dev/fix-avatars",
+        "file": "backend/src/app/api/dev/fix-avatars/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dev/health",
+        "file": "backend/src/app/api/dev/health/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dev/stats",
+        "file": "backend/src/app/api/dev/stats/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dev/tests",
+        "file": "backend/src/app/api/dev/tests/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "dungeon-rush": [
+      {
+        "url": "/api/dungeon-rush/abandon",
+        "file": "backend/src/app/api/dungeon-rush/abandon/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dungeon-rush/fight",
+        "file": "backend/src/app/api/dungeon-rush/fight/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/resolve",
+        "file": "backend/src/app/api/dungeon-rush/resolve/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/shop-buy",
+        "file": "backend/src/app/api/dungeon-rush/shop-buy/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/start",
+        "file": "backend/src/app/api/dungeon-rush/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/status",
+        "file": "backend/src/app/api/dungeon-rush/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "dungeons": [
+      {
+        "url": "/api/dungeons/abandon",
+        "file": "backend/src/app/api/dungeons/abandon/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dungeons/fight",
+        "file": "backend/src/app/api/dungeons/fight/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeons/list",
+        "file": "backend/src/app/api/dungeons/list/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dungeons",
+        "file": "backend/src/app/api/dungeons/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dungeons/run/:id/fight",
+        "file": "backend/src/app/api/dungeons/run/[id]/fight/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeons/start",
+        "file": "backend/src/app/api/dungeons/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "events": [
+      {
+        "url": "/api/events/active",
+        "file": "backend/src/app/api/events/active/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "flags": [
+      {
+        "url": "/api/flags",
+        "file": "backend/src/app/api/flags/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "game": [
+      {
+        "url": "/api/game/init",
+        "file": "backend/src/app/api/game/init/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "guild-challenge": [
+      {
+        "url": "/api/guild-challenge",
+        "file": "backend/src/app/api/guild-challenge/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "iap": [
+      {
+        "url": "/api/iap/apple-notifications",
+        "file": "backend/src/app/api/iap/apple-notifications/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/iap/products",
+        "file": "backend/src/app/api/iap/products/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/iap/restore-purchases",
+        "file": "backend/src/app/api/iap/restore-purchases/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/iap/restore",
+        "file": "backend/src/app/api/iap/restore/route.ts",
+        "methods": [],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/iap/verify-receipt",
+        "file": "backend/src/app/api/iap/verify-receipt/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/iap/verify",
+        "file": "backend/src/app/api/iap/verify/route.ts",
+        "methods": [],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "inventory": [
+      {
+        "url": "/api/inventory/equip",
+        "file": "backend/src/app/api/inventory/equip/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/inventory/expand",
+        "file": "backend/src/app/api/inventory/expand/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/inventory",
+        "file": "backend/src/app/api/inventory/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/inventory/sell",
+        "file": "backend/src/app/api/inventory/sell/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/inventory/unequip",
+        "file": "backend/src/app/api/inventory/unequip/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/inventory/use",
+        "file": "backend/src/app/api/inventory/use/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "leaderboard": [
+      {
+        "url": "/api/leaderboard",
+        "file": "backend/src/app/api/leaderboard/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/leaderboard/search",
+        "file": "backend/src/app/api/leaderboard/search/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "mail": [
+      {
+        "url": "/api/mail/:id/claim",
+        "file": "backend/src/app/api/mail/[id]/claim/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/mail/:id/delete",
+        "file": "backend/src/app/api/mail/[id]/delete/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/mail/:id/read",
+        "file": "backend/src/app/api/mail/[id]/read/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/mail",
+        "file": "backend/src/app/api/mail/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/mail/unread-count",
+        "file": "backend/src/app/api/mail/unread-count/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "me": [
+      {
+        "url": "/api/me",
+        "file": "backend/src/app/api/me/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "milestones": [
+      {
+        "url": "/api/milestones",
+        "file": "backend/src/app/api/milestones/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "minigames": [
+      {
+        "url": "/api/minigames/fortune-wheel/spin",
+        "file": "backend/src/app/api/minigames/fortune-wheel/spin/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/fortune-wheel/status",
+        "file": "backend/src/app/api/minigames/fortune-wheel/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/minigames/gold-mine/boost",
+        "file": "backend/src/app/api/minigames/gold-mine/boost/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/buy-slot",
+        "file": "backend/src/app/api/minigames/gold-mine/buy-slot/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/collect-all",
+        "file": "backend/src/app/api/minigames/gold-mine/collect-all/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/collect",
+        "file": "backend/src/app/api/minigames/gold-mine/collect/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/minigame-bonus",
+        "file": "backend/src/app/api/minigames/gold-mine/minigame-bonus/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/slot-minigame/start",
+        "file": "backend/src/app/api/minigames/gold-mine/slot-minigame/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/slot-minigame/submit",
+        "file": "backend/src/app/api/minigames/gold-mine/slot-minigame/submit/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/gold-mine/start",
+        "file": "backend/src/app/api/minigames/gold-mine/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/minigames/gold-mine/status",
+        "file": "backend/src/app/api/minigames/gold-mine/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/minigames/shell-game/guess",
+        "file": "backend/src/app/api/minigames/shell-game/guess/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/shell-game/play",
+        "file": "backend/src/app/api/minigames/shell-game/play/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/minigames/shell-game/start",
+        "file": "backend/src/app/api/minigames/shell-game/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/minigames/shell-game/status",
+        "file": "backend/src/app/api/minigames/shell-game/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "passives": [
+      {
+        "url": "/api/passives/active-slots/batch",
+        "file": "backend/src/app/api/passives/active-slots/batch/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/passives/active-slots",
+        "file": "backend/src/app/api/passives/active-slots/route.ts",
+        "methods": [
+          "GET",
+          "POST",
+          "DELETE"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/passives/character",
+        "file": "backend/src/app/api/passives/character/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/passives/respec",
+        "file": "backend/src/app/api/passives/respec/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/passives/tree",
+        "file": "backend/src/app/api/passives/tree/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/passives/unlock",
+        "file": "backend/src/app/api/passives/unlock/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "prestige": [
+      {
+        "url": "/api/prestige",
+        "file": "backend/src/app/api/prestige/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "push": [
+      {
+        "url": "/api/push/register",
+        "file": "backend/src/app/api/push/register/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/push/unregister",
+        "file": "backend/src/app/api/push/unregister/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "pvp": [
+      {
+        "url": "/api/pvp/fight",
+        "file": "backend/src/app/api/pvp/fight/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/pvp/find-match",
+        "file": "backend/src/app/api/pvp/find-match/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/history",
+        "file": "backend/src/app/api/pvp/history/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/match/complete",
+        "file": "backend/src/app/api/pvp/match/complete/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/pvp/match/start",
+        "file": "backend/src/app/api/pvp/match/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/pvp/opponents",
+        "file": "backend/src/app/api/pvp/opponents/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/prepare",
+        "file": "backend/src/app/api/pvp/prepare/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/resolve",
+        "file": "backend/src/app/api/pvp/resolve/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/pvp/revenge/:id",
+        "file": "backend/src/app/api/pvp/revenge/[id]/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/pvp/revenge",
+        "file": "backend/src/app/api/pvp/revenge/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/strike",
+        "file": "backend/src/app/api/pvp/strike/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "quests": [
+      {
+        "url": "/api/quests/daily/bonus",
+        "file": "backend/src/app/api/quests/daily/bonus/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/quests/daily",
+        "file": "backend/src/app/api/quests/daily/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "session-summary": [
+      {
+        "url": "/api/session-summary",
+        "file": "backend/src/app/api/session-summary/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "shop": [
+      {
+        "url": "/api/shop/buy-consumable",
+        "file": "backend/src/app/api/shop/buy-consumable/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/buy-gems",
+        "file": "backend/src/app/api/shop/buy-gems/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/buy-gold",
+        "file": "backend/src/app/api/shop/buy-gold/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/buy-potion",
+        "file": "backend/src/app/api/shop/buy-potion/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/buy",
+        "file": "backend/src/app/api/shop/buy/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/contraband",
+        "file": "backend/src/app/api/shop/contraband/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/items",
+        "file": "backend/src/app/api/shop/items/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/shop/offers",
+        "file": "backend/src/app/api/shop/offers/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/repair",
+        "file": "backend/src/app/api/shop/repair/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/shop/upgrade",
+        "file": "backend/src/app/api/shop/upgrade/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "skills": [
+      {
+        "url": "/api/skills/character",
+        "file": "backend/src/app/api/skills/character/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/skills/equip",
+        "file": "backend/src/app/api/skills/equip/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/skills/learn",
+        "file": "backend/src/app/api/skills/learn/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/skills",
+        "file": "backend/src/app/api/skills/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/skills/upgrade",
+        "file": "backend/src/app/api/skills/upgrade/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "social": [
+      {
+        "url": "/api/social/challenges",
+        "file": "backend/src/app/api/social/challenges/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/social/friends",
+        "file": "backend/src/app/api/social/friends/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/social/messages",
+        "file": "backend/src/app/api/social/messages/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/social/relationship",
+        "file": "backend/src/app/api/social/relationship/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/social/status",
+        "file": "backend/src/app/api/social/status/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "stamina": [
+      {
+        "url": "/api/stamina/refill",
+        "file": "backend/src/app/api/stamina/refill/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/stamina",
+        "file": "backend/src/app/api/stamina/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
+    "stash": [
+      {
+        "url": "/api/stash/deposit",
+        "file": "backend/src/app/api/stash/deposit/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/stash",
+        "file": "backend/src/app/api/stash/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/stash/withdraw",
+        "file": "backend/src/app/api/stash/withdraw/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "tutorial": [
+      {
+        "url": "/api/tutorial/quest",
+        "file": "backend/src/app/api/tutorial/quest/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/tutorial/referral",
+        "file": "backend/src/app/api/tutorial/referral/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/tutorial",
+        "file": "backend/src/app/api/tutorial/route.ts",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/tutorial/scripted-fight/preload",
+        "file": "backend/src/app/api/tutorial/scripted-fight/preload/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/tutorial/scripted-fight/resolve",
+        "file": "backend/src/app/api/tutorial/scripted-fight/resolve/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/tutorial/skip",
+        "file": "backend/src/app/api/tutorial/skip/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/tutorial/step",
+        "file": "backend/src/app/api/tutorial/step/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      }
+    ],
+    "user": [
+      {
+        "url": "/api/user/delete",
+        "file": "backend/src/app/api/user/delete/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/user/email",
+        "file": "backend/src/app/api/user/email/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/user/password",
+        "file": "backend/src/app/api/user/password/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ]
+  }
+}

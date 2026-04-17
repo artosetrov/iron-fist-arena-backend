@@ -2,6 +2,8 @@
 
 *Дата: 2026-03-21. Все 5 агентов запущены параллельно.*
 
+> **Status boundary:** historical full-product audit snapshot from `2026-03-21`. Keep it as forensic evidence of what the repo looked like at that moment, not as the current repo-health verdict without rechecking live code, CI/build status, and the audited `wiki/`.
+
 ---
 
 ## Общий вердикт: ⛔ NEEDS FIXES

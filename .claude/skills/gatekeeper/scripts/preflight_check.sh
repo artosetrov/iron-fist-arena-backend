@@ -161,6 +161,19 @@ if [ -n "$TS_FILES" ]; then
   echo ""
 fi
 
+# --- 8. Wiki generated drift check (if source/generated wiki files changed) ---
+WIKI_GEN_CHANGED=$(echo "$CHANGED" | grep -E '^(Hexbound/Hexbound/Theme/(DarkFantasyTheme|LayoutConstants)\.swift|backend/src/app/api/|backend/prisma/schema\.prisma|wiki/_generated/|scripts/wiki/)' || true)
+if [ -n "$WIKI_GEN_CHANGED" ] && [ -f "scripts/wiki/check-drift.sh" ]; then
+  echo "## Wiki Generated Drift Check"
+  if bash scripts/wiki/check-drift.sh; then
+    :
+  else
+    echo "  ⚠️  Generated wiki indexes are stale — run: bash scripts/wiki/generate-all.sh"
+    WARNINGS="$WARNINGS\n  - Generated wiki indexes stale"
+  fi
+  echo ""
+fi
+
 # --- VERDICT ---
 echo "==============================="
 if [ "$VERDICT" = "BLOCKED" ]; then

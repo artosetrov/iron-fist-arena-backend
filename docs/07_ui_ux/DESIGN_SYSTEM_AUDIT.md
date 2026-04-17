@@ -3,6 +3,8 @@
 > **Date:** 2026-04-01
 > **Scope:** CODE ↔ TOKENS ↔ COMPONENTS ↔ FIGMA DS ↔ FIGMA SCREENS ↔ SHIPPED APP
 > **Method:** Automated forensic analysis — 7 parallel agents, full codebase scan
+>
+> **Status boundary:** this is a historical forensic audit snapshot, not the live source of truth. Use `wiki/`, `DESIGN_SYSTEM.md`, `SCREEN_INVENTORY.md`, and current code/Figma exports for current-state decisions.
 
 ---
 
@@ -786,6 +788,8 @@ The design system is considered fully governed when ALL of the following are tru
 | **OVERALL** | **1626** | **7584** | **~70%** | **≥95%** |
 
 ### Success Metrics
+
+These were audit target metrics for the 2026-04-01 pass. They should not be read as guaranteed current repo state without revalidation.
 
 1. **Zero hardcoded `.font(.system)` in Views/** — verified by grep
 2. **Zero hardcoded `cornerRadius:` literals in Views/** — verified by grep

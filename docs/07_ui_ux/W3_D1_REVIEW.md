@@ -5,6 +5,8 @@
 **Скоуп:** W3 Balance adjustments (5 дней) — pre-implementation recon
 **Статус:** 🔍 Review — требуется выбор Артёма перед любой имплементацией
 
+> **Status boundary:** historical balance recon snapshot from the W3 planning moment. Keep it as context for why the sprint was framed a certain way, not as the current balance roadmap without checking the live constants, docs, and audit blocks.
+
 ---
 
 ## Зачем этот документ

@@ -1,7 +1,8 @@
 # Hexbound — Agent Loading Guide
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-04-16
 > Для AI-агентов. Перед началом работы — загрузи ТОЛЬКО нужные документы.
+> Для repo-wide audit, ownership, и current-reality checks сначала открой `wiki/index.md`, `wiki/log.md`, и `wiki/audit/audit-index.md`.
 > Не читай всё подряд. Читай по задаче.
 
 ---
@@ -24,7 +25,7 @@
 | Новый экран | `docs/rules/rules-swift.md` → `docs/rules/rules-ui-design.md` → `docs/07_ui_ux/SCREEN_INVENTORY.md` |
 | Новый компонент | `docs/rules/rules-ui-design.md` → проверить `Hexbound/Hexbound/Theme/` файлы |
 | Рефакторинг экрана | `docs/rules/rules-swift.md` → соответствующий `docs/features/` doc |
-| Анимации / Motion | `docs/rules/rules-ui-design.md` → `docs/07_ui_ux/MOTION_AND_JUICE_AUDIT.md` |
+| Анимации / Motion | `docs/rules/rules-ui-design.md` → `docs/07_ui_ux/DESIGN_SYSTEM.md` → при необходимости historical reference в `docs/07_ui_ux/MOTION_AND_JUICE_AUDIT.md` |
 | Combat UI (боевка) | `docs/rules/rules-combat-pvp.md` → `docs/rules/rules-ui-design.md` |
 
 ### Backend
@@ -75,10 +76,10 @@
 
 | Задача | Загрузить |
 |--------|----------|
-| Новая фича (end-to-end) | `PROJECT_INDEX.md` → rules по доменам → feature doc если есть |
+| Новая фича (end-to-end) | `wiki/index.md` → `docs/PROJECT_INDEX.md` → rules по доменам → feature doc если есть |
 | Code review | `docs/rules/rules-swift.md` (iOS) или `rules-backend.md` (TS) → `CLAUDE.md` |
-| UX audit | `docs/rules/rules-ui-design.md` → `docs/07_ui_ux/UX_AUDIT.md` |
-| Documentation update | `docs/SOURCE_OF_TRUTH.md` → соответствующий doc |
+| UX audit | `wiki/index.md` → `docs/rules/rules-ui-design.md` → `docs/07_ui_ux/UX_AUDIT.md` |
+| Documentation update | `wiki/index.md` → `docs/SOURCE_OF_TRUTH.md` → соответствующий doc |
 
 ---
 
@@ -86,6 +87,7 @@
 
 1. **Не читай всё.** Загружай только то, что указано для твоей задачи.
 2. **CLAUDE.md — всегда в контексте.** Его не нужно загружать отдельно.
-3. **Код > документация.** При конфликте — верь коду (см. `SOURCE_OF_TRUTH.md`).
-4. **После работы — обнови docs.** Если ты изменил API, экран, схему — обнови соответствующий doc.
-5. **Не создавай дублей.** Перед созданием нового doc — проверь `PROJECT_INDEX.md`.
+3. **Код + audited wiki > старый narrative doc.** При конфликте — верь коду и свежему `wiki/` статусу (см. `SOURCE_OF_TRUTH.md`).
+4. **Сначала проверяй boundary banner.** Датированные review/audit/prototype docs могут быть historical reference, а не живая спецификация.
+5. **После работы — обнови docs.** Если ты изменил API, экран, схему — обнови соответствующий doc и связанный wiki/audit trace.
+6. **Не создавай дублей.** Перед созданием нового doc — проверь `PROJECT_INDEX.md` и `wiki/index.md`.

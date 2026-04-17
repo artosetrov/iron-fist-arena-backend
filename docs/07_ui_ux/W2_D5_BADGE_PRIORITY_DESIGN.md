@@ -5,6 +5,8 @@
 **План:** `QA_FIX_PLAN_2026-04-10.md` W2.D5 — «Badge priority / visual hierarchy»
 **Связанные доки:** `W2_D4_BUILDING_GATING_DESIGN.md`
 
+> **Status boundary:** historical badge-priority proposal. Useful for product reasoning, but not a live statement of current hub badge behavior or current UX policy without revalidation.
+
 ---
 
 ## TL;DR

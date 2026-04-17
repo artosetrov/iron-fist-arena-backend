@@ -1,6 +1,6 @@
 # Hexbound — Database Migrations
 
-*Source of truth: this file + `backend/prisma/`. Updated: 2026-03-19*
+*Source of truth: this file + `backend/prisma/` + current deploy/build scripts. Updated: 2026-04-16*
 
 ---
 
@@ -44,30 +44,26 @@ git commit -m "db: add feature_name migration"
 ## Applying Migrations to Production
 
 ```bash
-# Option A: Automatic (via Vercel build)
-# If using `prisma migrate deploy` in build command, migrations apply on deploy.
-# Currently NOT configured — see "Recommended Setup" below.
-
-# Option B: Manual
+# Current production path (explicit)
 cd backend
 DATABASE_URL="production_connection_string" npm run db:migrate:deploy
 ```
 
-## Recommended Setup
+### Important Current Reality
 
-Add migration deploy to Vercel build command for backend:
+- backend build is currently `prisma generate && next build`
+- admin build is currently `prisma generate && next build`
+- neither Vercel build runs `prisma migrate deploy`
 
-**Current** (in backend/package.json):
-```
-"build": "prisma generate && next build"
-```
+That means a green deploy does **not** imply the database schema was migrated.
 
-**Recommended**:
-```
-"build": "prisma generate && prisma migrate deploy && next build"
-```
+If the team later decides to embed migration apply into deploy automation, that should be treated as a separate operational decision and updated consistently across:
 
-⚠️ This is safe because `prisma migrate deploy` only applies pending migrations, never creates new ones, and never resets data.
+- `backend/package.json`
+- Vercel project settings
+- `docs/10_operations/DEPLOY.md`
+- `docs/10_operations/GIT_AND_DEPLOY_AUDIT.md`
+- this file
 
 ## Commands Reference
 
@@ -99,7 +95,7 @@ CI check (`prisma-schema-sync` job) will fail if schemas are different.
 | Edit admin schema directly | Schemas diverge, admin crashes | Always edit backend first, copy to admin |
 | `db push` on production | Schema changes without migration history | Never use `db push` on production |
 | Forget to copy schema to admin | Admin build fails on deploy | `cp backend/prisma/schema.prisma admin/prisma/schema.prisma` |
-| Migration not applied before deploy | New code references missing columns | Add `prisma migrate deploy` to build |
+| Migration not applied before deploy | New code references missing columns | Run `cd backend && npm run db:migrate:deploy` explicitly |
 
 ## Rollback
 

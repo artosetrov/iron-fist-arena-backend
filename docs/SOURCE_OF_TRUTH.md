@@ -1,8 +1,8 @@
 # Hexbound — Source of Truth Matrix
 
-> **Last updated:** 2026-03-26
-> Какой документ является истиной для какого домена.
-> Если два документа противоречат — побеждает тот, что в колонке "Source of Truth".
+> **Last updated:** 2026-04-16
+> Routing matrix for top-level docs. For current file-by-file status, audit progress, and ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`.
+> Если два документа противоречат — побеждает код или более свежий explicitly-audited source.
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Домен | Source of Truth | Secondary Docs | Когда читать |
 |-------|----------------|----------------|-------------|
-| **Архитектура проекта** | `docs/01_source_of_truth/PROJECT_OVERVIEW.md` | `docs/PROJECT_INDEX.md` | Первое знакомство, обзор систем |
+| **Архитектура проекта** | `docs/01_source_of_truth/PROJECT_OVERVIEW.md` + `wiki/index.md` | `docs/PROJECT_INDEX.md` | Первое знакомство, обзор систем, актуальный audit |
 | **DB Schema** | `backend/prisma/schema.prisma` (код) | `docs/04_database/SCHEMA_REFERENCE.md` | Любая работа с БД |
 | **API Endpoints** | `backend/src/app/api/` (код) | `docs/03_backend_and_api/API_REFERENCE.md` | Работа с API |
 | **Цвета, шрифты, токены** | `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift` (код) | `docs/07_ui_ux/DESIGN_SYSTEM.md` | Любая работа с UI |
@@ -31,13 +31,15 @@
 | **Deploy flow** | `docs/10_operations/DEPLOY.md` | `GIT_WORKFLOW.md`, `RELEASE_IOS.md` | Деплой |
 | **Achievement catalog** | `backend/src/lib/game/achievement-catalog.ts` (код) | `GAME_SYSTEMS.md` | Достижения |
 | **Lore / World** | `docs/02_product_and_features/WORLD_AND_LORE.md` | — | Нарратив, тексты |
+| **Текущий audit / file ownership** | `wiki/audit/audit-index.md` + `wiki/audit/project-file-inventory.md` | `wiki/log.md` | Любой repo-wide audit или file-by-file pass |
 
 ---
 
 ## Правило разрешения конфликтов
 
 1. **Код > Документация.** Если `schema.prisma` говорит одно, а `SCHEMA_REFERENCE.md` другое — верь коду.
-2. **CLAUDE.md > DEVELOPMENT_RULES.md.** CLAUDE.md — самый актуальный, обновляется при каждом таске.
-3. **Feature doc > общий doc.** Если есть `docs/features/arena/ARENA_OVERVIEW.md`, он точнее чем описание арены в `GAME_SYSTEMS.md`.
-4. **Новый doc > старый doc.** Смотри дату `Last updated` в шапке.
-5. **При сомнениях — проверь код.** Открой файл и убедись.
+2. **`wiki/` > старый narrative snapshot.** Для текущего audit status, file ownership и repo reality сначала проверяй `wiki/index.md`, `wiki/log.md`, `wiki/audit/audit-index.md`.
+3. **CLAUDE.md > DEVELOPMENT_RULES.md.** CLAUDE.md — самый актуальный operational layer.
+4. **Feature doc > общий doc.** Если есть `docs/features/arena/ARENA_OVERVIEW.md`, он точнее чем описание арены в `GAME_SYSTEMS.md`.
+5. **Свежий audited doc > старый plan/review doc.** Смотри дату `Last updated`, boundary banners и historical/proposal метки.
+6. **При сомнениях — проверь код.** Открой файл и убедись.

@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-04-03T12:00:00Z",
-  "commit": "813b1b6",
-  "summary": "2 коммита + 285 файлов WIP: массовый UI polish всех экранов, 30+ новых SFX, новые компоненты (CardLevelBadge, PvPStatsWidget, TreasureRewardOverlay), fortune wheel backend, DS audit, Figma export pipeline.",
-  "retro_count": 5
+  "timestamp": "2026-04-17T00:00:00Z",
+  "commit": "1ac3304",
+  "summary": "1 коммит + 191 uncommitted: релизный wiki-аудит 004-108 с typed Codable на iOS и admin async hardening, в процессе — блоки 109-137, docs reorg в docs/features, удаление combat-proto HTML из root.",
+  "retro_count": 6
 }

@@ -1,5 +1,7 @@
 # Unified Preloader Concept — Hexbound
 
+> **Status boundary:** This is a historical loading-UX concept note, not the live loading specification. The counts and tiering below capture one design moment and should be revalidated against current Swift components, runtime behavior, and the audited `wiki/` before reuse.
+
 ## Problem
 
 The app has 4+ different loading patterns with inconsistent styling: fullscreen LoadingOverlay, 12 skeleton variants, 40+ ProgressView spinners with varying colors/sizes, and hardcoded text labels.

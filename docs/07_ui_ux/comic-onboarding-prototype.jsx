@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
+// Historical prototype snapshot retained for onboarding concept context; not live tutorial source of truth.
+
 // — Color tokens (matching DarkFantasyTheme) —
 const T = {
   bgAbyss: "#0D0D1A",
@@ -441,6 +443,18 @@ export default function ComicOnboardingPrototype() {
             transition: "opacity 0.5s ease",
           }}
         >
+          <div
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: 10,
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
+              color: T.textTertiary,
+              marginBottom: 6,
+            }}
+          >
+            Historical prototype snapshot
+          </div>
           <h1
             style={{
               fontFamily: "'Oswald', Impact, sans-serif",

@@ -1,8 +1,10 @@
-# Hexbound — Elite AI Studio Command Center
+# Hexbound — Elite AI Studio Command Center (Historical Snapshot)
 
-> **Статус:** Active Operating Framework
+> **Status boundary:** historical studio operating-framework snapshot. Keep this file as an archival coordination model, not as the live operational contract for the current repository.
+> **Статус:** Historical Operating Framework Snapshot
 > **Версия:** 2.0 — 2026-03-27
 > **Owner:** Game Director (Claude) + Artem (Founder / Creative Lead)
+> **Current live references:** `CLAUDE.md`, `wiki/index.md`, `wiki/log.md`, `wiki/audit/audit-index.md`
 
 ---
 

@@ -1,6 +1,6 @@
 # Hexbound — Documentation Cleanup Report
 
-*Executed: 2026-03-19*
+*Historical restructuring snapshot from 2026-03-19. Preserve this as audit evidence, but use `docs/01_source_of_truth/DOCUMENTATION_INDEX.md` and the `wiki/` audit surfaces for the current documentation map and current repo state. Executed: 2026-03-19; annotated: 2026-04-16.*
 
 ---
 

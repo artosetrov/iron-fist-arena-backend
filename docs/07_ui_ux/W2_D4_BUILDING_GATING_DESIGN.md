@@ -5,6 +5,8 @@
 **План:** `QA_FIX_PLAN_2026-04-10.md` W2.D4 — «Gate buildings behind soft level unlocks»
 **Связанные доки:** `W2_D1_REALITY_CHECK.md`, `W2_D2_LORE_AUDIT.md`, `W2_D3_SCRIPTED_FIGHT_DESIGN.md`
 
+> **Status boundary:** historical design proposal for one building-gating iteration. Keep it as rationale, not as the current unlock schedule or shipped hub-gating contract without rechecking live code and current feature maps.
+
 ---
 
 ## TL;DR

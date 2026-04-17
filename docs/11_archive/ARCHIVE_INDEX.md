@@ -23,8 +23,7 @@
 
 | File | Original |
 |------|----------|
-| `ART_STYLE_GUIDE_DUPLICATE.md` | `Hexbound/ART_STYLE_GUIDE.md` |
-| `mine-card-prompts_DUPLICATE.md` | `mine-card-prompts.md` (root) |
+| *(removed in audit block 135)* | Pure duplicates should be deleted once the canonical live source is stable |
 
 ## Feature-Specific Legacy Docs
 
@@ -37,6 +36,7 @@
 
 ## Policy
 
-- **Do not delete** archive files — they preserve historical context
+- **Do not delete historical docs blindly** — preserve archive files when they still carry unique forensic or historical context
+- **Do delete pure duplicates** once their canonical live source is stable and referenced elsewhere
 - **Do not reference** archive files as current documentation
 - **Do update** active docs in `/docs/01-10_*/` when implementation changes

@@ -1,5 +1,7 @@
 # Hexbound Screen Inventory For Figma
 
+*Source of truth: handoff-oriented screen snapshot for Figma transfer, not the canonical live navigation map. Revalidate against `Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift`, `Hexbound/Hexbound/App/AppRouter.swift`, and `wiki/entities/screens.md` before using this as an implementation checklist. Updated: 2026-04-16*
+
 Дата подготовки: 2026-03-12
 
 ## Обозначения

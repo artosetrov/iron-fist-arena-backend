@@ -5,6 +5,8 @@
 **Исходный plan item:** `QA_FIX_PLAN_2026-04-10.md` W2.D3 — *«ONB-01 Tutorial fight (biggest win)»*
 **Оценка:** 2 дня (biggest task недели)
 
+> **Status boundary:** historical design doc for the scripted tutorial fight before implementation. The live tutorial/runtime truth has since moved into the codebase and `wiki/features/tutorial.md`; keep this file as design rationale, not active spec.
+
 ---
 
 ## TL;DR

@@ -1,0 +1,2270 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$generatedFrom": [
+    "Hexbound/Hexbound/App/AppRouter.swift",
+    "Hexbound/Hexbound/Views/**/*.swift"
+  ],
+  "$doNotEdit": "Regenerate with scripts/wiki/generate-ios-screens.mjs",
+  "counts": {
+    "routes": 48,
+    "tabs": 3,
+    "screens": 281,
+    "viewFiles": 242,
+    "routesWithDestination": 48
+  },
+  "tabs": [
+    {
+      "name": "hub",
+      "rawValue": 0,
+      "label": "HUB",
+      "icon": "house.fill"
+    },
+    {
+      "name": "arena",
+      "rawValue": 1,
+      "label": "ARENA",
+      "icon": "shield.fill"
+    },
+    {
+      "name": "hero",
+      "rawValue": 2,
+      "label": "HERO",
+      "icon": "person.fill"
+    }
+  ],
+  "routes": [
+    {
+      "case": "login",
+      "associatedValues": [],
+      "doc": "Auth",
+      "destinationView": "AuthView",
+      "destinationRaw": "AuthView(initialMode: .signin)",
+      "viewFile": "Hexbound/Hexbound/Views/Auth/AuthView.swift",
+      "router": "auth"
+    },
+    {
+      "case": "register",
+      "associatedValues": [],
+      "destinationView": "AuthView",
+      "destinationRaw": "AuthView(initialMode: .signup)",
+      "viewFile": "Hexbound/Hexbound/Views/Auth/AuthView.swift",
+      "router": "auth"
+    },
+    {
+      "case": "onboarding",
+      "associatedValues": [],
+      "destinationView": "OnboardingDetailView",
+      "destinationRaw": "OnboardingDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
+      "router": "auth"
+    },
+    {
+      "case": "characterSelection",
+      "associatedValues": [],
+      "destinationView": "PlaceholderView",
+      "destinationRaw": "PlaceholderView() }",
+      "viewFile": null,
+      "router": "main"
+    },
+    {
+      "case": "hub",
+      "associatedValues": [],
+      "doc": "Hub",
+      "destinationView": "HubView",
+      "destinationRaw": "HubView()",
+      "viewFile": "Hexbound/Hexbound/Views/Hub/HubView.swift",
+      "router": "main"
+    },
+    {
+      "case": "hero",
+      "associatedValues": [],
+      "destinationView": "HeroDetailView",
+      "destinationRaw": "HeroDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Hero/HeroDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "stanceSelector",
+      "associatedValues": [],
+      "destinationView": "StanceSelectorDetailView",
+      "destinationRaw": "StanceSelectorDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Hub/StanceSelectorDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "buyStatPoints",
+      "associatedValues": [],
+      "destinationView": "BuyStatPointsView",
+      "destinationRaw": "BuyStatPointsView()",
+      "viewFile": "Hexbound/Hexbound/Views/Hero/BuyStatPointsView.swift",
+      "router": "main"
+    },
+    {
+      "case": "combat",
+      "associatedValues": [],
+      "doc": "Combat",
+      "destinationView": "CombatDetailView",
+      "destinationRaw": "CombatDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Combat/CombatDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "combatResult",
+      "associatedValues": [],
+      "destinationView": "CombatResultDetailView",
+      "destinationRaw": "CombatResultDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Combat/CombatResultDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "loot",
+      "associatedValues": [],
+      "destinationView": "LootDetailView",
+      "destinationRaw": "LootDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Combat/LootDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "interactiveBattle",
+      "associatedValues": [
+        {
+          "label": "characterId",
+          "type": "String"
+        },
+        {
+          "label": "opponentId",
+          "type": "String"
+        },
+        {
+          "label": "attackerMaxHp",
+          "type": "Int"
+        },
+        {
+          "label": "defenderMaxHp",
+          "type": "Int"
+        }
+      ],
+      "doc": "/ Interactive Combat v1 — new match-lifecycle fight screen. / Routed here when `GameConfig.interactiveCombatEnabled == true` (driven / by server env flag `INTERACTIVE_COMBAT_V1`). Classic flow uses `.combat`.",
+      "destinationView": "InteractiveBattleRouteView",
+      "destinationRaw": "InteractiveBattleRouteView(",
+      "viewFile": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "router": "main"
+    },
+    {
+      "case": "arena",
+      "associatedValues": [],
+      "doc": "Arena",
+      "destinationView": "ArenaDetailView",
+      "destinationRaw": "ArenaDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "shop",
+      "associatedValues": [],
+      "doc": "Shop",
+      "destinationView": "ShopDetailView",
+      "destinationRaw": "ShopDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Shop/ShopDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "currencyPurchase",
+      "associatedValues": [
+        {
+          "label": "initialTab",
+          "type": "Int"
+        }
+      ],
+      "destinationView": "CurrencyPurchaseView",
+      "destinationRaw": "CurrencyPurchaseView(initialTab: tab)",
+      "viewFile": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "router": "main"
+    },
+    {
+      "case": "premiumPurchase",
+      "associatedValues": [],
+      "destinationView": "PremiumPurchaseView",
+      "destinationRaw": "PremiumPurchaseView()",
+      "viewFile": "Hexbound/Hexbound/Views/Shop/PremiumPurchaseView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dungeonMap",
+      "associatedValues": [],
+      "doc": "Dungeon",
+      "destinationView": "DungeonMapView",
+      "destinationRaw": "DungeonMapView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dungeon/DungeonMapView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dungeonMapEditor",
+      "associatedValues": [],
+      "destinationView": "DungeonMapEditorView",
+      "destinationRaw": "DungeonMapEditorView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dungeon/DungeonMapEditorView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dungeonSelect",
+      "associatedValues": [],
+      "destinationView": "DungeonSelectDetailView",
+      "destinationRaw": "DungeonSelectDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dungeon/DungeonSelectDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dungeonRoom",
+      "associatedValues": [],
+      "destinationView": "DungeonRoomDetailView",
+      "destinationRaw": "DungeonRoomDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dungeon/DungeonRoomDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "guildHall",
+      "associatedValues": [],
+      "doc": "Social",
+      "destinationView": "GuildHallDetailView",
+      "destinationRaw": "GuildHallDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "guildHallMessage",
+      "associatedValues": [
+        {
+          "label": "characterId",
+          "type": "String"
+        },
+        {
+          "label": "characterName",
+          "type": "String"
+        },
+        {
+          "label": "avatar",
+          "type": "String?"
+        },
+        {
+          "label": "characterClass",
+          "type": "String?"
+        }
+      ],
+      "destinationView": "GuildHallDetailView",
+      "destinationRaw": "GuildHallDetailView(openMessageTo: characterId, messageName: characterName, messageAvatar: avatar, messageCharacterClass: characterClass)",
+      "viewFile": "Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "characterProfile",
+      "associatedValues": [
+        {
+          "label": "characterId",
+          "type": "String"
+        },
+        {
+          "label": "characterName",
+          "type": "String"
+        }
+      ],
+      "destinationView": "CharacterProfileView",
+      "destinationRaw": "CharacterProfileView(characterId: characterId, characterName: characterName)",
+      "viewFile": "Hexbound/Hexbound/Views/Profile/CharacterProfileView.swift",
+      "router": "main"
+    },
+    {
+      "case": "tavern",
+      "associatedValues": [],
+      "doc": "Minigames",
+      "destinationView": "TavernDetailView",
+      "destinationRaw": "TavernDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "stash",
+      "associatedValues": [],
+      "destinationView": "StashDetailView",
+      "destinationRaw": "StashDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/StashDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "shellGame",
+      "associatedValues": [],
+      "destinationView": "ShellGameDetailView",
+      "destinationRaw": "ShellGameDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/ShellGameDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "fortuneWheel",
+      "associatedValues": [],
+      "destinationView": "FortuneWheelDetailView",
+      "destinationRaw": "FortuneWheelDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/FortuneWheelDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "goldMine",
+      "associatedValues": [],
+      "destinationView": "GoldMineDetailView",
+      "destinationRaw": "GoldMineDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dungeonRush",
+      "associatedValues": [],
+      "destinationView": "DungeonRushDetailView",
+      "destinationRaw": "DungeonRushDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/DungeonRushDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "inbox",
+      "associatedValues": [],
+      "doc": "Inbox",
+      "destinationView": "InboxDetailView",
+      "destinationRaw": "InboxDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dailyLogin",
+      "associatedValues": [],
+      "doc": "Quests & Achievements",
+      "destinationView": "DailyLoginDetailView",
+      "destinationRaw": "DailyLoginDetailView() // BUG-53: route is legacy — modal is now a root overlay driven by appState.showDailyLoginPopup. Keep the case for the dev screen catalog.",
+      "viewFile": "Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "dailyQuests",
+      "associatedValues": [],
+      "destinationView": "DailyQuestsDetailView",
+      "destinationRaw": "DailyQuestsDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Quests/DailyQuestsDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "achievements",
+      "associatedValues": [],
+      "destinationView": "AchievementsDetailView",
+      "destinationRaw": "AchievementsDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Achievements/AchievementsDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "leaderboard",
+      "associatedValues": [],
+      "doc": "Leaderboard",
+      "destinationView": "LeaderboardDetailView",
+      "destinationRaw": "LeaderboardDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "battlePass",
+      "associatedValues": [],
+      "doc": "Battle Pass",
+      "destinationView": "BattlePassDetailView",
+      "destinationRaw": "BattlePassDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/BattlePass/BattlePassDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "sessionSummary",
+      "associatedValues": [
+        {
+          "label": "characterId",
+          "type": "String"
+        }
+      ],
+      "doc": "Session Summary",
+      "destinationView": "SessionSummaryNavigationWrapper",
+      "destinationRaw": "SessionSummaryNavigationWrapper(characterId: characterId)",
+      "viewFile": null,
+      "router": "main"
+    },
+    {
+      "case": "settings",
+      "associatedValues": [],
+      "doc": "Settings",
+      "destinationView": "SettingsDetailView",
+      "destinationRaw": "SettingsDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Settings/SettingsDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "appearanceEditor",
+      "associatedValues": [],
+      "destinationView": "AppearanceEditorDetailView",
+      "destinationRaw": "AppearanceEditorDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Profile/AppearanceEditorDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "upgradeGuest",
+      "associatedValues": [],
+      "doc": "Guest upgrade",
+      "destinationView": "UpgradeGuestView",
+      "destinationRaw": "UpgradeGuestView()",
+      "viewFile": "Hexbound/Hexbound/Views/Auth/UpgradeGuestView.swift",
+      "router": "main"
+    },
+    {
+      "case": "tutorial",
+      "associatedValues": [],
+      "doc": "Tutorial",
+      "destinationView": "TutorialView",
+      "destinationRaw": "TutorialView()",
+      "viewFile": "Hexbound/Hexbound/Views/Tutorial/TutorialView.swift",
+      "router": "main"
+    },
+    {
+      "case": "screenCatalog",
+      "associatedValues": [],
+      "doc": "Dev (routed to PlaceholderView in Release builds)",
+      "destinationView": "ScreenCatalogView",
+      "destinationRaw": "ScreenCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift",
+      "router": "main"
+    },
+    {
+      "case": "designSystem",
+      "associatedValues": [],
+      "destinationView": "DesignSystemPreview",
+      "destinationRaw": "DesignSystemPreview()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/DesignSystemPreview.swift",
+      "router": "main"
+    },
+    {
+      "case": "hubEditor",
+      "associatedValues": [],
+      "destinationView": "HubEditorDetailView",
+      "destinationRaw": "HubEditorDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "cardsCatalog",
+      "associatedValues": [],
+      "destinationView": "CardsCatalogView",
+      "destinationRaw": "CardsCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/CardsCatalogView.swift",
+      "router": "main"
+    },
+    {
+      "case": "progressBarsCatalog",
+      "associatedValues": [],
+      "destinationView": "ProgressBarsCatalogView",
+      "destinationRaw": "ProgressBarsCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/ProgressBarsCatalogView.swift",
+      "router": "main"
+    },
+    {
+      "case": "badgesCatalog",
+      "associatedValues": [],
+      "destinationView": "BadgesCatalogView",
+      "destinationRaw": "BadgesCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/BadgesCatalogView.swift",
+      "router": "main"
+    },
+    {
+      "case": "componentsCatalog",
+      "associatedValues": [],
+      "destinationView": "ComponentsCatalogView",
+      "destinationRaw": "ComponentsCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/ComponentsCatalogView.swift",
+      "router": "main"
+    },
+    {
+      "case": "modalsCatalog",
+      "associatedValues": [],
+      "destinationView": "ModalsCatalogView",
+      "destinationRaw": "ModalsCatalogView()",
+      "viewFile": "Hexbound/Hexbound/Views/Dev/ModalsCatalogView.swift",
+      "router": "main"
+    }
+  ],
+  "screens": {
+    "AchievementCardView": {
+      "name": "AchievementCardView",
+      "path": "Hexbound/Hexbound/Views/Achievements/AchievementCardView.swift",
+      "category": "Achievements",
+      "routes": []
+    },
+    "AchievementsDetailView": {
+      "name": "AchievementsDetailView",
+      "path": "Hexbound/Hexbound/Views/Achievements/AchievementsDetailView.swift",
+      "category": "Achievements",
+      "routes": [
+        "achievements"
+      ]
+    },
+    "ArenaCarouselView": {
+      "name": "ArenaCarouselView",
+      "path": "Hexbound/Hexbound/Views/Arena/ArenaCarouselView.swift",
+      "category": "Arena",
+      "routes": []
+    },
+    "ArenaComparisonSheet": {
+      "name": "ArenaComparisonSheet",
+      "path": "Hexbound/Hexbound/Views/Arena/ArenaComparisonSheet.swift",
+      "category": "Arena",
+      "routes": []
+    },
+    "ArenaDetailView": {
+      "name": "ArenaDetailView",
+      "path": "Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift",
+      "category": "Arena",
+      "routes": [
+        "arena"
+      ]
+    },
+    "ArenaOpponentCard": {
+      "name": "ArenaOpponentCard",
+      "path": "Hexbound/Hexbound/Views/Arena/ArenaOpponentCard.swift",
+      "category": "Arena",
+      "routes": []
+    },
+    "OpponentCardView": {
+      "name": "OpponentCardView",
+      "path": "Hexbound/Hexbound/Views/Arena/OpponentCardView.swift",
+      "category": "Arena",
+      "routes": []
+    },
+    "RankUpCeremonyView": {
+      "name": "RankUpCeremonyView",
+      "path": "Hexbound/Hexbound/Views/Arena/RankUpCeremonyView.swift",
+      "category": "Arena",
+      "routes": []
+    },
+    "AppearanceStepView": {
+      "name": "AppearanceStepView",
+      "path": "Hexbound/Hexbound/Views/Auth/AppearanceStepView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "AuthBackground": {
+      "name": "AuthBackground",
+      "path": "Hexbound/Hexbound/Views/Auth/AuthBackground.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "AuthView": {
+      "name": "AuthView",
+      "path": "Hexbound/Hexbound/Views/Auth/AuthView.swift",
+      "category": "Auth",
+      "routes": [
+        "login",
+        "register"
+      ]
+    },
+    "CharacterSelectionView": {
+      "name": "CharacterSelectionView",
+      "path": "Hexbound/Hexbound/Views/Auth/CharacterSelectionView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "HeroSelectionCard": {
+      "name": "HeroSelectionCard",
+      "path": "Hexbound/Hexbound/Views/Auth/CharacterSelectionView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ClassSelectionStepView": {
+      "name": "ClassSelectionStepView",
+      "path": "Hexbound/Hexbound/Views/Auth/ClassSelectionStepView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "EmailConfirmationView": {
+      "name": "EmailConfirmationView",
+      "path": "Hexbound/Hexbound/Views/Auth/EmailConfirmationView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "HeroForgeOverlayView": {
+      "name": "HeroForgeOverlayView",
+      "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "LoginView": {
+      "name": "LoginView",
+      "path": "Hexbound/Hexbound/Views/Auth/LoginView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "StyledTextField": {
+      "name": "StyledTextField",
+      "path": "Hexbound/Hexbound/Views/Auth/LoginView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "StyledSecureField": {
+      "name": "StyledSecureField",
+      "path": "Hexbound/Hexbound/Views/Auth/LoginView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "NameStepView": {
+      "name": "NameStepView",
+      "path": "Hexbound/Hexbound/Views/Auth/NameStepView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "EmberParticlesView": {
+      "name": "EmberParticlesView",
+      "path": "Hexbound/Hexbound/Views/Auth/NameStepView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "OnboardingCinematicView": {
+      "name": "OnboardingCinematicView",
+      "path": "Hexbound/Hexbound/Views/Auth/OnboardingCinematicView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "OnboardingDetailView": {
+      "name": "OnboardingDetailView",
+      "path": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
+      "category": "Auth",
+      "routes": [
+        "onboarding"
+      ]
+    },
+    "RegisterDetailView": {
+      "name": "RegisterDetailView",
+      "path": "Hexbound/Hexbound/Views/Auth/RegisterDetailView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "UpgradeGuestView": {
+      "name": "UpgradeGuestView",
+      "path": "Hexbound/Hexbound/Views/Auth/UpgradeGuestView.swift",
+      "category": "Auth",
+      "routes": [
+        "upgradeGuest"
+      ]
+    },
+    "WelcomeView": {
+      "name": "WelcomeView",
+      "path": "Hexbound/Hexbound/Views/Auth/WelcomeView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "BPRewardNodeView": {
+      "name": "BPRewardNodeView",
+      "path": "Hexbound/Hexbound/Views/BattlePass/BPRewardNodeView.swift",
+      "category": "BattlePass",
+      "routes": []
+    },
+    "BattlePassDetailView": {
+      "name": "BattlePassDetailView",
+      "path": "Hexbound/Hexbound/Views/BattlePass/BattlePassDetailView.swift",
+      "category": "BattlePass",
+      "routes": [
+        "battlePass"
+      ]
+    },
+    "SeasonSummaryModalView": {
+      "name": "SeasonSummaryModalView",
+      "path": "Hexbound/Hexbound/Views/BattlePass/SeasonSummaryModalView.swift",
+      "category": "BattlePass",
+      "routes": []
+    },
+    "ActiveSkillsHUD": {
+      "name": "ActiveSkillsHUD",
+      "path": "Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ActiveSkillSlotButton": {
+      "name": "ActiveSkillSlotButton",
+      "path": "Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "OpponentActivesPreview": {
+      "name": "OpponentActivesPreview",
+      "path": "Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ActiveFireBanner": {
+      "name": "ActiveFireBanner",
+      "path": "Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ConsumableFireBanner": {
+      "name": "ConsumableFireBanner",
+      "path": "Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "BattleSummaryView": {
+      "name": "BattleSummaryView",
+      "path": "Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "CombatDetailView": {
+      "name": "CombatDetailView",
+      "path": "Hexbound/Hexbound/Views/Combat/CombatDetailView.swift",
+      "category": "Combat",
+      "routes": [
+        "combat"
+      ]
+    },
+    "DamagePopupBubble": {
+      "name": "DamagePopupBubble",
+      "path": "Hexbound/Hexbound/Views/Combat/CombatDetailView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "CombatLogRow": {
+      "name": "CombatLogRow",
+      "path": "Hexbound/Hexbound/Views/Combat/CombatLogRow.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "CombatResultDetailView": {
+      "name": "CombatResultDetailView",
+      "path": "Hexbound/Hexbound/Views/Combat/CombatResultDetailView.swift",
+      "category": "Combat",
+      "routes": [
+        "combatResult"
+      ]
+    },
+    "InteractiveBattleView": {
+      "name": "InteractiveBattleView",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DuelFighterCard": {
+      "name": "DuelFighterCard",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "InteractivePredictView": {
+      "name": "InteractivePredictView",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "InteractiveBattleRouteView": {
+      "name": "InteractiveBattleRouteView",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": [
+        "interactiveBattle"
+      ]
+    },
+    "StanceOverlay": {
+      "name": "StanceOverlay",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "TimerRingStrikeButton": {
+      "name": "TimerRingStrikeButton",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "FighterStatusChip": {
+      "name": "FighterStatusChip",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "EnemyIntentPill": {
+      "name": "EnemyIntentPill",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "StanceBonusChip": {
+      "name": "StanceBonusChip",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "StanceBonusChipStack": {
+      "name": "StanceBonusChipStack",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "InteractiveRoundLogCard": {
+      "name": "InteractiveRoundLogCard",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "LogDivider": {
+      "name": "LogDivider",
+      "path": "Hexbound/Hexbound/Views/Combat/LogDivider.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "LootDetailView": {
+      "name": "LootDetailView",
+      "path": "Hexbound/Hexbound/Views/Combat/LootDetailView.swift",
+      "category": "Combat",
+      "routes": [
+        "loot"
+      ]
+    },
+    "CombatFXImageOverlay": {
+      "name": "CombatFXImageOverlay",
+      "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatFXImageOverlay.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "FXImageAnimator": {
+      "name": "FXImageAnimator",
+      "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatFXImageOverlay.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "CombatVFXOverlay": {
+      "name": "CombatVFXOverlay",
+      "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatVFXOverlay.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "YourChoiceButton": {
+      "name": "YourChoiceButton",
+      "path": "Hexbound/Hexbound/Views/Combat/YourChoiceButton.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ActiveQuestBanner": {
+      "name": "ActiveQuestBanner",
+      "path": "Hexbound/Hexbound/Views/Components/ActiveQuestBanner.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "AssetPlaceholderView": {
+      "name": "AssetPlaceholderView",
+      "path": "Hexbound/Hexbound/Views/Components/AssetPlaceholderView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "AvatarImageView": {
+      "name": "AvatarImageView",
+      "path": "Hexbound/Hexbound/Views/Components/AvatarImageView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "BattleResultCardView": {
+      "name": "BattleResultCardView",
+      "path": "Hexbound/Hexbound/Views/Components/BattleResultCardView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SpinningRaysView": {
+      "name": "SpinningRaysView",
+      "path": "Hexbound/Hexbound/Views/Components/BattleResultModels.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "BuildingLockOverlay": {
+      "name": "BuildingLockOverlay",
+      "path": "Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CachedAssetImage": {
+      "name": "CachedAssetImage",
+      "path": "Hexbound/Hexbound/Views/Components/CachedAssetImage.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CachedAvatarImage": {
+      "name": "CachedAvatarImage",
+      "path": "Hexbound/Hexbound/Views/Components/CachedAssetImage.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CardLevelBadge": {
+      "name": "CardLevelBadge",
+      "path": "Hexbound/Hexbound/Views/Components/CardLevelBadge.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CardActionButton": {
+      "name": "CardActionButton",
+      "path": "Hexbound/Hexbound/Views/Components/CardLevelBadge.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CelebrationBannerOverlay": {
+      "name": "CelebrationBannerOverlay",
+      "path": "Hexbound/Hexbound/Views/Components/CelebrationBannerView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CelebrationBannerView": {
+      "name": "CelebrationBannerView",
+      "path": "Hexbound/Hexbound/Views/Components/CelebrationBannerView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CharacterPortraitXPInfo": {
+      "name": "CharacterPortraitXPInfo",
+      "path": "Hexbound/Hexbound/Views/Components/CharacterPortraitInfo.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CharacterPortraitRankInfo": {
+      "name": "CharacterPortraitRankInfo",
+      "path": "Hexbound/Hexbound/Views/Components/CharacterPortraitInfo.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EmptyPortraitInfo": {
+      "name": "EmptyPortraitInfo",
+      "path": "Hexbound/Hexbound/Views/Components/CharacterPortraitInfo.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ClaimRewardModalView": {
+      "name": "ClaimRewardModalView",
+      "path": "Hexbound/Hexbound/Views/Components/ClaimRewardModalView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ClassTagView": {
+      "name": "ClassTagView",
+      "path": "Hexbound/Hexbound/Views/Components/ClassTagView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CoinFlyAnimationView": {
+      "name": "CoinFlyAnimationView",
+      "path": "Hexbound/Hexbound/Views/Components/CoinFlyAnimationView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ContextualHintBar": {
+      "name": "ContextualHintBar",
+      "path": "Hexbound/Hexbound/Views/Components/ContextualHintBar.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "CurrencyDisplay": {
+      "name": "CurrencyDisplay",
+      "path": "Hexbound/Hexbound/Views/Components/CurrencyDisplay.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EmptyStateView": {
+      "name": "EmptyStateView",
+      "path": "Hexbound/Hexbound/Views/Components/EmptyStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EquippedBadge": {
+      "name": "EquippedBadge",
+      "path": "Hexbound/Hexbound/Views/Components/EquippedBadge.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ErrorStateView": {
+      "name": "ErrorStateView",
+      "path": "Hexbound/Hexbound/Views/Components/ErrorStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EventBannerView": {
+      "name": "EventBannerView",
+      "path": "Hexbound/Hexbound/Views/Components/EventBannerView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "GlassStatPill": {
+      "name": "GlassStatPill",
+      "path": "Hexbound/Hexbound/Views/Components/GlassStatPill.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "GuestGateCTA": {
+      "name": "GuestGateCTA",
+      "path": "Hexbound/Hexbound/Views/Components/GuestGateCTA.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "GuestGateView": {
+      "name": "GuestGateView",
+      "path": "Hexbound/Hexbound/Views/Components/GuestGateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "GuestNudgeBanner": {
+      "name": "GuestNudgeBanner",
+      "path": "Hexbound/Hexbound/Views/Components/GuestNudgeBanner.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "HPBarView": {
+      "name": "HPBarView",
+      "path": "Hexbound/Hexbound/Views/Components/HPBarView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "HexPulseLoader": {
+      "name": "HexPulseLoader",
+      "path": "Hexbound/Hexbound/Views/Components/HexPulseLoader.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "FloatingFeedbackText": {
+      "name": "FloatingFeedbackText",
+      "path": "Hexbound/Hexbound/Views/Components/InlineFeedback.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "FlashBorder": {
+      "name": "FlashBorder",
+      "path": "Hexbound/Hexbound/Views/Components/InlineFeedback.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "InlineCheckmark": {
+      "name": "InlineCheckmark",
+      "path": "Hexbound/Hexbound/Views/Components/InlineFeedback.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "IntegratedCharacterCard": {
+      "name": "IntegratedCharacterCard",
+      "path": "Hexbound/Hexbound/Views/Components/IntegratedCharacterCard.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ItemImageView": {
+      "name": "ItemImageView",
+      "path": "Hexbound/Hexbound/Views/Components/ItemImageView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "LevelUpModalView": {
+      "name": "LevelUpModalView",
+      "path": "Hexbound/Hexbound/Views/Components/LevelUpModalView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "LoadingOverlay": {
+      "name": "LoadingOverlay",
+      "path": "Hexbound/Hexbound/Views/Components/LoadingOverlay.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "LowHPPotionBanner": {
+      "name": "LowHPPotionBanner",
+      "path": "Hexbound/Hexbound/Views/Components/LowHPPotionBanner.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NPCCompactHintView": {
+      "name": "NPCCompactHintView",
+      "path": "Hexbound/Hexbound/Views/Components/NPCCompactHintView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NPCGuideOverlay": {
+      "name": "NPCGuideOverlay",
+      "path": "Hexbound/Hexbound/Views/Components/NPCGuideOverlay.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NPCGuideWidget": {
+      "name": "NPCGuideWidget",
+      "path": "Hexbound/Hexbound/Views/Components/NPCGuideWidget.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NPCMiniButton": {
+      "name": "NPCMiniButton",
+      "path": "Hexbound/Hexbound/Views/Components/NPCGuideWidget.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NumberTickUpView": {
+      "name": "NumberTickUpView",
+      "path": "Hexbound/Hexbound/Views/Components/NumberTickUpView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "NumberTickUpText": {
+      "name": "NumberTickUpText",
+      "path": "Hexbound/Hexbound/Views/Components/NumberTickUpView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "OfflineBannerView": {
+      "name": "OfflineBannerView",
+      "path": "Hexbound/Hexbound/Views/Components/OfflineBannerView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "OpponentStatCell": {
+      "name": "OpponentStatCell",
+      "path": "Hexbound/Hexbound/Views/Components/OpponentStatCell.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "DeltaBadge": {
+      "name": "DeltaBadge",
+      "path": "Hexbound/Hexbound/Views/Components/OpponentStatCell.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "OrnamentalTitle": {
+      "name": "OrnamentalTitle",
+      "path": "Hexbound/Hexbound/Views/Components/OrnamentalTitle.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "OrnamentalSectionHeader": {
+      "name": "OrnamentalSectionHeader",
+      "path": "Hexbound/Hexbound/Views/Components/OrnamentalTitle.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "PortraitStatRings": {
+      "name": "PortraitStatRings",
+      "path": "Hexbound/Hexbound/Views/Components/PortraitStatRings.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "StatRing": {
+      "name": "StatRing",
+      "path": "Hexbound/Hexbound/Views/Components/PortraitStatRings.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "PvPStatsWidget": {
+      "name": "PvPStatsWidget",
+      "path": "Hexbound/Hexbound/Views/Components/PvPStatsWidget.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "QuestRewardCell": {
+      "name": "QuestRewardCell",
+      "path": "Hexbound/Hexbound/Views/Components/QuestRewardCell.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "RewardBurstView": {
+      "name": "RewardBurstView",
+      "path": "Hexbound/Hexbound/Views/Components/RewardBurstView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "HubLogoButton": {
+      "name": "HubLogoButton",
+      "path": "Hexbound/Hexbound/Views/Components/ScreenLayout.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ScreenLayout": {
+      "name": "ScreenLayout",
+      "path": "Hexbound/Hexbound/Views/Components/ScreenLayout.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SegmentedProgressBar": {
+      "name": "SegmentedProgressBar",
+      "path": "Hexbound/Hexbound/Views/Components/SegmentedProgressBar.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SessionExpiredModalView": {
+      "name": "SessionExpiredModalView",
+      "path": "Hexbound/Hexbound/Views/Components/SessionExpiredModalView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonRect": {
+      "name": "SkeletonRect",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonOpponentCard": {
+      "name": "SkeletonOpponentCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonInventoryItem": {
+      "name": "SkeletonInventoryItem",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonQuestCard": {
+      "name": "SkeletonQuestCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonLeaderboardRow": {
+      "name": "SkeletonLeaderboardRow",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonShopItemCard": {
+      "name": "SkeletonShopItemCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonAchievementCard": {
+      "name": "SkeletonAchievementCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonBPNode": {
+      "name": "SkeletonBPNode",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonDungeonCard": {
+      "name": "SkeletonDungeonCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonMineSlot": {
+      "name": "SkeletonMineSlot",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonConversationCard": {
+      "name": "SkeletonConversationCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonRevengeCard": {
+      "name": "SkeletonRevengeCard",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "SkeletonHistoryRow": {
+      "name": "SkeletonHistoryRow",
+      "path": "Hexbound/Hexbound/Views/Components/SkeletonViews.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "StaminaBarView": {
+      "name": "StaminaBarView",
+      "path": "Hexbound/Hexbound/Views/Components/StaminaBarView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "StanceDisplayView": {
+      "name": "StanceDisplayView",
+      "path": "Hexbound/Hexbound/Views/Components/StanceDisplayView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "StatGroupHeader": {
+      "name": "StatGroupHeader",
+      "path": "Hexbound/Hexbound/Views/Components/StatGroupHeader.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "StatPointsBadge": {
+      "name": "StatPointsBadge",
+      "path": "Hexbound/Hexbound/Views/Components/StatPointsBadge.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "TabSwitcher": {
+      "name": "TabSwitcher",
+      "path": "Hexbound/Hexbound/Views/Components/TabSwitcher.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "TierBadge": {
+      "name": "TierBadge",
+      "path": "Hexbound/Hexbound/Views/Components/TierBadge.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ToastOverlayView": {
+      "name": "ToastOverlayView",
+      "path": "Hexbound/Hexbound/Views/Components/ToastOverlayView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ToastView": {
+      "name": "ToastView",
+      "path": "Hexbound/Hexbound/Views/Components/ToastOverlayView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "TutorialOverlayView": {
+      "name": "TutorialOverlayView",
+      "path": "Hexbound/Hexbound/Views/Components/TutorialOverlayView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "TutorialQuestBanner": {
+      "name": "TutorialQuestBanner",
+      "path": "Hexbound/Hexbound/Views/Components/TutorialQuestBanner.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "UnifiedHeroWidget": {
+      "name": "UnifiedHeroWidget",
+      "path": "Hexbound/Hexbound/Views/Components/UnifiedHeroWidget.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "VictoryParticlesView": {
+      "name": "VictoryParticlesView",
+      "path": "Hexbound/Hexbound/Views/Components/VictoryParticlesView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "WidgetPill": {
+      "name": "WidgetPill",
+      "path": "Hexbound/Hexbound/Views/Components/WidgetPill.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "XPBarView": {
+      "name": "XPBarView",
+      "path": "Hexbound/Hexbound/Views/Components/XPBarView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "DailyLoginDetailView": {
+      "name": "DailyLoginDetailView",
+      "path": "Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift",
+      "category": "DailyLogin",
+      "routes": [
+        "dailyLogin"
+      ]
+    },
+    "DailyLoginPopupView": {
+      "name": "DailyLoginPopupView",
+      "path": "Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift",
+      "category": "DailyLogin",
+      "routes": []
+    },
+    "BadgesCatalogView": {
+      "name": "BadgesCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/BadgesCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "badgesCatalog"
+      ]
+    },
+    "CardsCatalogView": {
+      "name": "CardsCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/CardsCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "cardsCatalog"
+      ]
+    },
+    "ComponentsCatalogView": {
+      "name": "ComponentsCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/ComponentsCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "componentsCatalog"
+      ]
+    },
+    "DesignSystemPreview": {
+      "name": "DesignSystemPreview",
+      "path": "Hexbound/Hexbound/Views/Dev/DesignSystemPreview.swift",
+      "category": "Dev",
+      "routes": [
+        "designSystem"
+      ]
+    },
+    "ModalsCatalogView": {
+      "name": "ModalsCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/ModalsCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "modalsCatalog"
+      ]
+    },
+    "ProgressBarsCatalogView": {
+      "name": "ProgressBarsCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/ProgressBarsCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "progressBarsCatalog"
+      ]
+    },
+    "ScreenCatalogView": {
+      "name": "ScreenCatalogView",
+      "path": "Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift",
+      "category": "Dev",
+      "routes": [
+        "screenCatalog"
+      ]
+    },
+    "BossDetailSheet": {
+      "name": "BossDetailSheet",
+      "path": "Hexbound/Hexbound/Views/Dungeon/BossDetailSheet.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DiamondLoadingDot": {
+      "name": "DiamondLoadingDot",
+      "path": "Hexbound/Hexbound/Views/Dungeon/BossDetailSheet.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonBossCard": {
+      "name": "DungeonBossCard",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "StageBadge": {
+      "name": "StageBadge",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonDefeatView": {
+      "name": "DungeonDefeatView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonDefeatView.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonInfoSheet": {
+      "name": "DungeonInfoSheet",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonInfoSheet.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonMapBuildingView": {
+      "name": "DungeonMapBuildingView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonMapBuildingView.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonMapEditorView": {
+      "name": "DungeonMapEditorView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonMapEditorView.swift",
+      "category": "Dungeon",
+      "routes": [
+        "dungeonMapEditor"
+      ]
+    },
+    "DraggableEditorDungeonBuilding": {
+      "name": "DraggableEditorDungeonBuilding",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonMapEditorView.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "DungeonMapView": {
+      "name": "DungeonMapView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonMapView.swift",
+      "category": "Dungeon",
+      "routes": [
+        "dungeonMap"
+      ]
+    },
+    "DungeonRoomDetailView": {
+      "name": "DungeonRoomDetailView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonRoomDetailView.swift",
+      "category": "Dungeon",
+      "routes": [
+        "dungeonRoom"
+      ]
+    },
+    "DungeonSelectDetailView": {
+      "name": "DungeonSelectDetailView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonSelectDetailView.swift",
+      "category": "Dungeon",
+      "routes": [
+        "dungeonSelect"
+      ]
+    },
+    "DungeonVictoryView": {
+      "name": "DungeonVictoryView",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonVictoryView.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "LootPreviewSheet": {
+      "name": "LootPreviewSheet",
+      "path": "Hexbound/Hexbound/Views/Dungeon/LootPreviewSheet.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "BuyStatPointsView": {
+      "name": "BuyStatPointsView",
+      "path": "Hexbound/Hexbound/Views/Hero/BuyStatPointsView.swift",
+      "category": "Hero",
+      "routes": [
+        "buyStatPoints"
+      ]
+    },
+    "HeroDetailView": {
+      "name": "HeroDetailView",
+      "path": "Hexbound/Hexbound/Views/Hero/HeroDetailView.swift",
+      "category": "Hero",
+      "routes": [
+        "hero"
+      ]
+    },
+    "ActiveSkillPickerRow": {
+      "name": "ActiveSkillPickerRow",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "ActiveSkillPickerSheet": {
+      "name": "ActiveSkillPickerSheet",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "ActiveSlotsBar": {
+      "name": "ActiveSlotsBar",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "TalentDetailSheet": {
+      "name": "TalentDetailSheet",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "TalentNodeView": {
+      "name": "TalentNodeView",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentNodeView.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "TalentTreeCanvas": {
+      "name": "TalentTreeCanvas",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentTreeCanvas.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "TalentsTabView": {
+      "name": "TalentsTabView",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "UnlockCeremony": {
+      "name": "UnlockCeremony",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BuildingUnlockCeremony": {
+      "name": "BuildingUnlockCeremony",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BuildingUnlockCeremonyHost": {
+      "name": "BuildingUnlockCeremonyHost",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BossUnlockCeremony": {
+      "name": "BossUnlockCeremony",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "DungeonUnlockCeremony": {
+      "name": "DungeonUnlockCeremony",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "DungeonUnlockCeremonyHost": {
+      "name": "DungeonUnlockCeremonyHost",
+      "path": "Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "CityBuildingLabel": {
+      "name": "CityBuildingLabel",
+      "path": "Hexbound/Hexbound/Views/Hub/CityBuildingLabel.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BuildingBadgeView": {
+      "name": "BuildingBadgeView",
+      "path": "Hexbound/Hexbound/Views/Hub/CityBuildingLabel.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "InfoBadgePill": {
+      "name": "InfoBadgePill",
+      "path": "Hexbound/Hexbound/Views/Hub/CityBuildingLabel.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "CriticalBadgePill": {
+      "name": "CriticalBadgePill",
+      "path": "Hexbound/Hexbound/Views/Hub/CityBuildingLabel.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "CityBuildingView": {
+      "name": "CityBuildingView",
+      "path": "Hexbound/Hexbound/Views/Hub/CityBuildingView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "LanternGlowLayer": {
+      "name": "LanternGlowLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "LanternGlow": {
+      "name": "LanternGlow",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "FogLayer": {
+      "name": "FogLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "WindParticlesLayer": {
+      "name": "WindParticlesLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "FallingLeavesLayer": {
+      "name": "FallingLeavesLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "ChimneySmokeLayer": {
+      "name": "ChimneySmokeLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "StormEffectLayer": {
+      "name": "StormEffectLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapEffects.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "CityMapView": {
+      "name": "CityMapView",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "ParallaxLayer": {
+      "name": "ParallaxLayer",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "SkyObjectView": {
+      "name": "SkyObjectView",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "ScrollPositionIndicator": {
+      "name": "ScrollPositionIndicator",
+      "path": "Hexbound/Hexbound/Views/Hub/CityMapView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "FirstWinBonusCard": {
+      "name": "FirstWinBonusCard",
+      "path": "Hexbound/Hexbound/Views/Hub/HubBannerCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BattleInviteBanner": {
+      "name": "BattleInviteBanner",
+      "path": "Hexbound/Hexbound/Views/Hub/HubBannerCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "QuestRewardWidget": {
+      "name": "QuestRewardWidget",
+      "path": "Hexbound/Hexbound/Views/Hub/HubBannerCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "HubEditorDetailView": {
+      "name": "HubEditorDetailView",
+      "path": "Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift",
+      "category": "Hub",
+      "routes": [
+        "hubEditor"
+      ]
+    },
+    "DraggableEditorBuilding": {
+      "name": "DraggableEditorBuilding",
+      "path": "Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "DraggableEditorSkyObject": {
+      "name": "DraggableEditorSkyObject",
+      "path": "Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "FloatingActionIcon": {
+      "name": "FloatingActionIcon",
+      "path": "Hexbound/Hexbound/Views/Hub/HubFloatingControls.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "FloatingSoundToggle": {
+      "name": "FloatingSoundToggle",
+      "path": "Hexbound/Hexbound/Views/Hub/HubFloatingControls.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "TopCurrencyBar": {
+      "name": "TopCurrencyBar",
+      "path": "Hexbound/Hexbound/Views/Hub/HubInfoCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "DailyQuestsCard": {
+      "name": "DailyQuestsCard",
+      "path": "Hexbound/Hexbound/Views/Hub/HubInfoCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "BattlePassCard": {
+      "name": "BattlePassCard",
+      "path": "Hexbound/Hexbound/Views/Hub/HubInfoCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "DailyLoginCard": {
+      "name": "DailyLoginCard",
+      "path": "Hexbound/Hexbound/Views/Hub/HubInfoCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "NavTile": {
+      "name": "NavTile",
+      "path": "Hexbound/Hexbound/Views/Hub/HubInfoCards.swift",
+      "category": "Hub",
+      "routes": []
+    },
+    "HubView": {
+      "name": "HubView",
+      "path": "Hexbound/Hexbound/Views/Hub/HubView.swift",
+      "category": "Hub",
+      "routes": [
+        "hub"
+      ]
+    },
+    "StanceSelectorDetailView": {
+      "name": "StanceSelectorDetailView",
+      "path": "Hexbound/Hexbound/Views/Hub/StanceSelectorDetailView.swift",
+      "category": "Hub",
+      "routes": [
+        "stanceSelector"
+      ]
+    },
+    "InboxDetailView": {
+      "name": "InboxDetailView",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": [
+        "inbox"
+      ]
+    },
+    "InboxConversationRow": {
+      "name": "InboxConversationRow",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "SkeletonMailRow": {
+      "name": "SkeletonMailRow",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "EmptyMailState": {
+      "name": "EmptyMailState",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "EmptyScrollsState": {
+      "name": "EmptyScrollsState",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "UnreadBadge": {
+      "name": "UnreadBadge",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "ErrorBanner": {
+      "name": "ErrorBanner",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxDetailView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "InboxRowView": {
+      "name": "InboxRowView",
+      "path": "Hexbound/Hexbound/Views/Inbox/InboxRowView.swift",
+      "category": "Inbox",
+      "routes": []
+    },
+    "ItemCardView": {
+      "name": "ItemCardView",
+      "path": "Hexbound/Hexbound/Views/Inventory/ItemCardView.swift",
+      "category": "Inventory",
+      "routes": []
+    },
+    "CornerAccentsOverlay": {
+      "name": "CornerAccentsOverlay",
+      "path": "Hexbound/Hexbound/Views/Inventory/ItemCardView.swift",
+      "category": "Inventory",
+      "routes": []
+    },
+    "DurabilityRingOverlay": {
+      "name": "DurabilityRingOverlay",
+      "path": "Hexbound/Hexbound/Views/Inventory/ItemCardView.swift",
+      "category": "Inventory",
+      "routes": []
+    },
+    "ItemDetailSheet": {
+      "name": "ItemDetailSheet",
+      "path": "Hexbound/Hexbound/Views/Inventory/ItemDetailSheet.swift",
+      "category": "Inventory",
+      "routes": []
+    },
+    "LeaderboardDetailView": {
+      "name": "LeaderboardDetailView",
+      "path": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardDetailView.swift",
+      "category": "Leaderboard",
+      "routes": [
+        "leaderboard"
+      ]
+    },
+    "LeaderboardPlayerDetailSheet": {
+      "name": "LeaderboardPlayerDetailSheet",
+      "path": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardPlayerDetailSheet.swift",
+      "category": "Leaderboard",
+      "routes": []
+    },
+    "LeaderboardRowView": {
+      "name": "LeaderboardRowView",
+      "path": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardRowView.swift",
+      "category": "Leaderboard",
+      "routes": []
+    },
+    "DungeonRushDetailView": {
+      "name": "DungeonRushDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DungeonRushDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "dungeonRush"
+      ]
+    },
+    "FortuneWheelDetailView": {
+      "name": "FortuneWheelDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/FortuneWheelDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "fortuneWheel"
+      ]
+    },
+    "FortuneWheelView": {
+      "name": "FortuneWheelView",
+      "path": "Hexbound/Hexbound/Views/Minigames/FortuneWheelDetailView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MineShaftCard": {
+      "name": "MineShaftCard",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "LockedMineCard": {
+      "name": "LockedMineCard",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MiningSparklesOverlay": {
+      "name": "MiningSparklesOverlay",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "GoldMineDetailView": {
+      "name": "GoldMineDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "goldMine"
+      ]
+    },
+    "CapMeterView": {
+      "name": "CapMeterView",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "GoldMineMiniGameView": {
+      "name": "GoldMineMiniGameView",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ActiveShaftBanner": {
+      "name": "ActiveShaftBanner",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineShaftPicker.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ShaftPickerSheet": {
+      "name": "ShaftPickerSheet",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineShaftPicker.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ShaftPickerRow": {
+      "name": "ShaftPickerRow",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineShaftPicker.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ShaftClearedOverlay": {
+      "name": "ShaftClearedOverlay",
+      "path": "Hexbound/Hexbound/Views/Minigames/GoldMineShaftPicker.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MineClaimRewardView": {
+      "name": "MineClaimRewardView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MineResourceHeader": {
+      "name": "MineResourceHeader",
+      "path": "Hexbound/Hexbound/Views/Minigames/MineResourceHeader.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "FloatingValueView": {
+      "name": "FloatingValueView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MinigameCatchEffectOverlay": {
+      "name": "MinigameCatchEffectOverlay",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "MiniBurstView": {
+      "name": "MiniBurstView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "NearMissFlashView": {
+      "name": "NearMissFlashView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ComboBannerView": {
+      "name": "ComboBannerView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "WaveBannerView": {
+      "name": "WaveBannerView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "RareCatchFlashView": {
+      "name": "RareCatchFlashView",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "ShellGameDetailView": {
+      "name": "ShellGameDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/ShellGameDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "shellGame"
+      ]
+    },
+    "StashDetailView": {
+      "name": "StashDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/StashDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "stash"
+      ]
+    },
+    "TavernDetailView": {
+      "name": "TavernDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift",
+      "category": "Minigames",
+      "routes": [
+        "tavern"
+      ]
+    },
+    "TavernGameCard": {
+      "name": "TavernGameCard",
+      "path": "Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "TreasureRewardOverlay": {
+      "name": "TreasureRewardOverlay",
+      "path": "Hexbound/Hexbound/Views/Minigames/TreasureRewardOverlay.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "CombatColdOpenView": {
+      "name": "CombatColdOpenView",
+      "path": "Hexbound/Hexbound/Views/Onboarding/CombatColdOpenView.swift",
+      "category": "Onboarding",
+      "routes": []
+    },
+    "TutorialFightView": {
+      "name": "TutorialFightView",
+      "path": "Hexbound/Hexbound/Views/Onboarding/TutorialFightView.swift",
+      "category": "Onboarding",
+      "routes": []
+    },
+    "VictoryOverlayView": {
+      "name": "VictoryOverlayView",
+      "path": "Hexbound/Hexbound/Views/Onboarding/VictoryOverlayView.swift",
+      "category": "Onboarding",
+      "routes": []
+    },
+    "AppearanceEditorDetailView": {
+      "name": "AppearanceEditorDetailView",
+      "path": "Hexbound/Hexbound/Views/Profile/AppearanceEditorDetailView.swift",
+      "category": "Profile",
+      "routes": [
+        "appearanceEditor"
+      ]
+    },
+    "CharacterProfileView": {
+      "name": "CharacterProfileView",
+      "path": "Hexbound/Hexbound/Views/Profile/CharacterProfileView.swift",
+      "category": "Profile",
+      "routes": [
+        "characterProfile"
+      ]
+    },
+    "DailyQuestsDetailView": {
+      "name": "DailyQuestsDetailView",
+      "path": "Hexbound/Hexbound/Views/Quests/DailyQuestsDetailView.swift",
+      "category": "Quests",
+      "routes": [
+        "dailyQuests"
+      ]
+    },
+    "SessionSummaryView": {
+      "name": "SessionSummaryView",
+      "path": "Hexbound/Hexbound/Views/SessionSummary/SessionSummaryView.swift",
+      "category": "SessionSummary",
+      "routes": []
+    },
+    "ReferralSectionView": {
+      "name": "ReferralSectionView",
+      "path": "Hexbound/Hexbound/Views/Settings/ReferralSectionView.swift",
+      "category": "Settings",
+      "routes": []
+    },
+    "SettingsDetailView": {
+      "name": "SettingsDetailView",
+      "path": "Hexbound/Hexbound/Views/Settings/SettingsDetailView.swift",
+      "category": "Settings",
+      "routes": [
+        "settings"
+      ]
+    },
+    "ContrabandWidget": {
+      "name": "ContrabandWidget",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "CooldownCard": {
+      "name": "CooldownCard",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "AvailableCard": {
+      "name": "AvailableCard",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "CurrencyPurchaseView": {
+      "name": "CurrencyPurchaseView",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "category": "Shop",
+      "routes": [
+        "currencyPurchase"
+      ]
+    },
+    "CurrencyPackageCard": {
+      "name": "CurrencyPackageCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "MonthlyGemCardOffer": {
+      "name": "MonthlyGemCardOffer",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PremiumUnlockCard": {
+      "name": "PremiumUnlockCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PremiumBenefitChip": {
+      "name": "PremiumBenefitChip",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "MerchantStripView": {
+      "name": "MerchantStripView",
+      "path": "Hexbound/Hexbound/Views/Shop/MerchantStripView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "MerchantMiniButton": {
+      "name": "MerchantMiniButton",
+      "path": "Hexbound/Hexbound/Views/Shop/MerchantStripView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PremiumPurchaseView": {
+      "name": "PremiumPurchaseView",
+      "path": "Hexbound/Hexbound/Views/Shop/PremiumPurchaseView.swift",
+      "category": "Shop",
+      "routes": [
+        "premiumPurchase"
+      ]
+    },
+    "PremiumFeatureRow": {
+      "name": "PremiumFeatureRow",
+      "path": "Hexbound/Hexbound/Views/Shop/PremiumPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "ComparisonRow": {
+      "name": "ComparisonRow",
+      "path": "Hexbound/Hexbound/Views/Shop/PremiumPurchaseView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "ShopDetailView": {
+      "name": "ShopDetailView",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopDetailView.swift",
+      "category": "Shop",
+      "routes": [
+        "shop"
+      ]
+    },
+    "ShopOfferBannerView": {
+      "name": "ShopOfferBannerView",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopOfferBannerView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "OfferCard": {
+      "name": "OfferCard",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopOfferBannerView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "GuildHallDetailView": {
+      "name": "GuildHallDetailView",
+      "path": "Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift",
+      "category": "Social",
+      "routes": [
+        "guildHall",
+        "guildHallMessage"
+      ]
+    },
+    "NPCSpeechBubble": {
+      "name": "NPCSpeechBubble",
+      "path": "Hexbound/Hexbound/Views/Tutorial/NPCSpeechBubble.swift",
+      "category": "Tutorial",
+      "routes": []
+    },
+    "TutorialStepCard": {
+      "name": "TutorialStepCard",
+      "path": "Hexbound/Hexbound/Views/Tutorial/TutorialStepCard.swift",
+      "category": "Tutorial",
+      "routes": []
+    },
+    "TutorialView": {
+      "name": "TutorialView",
+      "path": "Hexbound/Hexbound/Views/Tutorial/TutorialView.swift",
+      "category": "Tutorial",
+      "routes": [
+        "tutorial"
+      ]
+    }
+  }
+}

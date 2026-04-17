@@ -1,0 +1,94 @@
+# Feature: Interactive Combat
+
+> Single-file map of every file that touches Interactive Combat v1 — round-by-round active-skill layer on top of PvP.
+
+## One-liner
+
+Optional combat mode where the player slots up to N "active skills" before the fight and fires them during rounds, with cooldowns and opponent AI also firing actives. Runs on top of the classic PvP pipeline.
+
+## Status
+
+- **Phase:** Phase 3.B shipped 2026-04-13 (5 active effects + opp AI firing + iOS fire banner). Phase 3 shipped 2026-04-13 (burst_damage firing + cooldown ticks + iOS HUD + opponent preview). Phase 1 shipped 2026-04-13 (Active Slot schema + CRUD + iOS UI).
+- **Last major change:** 2026-04-13 — Phase 3.B
+- **Owner / last hands:** Artem
+
+## Entry points
+
+- **iOS screen(s):**
+  - `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift` — main interactive combat screen
+  - `Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift` — cooldown HUD (bottom-of-screen active-skill buttons)
+- **Slot configuration UI:** Passive tree / hero screens → active-slot assignment
+- **Player action:** Enter PvP via Arena → interactive path → tap active-skill button during round
+
+## Backend
+
+### Routes
+
+#### Active Slot management
+- `GET  /api/passives/active-slots`          — `backend/src/app/api/passives/active-slots/route.ts` — list current slots
+- `POST /api/passives/active-slots`          — same file — slot change / persist
+- `POST /api/passives/active-slots/batch`    — `backend/src/app/api/passives/active-slots/batch/route.ts` — bulk slot persist
+
+#### Interactive match
+- `POST /api/pvp/match/start`    — `backend/src/app/api/pvp/match/start/route.ts` — create interactive PvpMatch row
+- `POST /api/pvp/strike`         — `backend/src/app/api/pvp/strike/route.ts` — submit one round; strike resolver fires actives, ticks cooldowns, returns round log
+- `POST /api/pvp/match/complete` — `backend/src/app/api/pvp/match/complete/route.ts` — final resolution + rewards
+
+### Business logic
+
+- `backend/src/lib/game/active-slots.ts` — slot CRUD, validation, effect resolution
+- `backend/src/lib/game/combat.ts` — shared combat core (inline calls into active-slots)
+- `backend/src/lib/game/consumable-effects.ts` — some active effects overlap with consumables
+
+### Prisma models touched
+
+- `CharacterActiveSlot` (line 1325) — per-character-per-slot active skill binding
+- `PvpMatch` (line 562) — match state, `status` column added for interactive tracking (migration applied via Supabase MCP)
+- `Character` (line 429) — back-relation to active slots
+
+## iOS
+
+### Views
+
+- `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift` — main screen, round animation, fire banner
+- `Hexbound/Hexbound/Views/Combat/InteractiveBattleViewModel.swift` — `@Observable` state: round, HP, cooldowns
+- `Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift` — cooldown HUD for actives
+- `Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift` — shared sub-components (banners, cooldown pills, opponent active preview)
+- `Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift` — per-round log card in the battle log
+
+### Active-slot configuration
+
+- Slot editor UI lives in the passive tree / hero screens (reuses existing slot pattern)
+- Look under `Hexbound/Hexbound/Views/Hero/Talents/` for slot assignment
+
+### Services
+
+- `Hexbound/Hexbound/Services/PvPService.swift` — interactive match API calls
+- `Hexbound/Hexbound/Services/PassiveTreeService.swift` — active-slot persistence
+- `Hexbound/Hexbound/Services/CombatEngine.swift` — shared combat animation driver
+
+## Admin
+
+- `admin/src/app/` — interactive match monitoring, active-effect catalog tuning
+
+## Docs
+
+- `docs/06_game_systems/COMBAT.md` — combat foundation
+- Memory: `project_interactive_combat_phase1.md`, `project_interactive_combat_phase3_shipped.md`, `project_interactive_combat_phase3b_shipped.md`, `project_interactive_combat_phase3_todo.md` (deferred items)
+
+## Notable gotchas
+
+- **Server-authoritative.** Clients must NEVER compute active-skill damage or cooldown ticks — server owns all of it.
+- **Migration-before-deploy rule.** `pvp_matches.status` column addition needed a production `ALTER TABLE` via Supabase MCP BEFORE the code deploy — shipping without it = 500s. Memory `feedback_migration_mcp_apply_to_prod.md` (3rd repeat of the same bug class).
+- **5 active effect types** supported in Phase 3.B. Adding a 6th requires: catalog entry + backend resolver + iOS icon + HUD wiring.
+- **Opponent AI.** Opponent actives fire deterministically based on match seed — classic flow doesn't need to care, but interactive preview shows upcoming opp active.
+- **Fire banner** was shipped 2026-04-13 as part of 3.B — iOS UI highlights which active just fired that round.
+
+## Tests / fixtures
+
+- `backend/src/__tests__/` — strike resolver unit tests, active-slot validation tests
+
+## Related features
+
+- [[pvp-combat]] — parent feature; Interactive Combat is a flavor of PvP
+- [[shop]] — consumables and some actives share effect resolver code

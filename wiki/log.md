@@ -996,3 +996,429 @@ Closed the next narrow iOS infrastructure block:
 - **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'APIResponse\\b|getRaw\\(|postRaw\\(|patchRaw\\(|JSONSerialization|\\[String: Any\\]|responsePayload' Hexbound/Hexbound -g'*.swift'`
 - **Inventory refresh:** updated current counts to 4913 in-scope files and `140 in-scope wiki files / 138 wiki pages`
 - **Open decisions:** no active feature-level raw JSON tail remains in `Hexbound`; remaining raw usage is intentionally centralized in networking or required by the system `Security` API
+
+## [2026-04-16] audit | Block 109 operations deploy docs reality sync
+
+Closed the next operations/documentation drift block:
+- **Created:** `[[block-109-operations-deploy-docs-reality-sync]]`
+- **Files audited:** 2 live operations docs plus 8 config/evidence sources (`ci.yml`, Next/Vercel configs, package scripts, Fastlane/AppConstants, and Herald run output)
+- **Fixes:** removed stale claims about missing CI/CD, backend `ignoreBuildErrors`, standing backend/admin schema drift, and the old `136 files` local-chaos snapshot; clarified that `prisma migrate deploy` is still an explicit production step; added live CI validation gates to `DEPLOY.md`; and rewrote the deploy audit around the real current risk surface
+- **Verification:** inspected `.github/workflows/ci.yml`, `backend/next.config.ts`, `admin/next.config.ts`, `backend/package.json`, `admin/vercel.json`, `Hexbound/fastlane/Appfile`, `Hexbound/Hexbound/App/AppConstants.swift`, `.claude/agent-bus/herald.md`, plus refreshed `git ls-files`, `git ls-files --others --exclude-standard`, and `find wiki -name '*.md'`
+- **Inventory refresh:** updated current counts to 4914 in-scope files and `141 in-scope wiki files / 139 wiki pages`
+- **Open decisions:** admin subtree deploy, explicit DB migration apply, incomplete Fastlane/Appfile setup, and iOS staging/prod URL parity remain real and are now documented as the honest residual operations debt
+
+## [2026-04-16] audit | Block 110 operations git workflow and iOS release doc parity
+
+Closed the next adjacent operations-doc block:
+- **Created:** `[[block-110-operations-git-workflow-and-ios-release-doc-parity]]`
+- **Files audited:** `docs/10_operations/GIT_WORKFLOW.md`, `docs/10_operations/RELEASE_IOS.md`, plus the live evidence files `.github/workflows/ci.yml`, `Hexbound/fastlane/Appfile`, `Hexbound/fastlane/Fastfile`, and `Hexbound/Hexbound/App/AppConstants.swift`
+- **Fixes:** clarified that CI validates but does not deploy admin/iOS; reframed branch protection as recommendation instead of implied current fact; documented that Fastlane release is setup-required because repo `Appfile` values are still placeholders; and made the staging/prod API host parity explicit in the iOS release guide
+- **Verification:** inspected the touched docs against the live workflow, Fastlane, and app environment files; then re-ran `git diff --check`, repo inventory counts, and wiki-link presence checks for `block-110`
+- **Inventory refresh:** updated current counts to 4915 in-scope files and `142 in-scope wiki files / 140 wiki pages`
+- **Open decisions:** the remaining operations tail is now narrower and concrete: admin subtree deploy remains manual, iOS release identity/team config still needs real values, and staging still shares the production API host
+
+## [2026-04-16] audit | Block 111 operations database migration runbook parity
+
+Closed the next operations-doc parity block:
+- **Created:** `[[block-111-operations-database-migration-runbook-parity]]`
+- **Files audited:** `docs/10_operations/DATABASE_MIGRATIONS.md` plus neighboring deploy docs and live build-config evidence in `backend/package.json` and `admin/vercel.json`
+- **Fixes:** removed the semi-active framing of build-time migration auto-apply, made explicit `db:migrate:deploy` the primary documented production path, and aligned the migration runbook with the already-refreshed deploy guide and deploy audit
+- **Verification:** inspected the migration doc against `DEPLOY.md`, `GIT_AND_DEPLOY_AUDIT.md`, `backend/package.json`, and `admin/vercel.json`; then re-ran `git diff --check`, repo inventory counts, and wiki-link presence checks for `block-111`
+- **Inventory refresh:** updated current counts to 4916 in-scope files and `143 in-scope wiki files / 141 wiki pages`
+- **Open decisions:** the remaining migration question is now purely policy: whether to keep explicit production apply as the long-term model or deliberately move to deploy-time auto-apply later
+
+## [2026-04-16] audit | Block 112 iOS TestFlight helper identity validation parity
+
+Closed the next small-but-real iOS release helper block:
+- **Created:** `[[block-112-ios-testflight-helper-identity-validation-parity]]`
+- **Files audited:** `Hexbound/scripts/deploy_testflight.sh`, `docs/10_operations/TESTFLIGHT_GUIDE.md`, `Hexbound/fastlane/Appfile`, and `Hexbound/Gemfile`
+- **Fixes:** hardened the TestFlight helper so it now accepts both valid Fastlane identity setup modes (Appfile-based or env-based), requires team configuration in addition to Apple ID, and explains repair steps clearly; then synced the TestFlight guide with that behavior
+- **Verification:** inspected the helper/docs against the live Fastlane/Appfile/Gemfile setup and re-ran `git diff --check`, repo inventory counts, and wiki-link presence checks for `block-112`
+- **Inventory refresh:** updated current counts to 4917 in-scope files and `144 in-scope wiki files / 142 wiki pages`
+- **Open decisions:** the remaining iOS release debt is now back to the real product/ops layer: placeholder Fastlane identity in repo, no distinct staging backend host, and manual App Store/TestFlight ownership work
+
+## [2026-04-16] audit | Block 113 wiki generation tooling and generated indexes
+
+Closed the next wiki tooling block:
+- **Created:** `[[block-113-wiki-generation-tooling-and-generated-indexes]]`
+- **Files audited:** `scripts/wiki/*`, `wiki/_generated/*`, `wiki/features/_template.md`, and both gatekeeper preflight scripts
+- **Fixes:** documented the new machine-readable wiki indexes, regenerated them, and most importantly wired `scripts/wiki/check-drift.sh` into both preflight scripts so the generated README promise ("preflight will warn if stale") is now actually true
+- **Verification:** `bash scripts/wiki/generate-all.sh`, `bash scripts/wiki/check-drift.sh`, `bash .skills/skills/gatekeeper/scripts/preflight_check.sh "$(pwd)"`, `git diff --check`, plus refreshed repo/wiki counts
+- **Inventory refresh:** updated current counts to 4934 in-scope files and `153 in-scope wiki markdown files / 147 wiki pages`
+- **Open decisions:** whether `scripts/wiki/*` and `wiki/_generated/*` stay intentionally untracked local tooling/indexes or get promoted to tracked repo artifacts later
+
+## [2026-04-16] audit | Block 114 wiki feature maps and index visibility
+
+Closed the next wiki navigation block:
+- **Created:** `[[block-114-wiki-feature-maps-and-index-visibility]]`
+- **Files audited:** `wiki/features/_template.md`, `wiki/features/gold-mine.md`, `wiki/features/interactive-combat.md`, `wiki/features/pvp-combat.md`, `wiki/features/referral.md`, `wiki/features/shop.md`, and `wiki/index.md`
+- **Fixes:** added a dedicated `Features` section to the wiki index, surfaced all five live feature maps, and converted the new feature pages’ related links onto native wiki-link style
+- **Verification:** inspected the feature pages/index, re-ran `git diff --check`, and refreshed wiki-count visibility in the footer
+- **Inventory refresh:** updated current counts to 4934 in-scope files and `153 in-scope wiki markdown files / 147 wiki pages`
+- **Open decisions:** whether the feature-map section stays a curated short list or grows into a broader feature atlas
+
+## [2026-04-16] audit | Block 115 Figma handoff and historical doc boundaries
+
+Closed the next operations/docs hygiene block:
+- **Created:** `[[block-115-operations-figma-and-historical-doc-boundaries]]`
+- **Files audited:** `docs/10_operations/FIGMA_HANDOFF.md`, `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`, `docs/10_operations/PROGRESS_LOG.md`, `docs/10_operations/SIMULATOR_PLAYTEST_BUGS_2026-04-09.md`, and `docs/10_operations/UI_PR_CHECKLIST.md`
+- **Fixes:** corrected the stale Figma screen-inventory path and wildcard-like admin UI source reference; added explicit source-of-truth or historical-snapshot boundaries to the Figma handoff, screen inventory, progress log, and simulator bug report; and replaced the ambiguous SwiftLint checklist step with the exact repo-safe command
+- **Verification:** inspected all five docs against the live repo layout and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4935 in-scope files and `154 in-scope wiki markdown files / 148 wiki pages`
+- **Open decisions:** continue the same truth-boundary cleanup into the remaining historical docs and documentation index layer
+
+## [2026-04-16] audit | Block 116 source-of-truth doc index parity
+
+Closed the next source-of-truth docs block:
+- **Created:** `[[block-116-source-of-truth-doc-index-parity]]`
+- **Files audited:** `docs/01_source_of_truth/DOCUMENTATION_INDEX.md` and `docs/01_source_of_truth/CLEANUP_REPORT.md`
+- **Fixes:** refreshed the master documentation index away from stale March count language, reclassified `PROGRESS_LOG.md` correctly as historical notebook material, linked the master index back to the live wiki audit surfaces, and added a historical boundary banner to the cleanup report
+- **Verification:** inspected both docs against the current repo/wiki state and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4936 in-scope files and `155 in-scope wiki markdown files / 149 wiki pages`
+- **Open decisions:** `PROJECT_OVERVIEW.md` still deserves the next pass because it keeps several old count-based descriptions
+
+## [2026-04-16] audit | Block 117 source-of-truth project overview parity
+
+Closed the next source-of-truth docs block:
+- **Created:** `[[block-117-source-of-truth-project-overview-parity]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md` plus live version/deployment-target evidence in `backend/package.json`, `admin/package.json`, and `Hexbound/Hexbound.xcodeproj/project.pbxproj`
+- **Fixes:** updated the overview freshness banner, corrected the iOS minimum version to `17.0`, replaced brittle count-heavy wording with lower-maintenance role-based descriptions, normalized framework wording to the current `Next.js 15.x / TypeScript 5.7.x / Prisma 6.x` package reality, and aligned the high-level deploy text with the already-audited operations docs
+- **Verification:** inspected the overview against the live package/xcode evidence and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4937 in-scope files and `156 in-scope wiki markdown files / 150 wiki pages`
+- **Open decisions:** the next adjacent cleanup should hit `ADMIN_CAPABILITIES.md` and `SCREEN_INVENTORY.md`, which still carry older freshness/count language
+
+## [2026-04-16] audit | Block 118 admin capabilities and screen inventory parity
+
+Closed the next source-of-truth docs block:
+- **Created:** `[[block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/07_ui_ux/SCREEN_INVENTORY.md`, plus live evidence in `admin/package.json`, `Hexbound/Hexbound/App/AppRouter.swift`, and `Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift`
+- **Fixes:** refreshed both docs’ freshness banners, removed stale count-heavy headings and summary claims, corrected the admin stack wording to the live `Next.js 15` package reality, clarified that `ADMIN_CAPABILITIES.md` is not a formal permission matrix, and reframed the screen inventory’s Figma coverage section as a snapshot gap-analysis rather than guaranteed live parity
+- **Verification:** inspected both docs against the current admin package and iOS routing/screen-catalog evidence, then re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4938 in-scope files and `157 in-scope wiki markdown files / 151 wiki pages`
+- **Open decisions:** continue the same truth-boundary pass through the remaining historical or count-heavy docs under `docs/05_admin_panel/` and `docs/07_ui_ux/`
+
+## [2026-04-16] audit | Block 119 design system source-of-truth vs audit snapshot boundaries
+
+Closed the next design-system docs block:
+- **Created:** `[[block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries]]`
+- **Files audited:** `docs/07_ui_ux/DESIGN_SYSTEM.md`, `docs/07_ui_ux/DESIGN_SYSTEM_AUDIT.md`, and live token evidence in `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift`
+- **Fixes:** reframed `DESIGN_SYSTEM.md` as a living ruleset instead of a frozen count inventory, removed brittle screen/component/token count metadata and stale count-bearing section headers, converted the old “100% COMPLETE” claim into an explicit historical milestone note, and marked `DESIGN_SYSTEM_AUDIT.md` as a historical forensic snapshot whose success metrics require revalidation before reuse
+- **Verification:** inspected both docs against the live theme file and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4939 in-scope files and `158 in-scope wiki markdown files / 152 wiki pages`
+- **Open decisions:** continue through the remaining `docs/07_ui_ux/` audit-style artifacts that still read like live truth without explicit historical boundaries
+
+## [2026-04-16] audit | Block 120 UI audit artifacts historical boundary cleanup
+
+Closed the next UI audit artifact block:
+- **Created:** `[[block-120-ui-audit-artifacts-historical-boundary-cleanup]]`
+- **Files audited:** `docs/07_ui_ux/FULL_DESIGN_SYSTEM_AUDIT_2026_04_04.md`, `docs/07_ui_ux/UX_AUDIT.md`, `docs/07_ui_ux/ASSET_CONSISTENCY_AUDIT.md`, and `docs/07_ui_ux/UI_AUDIT_DASHBOARD.html`
+- **Fixes:** added explicit historical-snapshot boundaries to the large forensic audit docs, clarified that their counts/scores/gap numbers require revalidation against live code/wiki, and changed the static HTML dashboard subtitle so it no longer reads like a live metric source
+- **Verification:** inspected all four artifacts and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4951 in-scope files and `159 in-scope wiki markdown files / 153 wiki pages`
+- **Open decisions:** keep moving through the remaining `docs/07_ui_ux/` review artifacts that still carry exact snapshot numbers without a clear time fence
+
+## [2026-04-16] audit | Block 121 prototypes link parity and transition state
+
+Closed the next prototype/history block:
+- **Created:** `[[block-121-prototypes-link-parity-and-transition-state]]`
+- **Files audited:** `COMBAT_UX_AUDIT.md`, `COMBAT_UX_IMPLEMENTATION_PLAN.md`, the git-visible `prototypes/*.html` combat/hero/legal surfaces, and `prototypes/victory-rewards/*`
+- **Fixes:** repaired combat-doc links after the move into `prototypes/`, fixed the reverse link from `prototypes/combat-prototypes.html` back to the historical audit, changed `prototypes/terms.html` to use a local `privacy.html` cross-link, and documented the current transition state where tracked root prototype/legal HTML is being replaced by `prototypes/` copies in the working tree
+- **Verification:** inspected all git-visible prototype HTML/assets, checked relative-link targets for the prototype set, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4954 in-scope files and `162 in-scope wiki markdown files / 156 wiki pages`
+- **Open decisions:** finish the root → `prototypes/` move explicitly, decide which prototype artifacts should be kept as design history, and define the real legal/static deploy contract instead of leaving these files in a half-prototype / half-production state
+
+## [2026-04-16] audit | Block 122 wiki feature-map visibility and related-link gaps
+
+Closed the next wiki navigation/source-of-truth block:
+- **Created:** `[[block-122-wiki-feature-map-visibility-and-related-link-gaps]]`
+- **Files audited:** `wiki/index.md` plus the current feature-map layer under `wiki/features/` covering `auth`, `achievements`, `battle-pass`, `characters`, `daily-login`, `dungeons`, `dungeon-rush`, `events`, `inventory`, `leaderboard`, `mail`, `minigames`, `passive-tree`, `prestige`, `quests`, `session-summary`, `social`, `stamina`, `stash`, and `tutorial`
+- **Fixes:** expanded the main wiki index from a stale curated feature subset to the full live feature-atlas, added first-class visibility for `passive-tree`, `prestige`, `quests`, `session-summary`, `social`, `minigames`, `stamina`, `stash`, and `tutorial`, corrected the main footer counts to the current wiki surface, and revalidated the remaining true related-page gaps down to `opponent-profile` and `onboarding`
+- **Verification:** re-enumerated the current `wiki/features/*.md` set, rescanned related-link targets against the live wiki page set, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4973 in-scope files and `181 in-scope wiki markdown files / 175 wiki pages`
+- **Open decisions:** create or remap the remaining related-page dead-ends (`opponent-profile`, `onboarding`) and keep the feature index synchronized as new `wiki/features/*.md` pages appear
+
+## [2026-04-16] audit | Block 123 UI review and plan docs historical boundaries
+
+Closed the next dated-UX-docs block:
+- **Created:** `[[block-123-ui-review-and-plan-docs-historical-boundaries]]`
+- **Files audited:** `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md`, `COMIC_ONBOARDING_PLAN.md`, `DAILY_LOGIN_CAROUSEL_REVIEW.md`, `MOTION_AND_JUICE_AUDIT.md`, `PROTOTYPE_INSIGHTS.md`, `QA_FIX_PLAN_2026-04-10.md`, `QA_PLAYTHROUGH_2026-04-10.md`, and `SOCIAL_FLOWS_UX_SPEC.md`
+- **Fixes:** added explicit historical/proposal boundaries to dated redesign, audit, and roadmap docs; redirected readers back to current `wiki/` and live code for operational truth; and downgraded `PROTOTYPE_INSIGHTS.md` from “canonical reference” wording to a historical archive role
+- **Verification:** inspected all eight docs and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4978 in-scope files and `182 in-scope wiki markdown files / 176 wiki pages`
+- **Open decisions:** continue the same cleanup through the remaining dated `docs/07_ui_ux/` design/review files that still read too close to live specification
+
+## [2026-04-16] audit | Block 124 W1-W3 plan docs historical boundaries
+
+Closed the next dated roadmap/checkpoint block:
+- **Created:** `[[block-124-w1-w3-plan-docs-historical-boundaries]]`
+- **Files audited:** `docs/07_ui_ux/W1_CHECKPOINT.md`, `W1_D3_GAMECONFIG_SSOT_REVIEW.md`, `W1_D4_BALANCE_DOCS_AUTOGEN.md`, `W1_D5_DRIFT_GUARD.md`, `W2_D1_REALITY_CHECK.md`, `W2_D1_REVIEW.md`, `W2_D2_LORE_AUDIT.md`, `W2_D2_REALITY_CHECK.md`, `W2_D3_SCRIPTED_FIGHT_DESIGN.md`, `W2_D4_BUILDING_GATING_DESIGN.md`, `W2_D5_BADGE_PRIORITY_DESIGN.md`, `W3_D1_REVIEW.md`, and `W3_D5_REVIEW_PLAN.md`
+- **Fixes:** added explicit historical/review/proposal boundaries to dated W1/W2/W3 checkpoint and design docs, clarified that “awaiting approval” or “completed” states belong to the original planning moment, and reframed these files as rationale/evidence rather than live roadmap truth
+- **Verification:** inspected all 13 docs and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4979 in-scope files and `183 in-scope wiki markdown files / 177 wiki pages`
+- **Open decisions:** continue the same cleanup through the remaining dated `docs/07_ui_ux/` artifacts that still read like current roadmap material
+
+## [2026-04-16] audit | Block 125 UI prototype and Figma workflow boundaries
+
+Closed the next residual prototype/workflow-boundary block:
+- **Created:** `[[block-125-ui-prototype-and-figma-workflow-boundaries]]`
+- **Files audited:** `docs/07_ui_ux/FIGMA_SCREEN_RULES.md`, `INTEGRATED_CARD_UNIFICATION.md`, `UNIFIED_PRELOADER_CONCEPT.md`, `card-audit-prototype.html`, `card-audit-v2.html`, `card-audit-v3.html`, `card-audit-v4.html`, `combat-prototype.html`, `daily_login_carousel_prototype.html`, `comic-onboarding-prototype.jsx`, `skilltree-prototype.html`, and `docs/07_ui_ux/prototypes/auth-flow-redesign.html`
+- **Fixes:** added explicit source-of-truth scoping to the strict Figma workflow playbook, reframed the integrated-card and preloader concept docs as historical proposal/concept artifacts, and added visible historical prototype framing to the remaining direct-open HTML/JSX UI prototype surfaces
+- **Verification:** inspected the title/header/opening surfaces for all 12 files, verified the new boundary wording, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4980 in-scope files and `184 in-scope wiki markdown files / 178 wiki pages`
+- **Open decisions:** continue through the remaining `docs/07_ui_ux/` direct-open prototype/archive files until every residual mock surface self-identifies as historical
+
+## [2026-04-16] audit | Block 126 design system roadmap and screen inventory live parity
+
+Closed the next live-vs-historical parity block:
+- **Created:** `[[block-126-design-system-roadmap-and-screen-inventory-live-parity]]`
+- **Files audited:** `docs/07_ui_ux/UI_AUDIT_DASHBOARD.html`, `DESIGN_SYSTEM.md`, and `SCREEN_INVENTORY.md`
+- **Fixes:** turned the audit dashboard title/header into explicit historical framing, narrowed the migration roadmap inside `DESIGN_SYSTEM.md` to an archival appendix instead of an active rollout queue, and updated `SCREEN_INVENTORY.md` to the live shared `IntegratedCharacterCard` while removing the stale `LoreIntroView.swift` gap entry
+- **Verification:** checked current iOS file presence for `IntegratedCharacterCard`, confirmed the old hero/opponent card files are gone, confirmed `LoreIntroView.swift` is absent, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4981 in-scope files and `185 in-scope wiki markdown files / 179 wiki pages`
+- **Open decisions:** keep reviewing mixed live/historical source-of-truth docs so rollout appendices and current runtime truth do not silently collapse back together
+
+## [2026-04-16] audit | Block 127 dated product, economy, and architecture doc boundaries
+
+Closed the next cross-domain dated-docs block:
+- **Created:** `[[block-127-dated-product-economy-and-architecture-doc-boundaries]]`
+- **Files audited:** `docs/06_game_systems/ECONOMY_AUDIT_2026-04-13.md`, `docs/09_rules_and_guidelines/INLINE_API_AUDIT.md`, `docs/FULL_PRODUCT_AUDIT_2026-03-21.md`, `docs/MIGRATION_PLAN.md`, and `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`
+- **Fixes:** added explicit historical boundaries to the dated economy, architecture, full-product, migration, and combat-plan docs so they no longer read like current repo/runtime truth without revalidation
+- **Verification:** inspected the openings of all five docs and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4982 in-scope files and `186 in-scope wiki markdown files / 180 wiki pages`
+- **Open decisions:** continue through the remaining dated docs under `docs/11_archive/` and similar archive-style folders
+
+## [2026-04-16] audit | Block 128 retro log historical boundaries
+
+Closed the next archive/journal block:
+- **Created:** `[[block-128-retro-log-historical-boundaries]]`
+- **Files audited:** all `25` dated retro logs under `docs/retro/RETRO_*.md`
+- **Fixes:** applied the same explicit historical retrospective boundary to every retro file so the folder reads as a dated engineering journal, not as current project status
+- **Verification:** spot-checked `RETRO_2026-04-15.md`, confirmed the boundary note exists in all `25` retro files, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4983 in-scope files and `187 in-scope wiki markdown files / 181 wiki pages`
+- **Open decisions:** continue the same source-of-truth framing pass through `docs/11_archive/` and the remaining legacy audit/report docs
+
+## [2026-04-16] audit | Block 129 archive legacy doc boundaries
+
+Closed the next archive-doc block:
+- **Created:** `[[block-129-archive-legacy-doc-boundaries]]`
+- **Files audited:** `docs/11_archive/ADMIN_PANEL_AUDIT_REPORT_2026-03-16.md`, `ART_STYLE_GUIDE_DUPLICATE.md`, `BALANCE_AUDIT_REPORT_2026-03-09.md`, `CLAUDE_2_LEGACY.md`, `HEXBOUND_UI_UX_AUDIT_GUIDE_v1.md`, `PROJECT_KNOWLEDGE_v2_LEGACY.md`, `UI_DESIGN_DOCUMENT_LEGACY.md`, and `mine-card-prompts_DUPLICATE.md`
+- **Fixes:** added explicit historical/legacy/duplicate boundaries so those archive files no longer open like living references or current source-of-truth docs
+- **Verification:** inspected the opening sections of all eight archive files and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4984 in-scope files and `188 in-scope wiki markdown files / 182 wiki pages`
+- **Open decisions:** continue through the remaining top-level legacy/old-process docs until all residual historical surfaces self-identify on open
+
+## [2026-04-16] audit | Block 130 top-level source-of-truth and orchestration boundaries
+
+Closed the next top-level docs reality-sync block:
+- **Created:** `[[block-130-top-level-source-of-truth-and-orchestration-boundaries]]`
+- **Files audited:** `docs/PROJECT_INDEX.md`, `SOURCE_OF_TRUTH.md`, `AGENT_LOADING_GUIDE.md`, `ORCHESTRATOR.md`, `00_studio/STUDIO_COMMAND_CENTER.md`, and `01_source_of_truth/DOCUMENTATION_INDEX.md`
+- **Fixes:** removed stale March freshness/count-heavy claims from the top-level routing docs, corrected the iOS minimum target to 17.0 in the project navigator, added explicit `wiki/` pointers for current audit/file-ownership truth, and reframed the orchestrator/studio command-center docs as historical operating-framework snapshots instead of live repo contracts
+- **Verification:** reviewed the edited headers/top sections, confirmed stale `2026-03-26` banners are gone from the three top-level routing docs, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4985 in-scope files and `189 in-scope wiki markdown files / 183 wiki pages`
+- **Open decisions:** continue through the remaining residual top-level governance/archive-adjacent docs until every direct-open `docs/` entry point clearly signals whether it is live truth, navigation aid, or historical process narrative
+
+## [2026-04-16] audit | Block 131 empty doc placeholders and deprecation markers
+
+Closed the next residual root-doc block:
+- **Created:** `[[block-131-empty-doc-placeholders-and-deprecation-markers]]`
+- **Files audited:** `docs/06_game_systems/ECONOMY_MODEL_V2.md`, `docs/Untitled 2.base`, and `docs/_COMMUNITY_Community 284.md`
+- **Fixes:** converted three silent zero-byte surfaces into explicit deprecated/placeholder docs so they no longer look like missing live source-of-truth material
+- **Verification:** confirmed all three files were previously empty and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4986 in-scope files and `190 in-scope wiki markdown files / 184 wiki pages`
+- **Open decisions:** continue through remaining root/legacy-adjacent residuals and decide which placeholders should be deleted versus replaced with real scoped docs
+
+## [2026-04-16] audit | Block 132 Obsidian base artifacts
+
+Closed the next editor-residue audit block:
+- **Created:** `[[block-132-obsidian-base-artifacts]]`
+- **Files audited:** `docs/Untitled.base`, `docs/Untitled 1.base`, and `docs/Untitled 2.base`
+- **Findings:** confirmed the repo only contains three `.base` files; two still contain the same trivial table-view stanza and one had already been boundary-marked in the previous placeholder pass
+- **Fixes:** no destructive file change yet; documented the whole `.base` group as likely editor residue and marked it as a deprecation/removal decision rather than pretending those files are meaningful live docs
+- **Verification:** compared all `.base` files, confirmed no other `.base` surfaces exist in the repo, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4987 in-scope files and `191 in-scope wiki markdown files / 185 wiki pages`
+- **Open decisions:** confirm whether any local Obsidian/editor workflow still requires `.base` files; if not, remove the entire group together
+
+## [2026-04-16] audit | Block 133 live doc TBD and URL cleanup
+
+Closed the next small live-doc consistency block:
+- **Created:** `[[block-133-live-doc-tbd-and-url-cleanup]]`
+- **Files audited:** `docs/06_game_systems/PROGRESSION.md` and `docs/10_operations/DEPLOY.md`
+- **Fixes:** replaced the stale daily-quest reward `TBD` wording in `PROGRESSION.md` with the real quest-definition-driven behavior and replaced the landing-site `TBD` URL in `DEPLOY.md` with the documented production domain/deploy path
+- **Verification:** reviewed the updated lines and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4988 in-scope files and `192 in-scope wiki markdown files / 186 wiki pages`
+- **Open decisions:** keep scanning live docs for the remaining small placeholder/todo tails that still make maintained docs feel provisional
+
+## [2026-04-16] audit | Block 134 delete placeholder and editor artifact files
+
+Closed the next cleanup-by-deletion block:
+- **Created:** `[[block-134-delete-placeholder-and-editor-artifact-files]]`
+- **Files removed:** `docs/06_game_systems/ECONOMY_MODEL_V2.md`, `docs/_COMMUNITY_Community 284.md`, `docs/Untitled.base`, `docs/Untitled 1.base`, and `docs/Untitled 2.base`
+- **Fixes:** converted the earlier placeholder/editor-residue findings into actual deletion and cleared repo-wide `.DS_Store` clutter during the same sweep
+- **Verification:** confirmed no `.base` files remain in the repo and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4989 in-scope files and `193 in-scope wiki markdown files / 187 wiki pages`
+- **Open decisions:** continue deleting similarly obvious non-product residue only when the role is already proven non-canonical
+
+## [2026-04-16] audit | Block 135 delete archive duplicate docs
+
+Closed the next archive-reduction block:
+- **Created:** `[[block-135-delete-archive-duplicate-docs]]`
+- **Files removed:** `docs/11_archive/ART_STYLE_GUIDE_DUPLICATE.md` and `docs/11_archive/mine-card-prompts_DUPLICATE.md`
+- **Fixes:** deleted two pure duplicate archive docs and updated `docs/11_archive/ARCHIVE_INDEX.md` so archive policy now distinguishes unique historical docs from removable duplicates
+- **Verification:** confirmed `ARCHIVE_INDEX.md` no longer lists the removed duplicate files and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4990 in-scope files and `194 in-scope wiki markdown files / 188 wiki pages`
+- **Open decisions:** keep archive preservation for unique historical material, but continue removing archive entries that are only redundant copies
+
+## [2026-04-16] audit | Block 136 delete root orphan prototype artifacts
+
+Closed the next safe root-prototype deletion block:
+- **Created:** `[[block-136-delete-root-orphan-prototype-artifacts]]`
+- **Files removed:** `review-choose-hero-guest-gating-before-after.jsx`, `gold-mine-ux-prototype.jsx`, and `gold-mine-ux-prototype-ds.jsx`
+- **Fixes:** deleted one tracked guest-gating review artifact and two local Gold Mine JSX prototype residues after confirming they had no live imports or maintained source-of-truth role; also updated `block-001` so root audit history now reflects the removal instead of leaving that file in `Needs review`
+- **Verification:** confirmed all three files are gone from the working tree, rechecked references outside generated graph residue, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4991 in-scope files and `195 in-scope wiki markdown files / 189 wiki pages`
+- **Open decisions:** continue the same high-confidence rule for root cleanup — remove only the prototype/history surfaces that are already proven orphaned, not the ones that still carry unique design rationale
+
+## [2026-04-16] audit | Block 137 root prototype relocation state sync
+
+Closed the next repo-map honesty block:
+- **Created:** `[[block-137-root-prototype-relocation-state-sync]]`
+- **Files audited:** deleted root prototype/legal HTML paths plus their `prototypes/` working-tree copies, along with `project-file-inventory.md` and `block-001-root-files.md`
+- **Fixes:** marked the deleted root prototype/legal entries in the inventory as `_(deleted in working tree)_` and added an explicit relocation note to `block-001` so the old root-file audit no longer reads like those files still physically live at repo root
+- **Verification:** confirmed the listed root HTML surfaces are absent from the working tree, confirmed corresponding `prototypes/` copies exist, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4992 in-scope files and `196 in-scope wiki markdown files / 190 wiki pages`
+- **Open decisions:** the remaining decision is whether the moved `prototypes/` copies become fully tracked canonical history surfaces or stay as transition-state working-tree mirrors
+
+## [2026-04-16] audit | Block 138 delete deprecated prototype residue
+
+Closed the next prototype-reduction block:
+- **Created:** `[[block-138-delete-deprecated-prototype-residue]]`
+- **Files removed:** `prototypes/hero-card-delete-rings-layout.html`, `prototypes/hero-card-rings-deepdive.html`, `prototypes/special_offer_widget_prototype.html`, and `prototypes/special_offer_widget_v2_prototype.html`
+- **Fixes:** removed two orphan hero-card explorations and two superseded Special Offer generations, while keeping `prototypes/special_offer_widget_v3_prototype.html` as the single retained historical offer reference; also updated `block-001` and `block-121` so audit history reflects the cleanup instead of leaving those files in deprecated limbo
+- **Verification:** confirmed all four files are gone from the working tree, confirmed `special_offer_widget_v3_prototype.html` still remains, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4991 in-scope files and `197 in-scope wiki markdown files / 191 wiki pages`
+- **Open decisions:** continue shrinking prototypes by keeping only latest or uniquely informative references; do not delete the remaining combat/legal/v3 surfaces until their retained-reference role is explicitly replaced
+
+## [2026-04-16] audit | Block 139 delete superseded combat prototype set
+
+Closed the next combat-history reduction block:
+- **Created:** `[[block-139-delete-superseded-combat-prototype-set]]`
+- **Files removed:** `prototypes/combat-proto-A.html`, `prototypes/combat-proto-B.html`, `prototypes/combat-proto-C.html`, `prototypes/combat-prototypes.html`, and `prototypes/combat-proto-B2-v2.html`
+- **Fixes:** removed the fully superseded A/B/C combat comparison set plus the dead launcher and extra B2-v2 intermediate branch, while intentionally keeping `prototypes/combat-proto-B2.html` and `prototypes/combat-proto-B2-v3.html` as the retained combat history bridge; also updated `block-001` and `block-121` so those files no longer sit in deprecated limbo
+- **Verification:** confirmed the five target files are gone from the working tree, confirmed `prototypes/combat-proto-B2.html` and `prototypes/combat-proto-B2-v3.html` still remain, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4988 in-scope files and `198 in-scope wiki markdown files / 192 wiki pages`
+- **Open decisions:** keep the remaining B2/B2-v3 prototypes only until their design-history role is either archived elsewhere or intentionally collapsed further
+
+## [2026-04-17] audit | Block 140 delete orphan feature prototype residue
+
+Closed the next ownerless-prototype cleanup block:
+- **Created:** `[[block-140-delete-orphan-feature-prototype-residue]]`
+- **Files removed:** `prototypes/active-skills-picker-prototype.html`, `prototypes/boss-card-prototype.html`, `prototypes/contraband_widget_prototype.html`, `prototypes/daily-login-prototype.html`, `prototypes/gold-mine-prototype.html`, and `prototypes/hero-card-hp-energy-prototype.html`
+- **Fixes:** removed six unowned feature prototype residues that no longer had any maintained source-of-truth role, shrinking `prototypes/` down to the intentionally retained legal/combat/Gold Mine/special-offer/victory set
+- **Verification:** confirmed all six target files are gone from the working tree, rechecked repo references for live consumers, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4989 in-scope files and `199 in-scope wiki markdown files / 193 wiki pages`
+- **Open decisions:** keep trimming `prototypes/` only where the retained-vs-orphan line is already clear from current docs and code
+
+## [2026-04-17] audit | Block 141 prototype reference doc sync
+
+Closed the follow-up doc-parity block:
+- **Created:** `[[block-141-prototype-reference-doc-sync]]`
+- **Files audited:** `docs/02_product_and_features/ACTIVE_SKILL_PICKER_SPEC.md` and `docs/retro/RETRO_2026-04-12.md`
+- **Fixes:** removed the stale claim that the deleted active-skill picker prototype still exists as a live reference and converted one later-resolved retro cleanup checkbox into an explicitly closed historical note
+- **Verification:** confirmed the active-skill-picker spec now points to the retained native implementation instead of a dead HTML artifact, confirmed the retro no longer carries the junk-file cleanup as an open present-tense task, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4990 in-scope files and `200 in-scope wiki markdown files / 194 wiki pages`
+- **Open decisions:** continue the same cleanup pattern whenever a historical note still has open TODO wording that has already been resolved by later audit blocks
+
+## [2026-04-17] audit | Block 142 delete wiki Obsidian editor residue
+
+Closed the next repo-hygiene cleanup block:
+- **Created:** `[[block-142-delete-wiki-obsidian-editor-residue]]`
+- **Files removed:** `wiki/.obsidian/app.json`, `wiki/.obsidian/appearance.json`, `wiki/.obsidian/core-plugins.json`, `wiki/.obsidian/graph.json`, and `wiki/.obsidian/workspace.json`
+- **Fixes:** removed local Obsidian editor-state residue from inside `wiki/`, which restored the difference between real wiki file count and maintained inventory count back to zero
+- **Verification:** confirmed the five `wiki/.obsidian/*` files are gone, rechecked wiki file totals against the inventory map, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4991 in-scope files and `201 in-scope wiki markdown files / 195 wiki pages`
+- **Open decisions:** keep deleting editor-state residue instead of normalizing it into the project wiki
+
+## [2026-04-17] audit | Block 143 delete final Special Offer prototype reference
+
+Closed the next retained-prototype reduction block:
+- **Created:** `[[block-143-delete-final-special-offer-prototype-reference]]`
+- **Files removed:** `prototypes/special_offer_widget_v3_prototype.html`
+- **Fixes:** removed the final retained Special Offer prototype after confirming it no longer had any live docs/code consumer, and updated `block-001` so the root-audit follow-up no longer advertises it as an active retained reference
+- **Verification:** confirmed `prototypes/special_offer_widget_v3_prototype.html` is gone from the working tree, rechecked remaining references for live consumers, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4992 in-scope files and `202 in-scope wiki markdown files / 196 wiki pages`
+- **Open decisions:** keep reevaluating the remaining prototypes one-by-one, but only delete those that have lost all named current consumers
+
+## [2026-04-17] audit | Block 144 delete victory-rewards prototype set
+
+Closed the next retained-prototype reduction block:
+- **Created:** `[[block-144-delete-victory-rewards-prototype-set]]`
+- **Files removed:** `prototypes/victory-rewards/index.html`, `prototypes/victory-rewards/assets/reward-gold.png`, `prototypes/victory-rewards/assets/reward-xp.png`, and `prototypes/victory-rewards/assets/reward-rating-up.png`
+- **Fixes:** removed the standalone victory-rewards prototype package after confirming it no longer had a named current consumer and duplicated reward art that already exists in tracked app and asset surfaces; also updated `block-121` to record that this prototype set was later removed
+- **Verification:** confirmed the whole `prototypes/victory-rewards/` set is gone from the working tree, confirmed tracked reward PNG equivalents still exist elsewhere in the repo, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4993 in-scope files and `203 in-scope wiki markdown files / 197 wiki pages`
+- **Open decisions:** only the combat, Gold Mine, and legal-transition prototype surfaces remain for explicit one-by-one review
+
+## [2026-04-17] audit | Block 145 delete Gold Mine minigame prototype reference
+
+Closed the next retained-prototype reduction block:
+- **Created:** `[[block-145-delete-gold-mine-minigame-prototype-reference]]`
+- **Files removed:** `prototypes/gold_mine_minigame_prototype.html`
+- **Files audited:** `GOLD_MINE_MINIGAME_PLAN.md`, `wiki/audit/block-001-root-files.md`
+- **Fixes:** removed the old Gold Mine minigame HTML prototype after converting the historical plan away from treating it as a live dependency; also updated `block-001` so Gold Mine no longer appears in the residual active-reference list
+- **Verification:** confirmed `prototypes/gold_mine_minigame_prototype.html` is gone from the working tree, confirmed the plan now frames that prototype as removed historical context, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4994 in-scope files and `204 in-scope wiki markdown files / 198 wiki pages`
+- **Open decisions:** only the combat-history pair plus the legal-transition copies remain in `prototypes/`, so further cleanup from here should be deliberate rather than bulk residue removal
+
+## [2026-04-17] audit | Block 146 delete legal transition prototype copies
+
+Closed the next retained-prototype reduction block:
+- **Created:** `[[block-146-delete-legal-transition-prototype-copies]]`
+- **Files removed:** `prototypes/privacy.html` and `prototypes/terms.html`
+- **Files audited:** `docs/10_operations/GIT_AND_DEPLOY_AUDIT.md`, `wiki/audit/block-121-prototypes-link-parity-and-transition-state.md`
+- **Fixes:** removed the last local legal transition HTML copies after confirming the app already opens hosted production URLs, and updated operations wording so it no longer implies a maintained repo-local legal/static page surface
+- **Verification:** confirmed both legal prototype copies are gone from the working tree, confirmed iOS legal buttons still target hosted URLs, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4993 in-scope files and `205 in-scope wiki markdown files / 199 wiki pages`
+- **Open decisions:** only the combat-history pair remains in `prototypes/`, so any further change there should be treated as a deliberate historical-source decision, not residue cleanup
+
+## [2026-04-17] audit | Block 147 delete final combat-history prototypes
+
+Closed the final prototype-reduction block:
+- **Created:** `[[block-147-delete-final-combat-history-prototypes]]`
+- **Files removed:** `prototypes/combat-proto-B2.html` and `prototypes/combat-proto-B2-v3.html`
+- **Files audited:** `COMBAT_UX_IMPLEMENTATION_PLAN.md`, `COMBAT_V3_IMPLEMENTATION_PLAN.md`, `wiki/audit/block-001-root-files.md`, `wiki/audit/block-121-prototypes-link-parity-and-transition-state.md`
+- **Fixes:** removed the final combat-history HTML artifacts after converting both implementation plans to historical-reference mode; updated root/prototype audit notes so they no longer imply an active retained combat HTML surface
+- **Verification:** confirmed `prototypes/` is now empty, confirmed both combat plans now treat the deleted prototypes as historical context rather than live dependencies, and re-ran `git diff --check`
+- **Inventory refresh:** updated current counts to 4992 in-scope files and `206 in-scope wiki markdown files / 200 wiki pages`
+- **Open decisions:** no generic prototype cleanup remains; any future resurrection of prototype HTML should be a deliberate new artifact, not residual carry-over
+
+## [2026-04-17] audit | Block 148 root dated QA and UI audit relocation
+
+Closed the next root-doc cleanup block:
+- **Created:** `[[block-148-root-dated-qa-and-ui-audit-relocation]]`
+- **Files moved:** `QA_REPORT_2026-04-09.md` -> `qa-reports/QA_REPORT_2026-04-09.md`, `UI_RESPONSIVENESS_AUDIT.md` -> `docs/07_ui_ux/UI_RESPONSIVENESS_AUDIT.md`
+- **Fixes:** removed two dated audit/history docs from root and relocated them into their canonical QA/UI doc families
+- **Verification:** confirmed both files are gone from root, confirmed the new destination paths exist, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 149 root combat history doc relocation
+
+Closed the next root-doc cleanup block:
+- **Created:** `[[block-149-root-combat-history-doc-relocation]]`
+- **Files moved:** `COMBAT_UX_AUDIT.md`, `COMBAT_UX_IMPLEMENTATION_PLAN.md`, and `COMBAT_V3_IMPLEMENTATION_PLAN.md` -> `docs/features/combat/`
+- **Fixes:** removed the root combat-history doc trio from root, preserved their internal lineage under the combat feature docs, and removed the last live-looking deleted-prototype links from the moved history docs
+- **Verification:** confirmed the three files are gone from root, confirmed the moved combat docs exist under `docs/features/combat/`, confirmed no deleted `prototypes/combat-*` links remain in the moved docs, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 150 root Gold Mine doc relocation
+
+Closed the next root-doc cleanup block:
+- **Created:** `[[block-150-root-gold-mine-doc-relocation]]`
+- **Files moved:** `GOLD_MINE_MINIGAME_BALANCE_AUDIT.md` and `GOLD_MINE_MINIGAME_PLAN.md` -> `docs/features/gold-mine/`
+- **Fixes:** removed the Gold Mine historical plan/audit pair from root, colocated them with the live Gold Mine overview, and updated the `shaft-catalog.ts` balance-doc reference to the new canonical path
+- **Verification:** confirmed both files are gone from root, confirmed the moved docs exist under `docs/features/gold-mine/`, confirmed the code reference uses the new path, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 151 root release audit relocation
+
+Closed the next root-doc cleanup block:
+- **Created:** `[[block-151-root-release-audit-relocation]]`
+- **Files moved:** `HEXBOUND_PRE_RELEASE_AUDIT.md` -> `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`
+- **Fixes:** removed the dated pre-release audit from root and moved it into the operations doc family where historical release-audit snapshots belong
+- **Verification:** confirmed the file is gone from root, confirmed the new operations path exists, and re-ran `git diff --check`

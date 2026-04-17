@@ -1,6 +1,8 @@
 # W3.D5 — Review-Before-Code Plan
 *Drafted: 2026-04-10 · For Artem approval before implementation*
 
+> **Status boundary:** historical review-before-code plan for one late W3 slice. Treat it as a dated planning artifact, not as the current active implementation plan.
+
 ---
 
 ## Что просит QA-план

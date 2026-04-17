@@ -1,6 +1,6 @@
 # Hexbound — iOS Release Guide
 
-*Source of truth: this file + Hexbound/fastlane/. Updated: 2026-03-19*
+*Source of truth: this file + `Hexbound/fastlane/` + `Hexbound/Hexbound/App/AppConstants.swift`. Updated: 2026-04-16*
 
 ---
 
@@ -9,8 +9,14 @@
 1. **Apple Developer Account** with App Store Connect access
 2. **Xcode 15+** with iOS 17 SDK
 3. **Fastlane** installed: `brew install fastlane`
-4. **Appfile configured**: `Hexbound/fastlane/Appfile` — set your Apple ID + Team ID
+4. **Fastlane identity configured**: `Hexbound/fastlane/Appfile` must be filled or equivalent env vars must be supplied
 5. **Signing**: valid provisioning profile "Hexbound AppStore" for `com.hexbound.app`
+
+Current repo reality:
+
+- `Fastfile` lanes exist and are usable as the release skeleton
+- `Appfile` still contains placeholder Apple identity / team values in repo
+- treat Fastlane release as **setup-required**, not turnkey
 
 ## Environment Config
 
@@ -19,6 +25,12 @@ API endpoints are configured in `Hexbound/Hexbound/App/AppConstants.swift`:
 - **DEBUG builds**: use staging URL (currently same as production)
 - **RELEASE builds**: use production URL (`api.hexboundapp.com`)
 - **Override**: set `HEXBOUND_ENV=staging` in Xcode scheme environment variables
+
+Important clarification:
+
+- the app does have `production` vs `staging` environment selection logic
+- but the current staging host still points to the same production API URL
+- so `HEXBOUND_ENV=staging` changes the app environment mode, not the backend host yet
 
 ## Release Flow
 
@@ -48,6 +60,8 @@ This runs:
 2. Archive with Release configuration
 3. Upload to App Store Connect / TestFlight
 4. Print success with version + build number
+
+This step still depends on real Apple credentials/team configuration being present at runtime.
 
 ### 3. Test in TestFlight
 
@@ -80,12 +94,14 @@ fastlane build
 
 Useful for verifying compilation before committing.
 
+For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` is still the cleanest non-upload gate.
+
 ## Fastlane Files
 
 | File | Purpose |
 |------|---------|
 | `Hexbound/fastlane/Fastfile` | Lane definitions (beta, build, bump_*) |
-| `Hexbound/fastlane/Appfile` | Apple ID, Team ID, bundle identifier |
+| `Hexbound/fastlane/Appfile` | Apple identity/team configuration and bundle identifier |
 
 ## Setup Checklist (First Time)
 
@@ -102,9 +118,9 @@ Useful for verifying compilation before committing.
 |---------|-----|
 | "No signing certificate" | Open Xcode → Signing & Capabilities → enable Automatic Signing |
 | "Provisioning profile not found" | Create "Hexbound AppStore" profile in developer.apple.com |
-| Appfile still has placeholder | Set real Apple ID and Team ID |
+| Appfile still has placeholder | Set real Apple ID / team values or provide `FASTLANE_*` env vars |
 | Build number conflict | Fastlane auto-increments, but if stuck: manually set in Xcode |
-| Wrong API URL in build | Check `AppConstants.swift` Environment enum |
+| Thought staging uses a separate backend | Today `staging` still resolves to the production API host in `AppConstants.swift` |
 
 ## Rollback
 

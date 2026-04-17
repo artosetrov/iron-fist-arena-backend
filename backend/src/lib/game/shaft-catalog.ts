@@ -44,7 +44,7 @@ export const SHAFTS: Record<ShaftKey, ShaftConfig> = {
 /**
  * Number of extraction plays required to clear one shaft cycle.
  * Each successful Collect All counts as one extraction (~20%).
- * Balance: see GOLD_MINE_MINIGAME_BALANCE_AUDIT.md Section 6.
+ * Balance: see docs/features/gold-mine/GOLD_MINE_MINIGAME_BALANCE_AUDIT.md Section 6.
  */
 export const SHAFT_TOTAL_EXTRACTIONS = 5
 

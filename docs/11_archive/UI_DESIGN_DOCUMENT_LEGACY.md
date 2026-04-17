@@ -1,5 +1,7 @@
 # Hexbound — UI Design Document
 
+> **Status boundary:** legacy UI design document from a pre-SwiftUI/live-design-system phase. Preserve it as historical visual/design reasoning, not as the current UI contract over `docs/07_ui_ux/`, current code, and audited `wiki/`.
+
 > **Version:** 3.0 — AAA Quality Standard
 > **Platform:** Mobile (iOS, Portrait 1170×2532)
 > **Engine:** Godot 4.3+

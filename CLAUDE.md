@@ -7,6 +7,17 @@
 > **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 47 component sets, 235 variants, 164 instances, 22 pages
 > **DS Audit**: See `docs/07_ui_ux/DESIGN_SYSTEM_AUDIT.md` for compliance status
 
+## Quick References (machine-readable indexes + feature maps)
+
+- **Tokens JSON** (colors + layout): `wiki/_generated/tokens.json` — regenerate with `bash scripts/wiki/generate-all.sh`
+- **API routes JSON** (auth / rate limit / transaction flags): `wiki/_generated/api-routes.json`
+- **Prisma models JSON** (65 models, 19 enums, fields with types): `wiki/_generated/prisma-models.json`
+- **Balance constants JSON** (32 constants, 10 formulas — stamina, XP, gold, ELO, combat, IAP, costs): `wiki/_generated/balance-constants.json`
+- **iOS screens JSON** (48 routes + 3 tabs → 281 View structs across 242 files): `wiki/_generated/ios-screens.json`
+- **Drift check**: `bash scripts/wiki/check-drift.sh` (warn if any generated file is older than its source)
+- **Feature maps** (end-to-end file inventory per feature): `wiki/features/` — 25 maps covering `achievements`, `auth`, `battle-pass`, `characters`, `daily-login`, `dungeons`, `dungeon-rush`, `events`, `gold-mine`, `interactive-combat`, `inventory`, `leaderboard`, `mail`, `minigames`, `passive-tree`, `prestige`, `pvp-combat`, `quests`, `referral`, `session-summary`, `shop`, `social`, `stamina`, `stash`, `tutorial`
+- **Feature template**: `wiki/features/_template.md` — copy when adding a new feature map
+
 ## Architecture
 
 - State management: `@MainActor @Observable` classes

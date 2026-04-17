@@ -1,6 +1,6 @@
 # Hexbound — Documentation Index (Master Reference)
 
-*Master index of all active project documentation. Last updated: 2026-03-26*
+*Master index of active project documentation. For live file-by-file repo status and current audit progress, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last updated: 2026-04-16*
 
 ---
 
@@ -16,9 +16,9 @@ These files define the current project state and structure.
 
 | Document | Location | Purpose |
 |----------|----------|---------|
-| **Project Overview** | `docs/01_source_of_truth/PROJECT_OVERVIEW.md` | Complete tech stack, all game systems, database schema, 40+ models, 20+ iOS screens, 38 admin pages, architecture decisions |
+| **Project Overview** | `docs/01_source_of_truth/PROJECT_OVERVIEW.md` | Project architecture, stack, game systems, schema surface, and major runtime areas |
 | **Documentation Index** | `docs/01_source_of_truth/DOCUMENTATION_INDEX.md` | This file — master reference guide |
-| **Cleanup Report** | `docs/01_source_of_truth/CLEANUP_REPORT.md` | 2026-03-19 documentation audit: what was changed, contradictions found, decisions made |
+| **Cleanup Report** | `docs/01_source_of_truth/CLEANUP_REPORT.md` | Historical 2026-03-19 documentation cleanup audit and restructuring report |
 
 ---
 
@@ -51,7 +51,7 @@ Schema, models, migrations, and data management.
 
 | Document | Location | Purpose |
 |----------|----------|---------|
-| **Schema Reference** | `docs/04_database/SCHEMA_REFERENCE.md` | Complete Prisma schema: all 40+ models, enums, relationships, indexes, field descriptions |
+| **Schema Reference** | `docs/04_database/SCHEMA_REFERENCE.md` | Prisma schema reference: models, enums, relationships, indexes, field descriptions |
 | **Migrations** | `docs/04_database/MIGRATIONS.md` | Migration workflow, how to add/modify tables, rollback procedures, testing migrations locally |
 
 ---
@@ -62,7 +62,7 @@ Admin capabilities, live configuration, and management tools.
 
 | Document | Location | Purpose |
 |----------|----------|---------|
-| **Admin Capabilities** | `docs/05_admin_panel/ADMIN_CAPABILITIES.md` | Full list of 37+ admin pages: character management, item CRUD, economy controls, 80+ config params, feature flags, live config, analytics, audit logs |
+| **Admin Capabilities** | `docs/05_admin_panel/ADMIN_CAPABILITIES.md` | Admin surface reference: player management, content CRUD, economy controls, feature flags, live config, analytics, audit logs |
 
 ---
 
@@ -85,8 +85,8 @@ Design system, screen inventory, and user experience audits.
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **Design System** | `docs/07_ui_ux/DESIGN_SYSTEM.md` | DarkFantasyTheme token reference (colors, fonts, spacing), ButtonStyles (all variants), LayoutConstants, component library overview |
-| **Figma Design System** | [Hexbound-DS (Figma)](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) | 162 Figma variables (91 primitives + 57 semantic + 14 spacing/radius), 9 text styles, 4 effect styles, 24 component sets with 105 variants. iOS code syntax on all tokens. |
-| **Screen Inventory** | `docs/07_ui_ux/SCREEN_INVENTORY.md` | All 20+ iOS screens: name, purpose, states (empty/loading/error/success), wireframes, navigation flows |
+| **Figma Design System** | [Hexbound-DS (Figma)](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) | Linked Figma design-system file with variables, styles, components, and iOS-oriented token naming |
+| **Screen Inventory** | `docs/07_ui_ux/SCREEN_INVENTORY.md` | iOS screen inventory: names, purposes, states, wireframes, and navigation flows |
 | **UX Audit (v2)** | `docs/07_ui_ux/UX_AUDIT.md` | Current UX assessment: strengths, issues with impact/priority, recommendations per screen, 3-second rule compliance |
 | **Asset Consistency Audit** | `docs/07_ui_ux/ASSET_CONSISTENCY_AUDIT.md` | Full pipeline audit: Figma → xcassets → code → runtime. Pixelation root causes, scale variants, orphaned assets, fix plan |
 
@@ -124,12 +124,12 @@ Deployment, testing, CI/CD, and handoff procedures.
 | **Git Workflow** | `docs/10_operations/GIT_WORKFLOW.md` | Branch strategy, remotes, subtree push, tagging |
 | **Database Migrations** | `docs/10_operations/DATABASE_MIGRATIONS.md` | Prisma migration flow, schema sync, production safety |
 | **iOS Release** | `docs/10_operations/RELEASE_IOS.md` | Fastlane setup, TestFlight upload, versioning, env config |
-| **Git & Deploy Audit** | `docs/10_operations/GIT_AND_DEPLOY_AUDIT.md` | 2026-03-19 audit: risks, source of truth map |
+| **Git & Deploy Audit** | `docs/10_operations/GIT_AND_DEPLOY_AUDIT.md` | Current deploy-risk map, release assumptions, and operational source-of-truth notes |
 | **TestFlight Guide** | `docs/10_operations/TESTFLIGHT_GUIDE.md` | Detailed App Store Connect + TestFlight setup |
 | **UI PR Checklist** | `docs/10_operations/UI_PR_CHECKLIST.md` | Code review checklist for UI/UX PRs |
 | **Figma Handoff** | `docs/10_operations/FIGMA_HANDOFF.md` | Design → code workflow: Figma conventions |
 | **Figma Screen Inventory** | `docs/10_operations/FIGMA_SCREEN_INVENTORY.md` | Figma screen-to-source mapping |
-| **Progress Log** | `docs/10_operations/PROGRESS_LOG.md` | Development changelog |
+| **Progress Log** | `docs/10_operations/PROGRESS_LOG.md` | Historical engineering notebook from the original repo audit |
 
 ---
 
@@ -158,7 +158,7 @@ Superseded, legacy, or reference-only documents.
 4. Implement: Follow **DEVELOPMENT_RULES.md** (strict null checks, TypeScript, form validation)
 
 ### For iOS/SwiftUI Developers
-1. Start with: **PROJECT_OVERVIEW.md** (tech stack, 20+ screens overview)
+1. Start with: **PROJECT_OVERVIEW.md** (tech stack and major iOS/runtime surface overview)
 2. Then read: **SCREEN_INVENTORY.md** (all screens, states, navigation)
 3. Reference: **DESIGN_SYSTEM.md** (tokens, buttons, spacing)
 4. Implement: Follow **DEVELOPMENT_RULES.md** (Xcode project file, @MainActor, design system usage)
@@ -231,7 +231,7 @@ Superseded, legacy, or reference-only documents.
 - **ADMIN_CAPABILITIES.md** — Achievement admin page
 
 ### Admin Panel
-- **PROJECT_OVERVIEW.md** — 38 admin pages listed
+- **PROJECT_OVERVIEW.md** — admin surface overview
 - **ADMIN_CAPABILITIES.md** — Detailed page descriptions
 - **ADMIN_CAPABILITIES.md** — All 80+ config keys
 
@@ -240,7 +240,7 @@ Superseded, legacy, or reference-only documents.
 - **DEVELOPMENT_RULES.md** — Design system usage rules
 
 ### iOS Screens & Navigation
-- **SCREEN_INVENTORY.md** — All 20+ screens, states
+- **SCREEN_INVENTORY.md** — live screen inventory and states
 - **UX_AUDIT.md** — Current UX, issues, recommendations
 
 ### Push Notifications
@@ -318,9 +318,9 @@ The documentation has been reorganized into a modular system. Key new files:
 
 | Document | Location | Purpose |
 |----------|----------|---------|
-| **Project Index** | `docs/PROJECT_INDEX.md` | Main project navigator — start here |
-| **Source of Truth** | `docs/SOURCE_OF_TRUTH.md` | Which doc/file is authoritative for each domain |
-| **Agent Loading Guide** | `docs/AGENT_LOADING_GUIDE.md` | Which docs to load for each task type |
+| **Project Index** | `docs/PROJECT_INDEX.md` | Top-level `docs/` navigator; pair it with `wiki/index.md` for current audit reality |
+| **Source of Truth** | `docs/SOURCE_OF_TRUTH.md` | Top-level source routing matrix; pair it with audited `wiki/` pages for current repo status |
+| **Agent Loading Guide** | `docs/AGENT_LOADING_GUIDE.md` | Task-based doc loading guide for agents; not a replacement for current audit state |
 | **Migration Plan** | `docs/MIGRATION_PLAN.md` | How the docs were reorganized, what's next |
 
 ### Modular Rules (`docs/rules/`)
@@ -375,9 +375,9 @@ Per-feature documentation with overview, key files, API, UI states:
 
 | Attribute | Value |
 |-----------|-------|
-| **Total Active Docs** | 45+ |
+| **Total Active Docs** | Use this index plus the wiki inventory for current counts |
 | **Total Archive Docs** | [See `docs/11_archive/`] |
-| **Last Full Sync** | 2026-03-26 |
+| **Last Full Sync** | 2026-04-16 |
 | **Created By** | Engineering Team |
 | **Maintained By** | Doc Keeper skill (`.claude/skills/doc-keeper/`) |
 

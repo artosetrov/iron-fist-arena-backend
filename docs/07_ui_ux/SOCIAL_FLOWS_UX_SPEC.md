@@ -4,6 +4,8 @@
 > **Статус:** UX-дизайн, ожидает утверждения перед реализацией
 > **Дата:** 2026-03-23
 
+> **Status boundary:** historical UX proposal/spec from `2026-03-23`. Treat this as a design-intent snapshot, not as the live shipped social contract. Re-check `wiki/features/social.md`, current backend routes, and current iOS Guild Hall / social screens before using it as implementation truth.
+
 ---
 
 ## Оглавление

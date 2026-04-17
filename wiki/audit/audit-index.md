@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-04-16
+updated: 2026-04-17
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 4909
+- In-scope files: 4992
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -128,6 +128,49 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 106 | [[block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity]] — iOS cache cleanup removing dead raw quest/layout bridges and narrowing bootstrap feature flags to the live bool contract | Fixed |
 | 107 | [[block-107-ios-dead-model-parse-bridge-cleanup]] — iOS dead Gold Mine/dungeon raw model parser cleanup plus validation of the last remaining daily-login cache compatibility edge | Fixed |
 | 108 | [[block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal]] — iOS cleanup removing the dead raw `GameConfig`/`APIResponse` tail and documenting the remaining intentional networking/keychain raw boundaries | Fixed |
+| 109 | [[block-109-operations-deploy-docs-reality-sync]] — operations/deploy docs sync for live CI, schema parity, explicit migration semantics, and current release risk inventory | Fixed |
+| 110 | [[block-110-operations-git-workflow-and-ios-release-doc-parity]] — operations runbook sync for git workflow, CI-vs-deploy semantics, Fastlane setup truth, and iOS staging/release wording parity | Fixed |
+| 111 | [[block-111-operations-database-migration-runbook-parity]] — operations migration runbook sync for explicit production apply semantics and parity with live deploy docs/build scripts | Fixed |
+| 112 | [[block-112-ios-testflight-helper-identity-validation-parity]] — iOS TestFlight helper and docs sync for Appfile-vs-env Fastlane identity setup and stricter team validation | Fixed |
+| 113 | [[block-113-wiki-generation-tooling-and-generated-indexes]] — wiki generation tooling audit, generated index parity, and preflight drift-check integration | Fixed |
+| 114 | [[block-114-wiki-feature-maps-and-index-visibility]] — wiki feature-map indexing, navigation visibility, and wiki-link style parity for new feature pages | Fixed |
+| 115 | [[block-115-operations-figma-and-historical-doc-boundaries]] — Figma handoff, screen inventory, historical progress/bug logs, and UI PR checklist source-of-truth boundaries | Fixed |
+| 116 | [[block-116-source-of-truth-doc-index-parity]] — documentation index and cleanup-report parity for current source-of-truth boundaries | Fixed |
+| 117 | [[block-117-source-of-truth-project-overview-parity]] — project overview parity for current stack, iOS minimum, and high-level operational semantics | Fixed |
+| 118 | [[block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity]] — admin capabilities and iOS screen inventory parity for stale counts, stack truth, and snapshot boundary wording | Fixed |
+| 119 | [[block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries]] — design system source-of-truth vs historical audit boundary cleanup for stale counts and milestone language | Fixed |
+| 120 | [[block-120-ui-audit-artifacts-historical-boundary-cleanup]] — UI audit artifact boundary cleanup for historical dashboards, UX reviews, and asset/design-system forensic snapshots | Fixed |
+| 121 | [[block-121-prototypes-link-parity-and-transition-state]] — prototype move link parity, combat-doc navigation repair, and prototype/legal transition-state capture | Fixed |
+| 122 | [[block-122-wiki-feature-map-visibility-and-related-link-gaps]] — full feature-atlas visibility sync in the main index plus revalidation of remaining related-page dead-ends | Fixed |
+| 123 | [[block-123-ui-review-and-plan-docs-historical-boundaries]] — historical-boundary cleanup for dated UI review, audit, redesign, and roadmap docs under `docs/07_ui_ux/` | Fixed |
+| 124 | [[block-124-w1-w3-plan-docs-historical-boundaries]] — historical-boundary cleanup for dated W1/W2/W3 checkpoint, review, and design-plan docs under `docs/07_ui_ux/` | Fixed |
+| 125 | [[block-125-ui-prototype-and-figma-workflow-boundaries]] — historical-boundary cleanup for residual UI prototype archives plus source-of-truth scoping for the strict Figma workflow playbook | Fixed |
+| 126 | [[block-126-design-system-roadmap-and-screen-inventory-live-parity]] — live-vs-historical parity cleanup for the UI audit dashboard, design-system migration appendix, and screen inventory component naming | Fixed |
+| 127 | [[block-127-dated-product-economy-and-architecture-doc-boundaries]] — historical-boundary cleanup for dated economy, architecture, migration, full-product, and interactive-combat plan docs | Fixed |
+| 128 | [[block-128-retro-log-historical-boundaries]] — historical-boundary cleanup applied across the full dated engineering retrospective log set under `docs/retro/` | Fixed |
+| 129 | [[block-129-archive-legacy-doc-boundaries]] — historical/legacy/duplicate boundary cleanup for residual archive docs under `docs/11_archive/` | Fixed |
+| 130 | [[block-130-top-level-source-of-truth-and-orchestration-boundaries]] — top-level docs navigator/source-of-truth refresh plus historical-boundary cleanup for orchestration and studio operating-framework docs | Fixed |
+| 131 | [[block-131-empty-doc-placeholders-and-deprecation-markers]] — empty placeholder-doc cleanup for silent zero-byte surfaces under `docs/` plus explicit deprecation markers | Fixed |
+| 132 | [[block-132-obsidian-base-artifacts]] — root-level `.base` editor-artifact audit and deprecation assessment for likely Obsidian residue under `docs/` | Fixed |
+| 133 | [[block-133-live-doc-tbd-and-url-cleanup]] — live-doc cleanup replacing residual `TBD`/placeholder wording in current progression and deploy docs | Fixed |
+| 134 | [[block-134-delete-placeholder-and-editor-artifact-files]] — deletion of confirmed placeholder docs and `.base` editor artifacts plus repo-wide `.DS_Store` sweep | Fixed |
+| 135 | [[block-135-delete-archive-duplicate-docs]] — deletion of pure duplicate archive docs plus archive-policy wording cleanup | Fixed |
+| 136 | [[block-136-delete-root-orphan-prototype-artifacts]] — deletion of orphan root-level guest-gating/Gold Mine prototype artifacts with no live imports or source-of-truth role | Fixed |
+| 137 | [[block-137-root-prototype-relocation-state-sync]] — inventory/root-audit sync for deleted root prototype/legal HTML paths now mirrored under `prototypes/` copies | Fixed |
+| 138 | [[block-138-delete-deprecated-prototype-residue]] — deletion of deprecated hero-card and Special Offer prototype residue while keeping only the latest historical reference variant | Fixed |
+| 139 | [[block-139-delete-superseded-combat-prototype-set]] — deletion of the superseded A/B/C combat prototype set plus the dead launcher and extra B2-v2 intermediate branch | Fixed |
+| 140 | [[block-140-delete-orphan-feature-prototype-residue]] — deletion of ownerless feature prototype residue that no longer had a live reference role | Fixed |
+| 141 | [[block-141-prototype-reference-doc-sync]] — docs sync removing live references to deleted prototype residue and closing one later-resolved retro cleanup task | Fixed |
+| 142 | [[block-142-delete-wiki-obsidian-editor-residue]] — deletion of local Obsidian editor-state files from `wiki/` to restore wiki inventory count parity | Fixed |
+| 143 | [[block-143-delete-final-special-offer-prototype-reference]] — deletion of the last retained Special Offer prototype after its remaining live-consumer role disappeared | Fixed |
+| 144 | [[block-144-delete-victory-rewards-prototype-set]] — deletion of the standalone victory-rewards animation prototype and its duplicate local reward-art bundle | Fixed |
+| 145 | [[block-145-delete-gold-mine-minigame-prototype-reference]] — deletion of the Gold Mine minigame HTML prototype after the historical plan stopped needing it as a live dependency | Fixed |
+| 146 | [[block-146-delete-legal-transition-prototype-copies]] — deletion of the local legal transition HTML copies plus operations-doc wording cleanup for hosted legal ownership | Fixed |
+| 147 | [[block-147-delete-final-combat-history-prototypes]] — deletion of the final B2/B2-v3 combat-history HTML artifacts after the implementation plans were converted to historical-reference mode | Fixed |
+| 148 | [[block-148-root-dated-qa-and-ui-audit-relocation]] — relocation of the dated root QA report and responsiveness audit into `qa-reports/` and `docs/07_ui_ux/` | Fixed |
+| 149 | [[block-149-root-combat-history-doc-relocation]] — relocation of the root combat audit/plan history into `docs/features/combat/` plus dead prototype-link cleanup | Fixed |
+| 150 | [[block-150-root-gold-mine-doc-relocation]] — relocation of the root Gold Mine plan/balance docs into `docs/features/gold-mine/` plus code-reference path parity | Fixed |
+| 151 | [[block-151-root-release-audit-relocation]] — relocation of the historical root pre-release audit into `docs/10_operations/` | Fixed |
 
 ## Status Legend
 

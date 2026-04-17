@@ -5,6 +5,8 @@
 **Файл под правку:** `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift`
 **Связанные компоненты:** `ItemCardView`, `ItemDetailSheet`, `DailyReward`, `DailyLoginRewardDef`
 
+> **Status boundary:** historical redesign review from `2026-04-11` for a specific daily-login UI iteration. Useful as rationale and component-thinking, but not a live guarantee that the current screen still matches this exact scope or recommendation set. Re-check `wiki/features/daily-login.md` and current Swift files before treating it as implementation truth.
+
 ---
 
 ## 1. Текущая проблема

@@ -7,6 +7,8 @@
 > **Скоуп:** 26 экранов, 31+ View-файл, 4 файла темы, все пользовательские флоу
 > **Предыдущий аудит:** v1.0 от 2026-03-15 (оценка B+) — **пересмотрена вниз до B−**
 > **Статус:** ПОЛНЫЙ АУДИТ + РЕКОМЕНДАЦИИ + СТАНДАРТ
+>
+> **Status boundary:** historical heuristic audit snapshot from `2026-03-16`. It is still useful as evidence and as a recommendation set, but its counts, scores, and gaps should not be treated as live release truth without revalidation against current code and `wiki/`.
 
 ---
 

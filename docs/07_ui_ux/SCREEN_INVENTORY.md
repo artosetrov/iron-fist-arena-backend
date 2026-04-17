@@ -1,17 +1,19 @@
 # Hexbound — Screen Inventory (Source of Truth)
 
-*Derived from iOS app code. Updated: 2026-04-04*
+*Derived from iOS app code. Updated: 2026-04-16*
+
+This page is a coded screen map of the iOS app. Use it together with `wiki/`, `AppRouter`, and the live screen files when validating current navigation or design coverage.
 
 ## Summary
 
-**Total screens**: 70+ Swift views (46 in Figma Screens, 15 missing)
+**Coverage**: broad SwiftUI screen inventory across auth, hub, arena, combat, inventory, shop, dungeons, minigames, progression, social, settings, tutorial, and debug surfaces
 **Architecture**: NavigationStack + AppRouter enum routing (28 routes, 3 bottom tabs: Hub, Arena, Hero)
 **Pattern**: @MainActor @Observable ViewModels
-**Figma Screens file**: [Hexbound-Design](https://www.figma.com/design/PalemJ36B97ZdC0cd8jzv4/Hexbound-Design)
+**Figma Screens file**: [Hexbound-Design](https://www.figma.com/design/PalemJ36B97ZdC0cd8jzv4/Hexbound-Design) — treat the coverage notes below as a point-in-time snapshot, not a guaranteed live parity claim
 
 ---
 
-## Auth Flow (6 screens)
+## Auth Flow
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -22,19 +24,19 @@
 | Email Confirmation | `EmailConfirmationView.swift` | waiting, confirmed, error | Email verification |
 | Upgrade Guest | `UpgradeGuestView.swift` | default, loading, error | Guest → full account conversion |
 
-## Hub / Home (8 screens)
+## Hub / Home
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Hub | `HubView.swift` | default, loading | Main home: stamina bar, character card, city map, floating buttons |
-| Hero Detail | `HeroDetailView.swift` | INVENTORY tab, STATUS tab, stat points banner | Character equipment (INVENTORY tab via HeroIntegratedCard), Repair Equipment widget (mass repair all damaged equipped items), stats & stat allocation (STATUS tab), stance display |
+| Hero Detail | `HeroDetailView.swift` | INVENTORY tab, STATUS tab, stat points banner | Character equipment (INVENTORY tab via `IntegratedCharacterCard`), Repair Equipment widget (mass repair all damaged equipped items), stats & stat allocation (STATUS tab), stance display |
 | City Map | `CityMapView.swift` | default | Interactive hub map with buildings |
 | City Building | `CityBuildingView.swift` | default | Individual building on city map (with `CityBuildingConfig`, `CityBuildingLabel`) |
 | City Map Effects | `CityMapEffects.swift` | — | Ambient particle/glow effects on city map |
 | Hub Editor | `HubEditorDetailView.swift` | default | Hub layout customization |
 | Stance Selector | `StanceSelectorDetailView.swift` | default | Combat stance (attack/defense zone) selection |
 
-## Arena / PvP (5 screens)
+## Arena / PvP
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -44,7 +46,7 @@
 | Opponent Card | `OpponentCardView.swift` | default, pressed, fighting | Opponent card with fight button |
 | Arena Opponent Card | `ArenaOpponentCard.swift` | default | Arena-specific opponent card variant |
 
-## Combat (4 screens + VFX system)
+## Combat (+ VFX system)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -64,14 +66,14 @@
 | `HealEffect.swift` | Heal animation |
 | `StatusVFXEffects.swift` | Status effect visuals (poison, stun, etc.) |
 
-## Inventory (2 screens)
+## Inventory
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Inventory | `InventoryViewModel.swift` | equipment, consumables tabs; loading, empty, search | Item management |
 | Item Detail | `ItemDetailSheet.swift` | default | Item stats, equip/sell actions |
 
-## Shop (4 screens)
+## Shop
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -85,7 +87,7 @@
 |------|---------|
 | `ItemCardView.swift` | Unified item card (shop/inventory/loot contexts) |
 
-## Dungeons (7 screens)
+## Dungeons
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -98,7 +100,7 @@
 | Dungeon Defeat | `DungeonDefeatView.swift` | default | Defeat screen with retry option |
 | Loot Preview | `LootPreviewSheet.swift` | default | Pre-battle loot preview sheet |
 
-## Minigames (5 screens)
+## Minigames
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -108,7 +110,7 @@
 | Tavern | `TavernDetailView.swift` | default | Tavern activity hub |
 | Fortune Wheel | `FortuneWheelDetailView.swift` | betting, spinning, result | Fortune wheel minigame |
 
-## Quests & Progression (7 screens)
+## Quests & Progression
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -120,7 +122,7 @@
 | Battle Pass | `BattlePassDetailView.swift` | free, premium tracks | Seasonal reward tree (with `BPRewardNodeView` nodes) |
 | Season Summary | `SeasonSummaryModalView.swift` | default | End-of-season stats recap |
 
-## Leaderboard & Social (3 screens)
+## Leaderboard & Social
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -129,7 +131,7 @@
 | Inbox | `InboxDetailView.swift` | loading, list, empty, detail | Mail messages (with `InboxRowView` rows) |
 | Guild Hall | `GuildHallDetailView.swift` | default, loading | Guild management & social |
 
-## Settings & Profile (4 screens)
+## Settings & Profile
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -138,13 +140,13 @@
 | Character Profile | `CharacterProfileView.swift` | default | Full character stats view |
 | Session Summary | `SessionSummaryView.swift` | default | End-of-session stats recap |
 
-## Tutorial (1 screen)
+## Tutorial
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Tutorial | `TutorialView.swift` | step-by-step | Guided onboarding tutorial with NPC guide |
 
-## Debug Only (2 screens)
+## Debug Only
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -191,8 +193,7 @@
 | `HubCharacterCard` | `HubCharacterCard.swift` | Hub character summary card |
 | `ItemCardView` | `ItemCardView.swift` | Unified item card (inventory/shop/loot) |
 | `NPCGuideWidget` | `NPCGuideWidget.swift` | Reusable NPC speech card + mini button |
-| `HeroIntegratedCard` | `HeroIntegratedCard.swift` | Equipment grid with portrait |
-| `OpponentIntegratedCard` | `OpponentIntegratedCard.swift` | Opponent equipment grid |
+| `IntegratedCharacterCard` | `IntegratedCharacterCard.swift` | Shared hero/opponent equipment grid with portrait |
 | `UnifiedHeroWidget` | `UnifiedHeroWidget.swift` | Compact hero HP/XP/Stamina widget |
 | `PvPStatsWidget` | `PvPStatsWidget.swift` | Arena stats summary widget |
 | `InlineFeedback` | `InlineFeedback.swift` | Floating text, flash border, checkmark feedback |
@@ -209,13 +210,15 @@
 
 ---
 
-## Figma Screen Coverage (Gap Analysis)
+## Figma Screen Coverage (Snapshot Gap Analysis)
 
-*Updated: 2026-04-04*
+*Updated: 2026-04-16*
 
-**In Figma Screens (46):** Hub, Arena, Hero Detail, Dungeon Select, Dungeon Room, Dungeon Victory, Tavern, Gold Mine, Dungeon Rush, Combat Active, Combat Result Victory/Defeat, Shop, Inventory, Inventory Empty, Daily Quests, Daily Quests Empty, Daily Login, Achievements, Battle Pass, Leaderboard, Leaderboard Player Detail, Leaderboard Loading, Character Creation, Character Profile, Appearance Editor, Stance Selector, Fortune Wheel, Shell Game, Top Bar, Item Detail Sheet, Dungeon Info Sheet, Level Up Modal, Guest Gate, Session Expired, Arena Comparison, Currency Purchase, Rank Up Ceremony, Welcome, Login, Register, Email Confirmation, Upgrade Guest, Arena Loading, Shop Loading, Server Error.
+The lists below are useful as a design-gap working snapshot, but they should be revalidated against the current Figma file and live app navigation before they are treated as release truth.
 
-**Missing from Figma (15 screens):**
+**Screens mapped in the Figma Screens file at the time of this snapshot:** Hub, Arena, Hero Detail, Dungeon Select, Dungeon Room, Dungeon Victory, Tavern, Gold Mine, Dungeon Rush, Combat Active, Combat Result Victory/Defeat, Shop, Inventory, Inventory Empty, Daily Quests, Daily Quests Empty, Daily Login, Achievements, Battle Pass, Leaderboard, Leaderboard Player Detail, Leaderboard Loading, Character Creation, Character Profile, Appearance Editor, Stance Selector, Fortune Wheel, Shell Game, Top Bar, Item Detail Sheet, Dungeon Info Sheet, Level Up Modal, Guest Gate, Session Expired, Arena Comparison, Currency Purchase, Rank Up Ceremony, Welcome, Login, Register, Email Confirmation, Upgrade Guest, Arena Loading, Shop Loading, Server Error.
+
+**Screens still called out as missing from the Figma Screens file in this snapshot:**
 
 | Priority | Screen | Swift File | Notes |
 |----------|--------|-----------|-------|
@@ -233,4 +236,3 @@
 | P2 | City Map | `CityMapView.swift` | Hub building map (interactive) |
 | P2 | Daily Login Popup | `DailyLoginPopupView.swift` | Auto-popup variant |
 | P2 | Season Summary | `SeasonSummaryModalView.swift` | End-of-season modal |
-| P2 | Lore Intro | `LoreIntroView.swift` | Auth flow narrative intro |

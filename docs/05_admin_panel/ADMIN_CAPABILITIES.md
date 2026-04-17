@@ -1,7 +1,9 @@
 # Admin Panel Capabilities (Source of Truth)
-*Derived from admin panel code. Updated: 2026-03-19*
+*Derived from admin panel code. Updated: 2026-04-16*
 
-Complete reference of all 37+ pages in the Next.js admin dashboard, organized by section. All endpoints require `admin` role unless otherwise noted.
+This is a high-level capability map of the Next.js admin dashboard, organized by area of responsibility. Treat `wiki/` plus the audited route/action files as the live source of truth for current behavior and access control.
+
+Admin-facing routes and actions are expected to run behind authenticated admin access, but permission boundaries are enforced in code per route and per action. This document should not be read as a formal security matrix.
 
 ---
 
@@ -373,7 +375,7 @@ Complete reference of all 37+ pages in the Next.js admin dashboard, organized by
 
 ## 5. Balance & Analytics
 
-### Configuration Manager (80+ Params)
+### Configuration Manager (live game config)
 **Purpose:** Central control of all game systems
 **Sections:**
 
@@ -620,7 +622,7 @@ Complete reference of all 37+ pages in the Next.js admin dashboard, organized by
 
 ### Developer
 - Config modification only
-- Can view/edit all 80+ config params
+- Can view/edit the live config categories exposed to this role
 - Can create snapshots and rollback
 - Can manage feature flags
 - Can run balance sims
@@ -689,15 +691,15 @@ Complete reference of all 37+ pages in the Next.js admin dashboard, organized by
 
 ---
 
-## 10. Page List (37+ Total)
+## 10. Page Surface Inventory
 
-**Overview (4 pages):**
+**Overview surfaces:**
 1. Dashboard (KPI, alerts, graphs)
 2. Players (search, manage)
 3. Arena (PvP matches)
 4. User Activity Log
 
-**Content Management (6 pages):**
+**Content management surfaces:**
 5. Items (CRUD)
 6. Consumables (CRUD)
 7. Skills (CRUD)
@@ -706,44 +708,44 @@ Complete reference of all 37+ pages in the Next.js admin dashboard, organized by
 10. Appearances/Cosmetics (CRUD)
 11. Assets (upload, library)
 
-**Gameplay Systems (4 pages):**
+**Gameplay system surfaces:**
 12. Quests (CRUD)
 13. Achievements (CRUD)
 14. Events (CRUD)
 15. Seasons & Battle Pass (CRUD)
 
-**Economy (5 pages):**
+**Economy surfaces:**
 16. Economy Overview
 17. Loot Tables
 18. Shop Offers (CRUD + A/B test)
 19. Upgrade/Repair Pricing
 20. Item Balance History
 
-**Balance & Analytics (4 pages):**
-21. Configuration Manager (80+ params)
+**Balance and analytics surfaces:**
+21. Configuration Manager (live game config)
 22. Item Balance Simulator
 23. Analytics Dashboard (retention, engagement, economy)
 24. Performance Monitoring
 
-**Live Operations (4 pages):**
+**Live operations surfaces:**
 25. Mail System (broadcast, segment, targeted)
 26. Push Notifications (campaigns, A/B test)
 27. Feature Flags (manage toggles)
 28. Config Snapshots (save/rollback)
 
-**System (3 pages):**
+**System surfaces:**
 29. System Status
 30. Audit Trail
 31. Roles & Permissions
 
-**Total: 37+ pages**
+This list is intended as a capability-oriented inventory snapshot, not a strict permanent count. For the current repo surface, verify against `admin/src/app/(dashboard)` and the live wiki audit.
 
 ---
 
 ## Tech Stack
 
 **Frontend:**
-- Next.js 14 (React)
+- Next.js 15 (React)
 - TypeScript
 - TailwindCSS + shadcn/ui
 - Chart.js or Recharts for graphs

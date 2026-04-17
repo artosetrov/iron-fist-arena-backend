@@ -1,6 +1,6 @@
 # Hexbound — Project Overview (Source of Truth)
 
-*Last verified against codebase: 2026-03-19*
+*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-16.*
 
 ---
 
@@ -13,9 +13,9 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 ## Technology Stack
 
 ### Backend
-- **Framework**: Next.js 15.2.0 / TypeScript 5.7.0
+- **Framework**: Next.js 15.x / TypeScript 5.7.x
 - **Database**: PostgreSQL via Supabase
-- **ORM**: Prisma 6.4.0
+- **ORM**: Prisma 6.x
 - **Caching**: Upstash Redis 1.37.0 with in-memory fallback
 - **Rate Limiting**: Upstash Rate Limit 2.0.8
 - **Testing**: Vitest 3.2.4
@@ -23,7 +23,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - **Hosting**: Vercel
 
 ### Admin Panel
-- **Framework**: Next.js 15.2.0 / TypeScript 5.7.0
+- **Framework**: Next.js 15.x / TypeScript 5.7.x
 - **UI Kit**: Tailwind CSS 4.0.0 + Radix UI (tabs, dialogs, selects, switches, toasts, menus, etc.)
 - **Forms**: React Hook Form 7.54.0 + Zod 3.24.0
 - **Charts**: Recharts 2.15.0
@@ -32,14 +32,14 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ### Mobile Client
 - **Language**: Swift / SwiftUI
-- **Minimum iOS**: iOS 16.4+
-- **Runtime**: 38+ screens (24 primary + 14 overlays/sheets), feature-complete for core gameplay loop
+- **Minimum iOS**: iOS 17.0
+- **Runtime**: broad multi-screen SwiftUI client covering auth, hub, PvP, combat, dungeons, minigames, progression, inbox, settings, and debug tooling
 - **Asset Pipeline**: Images hosted via Supabase Storage
 - **Hosting**: App Store
 
 ### Database
 - **Provider**: PostgreSQL (Supabase)
-- **Models**: 40+ Prisma models (see Entity Reference below)
+- **Schema surface**: user/account, character, inventory, PvP, dungeons, progression, economy, liveops, social, push, and audit models (see entity reference below)
 - **Migrations**: Version-controlled via `/backend/prisma/migrations/`
 
 ---
@@ -66,10 +66,10 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Damage types: Physical, Magical, True Damage, Poison
 - Target types: Single Enemy, Self Buff, AOE
 - Cooldown management, mana cost (framework ready)
-- 80+ skills defined in database
+- Large backend-defined skill catalog with admin-managed tuning and unlock rules
 
 ### Passive Skill Tree
-- 150+ passive nodes with tier progression
+- Large passive-node graph with tier progression
 - Passive connection graph (unlock dependencies)
 - Bonus types: flat/percent stat, flat/percent damage, crit, dodge, lifesteal, cooldown reduction, etc.
 - Character-specific unlocks tracked in CharacterPassive
@@ -115,7 +115,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - **Apply**: Character-specific selection
 
 ### Achievements
-- 40+ achievement definitions with unlock criteria
+- Achievement catalog with unlock criteria, progress tracking, and reward claims
 - Progress tracking per character
 - Reward claims: Gold, Gems, Cosmetics
 - Admin-definable (via AchievementDefinition model)
@@ -132,7 +132,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Admin-composable via MailMessage model
 
 ### Live Configuration
-- 80+ game config keys (GameConfig model)
+- Live key-value config surface via `GameConfig`
 - No redeployment needed for balance changes
 - Admin console support for real-time updates
 - Categories: Combat, Economy, Progression, UI/UX, Events
@@ -194,7 +194,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ---
 
-## Database Schema (40+ Models)
+## Database Schema
 
 ### User & Character
 - `User` — Accounts, auth provider, premium status, gems, role (player/admin)
@@ -210,9 +210,9 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - `PvpBattleTicket` — Pre-generated matchup seed, opponent, expiry
 
 ### Progression & Skills
-- `Skill` — 80+ skills: damage base, scaling, cooldown, unlock level, max rank
+- `Skill` — damage base, scaling, cooldown, unlock level, max rank
 - `CharacterSkill` — Character skill proficiency, equipped slot
-- `PassiveNode` — 150+ passive nodes: position, cost, bonus type, tier
+- `PassiveNode` — passive graph nodes: position, cost, bonus type, tier
 - `PassiveConnection` — Directed graph edges between passives
 - `CharacterPassive` — Unlocked passive nodes per character
 
@@ -246,15 +246,15 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - `ShopOfferPurchase` — Purchase history
 
 ### Admin & Configuration
-- `GameConfig` — Live config key-values (80+ keys)
+- `GameConfig` — Live config key-values
 - `FeatureFlag` — A/B test toggles, segments
 - `AdminLog` — Audit trail for admin actions
 - `ConfigSnapshot` — Config backup/restore
 - `DesignToken` — Dynamic theme tokens
 
 ### Content & Meta
-- `Item` — 200+ item definitions (base stats, special effects, class restrictions)
-- `Achievement` — 40+ achievement definitions
+- `Item` — item definitions (base stats, special effects, class restrictions)
+- `Achievement` — achievement definitions
 - `AchievementDefinition` — Template definitions
 - `QuestDefinition` — Quest type templates
 - `Event` — Seasonal events, tournaments, rushes
@@ -273,11 +273,11 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ---
 
-## iOS App (38+ Screens)
+## iOS App
 
 > Full screen inventory: `docs/07_ui_ux/SCREEN_INVENTORY.md`
 
-### Authentication & Onboarding (6 screens)
+### Authentication & Onboarding
 - Welcome (login/register/guest entry)
 - Login (Email/Password, Google OAuth, Apple OAuth)
 - Register (account creation)
@@ -285,7 +285,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Email Confirmation
 - Upgrade Guest (guest → full account)
 
-### Main Hub (8 screens)
+### Main Hub
 - Hub (stamina bar, character card, city map, floating action buttons)
 - Character Detail (stats, equipment, appearance, stat allocation/respec)
 - Hero Detail (character profile)
@@ -293,62 +293,62 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - City Building views + Hub Editor
 - Stance Selector (attack/defense zone)
 
-### Arena / PvP (5 screens)
+### Arena / PvP
 - Arena (opponents, revenge, history tabs + carousel)
 - Arena Comparison Sheet
 - Opponent cards (OpponentCardView, ArenaOpponentCard)
 
-### Combat (4 screens + VFX system)
+### Combat
 - Combat (intro → active → victory/defeat, turn-based with combat log)
 - Combat Result (rating change, rewards, loot)
 - Loot Detail
 - VFX system: CombatVFXOverlay, DamageHitEffects, DodgeMissBlock, HealEffect, StatusVFXEffects
 
-### Dungeons (5 screens)
+### Dungeons
 - Dungeon Select (difficulty/type)
 - Dungeon Info Sheet (lore, rewards)
 - Dungeon Room (floor-by-floor progression)
 - Dungeon Victory (loot display)
 - Loot Preview Sheet
 
-### Minigames (4 screens)
+### Minigames
 - Gold Mine (slots, mining timer, collect)
 - Shell Game (bet, play, result)
 - Dungeon Rush (wave-based boss rush + shop between floors)
 - Tavern (activity hub)
 
-### Inventory (2 screens)
+### Inventory
 - Inventory (equipment/consumables tabs, search, 4-col grid)
 - Item Detail Sheet (stats, equip/sell)
 
-### Shop (4 screens)
+### Shop
 - Shop (equipment/consumables/premium tabs)
 - Shop Offer Banner (limited-time deals)
 - Currency Purchase (IAP for gold/gems)
 - Premium Purchase (cosmetics)
 
-### Quests & Progression (6 screens)
+### Quests & Progression
 - Daily Quests (list + completion)
 - Daily Login (calendar + popup auto-show)
 - Achievements (list + achievement cards)
 - Battle Pass (free/premium tracks + reward nodes)
 
-### Leaderboard & Social (2 screens)
+### Leaderboard & Social
 - Leaderboard (rating/level/gold tabs)
 - Inbox (messages + attachments)
 
-### Profile & Settings (3 screens)
+### Profile & Settings
 - Settings (audio, language, account)
 - Appearance Editor (skin/avatar customization)
 - Profile (character stats overlay)
 
-### Dev Tools (2 screens)
+### Dev Tools
 - Screen Catalog (navigate all screens)
 - Design System Preview (color + component showcase)
 
 ---
 
-## Admin Panel (38 Pages)
+## Admin Panel
 
 ### Dashboard
 - KPI snapshot (DAU, revenue, active sessions)
@@ -370,9 +370,9 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Image management (Supabase Storage)
 
 ### Skills & Passives
-- CRUD skill database (80+ skills)
+- CRUD skill database
 - Test damage calculations
-- CRUD passive nodes (150+ nodes)
+- CRUD passive nodes
 - Visual tree editor (planned)
 
 ### Dungeon & Boss Configuration
@@ -389,7 +389,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Daily Gem Card config
 
 ### Achievements
-- CRUD achievement definitions (40+)
+- CRUD achievement definitions
 - Set targets, rewards, icons
 - View progress per character
 - Trigger early unlock (testing)
@@ -413,7 +413,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - View active flags per environment
 
 ### Live Configuration
-- Key-value pair editor (80+ config keys)
+- Key-value pair editor for live config keys
 - Syntax validation for JSON values
 - Audit trail (who changed what, when)
 - Instant apply (no redeployment)
@@ -482,14 +482,15 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 ## Deployment & Operations
 
 ### Backend & Admin
-- Hosted on Vercel (automatic previews for PRs)
+- Backend hosted on Vercel with automatic branch previews and production deploy on `origin/main`
+- Admin hosted on Vercel via separate subtree deploy path; production admin updates remain a manual `git subtree push --prefix=admin admin-deploy main` step
 - Environment variables: DATABASE_URL, DIRECT_URL (pooled vs. direct), UPSTASH_REDIS_REST_URL, SUPABASE_URL, SUPABASE_ANON_KEY
 - Build process: `prisma generate && next build`
-- Migrations: `prisma migrate deploy` (production), `prisma migrate dev` (local)
+- Migrations: `prisma migrate deploy` remains an explicit production step; it is not implicitly run by `next build`
 
 ### iOS App
 - Xcode project at `/Hexbound/Hexbound.xcodeproj`
-- Fastlane for TestFlight & App Store deployments
+- Fastlane lanes exist for TestFlight/App Store flow, but repo `Appfile` setup is still environment-dependent rather than turnkey
 - Asset hosting via Supabase Storage
 - App Store Connect for releases
 
@@ -533,13 +534,13 @@ PVP RPG/
 │   ├── app/api/                      (API routes)
 │   ├── lib/                          (Utilities, cache, auth, validators)
 │   ├── prisma/
-│   │   ├── schema.prisma             (40+ models)
+│   │   ├── schema.prisma             (full live schema surface)
 │   │   └── migrations/               (Version-controlled migrations)
-│   ├── package.json                  (Next.js 15, Prisma 6.4, Upstash)
+│   ├── package.json                  (Next.js 15, Prisma 6, Upstash-backed infra)
 │   └── README.md
 │
 ├── admin/                            (Next.js 15 admin panel)
-│   ├── src/app/                      (38 pages via App Router)
+│   ├── src/app/                      (dashboard pages + admin API routes)
 │   ├── src/components/               (Radix UI + Tailwind)
 │   ├── src/lib/                      (Forms, API clients, validators)
 │   ├── package.json                  (Next.js 15, Tailwind 4, Radix UI, Recharts)
@@ -547,7 +548,7 @@ PVP RPG/
 │
 ├── Hexbound/                         (iOS Swift/SwiftUI app)
 │   ├── Hexbound/
-│   │   ├── Views/                    (20+ screens)
+│   │   ├── Views/                    (multi-screen player UI + overlays + debug views)
 │   │   ├── Theme/                    (DarkFantasyTheme.swift, ButtonStyles.swift, LayoutConstants.swift)
 │   │   ├── Models/                   (25 Codable structs + 8 enums: Character, CombatData,
 │   │   │                              Item, ShopItem, ShopOffer, Opponent, MatchHistory,

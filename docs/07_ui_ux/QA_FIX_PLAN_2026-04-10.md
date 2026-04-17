@@ -6,6 +6,8 @@
 **Execution mode:** один фикс за раз, review после каждого, commit после approve
 **Target:** soft-launch ready build за 4 недели
 
+> **Status boundary:** historical execution roadmap snapshot from `2026-04-10`. Many items have since shipped, shifted blocks, or been superseded by later audit work. Use it as a planning artifact and forensic reference, not as the active sprint board or current release checklist.
+
 ---
 
 ## 0. Ground rules

@@ -1,0 +1,7204 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$generatedFrom": "backend/prisma/schema.prisma",
+  "$doNotEdit": "Regenerate with scripts/wiki/generate-prisma-models.mjs",
+  "counts": {
+    "models": 65,
+    "enums": 19,
+    "totalFields": 830
+  },
+  "enums": {
+    "CharacterClass": [
+      "warrior",
+      "rogue",
+      "mage",
+      "tank"
+    ],
+    "CharacterOrigin": [
+      "human",
+      "orc",
+      "skeleton",
+      "demon",
+      "dogfolk"
+    ],
+    "CharacterGender": [
+      "male",
+      "female"
+    ],
+    "ItemType": [
+      "weapon",
+      "helmet",
+      "chest",
+      "gloves",
+      "legs",
+      "boots",
+      "accessory",
+      "amulet",
+      "belt",
+      "relic",
+      "necklace",
+      "ring",
+      "consumable"
+    ],
+    "Rarity": [
+      "common",
+      "uncommon",
+      "rare",
+      "epic",
+      "legendary"
+    ],
+    "EquippedSlot": [
+      "weapon",
+      "weapon_offhand",
+      "helmet",
+      "chest",
+      "gloves",
+      "legs",
+      "boots",
+      "accessory",
+      "amulet",
+      "belt",
+      "relic",
+      "necklace",
+      "ring",
+      "ring2"
+    ],
+    "ConsumableType": [
+      "stamina_potion_small",
+      "stamina_potion_medium",
+      "stamina_potion_large",
+      "health_potion_small",
+      "health_potion_medium",
+      "health_potion_large",
+      "protection_scroll",
+      "legendary_shard"
+    ],
+    "QuestType": [
+      "pvp_wins",
+      "dungeons_complete",
+      "gold_spent",
+      "item_upgrade",
+      "consumable_use",
+      "shell_game_play",
+      "gold_mine_collect"
+    ],
+    "TitleType": [
+      "chosen"
+    ],
+    "CosmeticType": [
+      "frame",
+      "title",
+      "effect",
+      "skin"
+    ],
+    "EventType": [
+      "boss_rush",
+      "gold_rush",
+      "double_xp",
+      "drop_rate_boost",
+      "class_spotlight",
+      "tournament",
+      "weekend_warrior"
+    ],
+    "DungeonDifficulty": [
+      "easy",
+      "normal",
+      "hard",
+      "nightmare",
+      "rush"
+    ],
+    "DungeonType": [
+      "story",
+      "side",
+      "event",
+      "endgame"
+    ],
+    "SkillDamageType": [
+      "physical",
+      "magical",
+      "true_damage",
+      "poison"
+    ],
+    "SkillTargetType": [
+      "single_enemy",
+      "self_buff",
+      "aoe"
+    ],
+    "TalentSlotAction": [
+      "burst_damage",
+      "heal_self",
+      "shield_self",
+      "stun_enemy",
+      "execute"
+    ],
+    "PassiveBonusType": [
+      "flat_stat",
+      "percent_stat",
+      "flat_damage",
+      "percent_damage",
+      "flat_crit_chance",
+      "flat_dodge_chance",
+      "flat_hp",
+      "percent_hp",
+      "flat_armor",
+      "flat_magic_resist",
+      "percent_armor",
+      "percent_magic_resist",
+      "lifesteal",
+      "cooldown_reduction",
+      "damage_reduction"
+    ],
+    "ChallengeStatus": [
+      "pending",
+      "accepted",
+      "declined",
+      "expired",
+      "completed"
+    ],
+    "FriendshipStatus": [
+      "pending",
+      "accepted",
+      "blocked"
+    ]
+  },
+  "models": {
+    "GuildChallenge": {
+      "name": "GuildChallenge",
+      "tableName": "guild_challenges",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "goalType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "goal_type"
+        },
+        {
+          "name": "goalTarget",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "goal_target"
+        },
+        {
+          "name": "currentProgress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_progress",
+          "default": "0"
+        },
+        {
+          "name": "goldReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gold_reward"
+        },
+        {
+          "name": "gemReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gem_reward",
+          "default": "0"
+        },
+        {
+          "name": "startAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "start_at"
+        },
+        {
+          "name": "endAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "end_at"
+        },
+        {
+          "name": "completed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "claimed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "startAt",
+          "endAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "MilestoneClaim": {
+      "name": "MilestoneClaim",
+      "tableName": "milestone_claims",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "milestoneLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "milestone_level"
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "claimed_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "milestoneLevel"
+        ]
+      ]
+    },
+    "ReferralRewardClaim": {
+      "name": "ReferralRewardClaim",
+      "tableName": "referral_reward_claims",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "referrerCharacterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "referrer_character_id"
+        },
+        {
+          "name": "inviteeCharacterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "invitee_character_id"
+        },
+        {
+          "name": "qualifiedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "qualified_at",
+          "default": "now("
+        },
+        {
+          "name": "referrerCharacter",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "inviteeCharacter",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "referrerCharacterId"
+        ],
+        [
+          "inviteeCharacterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "referrerCharacterId",
+          "inviteeCharacterId"
+        ]
+      ]
+    },
+    "TutorialQuest": {
+      "name": "TutorialQuest",
+      "tableName": "tutorial_quests",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "questId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "quest_id"
+        },
+        {
+          "name": "progress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "target",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "isCompleted",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_completed",
+          "default": "false"
+        },
+        {
+          "name": "completedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "completed_at"
+        },
+        {
+          "name": "rewardClaimed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_claimed",
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "questId"
+        ]
+      ]
+    },
+    "User": {
+      "name": "User",
+      "tableName": "users",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "username",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "passwordHash",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "password_hash"
+        },
+        {
+          "name": "authProvider",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "auth_provider"
+        },
+        {
+          "name": "deviceId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "device_id",
+          "isUnique": true
+        },
+        {
+          "name": "gold",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "gems",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "premiumUntil",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "premium_until"
+        },
+        {
+          "name": "premiumGemClaimDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "premium_gem_claim_date"
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"player\""
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "lastLogin",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_login"
+        },
+        {
+          "name": "isBanned",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_banned",
+          "default": "false"
+        },
+        {
+          "name": "banReason",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "ban_reason"
+        },
+        {
+          "name": "characters",
+          "type": "Character",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "cosmetics",
+          "type": "Cosmetic",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "pushTokens",
+          "type": "PushToken",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "iapTransactions",
+          "type": "IapTransaction",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "dailyGemCard",
+          "type": "DailyGemCard",
+          "optional": true,
+          "array": false,
+          "modelRef": true
+        },
+        {
+          "name": "stashItems",
+          "type": "StashItem",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "premiumSubscription",
+          "type": "PremiumSubscription",
+          "optional": true,
+          "array": false,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "gold"
+        ],
+        [
+          "deviceId"
+        ]
+      ],
+      "uniques": []
+    },
+    "PremiumSubscription": {
+      "name": "PremiumSubscription",
+      "tableName": "premium_subscriptions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id",
+          "isUnique": true
+        },
+        {
+          "name": "productId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "product_id"
+        },
+        {
+          "name": "originalTransactionId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "original_transaction_id"
+        },
+        {
+          "name": "latestTransactionId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "latest_transaction_id"
+        },
+        {
+          "name": "startedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "started_at"
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "autoRenew",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "auto_renew",
+          "default": "true"
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "status",
+          "default": "\"active\""
+        },
+        {
+          "name": "latestReceipt",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "latest_receipt"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true,
+          "default": "now("
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "originalTransactionId"
+        ],
+        [
+          "expiresAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "Character": {
+      "name": "Character",
+      "tableName": "characters",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "characterName",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_name",
+          "isUnique": true
+        },
+        {
+          "name": "class",
+          "type": "CharacterClass",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "origin",
+          "type": "CharacterOrigin",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "gender",
+          "type": "CharacterGender",
+          "optional": false,
+          "array": false,
+          "default": "male",
+          "isEnum": true
+        },
+        {
+          "name": "avatar",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"warlord\""
+        },
+        {
+          "name": "level",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "1"
+        },
+        {
+          "name": "currentXp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_xp",
+          "default": "0"
+        },
+        {
+          "name": "prestigeLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "prestige_level",
+          "default": "0"
+        },
+        {
+          "name": "statPointsAvailable",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stat_points_available",
+          "default": "0"
+        },
+        {
+          "name": "passivePointsAvailable",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "passive_points_available",
+          "default": "0"
+        },
+        {
+          "name": "str",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "agi",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "vit",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "end",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "int",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "wis",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "luk",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "cha",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "10"
+        },
+        {
+          "name": "arenaTokens",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "arena_tokens",
+          "default": "0"
+        },
+        {
+          "name": "maxHp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_hp",
+          "default": "100"
+        },
+        {
+          "name": "currentHp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_hp",
+          "default": "100"
+        },
+        {
+          "name": "armor",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "magicResist",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "magic_resist",
+          "default": "0"
+        },
+        {
+          "name": "combatStance",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "combat_stance"
+        },
+        {
+          "name": "currentStamina",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_stamina",
+          "default": "180"
+        },
+        {
+          "name": "maxStamina",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_stamina",
+          "default": "180"
+        },
+        {
+          "name": "lastStaminaUpdate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_stamina_update"
+        },
+        {
+          "name": "lastHpUpdate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_hp_update"
+        },
+        {
+          "name": "bonusTrainings",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bonus_trainings",
+          "default": "0"
+        },
+        {
+          "name": "bonusTrainingsDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "bonus_trainings_date"
+        },
+        {
+          "name": "bonusTrainingsBuys",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bonus_trainings_buys",
+          "default": "0"
+        },
+        {
+          "name": "statPurchasesToday",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stat_purchases_today",
+          "default": "0"
+        },
+        {
+          "name": "statPurchasesDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "stat_purchases_date"
+        },
+        {
+          "name": "statPurchasesTotal",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stat_purchases_total",
+          "default": "0"
+        },
+        {
+          "name": "dungeonClearsToday",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_clears_today",
+          "default": "0"
+        },
+        {
+          "name": "dungeonClearsDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "dungeon_clears_date"
+        },
+        {
+          "name": "staminaRefillsToday",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stamina_refills_today",
+          "default": "0"
+        },
+        {
+          "name": "staminaRefillsDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "stamina_refills_date"
+        },
+        {
+          "name": "trashLootStreak",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "trash_loot_streak",
+          "default": "0"
+        },
+        {
+          "name": "shardsCommon",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shards_common",
+          "default": "0"
+        },
+        {
+          "name": "shardsRare",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shards_rare",
+          "default": "0"
+        },
+        {
+          "name": "shardsEpic",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shards_epic",
+          "default": "0"
+        },
+        {
+          "name": "shardsLegendary",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shards_legendary",
+          "default": "0"
+        },
+        {
+          "name": "pvpRating",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_rating",
+          "default": "1000"
+        },
+        {
+          "name": "pvpWins",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_wins",
+          "default": "0"
+        },
+        {
+          "name": "pvpLosses",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_losses",
+          "default": "0"
+        },
+        {
+          "name": "pvpWinStreak",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_win_streak",
+          "default": "0"
+        },
+        {
+          "name": "pvpLossStreak",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_loss_streak",
+          "default": "0"
+        },
+        {
+          "name": "highestPvpRank",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "highest_pvp_rank",
+          "default": "1000"
+        },
+        {
+          "name": "pvpCalibrationGames",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "pvp_calibration_games",
+          "default": "0"
+        },
+        {
+          "name": "firstWinToday",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "first_win_today",
+          "default": "false"
+        },
+        {
+          "name": "firstWinDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "first_win_date"
+        },
+        {
+          "name": "freePvpToday",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "free_pvp_today",
+          "default": "0"
+        },
+        {
+          "name": "freePvpDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "free_pvp_date"
+        },
+        {
+          "name": "gearScore",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gear_score",
+          "default": "0"
+        },
+        {
+          "name": "goldMineSlots",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gold_mine_slots",
+          "default": "1"
+        },
+        {
+          "name": "inventorySlots",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "inventory_slots",
+          "default": "28"
+        },
+        {
+          "name": "dailyBonusDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "daily_bonus_date"
+        },
+        {
+          "name": "activeShaftKey",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "active_shaft_key"
+        },
+        {
+          "name": "shaftProgress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shaft_progress",
+          "default": "0"
+        },
+        {
+          "name": "shaftTotal",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shaft_total",
+          "default": "5"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "lastPlayed",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_played"
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "equipment",
+          "type": "EquipmentInventory",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "consumables",
+          "type": "ConsumableInventory",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "trainingSessions",
+          "type": "TrainingSession",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "goldMineSessions",
+          "type": "GoldMineSession",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "minigameSessions",
+          "type": "MinigameSession",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "dailyQuests",
+          "type": "DailyQuest",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "battlePasses",
+          "type": "BattlePass",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "battlePassClaims",
+          "type": "BattlePassClaim",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "dungeonProgress",
+          "type": "DungeonProgress",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "dungeonRuns",
+          "type": "DungeonRun",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "legendaryShards",
+          "type": "LegendaryShard",
+          "optional": true,
+          "array": false,
+          "modelRef": true
+        },
+        {
+          "name": "dailyLoginReward",
+          "type": "DailyLoginReward",
+          "optional": true,
+          "array": false,
+          "modelRef": true
+        },
+        {
+          "name": "achievements",
+          "type": "Achievement",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "pvpMatchesAsPlayer1",
+          "type": "PvpMatch",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "pvpMatchesAsPlayer2",
+          "type": "PvpMatch",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "pvpMatchesAsWinner",
+          "type": "PvpMatch",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "pvpMatchesAsLoser",
+          "type": "PvpMatch",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "revengesAsVictim",
+          "type": "RevengeQueue",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "revengesAsAttacker",
+          "type": "RevengeQueue",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "pvpBattleTickets",
+          "type": "PvpBattleTicket",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "pvpTicketsAsOpponent",
+          "type": "PvpBattleTicket",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "characterSkills",
+          "type": "CharacterSkill",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "characterPassives",
+          "type": "CharacterPassive",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "characterActiveSlots",
+          "type": "CharacterActiveSlot",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "mailRecipients",
+          "type": "MailRecipient",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "shopOfferPurchases",
+          "type": "ShopOfferPurchase",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "contrabandClaims",
+          "type": "ContrabandClaim",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "tutorialStep",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "tutorial_step",
+          "default": "0"
+        },
+        {
+          "name": "tutorialSkipped",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "tutorial_skipped",
+          "default": "false"
+        },
+        {
+          "name": "tutorialCompleted",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "tutorial_completed",
+          "default": "false"
+        },
+        {
+          "name": "tutorialCompletedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "tutorial_completed_at"
+        },
+        {
+          "name": "referralCode",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "referral_code",
+          "isUnique": true
+        },
+        {
+          "name": "referredBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "referred_by"
+        },
+        {
+          "name": "activeTitle",
+          "type": "TitleType",
+          "optional": true,
+          "array": false,
+          "dbColumn": "active_title",
+          "isEnum": true
+        },
+        {
+          "name": "lastActiveAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_active_at"
+        },
+        {
+          "name": "friendsSent",
+          "type": "Friendship",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "friendsReceived",
+          "type": "Friendship",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "sentMessages",
+          "type": "DirectMessage",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "receivedMessages",
+          "type": "DirectMessage",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "challengesSent",
+          "type": "Challenge",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "challengesReceived",
+          "type": "Challenge",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "milestoneClaims",
+          "type": "MilestoneClaim",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "tutorialQuests",
+          "type": "TutorialQuest",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "referralRewardsGiven",
+          "type": "ReferralRewardClaim",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "referralRewardsReceived",
+          "type": "ReferralRewardClaim",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "weeklyChallengeProgress",
+          "type": "WeeklyChallengeProgress",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId"
+        ],
+        [
+          "pvpRating"
+        ],
+        [
+          "pvpRating",
+          "pvpCalibrationGames"
+        ],
+        [
+          "level"
+        ],
+        [
+          "level",
+          "gearScore"
+        ],
+        [
+          "lastActiveAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "Item": {
+      "name": "Item",
+      "tableName": "items",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "catalogId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "catalog_id",
+          "isUnique": true
+        },
+        {
+          "name": "itemName",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_name"
+        },
+        {
+          "name": "itemType",
+          "type": "ItemType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_type",
+          "isEnum": true
+        },
+        {
+          "name": "rarity",
+          "type": "Rarity",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "itemLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_level",
+          "default": "1"
+        },
+        {
+          "name": "baseStats",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "base_stats"
+        },
+        {
+          "name": "specialEffect",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "special_effect"
+        },
+        {
+          "name": "uniquePassive",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "unique_passive"
+        },
+        {
+          "name": "classRestriction",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "class_restriction"
+        },
+        {
+          "name": "setName",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "set_name"
+        },
+        {
+          "name": "buyPrice",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "buy_price",
+          "default": "0"
+        },
+        {
+          "name": "sellPrice",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sell_price",
+          "default": "0"
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_url"
+        },
+        {
+          "name": "imageKey",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_key"
+        },
+        {
+          "name": "dropChance",
+          "type": "Float",
+          "optional": true,
+          "array": false,
+          "dbColumn": "drop_chance",
+          "default": "0"
+        },
+        {
+          "name": "itemClass",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "item_class"
+        },
+        {
+          "name": "upgradeConfig",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "upgrade_config"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "equipment",
+          "type": "EquipmentInventory",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "dungeonDrops",
+          "type": "DungeonDrop",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "stashItems",
+          "type": "StashItem",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "itemType"
+        ],
+        [
+          "itemType",
+          "itemLevel"
+        ],
+        [
+          "rarity"
+        ]
+      ],
+      "uniques": []
+    },
+    "EquipmentInventory": {
+      "name": "EquipmentInventory",
+      "tableName": "equipment_inventory",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "itemId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_id"
+        },
+        {
+          "name": "upgradeLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "upgrade_level",
+          "default": "0"
+        },
+        {
+          "name": "durability",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "100"
+        },
+        {
+          "name": "maxDurability",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_durability",
+          "default": "100"
+        },
+        {
+          "name": "isEquipped",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_equipped",
+          "default": "false"
+        },
+        {
+          "name": "equippedSlot",
+          "type": "EquippedSlot",
+          "optional": true,
+          "array": false,
+          "dbColumn": "equipped_slot",
+          "isEnum": true
+        },
+        {
+          "name": "rolledStats",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "rolled_stats"
+        },
+        {
+          "name": "acquiredAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "acquired_at",
+          "default": "now("
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true,
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "item",
+          "type": "Item",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ],
+        [
+          "characterId",
+          "isEquipped"
+        ],
+        [
+          "itemId"
+        ]
+      ],
+      "uniques": []
+    },
+    "ConsumableInventory": {
+      "name": "ConsumableInventory",
+      "tableName": "consumable_inventory",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "consumableType",
+          "type": "ConsumableType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "consumable_type",
+          "isEnum": true
+        },
+        {
+          "name": "quantity",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "acquiredAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "acquired_at",
+          "default": "now("
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true,
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": [
+        [
+          "characterId",
+          "consumableType"
+        ]
+      ]
+    },
+    "StashItem": {
+      "name": "StashItem",
+      "tableName": "stash_items",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "itemId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_id"
+        },
+        {
+          "name": "upgradeLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "upgrade_level",
+          "default": "0"
+        },
+        {
+          "name": "durability",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "100"
+        },
+        {
+          "name": "maxDurability",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_durability",
+          "default": "100"
+        },
+        {
+          "name": "rolledStats",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "rolled_stats"
+        },
+        {
+          "name": "storedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stored_at",
+          "default": "now("
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true,
+          "default": "now("
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "item",
+          "type": "Item",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId"
+        ],
+        [
+          "itemId"
+        ]
+      ],
+      "uniques": []
+    },
+    "PvpMatch": {
+      "name": "PvpMatch",
+      "tableName": "pvp_matches",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "player1Id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player1_id"
+        },
+        {
+          "name": "player2Id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player2_id"
+        },
+        {
+          "name": "player1RatingBefore",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player1_rating_before"
+        },
+        {
+          "name": "player1RatingAfter",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player1_rating_after"
+        },
+        {
+          "name": "player2RatingBefore",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player2_rating_before"
+        },
+        {
+          "name": "player2RatingAfter",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "player2_rating_after"
+        },
+        {
+          "name": "winnerId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "winner_id"
+        },
+        {
+          "name": "loserId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "loser_id"
+        },
+        {
+          "name": "combatLog",
+          "type": "Json",
+          "optional": false,
+          "array": false,
+          "dbColumn": "combat_log"
+        },
+        {
+          "name": "matchDuration",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "match_duration",
+          "default": "0"
+        },
+        {
+          "name": "turnsTaken",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "turns_taken",
+          "default": "0"
+        },
+        {
+          "name": "goldReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gold_reward",
+          "default": "0"
+        },
+        {
+          "name": "xpReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "xp_reward",
+          "default": "0"
+        },
+        {
+          "name": "matchType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "match_type",
+          "default": "\"ranked\""
+        },
+        {
+          "name": "seasonNumber",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "season_number"
+        },
+        {
+          "name": "isRevenge",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_revenge",
+          "default": "false"
+        },
+        {
+          "name": "playedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "played_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "status",
+          "default": "\"completed\""
+        },
+        {
+          "name": "interactiveStrikeIndex",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "interactive_strike_index"
+        },
+        {
+          "name": "interactiveTimeoutAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "interactive_timeout_at"
+        },
+        {
+          "name": "interactiveChoices",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "interactive_choices"
+        },
+        {
+          "name": "interactiveActives",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "interactive_actives"
+        },
+        {
+          "name": "player1",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "player2",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "winner",
+          "type": "Character",
+          "optional": true,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "loser",
+          "type": "Character",
+          "optional": true,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "revengeQueues",
+          "type": "RevengeQueue",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "challenge",
+          "type": "Challenge",
+          "optional": true,
+          "array": false,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "player1Id"
+        ],
+        [
+          "player2Id"
+        ],
+        [
+          "player1Id",
+          "playedAt(sort: Desc)"
+        ],
+        [
+          "player2Id",
+          "playedAt(sort: Desc)"
+        ],
+        [
+          "winnerId"
+        ],
+        [
+          "playedAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "DungeonProgress": {
+      "name": "DungeonProgress",
+      "tableName": "dungeon_progress",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "dungeonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_id"
+        },
+        {
+          "name": "bossIndex",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "boss_index",
+          "default": "0"
+        },
+        {
+          "name": "completed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true,
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ],
+        [
+          "characterId",
+          "completed"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "dungeonId"
+        ]
+      ]
+    },
+    "DungeonRun": {
+      "name": "DungeonRun",
+      "tableName": "dungeon_runs",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "dungeonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_id",
+          "default": "\"training_camp\""
+        },
+        {
+          "name": "difficulty",
+          "type": "DungeonDifficulty",
+          "optional": false,
+          "array": false,
+          "default": "normal",
+          "isEnum": true
+        },
+        {
+          "name": "currentFloor",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_floor",
+          "default": "1"
+        },
+        {
+          "name": "state",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "seed",
+          "type": "Int",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "difficulty"
+        ],
+        [
+          "characterId",
+          "createdAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "LegendaryShard": {
+      "name": "LegendaryShard",
+      "tableName": "legendary_shards",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id",
+          "isUnique": true
+        },
+        {
+          "name": "shardCount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "shard_count",
+          "default": "0"
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "TrainingSession": {
+      "name": "TrainingSession",
+      "tableName": "training_sessions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "xpAwarded",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "xp_awarded",
+          "default": "0"
+        },
+        {
+          "name": "won",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "turns",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "opponentType",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "opponent_type"
+        },
+        {
+          "name": "playedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "played_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": []
+    },
+    "GoldMineSession": {
+      "name": "GoldMineSession",
+      "tableName": "gold_mine_sessions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "slotIndex",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "slot_index"
+        },
+        {
+          "name": "startedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "started_at",
+          "default": "now("
+        },
+        {
+          "name": "endsAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "ends_at"
+        },
+        {
+          "name": "collected",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "reward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "gemReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gem_reward",
+          "default": "0"
+        },
+        {
+          "name": "boosted",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "minigameSessionId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "minigame_session_id"
+        },
+        {
+          "name": "minigamePlayedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "minigame_played_at"
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ],
+        [
+          "characterId",
+          "collected"
+        ],
+        [
+          "characterId",
+          "endsAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "MinigameSession": {
+      "name": "MinigameSession",
+      "tableName": "minigame_sessions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "gameType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "game_type"
+        },
+        {
+          "name": "betAmount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bet_amount",
+          "default": "0"
+        },
+        {
+          "name": "secretData",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "secret_data"
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"active\""
+        },
+        {
+          "name": "result",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "shaftKey",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "shaft_key"
+        },
+        {
+          "name": "passiveGoldAmount",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "passive_gold_amount"
+        },
+        {
+          "name": "capGold",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "cap_gold"
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "claimedGold",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "claimed_gold"
+        },
+        {
+          "name": "claimedGems",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "claimed_gems"
+        },
+        {
+          "name": "caughtCount",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "caught_count"
+        },
+        {
+          "name": "spawnedCount",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "spawned_count"
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "claimed_at"
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ],
+        [
+          "characterId",
+          "status"
+        ],
+        [
+          "characterId",
+          "gameType",
+          "status"
+        ],
+        [
+          "expiresAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "Season": {
+      "name": "Season",
+      "tableName": "seasons",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "number",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "theme",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "startAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "start_at"
+        },
+        {
+          "name": "endAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "end_at"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "battlePasses",
+          "type": "BattlePass",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "battlePassRewards",
+          "type": "BattlePassReward",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "startAt",
+          "endAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "DailyQuest": {
+      "name": "DailyQuest",
+      "tableName": "daily_quests",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "questType",
+          "type": "QuestType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "quest_type",
+          "isEnum": true
+        },
+        {
+          "name": "progress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "target",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "rewardGold",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_gold",
+          "default": "0"
+        },
+        {
+          "name": "rewardXp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_xp",
+          "default": "0"
+        },
+        {
+          "name": "rewardGems",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_gems",
+          "default": "0"
+        },
+        {
+          "name": "completed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "day",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "day"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "questType",
+          "day"
+        ]
+      ]
+    },
+    "BattlePass": {
+      "name": "BattlePass",
+      "tableName": "battle_pass",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "seasonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "season_id"
+        },
+        {
+          "name": "premium",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "bpXp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bp_xp",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "season",
+          "type": "Season",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "claims",
+          "type": "BattlePassClaim",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "seasonId"
+        ]
+      ]
+    },
+    "BattlePassReward": {
+      "name": "BattlePassReward",
+      "tableName": "battle_pass_rewards",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "seasonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "season_id"
+        },
+        {
+          "name": "bpLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bp_level"
+        },
+        {
+          "name": "isPremium",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_premium",
+          "default": "false"
+        },
+        {
+          "name": "rewardType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_type"
+        },
+        {
+          "name": "rewardId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "reward_id"
+        },
+        {
+          "name": "rewardAmount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_amount",
+          "default": "1"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "season",
+          "type": "Season",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "claims",
+          "type": "BattlePassClaim",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": [
+        [
+          "seasonId",
+          "bpLevel",
+          "isPremium"
+        ]
+      ]
+    },
+    "BattlePassClaim": {
+      "name": "BattlePassClaim",
+      "tableName": "battle_pass_claims",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "battlePassId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "battle_pass_id"
+        },
+        {
+          "name": "rewardId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_id"
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "claimed_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "battlePass",
+          "type": "BattlePass",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "reward",
+          "type": "BattlePassReward",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": [
+        [
+          "characterId",
+          "rewardId"
+        ]
+      ]
+    },
+    "WeeklyChallengeProgress": {
+      "name": "WeeklyChallengeProgress",
+      "tableName": "weekly_challenge_progress",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "isoWeek",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "iso_week"
+        },
+        {
+          "name": "slotIndex",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "slot_index"
+        },
+        {
+          "name": "goalType",
+          "type": "QuestType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "goal_type",
+          "isEnum": true
+        },
+        {
+          "name": "goalTarget",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "goal_target"
+        },
+        {
+          "name": "progress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "bpXpAward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bp_xp_award"
+        },
+        {
+          "name": "claimed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "completedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "completed_at"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "isoWeek"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "isoWeek",
+          "slotIndex"
+        ]
+      ]
+    },
+    "Cosmetic": {
+      "name": "Cosmetic",
+      "tableName": "cosmetics",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "type",
+          "type": "CosmeticType",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "refId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "ref_id"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId"
+        ],
+        [
+          "userId",
+          "type"
+        ]
+      ],
+      "uniques": []
+    },
+    "AppearanceSkin": {
+      "name": "AppearanceSkin",
+      "tableName": "appearance_skins",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "skinKey",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "skin_key",
+          "isUnique": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "origin",
+          "type": "CharacterOrigin",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "gender",
+          "type": "CharacterGender",
+          "optional": false,
+          "array": false,
+          "isEnum": true
+        },
+        {
+          "name": "rarity",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"common\""
+        },
+        {
+          "name": "priceGold",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "price_gold",
+          "default": "0"
+        },
+        {
+          "name": "priceGems",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "price_gems",
+          "default": "0"
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_url"
+        },
+        {
+          "name": "imageKey",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_key"
+        },
+        {
+          "name": "isDefault",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_default",
+          "default": "false"
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        }
+      ],
+      "indexes": [
+        [
+          "origin",
+          "gender"
+        ]
+      ],
+      "uniques": []
+    },
+    "DesignToken": {
+      "name": "DesignToken",
+      "tableName": "design_tokens",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "\"global\""
+        },
+        {
+          "name": "tokens",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "updatedBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "updated_by"
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "DailyLoginReward": {
+      "name": "DailyLoginReward",
+      "tableName": "daily_login_rewards",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id",
+          "isUnique": true
+        },
+        {
+          "name": "currentDay",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "current_day",
+          "default": "1"
+        },
+        {
+          "name": "lastClaimDate",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "last_claim_date"
+        },
+        {
+          "name": "streak",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "totalClaims",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "total_claims",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "RevengeQueue": {
+      "name": "RevengeQueue",
+      "tableName": "revenge_queue",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "victimId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "victim_id"
+        },
+        {
+          "name": "attackerId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "attacker_id"
+        },
+        {
+          "name": "matchId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "match_id"
+        },
+        {
+          "name": "isSeen",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_seen",
+          "default": "false"
+        },
+        {
+          "name": "isUsed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_used",
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "victim",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "attacker",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "match",
+          "type": "PvpMatch",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "battleTickets",
+          "type": "PvpBattleTicket",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "victimId",
+          "isUsed",
+          "expiresAt"
+        ],
+        [
+          "attackerId"
+        ],
+        [
+          "expiresAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "PvpBattleTicket": {
+      "name": "PvpBattleTicket",
+      "tableName": "pvp_battle_tickets",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "opponentId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "opponent_id"
+        },
+        {
+          "name": "revengeId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "revenge_id"
+        },
+        {
+          "name": "battleSeed",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "battle_seed"
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "consumedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "consumed_at"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "opponent",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "revenge",
+          "type": "RevengeQueue",
+          "optional": true,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "consumedAt",
+          "expiresAt"
+        ],
+        [
+          "opponentId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "battleSeed"
+        ]
+      ]
+    },
+    "Achievement": {
+      "name": "Achievement",
+      "tableName": "achievements",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "achievementKey",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "achievement_key"
+        },
+        {
+          "name": "progress",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "target",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "completed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "false"
+        },
+        {
+          "name": "completedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "completed_at"
+        },
+        {
+          "name": "rewardClaimed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_claimed",
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "completed"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "achievementKey"
+        ]
+      ]
+    },
+    "PushToken": {
+      "name": "PushToken",
+      "tableName": "push_tokens",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "platform",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "token",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "true"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId",
+          "isActive"
+        ]
+      ],
+      "uniques": [
+        [
+          "userId",
+          "platform",
+          "token"
+        ]
+      ]
+    },
+    "PushCampaign": {
+      "name": "PushCampaign",
+      "tableName": "push_campaigns",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "body",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "data",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "targetType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "target_type",
+          "default": "\"broadcast\""
+        },
+        {
+          "name": "targetFilter",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "target_filter"
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"draft\""
+        },
+        {
+          "name": "sentCount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sent_count",
+          "default": "0"
+        },
+        {
+          "name": "failCount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "fail_count",
+          "default": "0"
+        },
+        {
+          "name": "scheduledAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "scheduled_at"
+        },
+        {
+          "name": "sentAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "sent_at"
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "status"
+        ]
+      ],
+      "uniques": []
+    },
+    "PushLog": {
+      "name": "PushLog",
+      "tableName": "push_logs",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "campaignId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "campaign_id"
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "token",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "body",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"sent\""
+        },
+        {
+          "name": "error",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "campaignId"
+        ],
+        [
+          "userId",
+          "createdAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "IapTransaction": {
+      "name": "IapTransaction",
+      "tableName": "iap_transactions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "productId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "product_id"
+        },
+        {
+          "name": "transactionId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "transaction_id",
+          "isUnique": true
+        },
+        {
+          "name": "receiptData",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "receipt_data"
+        },
+        {
+          "name": "gemsAwarded",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gems_awarded",
+          "default": "0"
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"pending\""
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "verifiedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "verified_at"
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId",
+          "createdAt(sort: Desc)"
+        ],
+        [
+          "transactionId"
+        ],
+        [
+          "status",
+          "createdAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "DailyGemCard": {
+      "name": "DailyGemCard",
+      "tableName": "daily_gem_cards",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id",
+          "isUnique": true
+        },
+        {
+          "name": "purchasedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "purchased_at"
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "lastClaimedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "last_claimed_at"
+        },
+        {
+          "name": "daysRemaining",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "days_remaining",
+          "default": "30"
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "Event": {
+      "name": "Event",
+      "tableName": "events",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "eventKey",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "event_key",
+          "isUnique": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "eventType",
+          "type": "EventType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "event_type",
+          "isEnum": true
+        },
+        {
+          "name": "config",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "startAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "start_at"
+        },
+        {
+          "name": "endAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "end_at"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "true"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "isActive",
+          "startAt",
+          "endAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "GameConfig": {
+      "name": "GameConfig",
+      "tableName": "game_config",
+      "fields": [
+        {
+          "name": "key",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true
+        },
+        {
+          "name": "value",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "category",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"general\""
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "updatedBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "updated_by"
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "AdminLog": {
+      "name": "AdminLog",
+      "tableName": "admin_logs",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "adminId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "admin_id"
+        },
+        {
+          "name": "action",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "target",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "details",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "adminId"
+        ],
+        [
+          "action"
+        ]
+      ],
+      "uniques": []
+    },
+    "ConfigSnapshot": {
+      "name": "ConfigSnapshot",
+      "tableName": "config_snapshots",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "configs",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "AchievementDefinition": {
+      "name": "AchievementDefinition",
+      "tableName": "achievement_definitions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "key",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "category",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "target",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "rewardType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_type"
+        },
+        {
+          "name": "rewardAmount",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_amount"
+        },
+        {
+          "name": "rewardId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "reward_id"
+        },
+        {
+          "name": "icon",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "true"
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "QuestDefinition": {
+      "name": "QuestDefinition",
+      "tableName": "quest_definitions",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "questType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "quest_type",
+          "isUnique": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "icon",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"\""
+        },
+        {
+          "name": "minTarget",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "min_target"
+        },
+        {
+          "name": "maxTarget",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_target"
+        },
+        {
+          "name": "rewardGold",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_gold",
+          "default": "0"
+        },
+        {
+          "name": "rewardXp",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_xp",
+          "default": "0"
+        },
+        {
+          "name": "rewardGems",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "reward_gems",
+          "default": "0"
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "default": "true"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "FeatureFlag": {
+      "name": "FeatureFlag",
+      "tableName": "feature_flags",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "key",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "flagType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "flag_type",
+          "default": "\"boolean\""
+        },
+        {
+          "name": "value",
+          "type": "Json",
+          "optional": false,
+          "array": false,
+          "default": "\"true\""
+        },
+        {
+          "name": "targeting",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "false"
+        },
+        {
+          "name": "environment",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"all\""
+        },
+        {
+          "name": "tags",
+          "type": "String",
+          "optional": false,
+          "array": true,
+          "default": "[]"
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        }
+      ],
+      "indexes": [
+        [
+          "isActive"
+        ],
+        [
+          "key",
+          "isActive"
+        ]
+      ],
+      "uniques": []
+    },
+    "MailMessage": {
+      "name": "MailMessage",
+      "tableName": "mail_messages",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "subject",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "body",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "senderType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sender_type",
+          "default": "\"system\""
+        },
+        {
+          "name": "senderName",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sender_name",
+          "default": "\"System\""
+        },
+        {
+          "name": "attachments",
+          "type": "Json",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "targetType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "target_type",
+          "default": "\"broadcast\""
+        },
+        {
+          "name": "targetFilter",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "target_filter"
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "recipients",
+          "type": "MailRecipient",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "targetType"
+        ],
+        [
+          "createdAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "MailRecipient": {
+      "name": "MailRecipient",
+      "tableName": "mail_recipients",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "messageId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "message_id"
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "isRead",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_read",
+          "default": "false"
+        },
+        {
+          "name": "isClaimed",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_claimed",
+          "default": "false"
+        },
+        {
+          "name": "isDeleted",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_deleted",
+          "default": "false"
+        },
+        {
+          "name": "readAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "read_at"
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "claimed_at"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "message",
+          "type": "MailMessage",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "isDeleted",
+          "createdAt(sort: Desc)"
+        ],
+        [
+          "characterId",
+          "isRead"
+        ]
+      ],
+      "uniques": [
+        [
+          "messageId",
+          "characterId"
+        ]
+      ]
+    },
+    "ItemBalanceProfile": {
+      "name": "ItemBalanceProfile",
+      "tableName": "item_balance_profiles",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "itemType",
+          "type": "ItemType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_type",
+          "isUnique": true,
+          "isEnum": true
+        },
+        {
+          "name": "statWeights",
+          "type": "Json",
+          "optional": false,
+          "array": false,
+          "dbColumn": "stat_weights"
+        },
+        {
+          "name": "powerWeight",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "power_weight",
+          "default": "1.0"
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "updatedBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "updated_by"
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "BalanceSimulationRun": {
+      "name": "BalanceSimulationRun",
+      "tableName": "balance_simulation_runs",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "runType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "run_type"
+        },
+        {
+          "name": "config",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "results",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        }
+      ],
+      "indexes": [
+        [
+          "runType",
+          "createdAt(sort: Desc)"
+        ]
+      ],
+      "uniques": []
+    },
+    "Skill": {
+      "name": "Skill",
+      "tableName": "skills",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "skillKey",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "skill_key",
+          "isUnique": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "classRestriction",
+          "type": "CharacterClass",
+          "optional": true,
+          "array": false,
+          "dbColumn": "class_restriction",
+          "isEnum": true
+        },
+        {
+          "name": "damageBase",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "damage_base",
+          "default": "0"
+        },
+        {
+          "name": "damageScaling",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "damage_scaling"
+        },
+        {
+          "name": "damageType",
+          "type": "SkillDamageType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "damage_type",
+          "default": "physical",
+          "isEnum": true
+        },
+        {
+          "name": "targetType",
+          "type": "SkillTargetType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "target_type",
+          "default": "single_enemy",
+          "isEnum": true
+        },
+        {
+          "name": "cooldown",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "manaCost",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "mana_cost",
+          "default": "0"
+        },
+        {
+          "name": "effectJson",
+          "type": "Json",
+          "optional": true,
+          "array": false,
+          "dbColumn": "effect_json"
+        },
+        {
+          "name": "unlockLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "unlock_level",
+          "default": "1"
+        },
+        {
+          "name": "maxRank",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_rank",
+          "default": "5"
+        },
+        {
+          "name": "rankScaling",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "rank_scaling",
+          "default": "0.1"
+        },
+        {
+          "name": "icon",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "true"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "characterSkills",
+          "type": "CharacterSkill",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "CharacterSkill": {
+      "name": "CharacterSkill",
+      "tableName": "character_skills",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "skillId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "skill_id"
+        },
+        {
+          "name": "rank",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "1"
+        },
+        {
+          "name": "isEquipped",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_equipped",
+          "default": "false"
+        },
+        {
+          "name": "slotIndex",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "slot_index"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "skill",
+          "type": "Skill",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "isEquipped"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "skillId"
+        ]
+      ]
+    },
+    "PassiveNode": {
+      "name": "PassiveNode",
+      "tableName": "passive_nodes",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "nodeKey",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "node_key",
+          "isUnique": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "bonusType",
+          "type": "PassiveBonusType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bonus_type",
+          "isEnum": true
+        },
+        {
+          "name": "bonusStat",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "bonus_stat"
+        },
+        {
+          "name": "bonusValue",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "bonus_value"
+        },
+        {
+          "name": "tier",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "1"
+        },
+        {
+          "name": "positionX",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "position_x",
+          "default": "0"
+        },
+        {
+          "name": "positionY",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "position_y",
+          "default": "0"
+        },
+        {
+          "name": "cost",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "1"
+        },
+        {
+          "name": "icon",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "classRestriction",
+          "type": "CharacterClass",
+          "optional": true,
+          "array": false,
+          "dbColumn": "class_restriction",
+          "isEnum": true
+        },
+        {
+          "name": "isStartNode",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_start_node",
+          "default": "false"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "true"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "activeActionType",
+          "type": "TalentSlotAction",
+          "optional": true,
+          "array": false,
+          "dbColumn": "active_action_type",
+          "isEnum": true
+        },
+        {
+          "name": "activeCooldown",
+          "type": "Int",
+          "optional": true,
+          "array": false,
+          "dbColumn": "active_cooldown"
+        },
+        {
+          "name": "activeMagnitude",
+          "type": "Float",
+          "optional": true,
+          "array": false,
+          "dbColumn": "active_magnitude"
+        },
+        {
+          "name": "isActivatable",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_activatable",
+          "default": "false"
+        },
+        {
+          "name": "connectionsFrom",
+          "type": "PassiveConnection",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "connectionsTo",
+          "type": "PassiveConnection",
+          "optional": false,
+          "array": true,
+          "relation": true
+        },
+        {
+          "name": "characterPassives",
+          "type": "CharacterPassive",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "characterActiveSlots",
+          "type": "CharacterActiveSlot",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "PassiveConnection": {
+      "name": "PassiveConnection",
+      "tableName": "passive_connections",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "fromId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "from_id"
+        },
+        {
+          "name": "toId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "to_id"
+        },
+        {
+          "name": "fromNode",
+          "type": "PassiveNode",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "toNode",
+          "type": "PassiveNode",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": [
+        [
+          "fromId",
+          "toId"
+        ]
+      ]
+    },
+    "CharacterPassive": {
+      "name": "CharacterPassive",
+      "tableName": "character_passives",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "nodeId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "node_id"
+        },
+        {
+          "name": "unlockedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "unlocked_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "node",
+          "type": "PassiveNode",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "nodeId"
+        ]
+      ]
+    },
+    "CharacterActiveSlot": {
+      "name": "CharacterActiveSlot",
+      "tableName": "character_active_slots",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "nodeId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "node_id"
+        },
+        {
+          "name": "consumableType",
+          "type": "ConsumableType",
+          "optional": true,
+          "array": false,
+          "dbColumn": "consumable_type",
+          "isEnum": true
+        },
+        {
+          "name": "slotIndex",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "slot_index"
+        },
+        {
+          "name": "equippedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "equipped_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "node",
+          "type": "PassiveNode",
+          "optional": true,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId"
+        ]
+      ],
+      "uniques": [
+        [
+          "characterId",
+          "slotIndex"
+        ]
+      ]
+    },
+    "Dungeon": {
+      "name": "Dungeon",
+      "tableName": "dungeons",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "slug",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "lore",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "levelReq",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "level_req",
+          "default": "1"
+        },
+        {
+          "name": "difficulty",
+          "type": "DungeonDifficulty",
+          "optional": false,
+          "array": false,
+          "default": "normal",
+          "isEnum": true
+        },
+        {
+          "name": "dungeonType",
+          "type": "DungeonType",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_type",
+          "default": "story",
+          "isEnum": true
+        },
+        {
+          "name": "energyCost",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "energy_cost",
+          "default": "20"
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_url"
+        },
+        {
+          "name": "backgroundUrl",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "background_url"
+        },
+        {
+          "name": "imagePrompt",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_prompt"
+        },
+        {
+          "name": "imageStyle",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_style"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "true"
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "goldReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gold_reward",
+          "default": "0"
+        },
+        {
+          "name": "xpReward",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "xp_reward",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "bosses",
+          "type": "DungeonBoss",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "waves",
+          "type": "DungeonWave",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        },
+        {
+          "name": "drops",
+          "type": "DungeonDrop",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "DungeonBoss": {
+      "name": "DungeonBoss",
+      "tableName": "dungeon_bosses",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "dungeonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_id"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "bossType",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "boss_type"
+        },
+        {
+          "name": "level",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "hp",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "damage",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "defense",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "speed",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "critChance",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "crit_chance",
+          "default": "0"
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "lore",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_url"
+        },
+        {
+          "name": "imagePrompt",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_prompt"
+        },
+        {
+          "name": "floorNumber",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "floor_number"
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "dungeon",
+          "type": "Dungeon",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "abilities",
+          "type": "BossAbility",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "BossAbility": {
+      "name": "BossAbility",
+      "tableName": "boss_abilities",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "bossId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "boss_id"
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "abilityType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "ability_type"
+        },
+        {
+          "name": "damage",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "cooldown",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "specialEffect",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "special_effect"
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "boss",
+          "type": "DungeonBoss",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "DungeonWave": {
+      "name": "DungeonWave",
+      "tableName": "dungeon_waves",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "dungeonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_id"
+        },
+        {
+          "name": "waveNumber",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "wave_number"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "dungeon",
+          "type": "Dungeon",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "enemies",
+          "type": "DungeonWaveEnemy",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [],
+      "uniques": [
+        [
+          "dungeonId",
+          "waveNumber"
+        ]
+      ]
+    },
+    "DungeonWaveEnemy": {
+      "name": "DungeonWaveEnemy",
+      "tableName": "dungeon_wave_enemies",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "waveId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "wave_id"
+        },
+        {
+          "name": "enemyType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "enemy_type"
+        },
+        {
+          "name": "level",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "count",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "1"
+        },
+        {
+          "name": "wave",
+          "type": "DungeonWave",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "DungeonDrop": {
+      "name": "DungeonDrop",
+      "tableName": "dungeon_drops",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "dungeonId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "dungeon_id"
+        },
+        {
+          "name": "itemId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "item_id"
+        },
+        {
+          "name": "dropChance",
+          "type": "Float",
+          "optional": false,
+          "array": false,
+          "dbColumn": "drop_chance"
+        },
+        {
+          "name": "minQuantity",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "min_quantity",
+          "default": "1"
+        },
+        {
+          "name": "maxQuantity",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_quantity",
+          "default": "1"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "dungeon",
+          "type": "Dungeon",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "item",
+          "type": "Item",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [],
+      "uniques": []
+    },
+    "ShopOffer": {
+      "name": "ShopOffer",
+      "tableName": "shop_offers",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "key",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isUnique": true
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "offerType",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "offer_type",
+          "default": "\"bundle\""
+        },
+        {
+          "name": "contents",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "originalPrice",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "original_price"
+        },
+        {
+          "name": "salePrice",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sale_price"
+        },
+        {
+          "name": "currency",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"gold\""
+        },
+        {
+          "name": "discountPct",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "discount_pct",
+          "default": "0"
+        },
+        {
+          "name": "maxPurchases",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_purchases",
+          "default": "1"
+        },
+        {
+          "name": "minLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "min_level",
+          "default": "1"
+        },
+        {
+          "name": "maxLevel",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "max_level",
+          "default": "999"
+        },
+        {
+          "name": "sortOrder",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sort_order",
+          "default": "0"
+        },
+        {
+          "name": "imageKey",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "image_key"
+        },
+        {
+          "name": "tags",
+          "type": "String",
+          "optional": false,
+          "array": true,
+          "default": "[]"
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_active",
+          "default": "false"
+        },
+        {
+          "name": "startsAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "starts_at"
+        },
+        {
+          "name": "endsAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "ends_at"
+        },
+        {
+          "name": "createdBy",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "created_by"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "purchases",
+          "type": "ShopOfferPurchase",
+          "optional": false,
+          "array": true,
+          "modelRef": true
+        }
+      ],
+      "indexes": [
+        [
+          "isActive",
+          "startsAt",
+          "endsAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "ContrabandClaim": {
+      "name": "ContrabandClaim",
+      "tableName": "contraband_claims",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "contents",
+          "type": "Json",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "price",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "default": "0"
+        },
+        {
+          "name": "currency",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "default": "\"gold\""
+        },
+        {
+          "name": "claimNumber",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "claim_number"
+        },
+        {
+          "name": "claimedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "claimed_at",
+          "default": "now("
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "characterId",
+          "claimedAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "ShopOfferPurchase": {
+      "name": "ShopOfferPurchase",
+      "tableName": "shop_offer_purchases",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "offerId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "offer_id"
+        },
+        {
+          "name": "characterId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "character_id"
+        },
+        {
+          "name": "price",
+          "type": "Int",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "currency",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "offer",
+          "type": "ShopOffer",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "character",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "offerId",
+          "characterId"
+        ]
+      ],
+      "uniques": []
+    },
+    "Friendship": {
+      "name": "Friendship",
+      "tableName": "friendships",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "userId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "user_id"
+        },
+        {
+          "name": "friendId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "friend_id"
+        },
+        {
+          "name": "status",
+          "type": "FriendshipStatus",
+          "optional": false,
+          "array": false,
+          "default": "pending",
+          "isEnum": true
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "user",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "friend",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "userId",
+          "status"
+        ],
+        [
+          "friendId",
+          "status"
+        ]
+      ],
+      "uniques": [
+        [
+          "userId",
+          "friendId"
+        ]
+      ]
+    },
+    "DirectMessage": {
+      "name": "DirectMessage",
+      "tableName": "direct_messages",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "senderId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "sender_id"
+        },
+        {
+          "name": "receiverId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "receiver_id"
+        },
+        {
+          "name": "content",
+          "type": "String",
+          "optional": false,
+          "array": false
+        },
+        {
+          "name": "isQuick",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_quick",
+          "default": "false"
+        },
+        {
+          "name": "quickId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "quick_id"
+        },
+        {
+          "name": "isRead",
+          "type": "Boolean",
+          "optional": false,
+          "array": false,
+          "dbColumn": "is_read",
+          "default": "false"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "sender",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "receiver",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "receiverId",
+          "isRead"
+        ],
+        [
+          "senderId",
+          "createdAt"
+        ],
+        [
+          "expiresAt"
+        ]
+      ],
+      "uniques": []
+    },
+    "Challenge": {
+      "name": "Challenge",
+      "tableName": "challenges",
+      "fields": [
+        {
+          "name": "id",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "isId": true,
+          "default": "uuid("
+        },
+        {
+          "name": "challengerId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "challenger_id"
+        },
+        {
+          "name": "defenderId",
+          "type": "String",
+          "optional": false,
+          "array": false,
+          "dbColumn": "defender_id"
+        },
+        {
+          "name": "status",
+          "type": "ChallengeStatus",
+          "optional": false,
+          "array": false,
+          "default": "pending",
+          "isEnum": true
+        },
+        {
+          "name": "matchId",
+          "type": "String",
+          "optional": true,
+          "array": false,
+          "dbColumn": "match_id",
+          "isUnique": true
+        },
+        {
+          "name": "message",
+          "type": "String",
+          "optional": true,
+          "array": false
+        },
+        {
+          "name": "goldWager",
+          "type": "Int",
+          "optional": false,
+          "array": false,
+          "dbColumn": "gold_wager",
+          "default": "0"
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "created_at",
+          "default": "now("
+        },
+        {
+          "name": "updatedAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "updated_at",
+          "isUpdatedAt": true
+        },
+        {
+          "name": "expiresAt",
+          "type": "DateTime",
+          "optional": false,
+          "array": false,
+          "dbColumn": "expires_at"
+        },
+        {
+          "name": "respondedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "responded_at"
+        },
+        {
+          "name": "completedAt",
+          "type": "DateTime",
+          "optional": true,
+          "array": false,
+          "dbColumn": "completed_at"
+        },
+        {
+          "name": "challenger",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "defender",
+          "type": "Character",
+          "optional": false,
+          "array": false,
+          "relation": true
+        },
+        {
+          "name": "match",
+          "type": "PvpMatch",
+          "optional": true,
+          "array": false,
+          "relation": true
+        }
+      ],
+      "indexes": [
+        [
+          "defenderId",
+          "status"
+        ],
+        [
+          "challengerId",
+          "status"
+        ],
+        [
+          "expiresAt"
+        ]
+      ],
+      "uniques": []
+    }
+  }
+}

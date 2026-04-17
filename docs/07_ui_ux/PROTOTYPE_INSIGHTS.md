@@ -1,7 +1,7 @@
 # Prototype Insights Archive
 
 > Extracted from 67 HTML/JSX/MD prototype files in project root (2026-03-21 — 2026-03-28).
-> Original files deleted after extraction. This is the canonical reference.
+> Original files deleted after extraction. This is a historical prototype-insight archive, not the live source of truth for current UI, balance, or architecture.
 
 ## 1. Input Field Token System
 

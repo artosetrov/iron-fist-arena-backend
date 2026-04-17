@@ -1,5 +1,7 @@
 # HEXBOUND — UI/UX CONSISTENCY AUDIT & UNIFIED STANDARD GUIDE
 
+> **Status boundary:** historical UI/UX audit guide snapshot from `2026-03-15`. It preserves an earlier audit framework and migration thesis, but it is not the live UI source of truth over the current design-system docs, screen inventory, and audited `wiki/`.
+
 > **Version:** 1.0
 > **Date:** 2026-03-15
 > **Author:** Principal Mobile Game UX/UI Auditor

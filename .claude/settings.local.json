@@ -11,7 +11,10 @@
       "Bash(find wiki:*)",
       "Bash(/Users/artosetrov/.local/bin/graphify --help)",
       "Bash(/Users/artosetrov/.local/bin/graphify update:*)",
-      "mcp__figma__get_design_context"
+      "mcp__figma__get_design_context",
+      "Bash(cp .skills/skills/guardian/SKILL.md .claude/skills/guardian/SKILL.md)",
+      "Bash(cp .skills/skills/oracle/SKILL.md .claude/skills/oracle/SKILL.md)",
+      "Bash(bash .claude/skills/gatekeeper/scripts/preflight_check.sh)"
     ]
   },
   "enabledMcpjsonServers": [

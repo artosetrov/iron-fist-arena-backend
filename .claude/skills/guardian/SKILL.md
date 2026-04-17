@@ -58,16 +58,26 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **HUD cards over map.** Must use `DarkFantasyTheme.bgSecondary` fill, not translucent `opacity(0.08)`.
 - **Card icons.** Never emoji in HUD cards/banners. Use asset images from Assets.xcassets.
 - **SFX.** Sound effects go through `SFXManager.shared.play(...)`, never direct `AVAudioPlayer`. **CRITICAL:** If `SFX` enum has a case (e.g., `SFX.uiBack`), the corresponding `.wav` file MUST exist in the bundle. If missing, `SFXManager` silently skips the sound. Check for gaps: if a case exists but no WAV, generate the audio file. This is a runtime silent failure, not a compile error.
+- **`[weak self]` in structs.** `[weak self]` is ONLY valid for classes. SwiftUI Views are structs — using `[weak self]` causes "'weak' may only be applied to class" error. In struct Views, capture `self` directly without capture list. Use `[weak self]` only in `@Observable` ViewModel classes.
+- **`showToast` signature.** `appState.showToast(_ title, subtitle:, type:, actionLabel:, action:)`. First arg is positional (NO `title:` label), second is `subtitle:` (NOT `message:`). `ToastType` has: `.achievement`, `.levelUp`, `.rankUp`, `.quest`, `.reward`, `.info`, `.error` — there is NO `.success`.
+- **`post()` vs `postRaw()`.** `APIClient.shared.post(_:body:)` requires `Encodable` body — do NOT pass `[String: Any]`. Use a concrete `Encodable` struct. `postRaw(_:body:)` accepts `[String: Any]` but is deprecated for new code.
+- **No `[String: Any]` raw parsing helpers in service layer.** Methods like `static func from(serverData: [String: Any]) -> Foo?` are fully deprecated. iOS API contracts must use typed `Codable` structs decoded by `APIClient` (which applies `.convertFromSnakeCase` automatically). If a server response is truly untyped, add a concrete model struct to `Hexbound/Models/` instead. **Incident (2026-04-16, wiki blocks 072-108):** 37 blocks of systematic removal of `from(serverData:)` helpers and raw `[String: Any]` API boundaries across all iOS services. Any new code reintroducing raw dictionary parsing for API responses will be reverted.
 - **Haptics.** Use `HapticManager` static methods, never raw `UIImpactFeedbackGenerator`.
 - **UnifiedHeroWidget.** Never create inline character displays. Use `UnifiedHeroWidget` with appropriate context.
 - **HeroIntegratedCard.** Hero page uses this, not UnifiedHeroWidget.
 - **Enemy avatars.** Must be mirrored with `.scaleEffect(x: -1, y: 1)` in combat/VS screens.
 - **Fight button.** No animation — only `opacity(isPressed ? 0.85 : 1)`.
 - **TabSwitcher padding.** Must have `.padding(.horizontal, screenPadding)` + `.padding(.vertical, tabSwitcherPaddingV)`.
+- **Deprecated `.foregroundColor()`.** Use `.foregroundStyle()` instead. `.foregroundColor()` is deprecated in iOS 17+. The scanner now flags all remaining instances. Incident: commit `38bd758` replaced 9 instances in InboxRowView; `InboxDetailView` still has 12 remaining.
 - **Color shorthand without prefix.** `.bgAbyss`, `.textPrimary` etc. ONLY work if registered in `Color`/`ShapeStyle` extensions at the bottom of `DarkFantasyTheme.swift`. Prefer full `DarkFantasyTheme.xxx` prefix. If a shorthand is used, verify it's in the extension.
 - **Progress bar clamp.** Any `.frame(width: geo.size.width * fraction)` MUST use `max(0, min(1, fraction))`. Without it, SwiftUI warns "Invalid frame dimension".
 - **Async in sync closure.** `ErrorStateView.loadFailed { await vm.xxx() }` is WRONG — the factory expects `() -> Void`. Must wrap: `{ Task { await vm.xxx() } }`. Flag any `await` inside a non-async closure parameter.
 - **Type namespacing.** `BurstStyle` is a top-level enum, NOT `RewardBurstView.Style`. Before using `TypeA.TypeB` syntax, verify the nested type actually exists.
+- **Root-level overlays.** Any overlay that must survive a `currentScreen` transition (loading during navigation, forge/creation overlays, celebrations spanning screens) **MUST** be mounted in `HexboundApp.swift` with an `AppState` flag, NOT inside the source screen. An overlay inside `OnboardingDetailView`/`HubView` etc. is torn down with the view during cross-fade, leaving a 1–3s black gap while the destination view decodes its backdrop. Incident: BUG-08 "2-3s black screen after SAVE on NAME" — inline `heroCreationOverlay` lived in `OnboardingDetailView`, got destroyed when `currentScreen = .loreIntro`, while `OnboardingCinematicView` synchronously decoded `onboarding-city-panorama`. Fix: `AppState.isForgingHero` + `HeroForgeOverlayView` at app root. See `Hexbound/CLAUDE.md` → "Root-Level Overlays". Precedent: BUG-53 Daily Login used same pattern.
+- **ViewModel `isLoading` cleanup via `defer`.** ViewModels that set `isCreating = true` / `isLoading = true` / `isSubmitting = true` before an async call MUST use `defer { isCreating = false }` (NOT just `isCreating = false` at the end of the happy path). Reason: on success the VM typically routes away (`appState.currentScreen = .xxx`) and the view unmounts, which feels like "cleanup happens automatically" — but if the same VM instance is reused, or if the code reaches the flag-set and then throws before the explicit reset, the flag leaks forever. `defer` fires on every exit path — success, catch, early-return. Incident: `OnboardingViewModel.createCharacter()` originally never reset `isCreating = false` on success, only on the error path.
+- **Inline loading overlays with synchronous `Image(named:)` decode.** If a destination screen has `Image("bg-shop")`, `Image("onboarding-city-panorama")` or similar large JPEG/PNG in its `body` (not `CachedAssetImage`), it blocks the main thread on first mount for 1–3 seconds. This is a root cause for "black screen during navigation" bugs. Either (a) switch to `CachedAssetImage` with `.interpolation(.medium)`, or (b) ensure the source screen raises a root-level overlay before the `currentScreen` change (see rule above).
+- **No `snake_case` CodingKeys in DTOs.** `APIClient` sets `decoder.keyDecodingStrategy = .convertFromSnakeCase`, so every JSON response is already mapped from `snake_case` → `camelCase` automatically. Declaring `enum CodingKeys: String, CodingKey { case matchId = "match_id" }` on a DTO **double-applies** the conversion and yields `keyNotFound(match_id)` at runtime — the decoder is now looking for a key named `matchId` in the already-converted dict. **Rule:** Swift DTOs under `Hexbound/Models/` must use plain camelCase properties with NO `CodingKeys` enum unless the key genuinely differs (e.g. rename `class` → `characterClass`). Recurring incident — fixed twice on 2026-04-13: `e25845c` (talents DTOs) and `4d757da` (Interactive Combat DTOs).
+- **`@Observable` ViewModel init(appState:cache:) preservation.** When editing the TOP of a `*ViewModel.swift` file (adding a computed block, constants, MARK section), it is easy to accidentally overwrite the `init(appState:cache:)` block. The Swift compiler catches this with "Class 'XxxViewModel' has no initializers", but only at build time — a failed build is one round-trip slower than a pre-commit scan. **Rule:** after editing any `*ViewModel.swift` that has `let appState: AppState` / `let cache: GameDataCache` stored properties, grep for `init(` in the same file before committing. Scanner now enforces this in `check_design_system.sh` section 6. Incident: commit `712c696` (2026-04-11) — `GoldMineViewModel` init wiped by a `mineNames` block paste; "restore init" commit 9 min later. Second recorded incident (see auto-memory `feedback_observable_init_preservation.md`).
 
 ### 4. Property Access Safety
 
@@ -77,18 +87,44 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **Character model specifics:** Character has `.avatar` (appearance key), NOT `.skinKey`. The `.skinKey` is on `AppearanceSkin`, not `Character`.
 - **PvP data specifics:** `PvPRank` has NO `.displayName` — use `.rawValue` instead. `LeaderboardEntry` has ONLY: `characterId`, `characterName`, `characterClass` (String), `value`, `rank`. No avatar/equipment/stats.
 
-### 5. Enum Exhaustiveness
+### 5. Guard Before Await (Double-Tap Prevention)
+
+Every async method in a ViewModel that triggers a network request MUST set its guard flag (`isLoading`, `isClaiming`, `isFighting`, etc.) as the **FIRST** line, BEFORE any `await` call. The flag must be checked at the top with `guard !isXxx else { return }`.
+
+**Pattern (CORRECT):**
+```swift
+func fight(opponentId: String) async {
+    guard !isFighting else { return }
+    isFighting = true
+    defer { isFighting = false }
+    // ... await network call ...
+}
+```
+
+**Anti-pattern (WRONG — causes double-tap exploits):**
+```swift
+func fight(opponentId: String) async {
+    let opponent = await api.prepare(opponentId)  // ← Two taps both pass guard!
+    isFighting = true  // ← Too late
+}
+```
+
+**Why:** QA audit 2026-04-12 found 3 critical double-tap race conditions (BUG-C01/C02/C03) where two rapid taps both passed the guard because the flag was set AFTER the first `await`. This caused duplicate battles, gold loss, and double purchases.
+
+**Rule:** Flag any ViewModel async method that (a) has an `await` call AND (b) does not set a boolean guard flag before the first `await`. Scanner section 7 checks this automatically.
+
+### 6. Enum Exhaustiveness
 
 When a new case is added to an enum, search ALL `switch` statements on that enum. Each must handle the new case with correct values — don't just add `default:`.
 
-### 6. Accessibility
+### 7. Accessibility
 
 - **Every Button must have `.accessibilityLabel()`.** Icon-only buttons are the highest priority. Flag any `Button { }` without `.accessibilityLabel`.
 - Labels describe the **action** ("Go back", "Show password"), not the visual ("Arrow", "Eye icon").
 - Dynamic state → dynamic label: `.accessibilityLabel(isVisible ? "Hide password" : "Show password")`
 - No emoji as functional icons — use asset images or SF Symbols. Exception: decorative/flavor text.
 
-### 7. ViewModifier Parameters
+### 8. ViewModifier Parameters
 
 If a modifier struct got a new parameter, search for ALL callers — both the `.modifier(Foo(...))` form and the `.foo(...)` extension. Direct struct initializers don't get default values from the extension.
 
@@ -119,36 +155,3 @@ When invoked as a subagent (via Agent tool), the caller should pass:
 - Whether this is a new feature, bugfix, or refactor
 
 Return the review in the format above. If there are Critical issues, start the response with `⛔ CRITICAL ISSUES FOUND` so the caller can act on it.
-
----
-
-## Agent Bus (Team Communication)
-
-> Ты часть Agent Team. После завершения работы — запиши результат в bus. Перед началом — проверь bus на сообщения от других агентов.
-
-### При старте
-1. `ls .claude/agent-bus/` — проверь есть ли файлы от других агентов
-2. Прочитай `.md` файлы (кроме `PROTOCOL.md`, `AGENT_HEADER.md`) — это результаты других агентов
-3. Проверь секцию `## Alerts` — если есть `@{твоё-имя}` или `@ALL`, обработай
-
-### При завершении
-Запиши результат: `Write tool → .claude/agent-bus/{твоё-имя}.md`
-
-Формат:
-```markdown
-# {Name} — Result
-timestamp: {now}
-status: OK | WARNING | BLOCKED
-
-## Findings
-- ...
-
-## Decisions
-- ...
-
-## Alerts
-- @{agent}: описание (если нашёл проблему для другого агента)
-
-## Files Changed
-- path/to/file (action)
-```

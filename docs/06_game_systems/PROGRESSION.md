@@ -276,7 +276,7 @@ Examples:
 | Quests per Day | 3 | Random selection |
 | Reset Time | UTC midnight | Consistent for all players |
 | Target Scaling | By character level | Higher level = harder targets |
-| Completion Reward | (TBD by quest) | Typically gold/XP |
+| Completion Reward | Configured per quest definition | Typically gold/XP, varies by quest type and tuning |
 
 ### Quest Progression Tracking
 

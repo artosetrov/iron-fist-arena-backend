@@ -5,6 +5,8 @@
 **Скоуп:** W1.D3 Hexbound QA Fix Plan
 **Статус:** Ожидает одобрения Артёма
 
+> **Status boundary:** historical review-before-code snapshot tied to the W1.D3 planning moment. Keep it as rationale and evidence, not as the current approval queue or live GameConfig rollout plan.
+
 ---
 
 ## TL;DR

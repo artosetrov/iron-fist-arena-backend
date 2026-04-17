@@ -1,6 +1,6 @@
 # Hexbound — Git Workflow
 
-*Source of truth: this file + actual git config. Updated: 2026-03-19*
+*Source of truth: this file + actual git config + `.github/workflows/ci.yml`. Updated: 2026-04-16*
 
 ---
 
@@ -46,7 +46,7 @@ git checkout -b feature/arena-redesign
 git add .
 git commit -m "feat: arena redesign"
 
-# Push for CI check + Vercel preview
+# Push for CI check + backend Vercel preview
 git push origin feature/arena-redesign
 
 # Merge to main when ready
@@ -68,7 +68,7 @@ After pushing to `origin main`, you must also push the admin subtree:
 git subtree push --prefix=admin admin-deploy main
 ```
 
-**If you forget this step, admin panel will NOT update.**
+**If you forget this step, admin panel will NOT update even if backend already did.**
 
 ### If subtree push fails (common after force push or rebase)
 
@@ -92,11 +92,29 @@ git push origin --tags
 
 ## Branch Protection (Recommended)
 
-When ready, enable on GitHub → Settings → Branches → `main`:
+Recommended GitHub settings for `main`:
 
-- [x] Require pull request before merging
-- [x] Require status checks (CI build)
-- [ ] Require approvals (not needed for solo dev)
+- require pull request before merging
+- require status checks (the CI build workflow)
+- approvals optional for solo-dev mode
+
+This document does **not** claim those rules are already enabled; it records the recommended operating baseline.
+
+## CI Reality
+
+The repo now has a live workflow at `.github/workflows/ci.yml`.
+
+Current CI covers:
+
+- backend build + tests
+- admin build
+- Prisma schema parity + migration drift checks
+
+CI helps catch regressions before or alongside production pushes, but it does **not** replace:
+
+- admin subtree deploy
+- explicit production migration apply
+- iOS/TestFlight release work
 
 ## Common Mistakes
 
@@ -104,5 +122,6 @@ When ready, enable on GitHub → Settings → Branches → `main`:
 |---------|-----|
 | Forgot admin subtree push | Run `git subtree push --prefix=admin admin-deploy main` |
 | Prisma schemas out of sync | Copy `backend/prisma/schema.prisma` → `admin/prisma/schema.prisma` |
+| Assumed CI deploys admin | CI validates builds only; production admin still needs subtree push |
 | Pushed broken code to main | Revert commit: `git revert HEAD && git push origin main` |
 | Large uncommitted diff | Commit in logical chunks, not one giant commit |

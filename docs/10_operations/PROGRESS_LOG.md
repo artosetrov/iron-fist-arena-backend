@@ -1,3 +1,7 @@
+# Hexbound Progress Log
+
+*Historical working notebook from the original long-form repo audit. This file is intentionally preserved as a point-in-time engineering log, but it is **not** the current source of truth for repo status anymore. Use `wiki/audit/audit-index.md`, `wiki/audit/project-file-inventory.md`, `wiki/index.md`, and `wiki/log.md` for the live project state. Updated: 2026-04-16*
+
 Original prompt: Act as a principal game engineer, backend architect, performance engineer, QA lead, and security auditor. Audit and improve the entire project to production standard across architecture, database, APIs, gameplay systems, performance, UX responsiveness, testing, and exploit resistance, then report findings in sections A-J plus a Top 20 priority fix list.
 
 ## 2026-03-12

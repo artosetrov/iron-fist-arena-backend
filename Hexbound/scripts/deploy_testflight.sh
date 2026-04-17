@@ -26,11 +26,33 @@ if ! command -v fastlane &> /dev/null; then
 fi
 
 # 2. Проверить что Appfile настроен
-if grep -q "YOUR_APPLE_ID" fastlane/Appfile; then
+has_fastlane_apple_id=false
+if [ -n "${FASTLANE_APPLE_ID:-}" ]; then
+    has_fastlane_apple_id=true
+elif ! grep -q "YOUR_APPLE_ID" fastlane/Appfile; then
+    has_fastlane_apple_id=true
+fi
+
+has_fastlane_team=false
+if [ -n "${FASTLANE_TEAM_ID:-}" ] || [ -n "${FASTLANE_ITC_TEAM_ID:-}" ]; then
+    has_fastlane_team=true
+elif grep -Eq '^[[:space:]]*(team_id|itc_team_id)\(' fastlane/Appfile; then
+    has_fastlane_team=true
+fi
+
+if [ "$has_fastlane_apple_id" != "true" ] || [ "$has_fastlane_team" != "true" ]; then
     echo ""
-    echo "❌ Сначала настрой fastlane/Appfile:"
+    echo "❌ Сначала настрой Fastlane identity:"
+    echo "   Нужен Apple ID и Team ID / App Store Connect Team ID"
+    echo ""
+    echo "   Вариант A: заполнить fastlane/Appfile"
     echo "   1. Замени YOUR_APPLE_ID@example.com на свой Apple ID"
-    echo "   2. Раскомментируй и заполни team_id"
+    echo "   2. Раскомментируй и заполни team_id (и при необходимости itc_team_id)"
+    echo ""
+    echo "   Вариант B: передать env vars"
+    echo "   FASTLANE_APPLE_ID=..."
+    echo "   FASTLANE_TEAM_ID=..."
+    echo "   FASTLANE_ITC_TEAM_ID=...   # если нужен отдельный ASC team"
     echo ""
     exit 1
 fi

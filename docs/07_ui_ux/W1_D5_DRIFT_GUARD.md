@@ -5,6 +5,8 @@
 **Скоуп:** W1.D5 Hexbound QA Fix Plan
 **Статус:** ✅ Завершено
 
+> **Status boundary:** historical completion report for the first iOS/backend drift-guard rollout. Useful as provenance, but not a substitute for checking the current guard scripts and active CI/preflight wiring.
+
 ---
 
 ## TL;DR

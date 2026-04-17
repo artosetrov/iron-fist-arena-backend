@@ -1,5 +1,6 @@
 # Figma Screen Creation Rules (MANDATORY)
 
+> **Status boundary:** This is a workflow playbook for a specific Figma authoring flow against `Hexbound-Design` and its linked design-system library. It is useful when that exact Figma/tooling path is in play, but it is **not** the general product source of truth. Live UI truth remains the current Swift code plus the audited `wiki/` pages.
 > **Scope:** These rules apply to EVERY `use_figma` call that creates or modifies a screen in `Hexbound-Design` (fileKey: `PalemJ36B97ZdC0cd8jzv4`).
 > **Violation = delete and rebuild.** No exceptions, no "fix later".
 

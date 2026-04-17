@@ -5,6 +5,8 @@
 **Скоуп:** W2 Onboarding hook (5 дней) — pre-implementation recon
 **Статус:** 🔍 Review — требуется выбор Артёма перед любой имплементацией
 
+> **Status boundary:** historical pre-implementation recon snapshot for the W2 onboarding slice. It documents the decision space from `2026-04-10`, not the current active approval state.
+
 ---
 
 ## Зачем этот документ

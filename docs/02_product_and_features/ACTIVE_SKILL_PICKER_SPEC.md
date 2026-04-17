@@ -1,7 +1,7 @@
 # Active Skill Picker — Full Spec & Implementation Plan
 
 > Status: **Draft** · Owner: Artem · Target: Interactive Combat v1 — Phase 4
-> Prototype: `active-skills-picker-prototype.html`
+> Historical note: the exploratory `active-skills-picker-prototype.html` was removed during later repository cleanup; treat this spec plus the shipped native picker implementation as the current reference.
 > Depends on: Interactive Combat v1 Phase 1, Phase 3, Phase 3.B (all shipped 2026-04-13)
 
 ## 1. Problem & Goal
@@ -373,10 +373,11 @@ If fire rate <30% → potions too weak or too scarce → raise heal % by 5pt or 
 
 ## 12. References
 
-- Prototype: `active-skills-picker-prototype.html` (this repo root)
+- Historical prototype: removed later during repository cleanup; use this spec and the shipped native picker flow as the retained reference
 - Phase 1 shipped: `auto-memory/project_interactive_combat_phase1.md`
 - Phase 3.B shipped: `auto-memory/project_interactive_combat_phase3b_shipped.md`
 - Migration safety: `auto-memory/feedback_migration_mcp_apply_to_prod.md`
 - Schema drift checker: `scripts/check_schema_drift.py`
 - Figma rules: `docs/07_ui_ux/FIGMA_SCREEN_RULES.md`
 - Current `ActiveSlotsBar`: `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift`
+- Current native picker: `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift`

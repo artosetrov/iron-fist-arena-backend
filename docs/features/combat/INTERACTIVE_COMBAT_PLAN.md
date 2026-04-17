@@ -5,6 +5,8 @@
 **Owner:** Artem
 **Scope:** Phase 1 (active talent slots) + Phase 2 (per-strike stance choice) — shipped together
 
+> **Status boundary:** historical interactive-combat design plan from `2026-04-13`. The document is still valuable as design rationale, but it is not the live implementation contract. Revalidate against the current backend interactive-combat routes, current iOS combat flows, and current `wiki/` audit pages before treating it as shipped truth.
+
 > **v2 revision headline:** the v1 "Attack / Defend / Counter" RPS model has been **replaced** with an interactive version of the existing **head / chest / legs zone stance system** (already in `combat.ts`). RPS was inventing a parallel layer that contradicted the shipped combat pipeline and `SKILL_TREE_DESIGN.md`. See **§13 Balance & Economy Alignment** for the full rationale.
 
 ---

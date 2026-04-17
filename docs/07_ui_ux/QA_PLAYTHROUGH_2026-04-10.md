@@ -7,6 +7,8 @@
 **Method:** Hybrid — визуальный прогон через Simulator (онбординг → хаб → hero screens) + глубокий код-ревью баланса, экономики и view-слоя.
 **Честность:** максимальная. Без сглаживаний.
 
+> **Status boundary:** historical playthrough + audit snapshot from `2026-04-10`. Valuable as a forensic readout, but not a live statement of current product health. Revalidate all counts, severities, and fix-status assumptions against the current codebase, test suite, and `wiki/` before using it operationally.
+
 ---
 
 ## 0. Методологическая оговорка (важно)

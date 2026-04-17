@@ -1,5 +1,7 @@
 # Comic Onboarding — Plan & Art Specs
 
+> **Status boundary:** historical concept + art-spec plan for a comic-style onboarding exploration. Treat this as a proposal snapshot, not as the canonical onboarding/tutorial implementation or current asset manifest. Revalidate against the live `wiki/features/tutorial.md`, `wiki/features/characters.md`, and current onboarding assets before using it operationally.
+
 ## Concept: "The Ballad of Nobody"
 
 Короткая лор-история в стиле комикса. Новичок приходит в Hexbound — и город показывает, что его тут ждёт. Тёмный юмор, атмосферный арт, кинематографичная подача.

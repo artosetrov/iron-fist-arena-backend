@@ -1,7 +1,7 @@
 # Hexbound — Project Index
 
-> **Главный навигатор проекта.** Если ты агент или разработчик — начни отсюда.
-> Last updated: 2026-03-26
+> **Навигационный слой верхнего уровня.** Используй этот файл как обзорный вход в `docs/`, а для текущего file-by-file состояния, audit coverage и ownership notes смотри `wiki/index.md`, `wiki/log.md`, и `wiki/audit/audit-index.md`.
+> Last updated: 2026-04-16
 
 ---
 
@@ -13,11 +13,11 @@
 
 | Платформа | Технологии |
 |-----------|-----------|
-| **iOS клиент** | Swift / SwiftUI, iOS 16.4+, 38+ экранов |
-| **Backend** | Next.js 15.2 / TypeScript 5.7, Prisma 6.4, PostgreSQL (Supabase), Upstash Redis |
-| **Admin** | Next.js 15.2, Tailwind 4.0, Radix UI, Recharts, React Hook Form + Zod |
+| **iOS клиент** | Swift / SwiftUI, iOS 17.0+, широкий multi-screen клиент для auth, hub, PvP, dungeons, minigames, progression, inbox, settings |
+| **Backend** | Next.js 15.x / TypeScript 5.7.x, Prisma 6.x, PostgreSQL (Supabase), Upstash Redis |
+| **Admin** | Next.js 15.x, Tailwind 4.x, Radix UI, Recharts, React Hook Form + Zod |
 | **Хостинг** | Vercel (backend + admin), App Store (iOS) |
-| **БД** | PostgreSQL (Supabase), 40+ моделей Prisma |
+| **БД** | PostgreSQL (Supabase), Prisma schema covering auth, characters, economy, PvP, dungeons, social, liveops, push, and audit surfaces |
 
 ---
 
@@ -51,7 +51,7 @@ scripts/                    ← Утилиты (git-watcher, deploy)
 
 | Домен | Главный документ | Доп. документы |
 |-------|-----------------|----------------|
-| **Проект в целом** | `docs/01_source_of_truth/PROJECT_OVERVIEW.md` | Этот файл |
+| **Проект в целом** | `wiki/index.md` + `docs/01_source_of_truth/PROJECT_OVERVIEW.md` | Этот файл как навигатор верхнего уровня |
 | **DB Schema** | `backend/prisma/schema.prisma` | `docs/04_database/SCHEMA_REFERENCE.md` |
 | **API** | `docs/03_backend_and_api/API_REFERENCE.md` | Код в `backend/src/app/api/` |
 | **UI Design System** | `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift` | `docs/07_ui_ux/DESIGN_SYSTEM.md` |
@@ -67,6 +67,7 @@ scripts/                    ← Утилиты (git-watcher, deploy)
 | **Audio** | `docs/02_product_and_features/AUDIO_DESIGN.md` | — |
 | **Art Style** | `docs/08_prompts/ART_STYLE_GUIDE.md` | `ASSET_PROMPTS_INDEX.md` |
 | **Deploy** | `docs/10_operations/DEPLOY.md` | `GIT_WORKFLOW.md` |
+| **Текущий audit / ownership** | `wiki/audit/audit-index.md` + `wiki/audit/project-file-inventory.md` | `wiki/log.md` |
 
 ---
 
@@ -134,6 +135,7 @@ scripts/                    ← Утилиты (git-watcher, deploy)
 ## Навигация по документации
 
 Полный индекс всех файлов: [`DOCUMENTATION_INDEX.md`](01_source_of_truth/DOCUMENTATION_INDEX.md)
+Текущий audit/source-of-truth слой: [`../wiki/index.md`](../wiki/index.md)
 Шаблоны для новых docs: [`templates/`](templates/)
 Модульные правила: [`rules/`](rules/)
 Feature docs: [`features/`](features/)

@@ -4,6 +4,8 @@
 **Статус:** 🛑 Обновление плана — execution paused до подтверждения
 **Связанные:** `W2_D2_LORE_AUDIT.md` (обсолет в части архитектуры)
 
+> **Status boundary:** historical plan-correction snapshot for a specific onboarding cinematic architecture moment. It should not be treated as the current cinematic implementation plan without revalidation.
+
 ---
 
 ## TL;DR

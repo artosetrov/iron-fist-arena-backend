@@ -4,6 +4,8 @@
 **Статус:** 🔵 Decision — requires minimal code change (navigation reorder), no content rewrite
 **Исходные plan items:** `QA_FIX_PLAN_2026-04-10.md` W2.D2 — *«ONB-04 Welcome lore — cinematic вместо wall-of-text»*
 
+> **Status boundary:** historical audit/decision memo for one onboarding-content discussion. Use it as context, not as the live onboarding narrative spec without checking the current tutorial/onboarding surfaces.
+
 ---
 
 ## TL;DR

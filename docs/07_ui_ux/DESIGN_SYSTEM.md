@@ -1,8 +1,8 @@
 # HEXBOUND — Система дизайна (Design System)
 
 **Версия:** 2.3.0
-**Статус:** Production-ready (v2.3 — DS Audit Cleanup)
-**Дата:** 4 апреля 2026
+**Статус:** Active reference (living design-system document)
+**Дата:** 16 апреля 2026
 **Платформа:** iOS SwiftUI (Portrait, 1170×2532)
 **Язык:** Русский + технические термины на английском
 **Figma Design System:** [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS)
@@ -11,19 +11,18 @@
 
 ## 1. Заголовок и метаданные
 
-Этот документ является **КАНОНИЧЕСКИМ источником истины** для всех UI/UX решений в Hexbound.
+Этот документ является **КАНОНИЧЕСКИМ источником истины** для правил UI/UX, токенов и компонентных соглашений в Hexbound.
 
 - **Приложение:** Hexbound Mobile PvP RPG (Dark Fantasy Premium)
-- **Целевая аудитория:** iOS players 16+, portrait orientation, touch-first interaction
-- **Экраны:** 46 (Figma) / 70+ (Swift)
-- **Компоненты переиспользования:** 30+
-- **Токены дизайна:** 370+ (colors, spacing, typography, opacity)
-- **Figma переменных:** 377 (209 Primitives + 158 Color semantic + 14 Spacing/Radius)
-- **Figma компонентов:** 47 component sets, 235 variants, 164 instances
-- **Баттон стили:** 20 (6 families × states)
-- **Карточек стили:** 9 (Panel/Highlight/Info/Modal + 5 Rarities) + 3 dividers
+- **Целевая аудитория:** iPhone portrait, touch-first interaction, mid-core RPG sessions
+- **Покрытие:** auth, hub, PvP, combat, inventory, shop, dungeons, minigames, progression, social, settings, tutorial
+- **Компонентный слой:** shared SwiftUI components + ornamental primitives + screen-specific compositions
+- **Токены дизайна:** live code tokens + Figma DS variables; exact counts should be verified against code/Figma export, not frozen in this doc
+- **Figma DS:** variables, component sets, and variants live in `Hexbound-DS`; exact inventory is snapshot-sensitive
+- **Баттон стили:** button families with state variants
+- **Карточные стили:** panel / highlight / info / modal / rarity surfaces + dividers
 
-Этот документ заменяет все предыдущие версии и становит новый стандарт качества.
+Для точных current-state inventories используйте `wiki/`, `SCREEN_INVENTORY.md`, и живой код. Этот документ задает систему, а не обещает вечные количественные значения.
 
 ---
 
@@ -939,7 +938,7 @@ OrnamentalDivider()
 
 #### Standard Application Patterns (MANDATORY for new UI)
 
-**Статус: 100% COMPLETE (v2.1 Structural Rebranding)** — 34+ файлов переделаны. Все панели усилены: surfaceLighting + cornerBrackets + abyss shadow. Модали — полный набор (brackets + diamonds + dual shadow). Завершено 2026-03-22.
+**Историческая заметка:** v2.1 Structural Rebranding завершил крупный проход 2026-03-22. Эту строку нужно читать как milestone snapshot, а не как гарантию, что весь текущий UI уже полностью выровнен без остаточного долга.
 
 **Standard panel pattern (регулярные карточки, детальные секции, игровые здания):**
 ```swift
@@ -2070,7 +2069,7 @@ Text("HP: 150")
 
 ## 15. Экранные заметки по рефакторингу (Screen Alignment Notes)
 
-### 15.1 Hub Screens (6 экранов)
+### 15.1 Hub Screens
 
 **Основные проблемы:**
 - ❌ 50+ hardcoded colors (должны быть tokens)
@@ -2085,7 +2084,7 @@ Text("HP: 150")
 
 **Приоритет:** P0 (фундамент для всех остальных экранов)
 
-### 15.2 Arena / PvP Screens (5 экранов)
+### 15.2 Arena / PvP Screens
 
 **Основные проблемы:**
 - ❌ Opponent comparison не side-by-side (user не может быстро сравнить)
@@ -2100,7 +2099,7 @@ Text("HP: 150")
 
 **Приоритет:** P1 (critical user path)
 
-### 15.3 Character / Profile Screens (3 экрана)
+### 15.3 Character / Profile Screens
 
 **Основные проблемы:**
 - ❌ Stats не color-coded (статы не сканируемые fast)
@@ -2115,7 +2114,7 @@ Text("HP: 150")
 
 **Приоритет:** P1 (core gameplay loop)
 
-### 15.4 Inventory Screens (2 экрана)
+### 15.4 Inventory Screens
 
 **Основные проблемы:**
 - ❌ Grid layout неудобный (иконки слишком маленькие)
@@ -2130,7 +2129,7 @@ Text("HP: 150")
 
 **Приоритет:** P2 (supporting screen)
 
-### 15.5 Shop Screens (4 экрана)
+### 15.5 Shop Screens
 
 **Основные проблемы:**
 - ❌ Price не выделена (buried in text)
@@ -2145,7 +2144,7 @@ Text("HP: 150")
 
 **Приоритет:** P2 (monetization, but supporting)
 
-### 15.6 Battle Result Screen (1 экран)
+### 15.6 Battle Result Screen
 
 **Основные проблемы:**
 - ❌ Rewards не reveal animation (flat, not rewarding)
@@ -2160,7 +2159,7 @@ Text("HP: 150")
 
 **Приоритет:** P1 (core gameplay feeling)
 
-### 15.7 Onboarding Screens (4+ экрана)
+### 15.7 Onboarding Screens
 
 **Основные проблемы:**
 - ❌ 30+ hardcoded values (не в design system)
@@ -2177,9 +2176,11 @@ Text("HP: 150")
 
 ---
 
-## 16. Роадмап миграции (Migration Roadmap)
+## 16. Исторический роадмап миграции (Migration Roadmap Archive)
 
-Следовать этому порядку для успешной migration на design system.
+> **Status boundary:** the rules and component guidance in this document are live, but the phased migration plan below is historical rollout context from the original design-system adoption push. Keep it as implementation history, not as the active execution queue or current delivery plan.
+
+Ниже сохранён исходный migration order как архив rollout-мышления, а не как подтверждение, что именно этот порядок и сроки всё ещё актуальны.
 
 ### P0 — Blockers (начать СЕЙЧАС)
 

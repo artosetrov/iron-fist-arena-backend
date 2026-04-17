@@ -1,0 +1,619 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$generatedFrom": "backend/src/lib/game/balance.ts",
+  "$doNotEdit": "Regenerate with scripts/wiki/generate-balance-constants.mjs",
+  "counts": {
+    "constants": 32,
+    "functions": 10,
+    "unevaluated": 0
+  },
+  "constants": {
+    "STAMINA": {
+      "value": {
+        "MAX": 180,
+        "REGEN_RATE": 1,
+        "REGEN_INTERVAL_MINUTES": 8,
+        "PVP_COST": 10,
+        "DUNGEON_EASY": 15,
+        "DUNGEON_NORMAL": 20,
+        "DUNGEON_HARD": 25,
+        "BOSS": 40,
+        "TRAINING": 5,
+        "FREE_PVP_PER_DAY": 3
+      },
+      "doc": "--- Stamina ---"
+    },
+    "STAMINA_REFILL_DR": {
+      "value": {
+        "COST_MULTIPLIERS": [
+          1,
+          1.6,
+          2.8,
+          4.8
+        ],
+        "DAILY_CAP": 4
+      },
+      "doc": "--- Stamina Refill Diminishing Returns (W3.D4) ---\n\nIndustry precedent: Clash Royale gem-for-gold, LoL boosts, Genshin Fragile Resin.\nRule: the Nth refill of the day costs more gems than the previous one so whales\ncannot buy unlimited energy at a flat rate. Free-to-play users are unaffected\nbecause the base price equals STAMINA_REFILL in GEM_COSTS.\n\nCost formula for refill index `n` (0-indexed):\n  cost_n = base_cost × REFILL_COST_MULTIPLIERS[min(n, cap)]\n\nA hard cap prevents a 5th+ refill on the same day — there is no price that\nmakes a 20-refill day healthy for the economy."
+    },
+    "TRAINING_XP_DR": {
+      "value": {
+        "FULL_XP_CLEARS": 6,
+        "HALF_XP_CLEARS": 6,
+        "FLOOR_MULTIPLIER": 0.1
+      },
+      "doc": "--- Training / Dungeon XP Diminishing Returns (W3.D4) ---\n\nIndustry precedent: WoW rested XP (soft), LoL FWoTD (first win of the day),\nRaid: Shadow Legends Dungeon Energy, Genshin daily commissions.\nRule: first N dungeon clears/day give full XP. The next M are at 50%. Beyond\nthat, XP floors at 10% (never zero — never brick the player if they want to\nkeep playing, just remove the farming incentive).\n\nThe multiplier is chosen by the NUMBER of dungeon clears taken today, not by\ntotal XP earned, so that long boss fights are not disproportionately nerfed."
+    },
+    "HP_REGEN": {
+      "value": {
+        "REGEN_RATE": 1,
+        "REGEN_INTERVAL_MINUTES": 5
+      },
+      "doc": "--- HP Regen ---"
+    },
+    "GOLD_REWARDS": {
+      "value": {
+        "PVP_WIN_BASE": 150,
+        "PVP_LOSS_BASE": 50,
+        "TRAINING_WIN": 30,
+        "TRAINING_LOSS": 10,
+        "REVENGE_MULTIPLIER": 1.5
+      },
+      "doc": "--- Gold rewards (Economy v2 — reduced to fix gold hyperinflation) ---"
+    },
+    "XP_REWARDS": {
+      "value": {
+        "PVP_WIN_XP": 150,
+        "PVP_LOSS_XP": 50,
+        "TRAINING_WIN_XP": 60,
+        "TRAINING_LOSS_XP": 20
+      },
+      "doc": "--- XP rewards ---"
+    },
+    "FIRST_WIN_BONUS": {
+      "value": {
+        "GOLD_MULT": 2,
+        "XP_MULT": 2
+      },
+      "doc": "--- First win of the day bonus ---"
+    },
+    "UPGRADE_CHANCES": {
+      "value": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        80,
+        60,
+        40,
+        30,
+        20
+      ],
+      "typeAnnotation": "readonly number[]",
+      "doc": "--- Equipment upgrade success chances (index 0 = +1, index 9 = +10) ---\nEconomy v3 (2026-04-13): bumped the +9 / +10 floor (25%/15% → 30%/20%) and\nchanged the failure mode at +9 / +10 to \"downgrade by 1\" instead of \"stays\".\nWhy: previous setup turned high-end upgrading into a flat gold tax that whales\ncould brute-force. Downgrade-on-fail makes the choice meaningful — Protection\nScrolls become a real call. Higher base success keeps the median grinder honest.\nSee ECONOMY_RULES.md R7.3."
+    },
+    "UPGRADE_DOWNGRADE_LEVELS": {
+      "value": [
+        9,
+        10
+      ],
+      "typeAnnotation": "readonly number[]",
+      "doc": "Plus-levels at which a failed upgrade attempt downgrades the item by 1 (unless protected)."
+    },
+    "DAILY_LOGIN_REWARDS": {
+      "value": [
+        {
+          "type": "gold",
+          "amount": 150,
+          "displayName": "150 Gold",
+          "displayIcon": "icon-gold"
+        },
+        {
+          "type": "consumable",
+          "amount": 1,
+          "displayName": "1 S. Potion",
+          "displayIcon": "icon-stamina-small",
+          "itemId": "stamina_potion_small"
+        },
+        {
+          "type": "gold",
+          "amount": 300,
+          "displayName": "300 Gold",
+          "displayIcon": "icon-gold"
+        },
+        {
+          "type": "consumable",
+          "amount": 2,
+          "displayName": "2 S. Potions",
+          "displayIcon": "icon-stamina-small",
+          "itemId": "stamina_potion_small"
+        },
+        {
+          "type": "gold",
+          "amount": 500,
+          "displayName": "500 Gold",
+          "displayIcon": "icon-gold"
+        },
+        {
+          "type": "consumable",
+          "amount": 1,
+          "displayName": "1 L. Potion",
+          "displayIcon": "icon-stamina-large",
+          "itemId": "stamina_potion_large"
+        },
+        {
+          "type": "gems",
+          "amount": 25,
+          "displayName": "25 Gems",
+          "displayIcon": "icon-gems"
+        }
+      ],
+      "typeAnnotation": "readonly DailyLoginRewardDef[]",
+      "doc": "--- Daily login rewards (Economy v2 — reduced gold days to prevent passive > active income) ---"
+    },
+    "IAP_PRODUCTS": {
+      "value": {
+        "gems_small": {
+          "gems": 100,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 0.99
+        },
+        "gems_medium": {
+          "gems": 550,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 4.99
+        },
+        "gems_large": {
+          "gems": 1200,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 9.99
+        },
+        "gems_huge": {
+          "gems": 2500,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 19.99
+        },
+        "gems_mega": {
+          "gems": 6500,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 49.99
+        },
+        "gold_500": {
+          "gems": 0,
+          "gold": 500,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 0.99,
+          "enabled": false
+        },
+        "gold_1200": {
+          "gems": 0,
+          "gold": 1200,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 1.99,
+          "enabled": false
+        },
+        "gold_3500": {
+          "gems": 0,
+          "gold": 3500,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 4.99,
+          "enabled": false
+        },
+        "gold_8000": {
+          "gems": 0,
+          "gold": 8000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 9.99,
+          "enabled": false
+        },
+        "gold_20000": {
+          "gems": 0,
+          "gold": 20000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 19.99,
+          "enabled": false
+        },
+        "adventurer_bundle_I": {
+          "gems": 600,
+          "gold": 3000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 4.99,
+          "items": [
+            {
+              "type": "protection_scroll",
+              "quantity": 1
+            }
+          ]
+        },
+        "adventurer_bundle_II": {
+          "gems": 1400,
+          "gold": 10000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 9.99,
+          "items": [
+            {
+              "type": "protection_scroll",
+              "quantity": 3
+            },
+            {
+              "type": "legendary_shard",
+              "quantity": 1
+            }
+          ]
+        },
+        "adventurer_bundle_III": {
+          "gems": 3200,
+          "gold": 20000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 19.99,
+          "items": [
+            {
+              "type": "protection_scroll",
+              "quantity": 5
+            },
+            {
+              "type": "legendary_shard",
+              "quantity": 5
+            }
+          ]
+        },
+        "monthly_gem_card": {
+          "gems": 50,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": true,
+          "price": 4.99
+        },
+        "starter_bundle": {
+          "gems": 200,
+          "gold": 3000,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 2.99
+        },
+        "premium_forever": {
+          "gems": 0,
+          "gold": 0,
+          "premium": true,
+          "monthlyGemCard": false,
+          "price": 9.99,
+          "enabled": false
+        },
+        "premium_pass_monthly": {
+          "gems": 0,
+          "gold": 0,
+          "premium": false,
+          "monthlyGemCard": false,
+          "price": 4.99,
+          "subscription": {
+            "durationDays": 30,
+            "monthlyGems": 300
+          }
+        }
+      },
+      "typeAnnotation": "Record<string, IapProduct>"
+    },
+    "BATTLE_PASS": {
+      "value": {
+        "BP_XP_PER_PVP": 20,
+        "BP_XP_PER_DUNGEON_FLOOR": 30,
+        "BP_XP_PER_QUEST": 50,
+        "BP_XP_PER_ACHIEVEMENT": 100
+      },
+      "doc": "--- Battle Pass ---"
+    },
+    "BP_WEEKLY": {
+      "value": {
+        "SLOTS": 5,
+        "XP_PER_CLEAR": 150
+      },
+      "doc": "--- Battle Pass Weekly Challenges (W3.D5 — BAL-06) ---\n\nEvery character gets 5 rotating challenge slots per ISO week. Pool is\nselected deterministically via mulberry32(seedFromWeek) — no cron job, no\nDB writes until the player actually scores progress.\n\nDesign intent (industry reference: Fortnite, LoL, Valorant):\n  - 5 challenges keeps the list skimmable on mobile (< 1 screen)\n  - Each completion awards 150 BP XP (≈ 3x a daily quest) so clearing all\n    five = 750 BP XP, i.e. ~1.5 BP levels → meaningful weekly pull\n  - Goals scale modestly vs dailies but are still achievable in one evening\n    of play if the pool slots overlap with the player's session pattern\n  - No rerolls in v1 — the rotation IS the reroll\n\nExtending: add a new tuple to WEEKLY_CHALLENGE_POOL, bump BP_WEEKLY_XP if\nrebalancing. Do NOT change pool length — it's load-bearing for determinism\nacross historical weeks (claimed rows reference goal_type + slot_index)."
+    },
+    "ELO": {
+      "value": {
+        "K_CALIBRATION": 48,
+        "K_DEFAULT": 32,
+        "CALIBRATION_GAMES": 10,
+        "MIN_RATING": 0
+      },
+      "doc": "--- ELO ---"
+    },
+    "PVP_RANKS": {
+      "value": {
+        "BRONZE": 0,
+        "SILVER": 750,
+        "GOLD": 1500,
+        "PLATINUM": 2250,
+        "DIAMOND": 3000,
+        "MASTER": 3750,
+        "GRANDMASTER": 4250
+      },
+      "doc": "--- PvP Rank Thresholds (W3.D5 — Variant A ladder rewrite) ---\n\nLadder: Bronze → Silver → Gold → Platinum → Diamond → Master → Grandmaster → Challenger\nEach ranged tier is 750 ELO wide with 3 divisions (III → II → I, 250 ELO each).\nMaster (3750-4249) and Grandmaster (4250+) have no divisions.\nChallenger is top-100 leaderboard rank inside the Grandmaster rating band —\nNOT a persistent rating threshold, so no constant here.\n\nIndustry precedent: LoL 10 tiers × 4 div, Valorant 9 × 3, Apex 8 × 4.\nStarting rating 1000 (Character.pvpRating default) lands in Silver II.\n\nThese constants are kept for live-config compatibility AND as the source\nof truth for tier floors, but the ladder logic lives in tier.ts\n(tierFromRating / divisionFromRating). Do not duplicate those computations\nhere — import from tier.ts instead."
+    },
+    "COMBAT": {
+      "value": {
+        "MAX_TURNS": 15,
+        "MIN_DAMAGE": 1,
+        "CRIT_MULTIPLIER": 1.5,
+        "MAX_CRIT_CHANCE": 50,
+        "MAX_DODGE_CHANCE": 30,
+        "ROGUE_DODGE_BONUS": 4,
+        "TANK_DAMAGE_REDUCTION": 0.85,
+        "DAMAGE_VARIANCE": 0.1,
+        "POISON_ARMOR_PENETRATION": 0.3,
+        "CRIT_PER_LUK": 0.6,
+        "CRIT_PER_AGI": 0.2,
+        "DODGE_PER_AGI": 0.2,
+        "DODGE_PER_LUK": 0.1,
+        "ROGUE_EXECUTE_HP_THRESHOLD": 0.35,
+        "ROGUE_EXECUTE_DAMAGE_BONUS": 0.15,
+        "CHA_MISS_PER_POINT": 0.2,
+        "CHA_MISS_CAP": 20
+      },
+      "doc": "--- Combat ---"
+    },
+    "BATTLE_FATIGUE": {
+      "value": {
+        "FATIGUE_START_TURN": 10,
+        "FATIGUE_PERCENT_PER_TURN": 10
+      },
+      "doc": "--- Battle Fatigue (anti-stall mechanic) ---\nAfter FATIGUE_START_TURN, both fighters deal +FATIGUE_PERCENT_PER_TURN% more damage per turn"
+    },
+    "STANCE_ZONES": {
+      "value": {
+        "VALID_ZONES": [
+          "head",
+          "chest",
+          "legs"
+        ],
+        "ATTACK_ZONE": {
+          "head": {
+            "offense": 10,
+            "crit": 5
+          },
+          "chest": {
+            "offense": 5,
+            "crit": 0
+          },
+          "legs": {
+            "offense": 2,
+            "crit": 0
+          }
+        },
+        "DEFENSE_ZONE": {
+          "head": {
+            "defense": 0,
+            "dodge": 8
+          },
+          "chest": {
+            "defense": 10,
+            "dodge": 0
+          },
+          "legs": {
+            "defense": 5,
+            "dodge": 3
+          }
+        },
+        "MISMATCH_OFFENSE_BONUS": 5,
+        "MATCH_DEFENSE_BONUS": 15
+      }
+    },
+    "PRESTIGE": {
+      "value": {
+        "MAX_LEVEL": 50,
+        "STAT_BONUS_PER_PRESTIGE": 0.05,
+        "STAT_POINTS_PER_LEVEL": 3
+      },
+      "doc": "--- Prestige ---"
+    },
+    "DROP_CHANCES": {
+      "value": {
+        "pvp": 0.15,
+        "training": 0.05,
+        "dungeon_easy": 0.2,
+        "dungeon_normal": 0.3,
+        "dungeon_hard": 0.4,
+        "boss": 0.75
+      },
+      "typeAnnotation": "Record<string, number>",
+      "doc": "--- Loot drop chances by source ---"
+    },
+    "CHA_GOLD_BONUS_CAP": {
+      "value": 0.8,
+      "doc": "CHA gold bonus with diminishing returns (W3.D3 — cap reduced 125% → 80%).\nW3.D1 turned CHA's primary effect into miss-chance (intimidation). Gold\nbonus is now a secondary flavour of the stat, and 125% stacked with\nwin-streak + first-win + level-scaling blew sink-ratio targets apart in\neconomy simulations. 80% cap keeps the \"merchant build\" feel without\nmaking CHA mandatory for farming. Industry precedent: Diablo III Paragon\nfame DR, RAID masteries with hard ceilings.\nCurve shape is unchanged — only the hard ceiling moved:\n- CHA 0-30:  +2.5% per point\n- CHA 31-60: +1.0% per point\n- CHA 61+:   +0.5% per point, capped at +80%"
+    },
+    "LOSS_STREAK_BONUSES": {
+      "value": [
+        0,
+        0,
+        0,
+        0.2,
+        0.2,
+        0.35,
+        0.35,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "typeAnnotation": "readonly number[]",
+      "doc": "--- Loss Streak Gold Protection (W3.D3 — capped at +50%) ---\nAfter consecutive losses, next win gives bonus gold to reduce frustration.\nPre-W3.D3: [..., 0.3, 0.3, 0.5, 0.5, 0.8, ...] — up to +80% bonus was a\nwhale-farming loophole when combined with CHA+streak+first-win stacking.\nW3.D3 rebalance (Clash Royale / LoL recovery model): max +50%. This still\ncushions tilt recovery without letting a loss-streak farmer out-earn a\nstraight winner. Ratio stays monotone non-decreasing."
+    },
+    "WIN_STREAK_BONUSES": {
+      "value": [
+        0,
+        0,
+        0,
+        0.15,
+        0.15,
+        0.3,
+        0.3,
+        0.3,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "typeAnnotation": "readonly number[]",
+      "doc": "--- Win Streak Gold Bonuses (W3.D3 — capped at +50%) ---\nIndex = streak length, value = bonus multiplier (0 = no bonus).\nPre-W3.D3: [..., 0.2, 0.2, 0.5, 0.5, 0.5, 1.0, ...] — an 8-win streak\ndoubled income, and stacked with CHA + first-win + level-scaling it ran\ntheoretical peak earnings to ~×13 average. Clash Royale, Fortnite and LoL\nall cap streak bonuses well under ×2 (typical ×1.25 – ×1.5). W3.D3 caps\nthe top bucket at +50% which holds peak stacking to ~×6 — aggressive but\nnot uncapped. Empirically this change alone moves sink ratio by ~20 pts."
+    },
+    "REPAIR_COSTS": {
+      "value": {
+        "BASE_COST": 120,
+        "PER_LEVEL": 20,
+        "RARITY_MULTIPLIERS": {
+          "common": 1,
+          "uncommon": 1.5,
+          "rare": 2,
+          "epic": 3,
+          "legendary": 5
+        }
+      },
+      "doc": "--- Equipment Repair Costs (W3.D3 — bumped to meet sink-ratio target) ---\nPre-W3.D3 (80 / 15) only took ~15% of a typical fight's gold, well under\nthe 25-35% band used by RAID: Shadow Legends and AFK Arena for equipment\nmaintenance. W3.D3 raises base cost 80 → 120 and per-level 15 → 20 so\nthat a full gear repair lands at ~70-90% of the gold earned between\nrepair cycles. Durability is still 100 → dozens of fights, so the sink\nis applied in lumps rather than per-fight tax."
+    },
+    "UPGRADE_COSTS": {
+      "value": {
+        "BASE": 150,
+        "EXPONENT": 1.4
+      },
+      "doc": "--- Equipment Upgrade Costs (Economy v2 — exponential to create endgame gold sink) ---"
+    },
+    "SKILLS": {
+      "value": {
+        "MAX_EQUIPPED_SLOTS": 4,
+        "UPGRADE_GOLD_BASE": 500,
+        "UPGRADE_GOLD_PER_RANK": 500,
+        "LEARN_GOLD_COST": 200
+      },
+      "doc": "--- Active Skills ---"
+    },
+    "PASSIVES": {
+      "value": {
+        "POINTS_PER_LEVEL": 1,
+        "MAX_PASSIVE_POINTS": 50,
+        "RESPEC_GEM_COST": 50,
+        "RESPEC_GOLD_COST": 5000
+      },
+      "doc": "--- Passive Tree ---"
+    },
+    "GEM_COSTS": {
+      "value": {
+        "STAMINA_REFILL": 50,
+        "EXTRA_PVP_COMBAT": 50,
+        "BATTLE_PASS_PREMIUM": 700,
+        "GOLD_MINE_BUY_SLOT": 50,
+        "GOLD_MINE_BOOST": 15,
+        "UPGRADE_PROTECTION": 40
+      },
+      "doc": "--- Gem costs (Economy v3, 2026-04-13) ---\nSee ECONOMY_RULES.md R7.3 (protection), R8 (stamina), R11/R12 (BP), R13 (mine)."
+    },
+    "STAT_PURCHASE": {
+      "value": {
+        "ESCALATION": [
+          15,
+          20,
+          30,
+          45,
+          65
+        ],
+        "DAILY_LIMIT": 5,
+        "GLOBAL_CAP": 50
+      },
+      "doc": "--- Stat Point Purchase (escalating daily cost) ---"
+    },
+    "INVENTORY": {
+      "value": {
+        "BASE_SLOTS": 28,
+        "EXPAND_AMOUNT": 10,
+        "EXPAND_COST_GOLD": 5000,
+        "MAX_EXPANSIONS": 3,
+        "MAX_SLOTS": 58
+      },
+      "doc": "--- Inventory ---\nNOTE: per-character slot count lives on Character.inventorySlots (default BASE_SLOTS,\ngrows by EXPAND_AMOUNT on each expand, capped at BASE_SLOTS + MAX_EXPANSIONS*EXPAND_AMOUNT).\nThere is NO separate global cap — MAX_SLOTS is derived, not configurable. See CRIT-04."
+    },
+    "EXTRA_PVP": {
+      "value": {
+        "STAMINA_GRANTED": 5
+      },
+      "doc": "--- Extra PvP combat ---"
+    },
+    "RARITY_DISTRIBUTION": {
+      "value": {
+        "common": 50,
+        "uncommon": 30,
+        "rare": 15,
+        "epic": 4,
+        "legendary": 1
+      },
+      "doc": "--- Rarity distribution (must sum to 100) ---"
+    }
+  },
+  "functions": {
+    "trainingXpMultiplier": {
+      "signature": "export function trainingXpMultiplier(clearsToday: number): number",
+      "body": "if (clearsToday < 0) return 1;\n  if (clearsToday < TRAINING_XP_DR.FULL_XP_CLEARS) return 1;\n  if (clearsToday < TRAINING_XP_DR.FULL_XP_CLEARS + TRAINING_XP_DR.HALF_XP_CLEARS) return 0.5;\n  return TRAINING_XP_DR.FLOOR_MULTIPLIER;",
+      "doc": "Multiplier to apply to a dungeon XP reward based on how many clears\nthe character has already done today.\n@param clearsToday Number of dungeon clears already counted today (pre-increment)."
+    },
+    "staminaRefillGemCost": {
+      "signature": "export function staminaRefillGemCost(baseCost: number, refillsToday: number): number | null",
+      "body": "if (refillsToday < 0) refillsToday = 0;\n  if (refillsToday >= STAMINA_REFILL_DR.DAILY_CAP) return null;\n  const mult = STAMINA_REFILL_DR.COST_MULTIPLIERS[refillsToday]\n    ?? STAMINA_REFILL_DR.COST_MULTIPLIERS[STAMINA_REFILL_DR.COST_MULTIPLIERS.length - 1];\n  return Math.ceil(baseCost * mult);",
+      "doc": "Gem cost for the Nth stamina refill of the day. Returns null if the daily\nrefill cap has been hit.\n@param baseCost       The base gem cost from GEM_COSTS.STAMINA_REFILL.\n@param refillsToday   Number of refills already used today (pre-increment)."
+    },
+    "xpForLevel": {
+      "signature": "export function xpForLevel(level: number): number",
+      "body": "return 100 * level + 20 * level * level;",
+      "doc": "--- XP ---\nXP required to reach the given level (cumulative threshold)."
+    },
+    "bpXpForLevel": {
+      "signature": "export function bpXpForLevel(level: number): number",
+      "body": "return 100 + level * 50;",
+      "doc": "XP required to reach a given Battle Pass level."
+    },
+    "chaGoldBonus": {
+      "signature": "export function chaGoldBonus(baseGold: number, cha: number): number",
+      "body": "let bonus = 0;\n  if (cha <= 30) {\n    bonus = cha * 0.025;\n  } else if (cha <= 60) {\n    bonus = 30 * 0.025 + (cha - 30) * 0.01;\n  } else {\n    bonus = 30 * 0.025 + 30 * 0.01 + (cha - 60) * 0.005;\n  }\n  // W3.D3 — hard cap at 80% (was 125%).\n  bonus = Math.min(bonus, CHA_GOLD_BONUS_CAP);\n  return Math.floor(baseGold * (1 + bonus));"
+    },
+    "lossStreakGoldMultiplier": {
+      "signature": "export function lossStreakGoldMultiplier(lossStreak: number): number",
+      "body": "if (lossStreak < 0) return 0;\n  const idx = Math.min(lossStreak, LOSS_STREAK_BONUSES.length - 1);\n  return LOSS_STREAK_BONUSES[idx];",
+      "doc": "Get the gold bonus multiplier for loss streak recovery (applied on next WIN)."
+    },
+    "streakGoldMultiplier": {
+      "signature": "export function streakGoldMultiplier(winStreak: number): number",
+      "body": "if (winStreak < 0) return 0;\n  const idx = Math.min(winStreak, WIN_STREAK_BONUSES.length - 1);\n  return WIN_STREAK_BONUSES[idx];",
+      "doc": "Get the gold bonus multiplier for the current win streak."
+    },
+    "levelScaledReward": {
+      "signature": "export function levelScaledReward(baseReward: number, level: number): number",
+      "body": "// Economy v3 (2026-04-13): +4% per level above 1 (was +2%).\n  // v2's +2% was slower than cost scaling (repair/upgrade grow faster), making midgame\n  // feel like treading water. Doubling the slope keeps earning power ahead of costs at\n  // L10–L30. Level 50 now gets +196% = ~3× rewards. See ECONOMY_RULES.md R3.\n  return Math.floor(baseReward * (1 + (level - 1) * 0.04));",
+      "doc": "Scale PvP gold/XP reward based on character level (higher levels earn slightly more)."
+    },
+    "repairCost": {
+      "signature": "export function repairCost(itemLevel: number, rarity: string): number",
+      "body": "const mult = (REPAIR_COSTS.RARITY_MULTIPLIERS as Record<string, number>)[rarity] ?? 1.0;\n  return Math.floor((REPAIR_COSTS.BASE_COST + itemLevel * REPAIR_COSTS.PER_LEVEL) * mult);",
+      "doc": "Calculate repair cost for a single item."
+    },
+    "upgradeCost": {
+      "signature": "export function upgradeCost(plusLevel: number): number",
+      "body": "return Math.floor(UPGRADE_COSTS.BASE * Math.pow(UPGRADE_COSTS.EXPONENT, plusLevel));",
+      "doc": "Calculate gold cost for upgrading to +N. Exponential: 150 × 1.4^N"
+    }
+  }
+}

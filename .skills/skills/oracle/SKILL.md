@@ -126,7 +126,36 @@ Verify any enum values used match the actual backend enums:
 - **No orphaned imports.** Unused imports should be removed.
 - **Build must pass.** Mentally trace whether `npx next build` would succeed with these changes.
 
-### 7. Deploy Awareness
+### 8. Admin React Async State (CRITICAL — 2026-04-16)
+
+Mutation handlers in admin React components that control a loading flag (`isMutating`, `isLoading`, `isDeleting`, `isCreating`) MUST reset the flag via `finally`, not only on the success path.
+
+**Anti-pattern (broken — UI gets stuck after a thrown error):**
+```tsx
+setIsMutating(true)
+const result = await someServerAction(...)
+setIsMutating(false)  // ← never resets if serverAction throws
+```
+
+**Correct pattern:**
+```tsx
+setIsMutating(true)
+try {
+  const result = await someServerAction(...)
+  // handle success
+} catch (e) {
+  console.error('Action failed:', e)
+  toast.error('Something went wrong')
+} finally {
+  setIsMutating(false)  // ← always resets, even on thrown error
+}
+```
+
+**Incident (2026-04-15/16, blocks 061-068):** Found in 10+ admin pages — generic CRUD shell, live editors, config, players, items, snapshots, skills, balance. Any thrown server action left the admin screen permanently stuck in loading/spinner state. Applied as a systematic fix across all affected files.
+
+**Scanner pattern:** `grep -rn "setIs[A-Z]" admin/src/ --include="*.tsx" -A 8` — flag any handler that sets `isSomething(true)` without a `} finally {` block following it.
+
+### 9. Deploy Awareness
 
 If changes touch admin/:
 - Remind about `git subtree push --prefix=admin admin-deploy main` after pushing to origin.

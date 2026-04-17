@@ -1,5 +1,7 @@
 # Hexbound — Full Game Balance & Economy Audit Report
 
+> **Status boundary:** historical balance/economy audit snapshot from `2026-03-09`. Useful as early-system evidence, but not the current balance truth without revalidating against live backend constants, later economy audits, and audited `wiki/`.
+
 **Date:** March 9, 2026
 **Auditor:** Game Systems Balance Analysis
 **Version:** 1.0

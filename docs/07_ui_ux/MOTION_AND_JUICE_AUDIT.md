@@ -1,5 +1,7 @@
 # HEXBOUND — Motion, Juice & Game Feel Audit v1.0
 
+> **Status boundary:** historical motion/game-feel audit snapshot from `2026-03-20`. The findings remain useful, but all count-heavy claims, coverage percentages, and priority calls should be revalidated against the live app, current design-system rules, and `wiki/` before reuse as release truth.
+
 > **Роль:** Senior Game UX/UI Director + Monetization Designer + Motion Designer
 > **Дата:** 2026-03-20
 > **Скоуп:** 26 экранов, дизайн-система, motion framework, retention UX, monetization flows

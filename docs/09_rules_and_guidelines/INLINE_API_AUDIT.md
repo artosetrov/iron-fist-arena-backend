@@ -4,6 +4,8 @@
 **Scope:** All 181 `.swift` files in `Hexbound/Hexbound/Views/`
 **Finding:** 8 files with direct API/service calls in Views; 7 contain duplicated code
 
+> **Status boundary:** historical architecture audit snapshot from `2026-04-06`. The findings remain useful as a code-smell baseline, but the concrete counts, offenders, and delegation recommendations should be revalidated against the current iOS tree before being treated as live architecture truth.
+
 ---
 
 ## Executive Summary
@@ -284,4 +286,3 @@ Button { Task { await Service.shared.method(...) } } label: { ... }
 - `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md` — Architecture requirements
 - `CLAUDE.md` — State management: `@MainActor @Observable` classes, Views use `@Bindable var vm`
 - `Hexbound/CLAUDE.md` — Swift/iOS specific patterns
-

@@ -5,6 +5,8 @@
 > **Scope:** Figma DS ↔ Figma Screens ↔ Swift Code — полная экосистема
 > **Method:** 7-source forensic scan: Figma DS metadata, Figma Screens metadata, Swift theme files, Swift Views inventory, CDO grep scan, existing audit docs, CLAUDE.md rules
 > **Goal:** Studio-level 1:1 consistency, масштабируемая система
+>
+> **Status boundary:** historical full-scale audit snapshot from `2026-04-04`. The counts, coverage tables, and gap numbers below are useful evidence from that pass, but they are not the live source of truth. Revalidate current state against `wiki/`, `DESIGN_SYSTEM.md`, `SCREEN_INVENTORY.md`, current code, and current Figma exports.
 
 ---
 

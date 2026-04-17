@@ -4,6 +4,8 @@
 **Статус:** ✅ Все automated gates пройдены, ждёт manual QA от Артёма
 **Tag target:** `v2026.04.17-w1-foundation`
 
+> **Status boundary:** historical checkpoint snapshot for the W1 foundation slice. Useful as evidence of what was believed complete on `2026-04-10`, but not a live readiness verdict for the current repo state.
+
 ---
 
 ## Объём W1 (5 дней)
