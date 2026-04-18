@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-17
+updated: 2026-04-18
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5036
-- Untracked project-owned files: 6
-- In-scope files listed here: 5042
+- Tracked files: 5044
+- Untracked project-owned files: 9
+- In-scope files listed here: 5053
 
 ## Excluded Generated / Vendor Areas
 
@@ -33,9 +33,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills: 17
 - [root]: 3
 - admin: 217
-- backend: 366
+- backend: 381
 - Buildings: 21
-- docs: 176
+- docs: 177
 - figma-assets: 333
 - graphify-out: 869
 - Hexbound: 1497
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 17
 - sounds: 33
 - User: 1059
-- wiki: 237
+- wiki: 268
 
 ## File List By Block
 
@@ -721,6 +721,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/user/password/route.ts
 - backend/src/app/layout.tsx
 - backend/src/lib/apple-iap.ts
+- backend/src/lib/analytics.ts _(untracked)_
 - backend/src/lib/auth-admin.ts
 - backend/src/lib/auth.ts
 - backend/src/lib/cache.ts
@@ -786,7 +787,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/shared-kv.ts
 - backend/src/lib/supabase/server.ts
 - backend/src/middleware.ts
+- backend/tests/api/auth-guest.test.ts _(untracked)_
 - backend/tests/api/auth-login.test.ts
+- backend/tests/api/me.test.ts _(untracked)_
 - backend/tests/api/auth-register.test.ts
 - backend/tests/api/auth-forgot-password.test.ts _(untracked)_
 - backend/tests/api/auth-google-apple.test.ts _(untracked)_
@@ -809,6 +812,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/inventory-sell.test.ts
 - backend/tests/api/inventory-unequip.test.ts
 - backend/tests/api/mail-list.test.ts
+- backend/tests/api/pvp-history.test.ts _(untracked)_
 - backend/tests/api/pvp-prepare-bot-ticket.test.ts
 - backend/tests/api/pvp-resolve.test.ts
 - backend/tests/api/social-challenges.test.ts
@@ -3469,6 +3473,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Resources/image16.png
 - Hexbound/Hexbound/Services/AchievementService.swift
 - Hexbound/Hexbound/Services/AssetManager.swift
+- Hexbound/Hexbound/Services/AnalyticsService.swift _(untracked)_
 - Hexbound/Hexbound/Services/AuthService.swift
 - Hexbound/Hexbound/Services/BattlePassService.swift
 - Hexbound/Hexbound/Services/BattlePreloader.swift
@@ -5109,6 +5114,11 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-194-backend-oauth-local-init-cleanup-and-collision-guards.md _(untracked)_
 - wiki/audit/block-195-backend-upgrade-guest-oauth-transaction-cleanup.md _(untracked)_
 - wiki/audit/block-196-backend-register-local-init-cleanup.md _(untracked)_
+- wiki/audit/block-197-backend-login-local-row-bootstrap-parity.md _(untracked)_
+- wiki/audit/block-198-backend-auth-guest-local-row-race-recovery.md _(untracked)_
+- wiki/audit/block-199-backend-me-local-row-bootstrap-parity.md _(untracked)_
+- wiki/audit/block-200-backend-pvp-history-missing-opponent-guard.md _(untracked)_
+- wiki/audit/block-201-backend-interactive-pvp-opponent-null-contract-guard.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

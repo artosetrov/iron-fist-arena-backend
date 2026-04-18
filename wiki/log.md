@@ -1827,3 +1827,48 @@ Closed the next auth/runtime parity block:
 - **Fixes:** completed the email-register cleanup story so a local `User` bootstrap failure after successful Supabase create/sign-in now deletes the fresh auth user and returns `500 Failed to initialize account` instead of returning success with an auth-only email account
 - **Inventory refresh:** updated current counts to `5042` in-scope files and `258 in-scope wiki markdown files / 257 wiki pages`
 - **Verification:** `cd backend && npx vitest run tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npx eslint src/app/api/auth/register/route.ts src/app/api/auth/upgrade-guest-oauth/route.ts src/app/api/auth/upgrade-guest/route.ts src/app/api/auth/google/route.ts src/app/api/auth/apple/route.ts tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 197 backend login local-row bootstrap parity
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-197-backend-login-local-row-bootstrap-parity]]`
+- **Files audited:** `backend/src/app/api/auth/login/route.ts`, `backend/tests/api/auth-login.test.ts`, `wiki/features/auth.md`
+- **Fixes:** split login’s local bootstrap into explicit update/create branches so missing local rows are recreated deliberately, duplicate-email collisions now return `409`, and login no longer silently issues tokens behind a failed local identity bootstrap
+- **Inventory refresh:** updated current counts to `5045` in-scope files and `259 in-scope wiki markdown files / 258 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-login.test.ts tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npx eslint src/app/api/auth/login/route.ts src/app/api/auth/register/route.ts src/app/api/auth/upgrade-guest-oauth/route.ts src/app/api/auth/upgrade-guest/route.ts src/app/api/auth/google/route.ts src/app/api/auth/apple/route.ts tests/api/auth-login.test.ts tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 198 backend auth guest local-row race recovery
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-198-backend-auth-guest-local-row-race-recovery]]`
+- **Files audited:** `backend/src/lib/auth.ts`, `backend/src/app/api/auth/guest/route.ts`, `backend/tests/api/auth-guest.test.ts`, `wiki/features/auth.md`
+- **Fixes:** split raw Supabase token validation into `getSupabaseAuthUser(req)`, let `/auth/guest` bootstrap the missing local row directly, and made the route reload the row when a concurrent create wins instead of dying behind the old helper-level missing-row `401`/generic `500`
+- **Inventory refresh:** updated current counts to `5053` in-scope files and `263 in-scope wiki markdown files / 262 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-guest.test.ts`, `cd backend && npx eslint src/lib/auth.ts src/app/api/auth/guest/route.ts tests/api/auth-guest.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 199 backend me local-row bootstrap parity
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-199-backend-me-local-row-bootstrap-parity]]`
+- **Files audited:** `backend/src/app/api/me/route.ts`, `backend/tests/api/me.test.ts`, `wiki/features/auth.md`, `docs/03_backend_and_api/API_REFERENCE.md`
+- **Fixes:** moved `/api/me` onto raw Supabase auth validation, preserved banned-user `401`, added missing-row bootstrap plus create-race reload, and returned `409` on duplicate-email collisions instead of drifting into `401`/`404` ambiguity
+- **Inventory refresh:** updated current counts to `5053` in-scope files and `263 in-scope wiki markdown files / 262 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/me.test.ts`, `cd backend && npx eslint src/app/api/me/route.ts tests/api/me.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 200 backend PvP history missing-opponent guard
+
+Closed the next PvP/runtime parity block:
+- **Created:** `[[block-200-backend-pvp-history-missing-opponent-guard]]`
+- **Files audited:** `backend/src/app/api/pvp/history/route.ts`, `backend/tests/api/pvp-history.test.ts`, `wiki/features/pvp-combat.md`
+- **Fixes:** converted `/pvp/history` response shaping to skip rows with no resolved opponent relation instead of crashing the whole history response on null `player2`
+- **Inventory refresh:** updated current counts to `5053` in-scope files and `263 in-scope wiki markdown files / 262 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/pvp-history.test.ts`, `cd backend && npx eslint src/app/api/pvp/history/route.ts tests/api/pvp-history.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 201 backend interactive PvP opponent-null contract guard
+
+Closed the next PvP/runtime parity block:
+- **Created:** `[[block-201-backend-interactive-pvp-opponent-null-contract-guard]]`
+- **Files audited:** `backend/src/app/api/pvp/strike/route.ts`, `backend/src/app/api/pvp/match/complete/route.ts`, `wiki/features/pvp-combat.md`, `docs/03_backend_and_api/API_REFERENCE.md`
+- **Fixes:** added explicit `409 Player-vs-player opponent missing` guards to `strike` and `match/complete`, narrowed the rest of the flow onto a non-null `player2Id`, and documented the contract instead of relying on nullability drift
+- **Inventory refresh:** updated current counts to `5053` in-scope files and `263 in-scope wiki markdown files / 262 wiki pages`
+- **Verification:** `cd backend && npx eslint src/app/api/pvp/strike/route.ts src/app/api/pvp/match/complete/route.ts`, `cd backend && npm run build`, and `git diff --check`

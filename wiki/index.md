@@ -267,7 +267,12 @@
 - [[block-194-backend-oauth-local-init-cleanup-and-collision-guards]] — Google/Apple auth now clean up fresh Supabase users on local init failure and return `409` on duplicate-email collisions instead of generic bootstrap failure
 - [[block-195-backend-upgrade-guest-oauth-transaction-cleanup]] — `upgrade-guest-oauth` now deletes the fresh OAuth auth user if the guest→OAuth transfer transaction fails before any local OAuth row was attached
 - [[block-196-backend-register-local-init-cleanup]] — `register` now deletes the fresh Supabase auth user if local `User` bootstrap fails after successful create/sign-in instead of returning success with an auth-only account
+- [[block-197-backend-login-local-row-bootstrap-parity]] — `login` now explicitly recreates missing local user rows, returns `409` on email collisions, and fails cleanly instead of issuing tokens behind a broken local identity bootstrap
+- [[block-198-backend-auth-guest-local-row-race-recovery]] — `/auth/guest` now validates Supabase auth directly, recreates the missing local guest row, and reloads the row if a concurrent create wins the race
+- [[block-199-backend-me-local-row-bootstrap-parity]] — `/api/me` now bootstraps a missing local user row, reloads on create races, and returns `409` on duplicate-email collisions instead of drifting into `401/404` ambiguity
+- [[block-200-backend-pvp-history-missing-opponent-guard]] — `/pvp/history` now skips rows whose opponent relation is missing instead of crashing the whole history response
+- [[block-201-backend-interactive-pvp-opponent-null-contract-guard]] — interactive `/pvp/strike` and `/pvp/match/complete` now fail explicitly with `409` when a row has no real `player2Id`
 
 ---
 
-*258 in-scope wiki markdown files | 257 wiki pages (13 systems, 12 decisions, 3 entities, 196 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-18*
+*263 in-scope wiki markdown files | 262 wiki pages (13 systems, 12 decisions, 3 entities, 201 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-18*

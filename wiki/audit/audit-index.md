@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-04-17
+updated: 2026-04-18
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5013
+- In-scope files: 5053
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -216,6 +216,11 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 194 | [[block-194-backend-oauth-local-init-cleanup-and-collision-guards]] — Google/Apple auth now clean up fresh Supabase users on local init failure and return `409` on duplicate-email collisions instead of generic bootstrap failure | Fixed |
 | 195 | [[block-195-backend-upgrade-guest-oauth-transaction-cleanup]] — `upgrade-guest-oauth` now deletes the fresh OAuth auth user if the guest→OAuth transfer transaction fails before any local OAuth row was attached | Fixed |
 | 196 | [[block-196-backend-register-local-init-cleanup]] — `register` now deletes the fresh Supabase auth user if local `User` bootstrap fails after successful create/sign-in instead of returning success with an auth-only account | Fixed |
+| 197 | [[block-197-backend-login-local-row-bootstrap-parity]] — `login` now explicitly recreates missing local user rows, returns `409` on email collisions, and fails cleanly instead of issuing tokens behind a broken local identity bootstrap | Fixed |
+| 198 | [[block-198-backend-auth-guest-local-row-race-recovery]] — `/auth/guest` now validates Supabase auth directly, recreates the missing local guest row, and reloads the row if a concurrent create wins the race | Fixed |
+| 199 | [[block-199-backend-me-local-row-bootstrap-parity]] — `/api/me` now bootstraps a missing local user row, reloads on create races, and returns `409` on duplicate-email collisions instead of drifting into `401/404` ambiguity | Fixed |
+| 200 | [[block-200-backend-pvp-history-missing-opponent-guard]] — `/pvp/history` now skips rows whose opponent relation is missing instead of crashing the whole history response | Fixed |
+| 201 | [[block-201-backend-interactive-pvp-opponent-null-contract-guard]] — interactive `/pvp/strike` and `/pvp/match/complete` now fail explicitly with `409` when a row has no real `player2Id` instead of relying on nullability drift | Fixed |
 
 ## Status Legend
 
