@@ -8,6 +8,7 @@ import { formatRewardTypeName } from '@/lib/game/reward-display'
 import { grantRewardEntries, type RewardGrantEntry } from '@/lib/game/reward-grants'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rateLimit } from '@/lib/rate-limit'
+import { track as trackAnalytics } from '@/lib/analytics'
 
 type SupportedBattlePassRewardType =
   | 'gold'
@@ -419,6 +420,8 @@ export async function POST(
       return {
         claimedRewards,
         rewardGrantResult,
+        battlePassId,
+        seasonId: activeSeason.id,
       }
     })
 
@@ -427,6 +430,17 @@ export async function POST(
         invalidateSkillCache(character_id),
         invalidatePassiveCache(character_id),
       ])
+    }
+
+    if (result.claimedRewards.length > 0) {
+      trackAnalytics({
+        name: 'bp_claim',
+        userId: user.id,
+        characterId: character_id,
+        seasonId: result.seasonId,
+        level: targetLevel,
+        isPremium: result.claimedRewards.some((r) => r.isPremium),
+      })
     }
 
     return NextResponse.json({

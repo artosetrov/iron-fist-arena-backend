@@ -8,6 +8,7 @@ import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
+import { track as trackAnalytics } from '@/lib/analytics'
 import {
   getUpgradeCost,
   getUpgradeSuccessChance,
@@ -183,6 +184,17 @@ export async function POST(req: NextRequest) {
       const after = effectiveStats[stat] ?? 0
       statChanges[stat] = { before, after, diff: after - before }
     }
+
+    trackAnalytics({
+      name: 'shop_upgrade',
+      userId: user.id,
+      characterId: character_id,
+      itemId: inventory_id,
+      catalogId: inventoryItem.item.catalogId,
+      fromLevel: currentLevel,
+      toLevel: newLevel,
+      success,
+    })
 
     return NextResponse.json({
       success,

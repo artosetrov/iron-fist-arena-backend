@@ -17,6 +17,7 @@ import {
 } from '@/lib/game/balance'
 import { cacheDeletePrefix } from '@/lib/cache'
 import { applyLevelUp } from '@/lib/game/progression'
+import { track as trackAnalytics } from '@/lib/analytics'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { degradeEquipment } from '@/lib/game/durability'
@@ -114,6 +115,8 @@ export async function POST(req: NextRequest) {
     if (choices.length === 0) {
       return NextResponse.json({ error: 'No rounds played' }, { status: 400 })
     }
+
+    const isAttackerFirstMatch = (attacker.pvpWins + attacker.pvpLosses) === 0
 
     const last = choices[choices.length - 1]
     const attackerFinalHp = Math.max(0, last.attacker_hp_after)
@@ -327,6 +330,17 @@ export async function POST(req: NextRequest) {
     if (lootItem) loot.push(lootItem)
 
     const ratingChange = attackerNewRating - attacker.pvpRating
+
+    if (isAttackerFirstMatch) {
+      trackAnalytics({
+        name: 'first_pvp',
+        userId: attacker.userId,
+        characterId: attacker.id,
+        won: attackerWon,
+        totalTurns: combat_log.length,
+        ratingAfter: attackerNewRating,
+      })
+    }
 
     return NextResponse.json({
       player: {

@@ -440,6 +440,7 @@
 		E4DBBE3A94037E4C8732F8F9 /* ui_equip_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 39AE7A87F68ECFEE3A4B8B91 /* ui_equip_2.wav */; };
 		E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FDAE41BCB1FB2232906E8C39 /* Oswald-Regular.ttf */; };
 		E53876454A91F74256038E64 /* AchievementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */; };
+		AA0417A1E85C4C0099D00001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */; };
 		E55080DD83E15810D7C63678 /* SegmentedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB613DE56FBC3B40EBE42011 /* SegmentedProgressBar.swift */; };
 		E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47BF69C872101A05B35E80C /* Character.swift */; };
 		E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6D /* SFXManager.swift */; };
@@ -937,6 +938,7 @@
 		D9E867F52B861525354D0709 /* BattlePreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePreloader.swift; sourceTree = "<group>"; };
 		DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonViews.swift; sourceTree = "<group>"; };
 		DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementService.swift; sourceTree = "<group>"; };
+		AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		DC2799E960A250F50D77C492 /* AssetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetManager.swift; sourceTree = "<group>"; };
 		DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_wind_heavy.wav; sourceTree = "<group>"; };
 		DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRowView.swift; sourceTree = "<group>"; };
@@ -1515,6 +1517,7 @@
 			children = (
 				DC2799E960A250F50D77C492 /* AssetManager.swift */,
 				DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */,
+				AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */,
 				18860E524F76C28304AB39AF /* AuthService.swift */,
 				39859708651A5AACC1204865 /* BattlePassService.swift */,
 				D9E867F52B861525354D0709 /* BattlePreloader.swift */,
@@ -2219,6 +2222,7 @@
 				310339BA65F0A1A947B39D34 /* Achievement.swift in Sources */,
 				A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */,
 				E53876454A91F74256038E64 /* AchievementService.swift in Sources */,
+				AA0417A1E85C4C0099D00001 /* AnalyticsService.swift in Sources */,
 				542C67EDB654AF9BFE887353 /* AchievementsDetailView.swift in Sources */,
 				C70E9AD47FC899F2C57ADD80 /* AchievementsViewModel.swift in Sources */,
 				941F9A9BC1C17F6006E85B3E /* AppConstants.swift in Sources */,

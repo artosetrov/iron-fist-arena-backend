@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
 import { verifyAppleTransaction } from '@/lib/apple-iap'
+import { track as trackAnalytics } from '@/lib/analytics'
 
 function isDuplicateTransactionError(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
@@ -272,6 +273,15 @@ export async function POST(req: NextRequest) {
     }
 
     const [transaction] = await prisma.$transaction(operations)
+
+    trackAnalytics({
+      name: 'iap_purchase',
+      userId: user.id,
+      productId: product_id,
+      transactionId: transaction_id,
+      gemsAwarded: product.gems ?? 0,
+      goldAwarded: product.gold ?? 0,
+    })
 
     // Build response
     const response: Record<string, unknown> = {

@@ -9,6 +9,8 @@ import {
   awardReferralQualificationIfEligible,
   type ReferralQualificationReward,
 } from './tutorial';
+import { track as trackAnalytics } from '../analytics';
+import { prisma } from '../prisma';
 
 // Re-export for convenience
 export { xpForLevel };
@@ -104,6 +106,29 @@ export async function applyLevelUp(
   } catch (error: unknown) {
     console.error('Achievement/milestone tracking error (level-up):', error);
   }
+
+  // Analytics — fire-and-forget after DB mutations settled. Uses root prisma
+  // (not tx) to avoid coupling the event emission to the caller's transaction
+  // commit lifecycle.
+  void (async () => {
+    try {
+      const owner = await prisma.character.findUnique({
+        where: { id: characterId },
+        select: { userId: true },
+      });
+      if (owner?.userId) {
+        trackAnalytics({
+          name: 'level_up',
+          userId: owner.userId,
+          characterId,
+          fromLevel: character.level,
+          toLevel: result.newLevel,
+        });
+      }
+    } catch {
+      // already logged by trackAnalytics on inner failure
+    }
+  })();
 
   return result;
 }

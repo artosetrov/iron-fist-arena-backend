@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import { track as trackAnalytics } from '@/lib/analytics'
 
 /**
  * POST /api/auth/register
@@ -109,6 +110,13 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       )
     }
+
+    trackAnalytics({
+      name: 'signup',
+      userId: createData.user.id,
+      authProvider: 'email',
+      hasUsername: Boolean(displayName),
+    })
 
     return NextResponse.json({
       needs_confirmation: false,

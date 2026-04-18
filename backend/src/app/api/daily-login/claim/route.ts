@@ -10,6 +10,7 @@ import {
   PREMIUM_DAILY_GEMS,
   PREMIUM_ENTITLEMENT_USER_SELECT,
 } from '@/lib/game/premium'
+import { track as trackAnalytics } from '@/lib/analytics'
 
 type LockedDailyLoginRow = {
   currentDay: number
@@ -189,7 +190,16 @@ export async function POST(req: NextRequest) {
         gems += PREMIUM_DAILY_GEMS
       }
 
-      return { reward, updatedLogin, premiumGemsAwarded, gold, gems }
+      return { reward, updatedLogin, premiumGemsAwarded, gold, gems, newStreak, resetStreak, newDay }
+    })
+
+    trackAnalytics({
+      name: 'daily_login',
+      userId: user.id,
+      characterId: character_id,
+      day: result.newDay,
+      streak: result.newStreak,
+      resetStreak: result.resetStreak,
     })
 
     return NextResponse.json({
