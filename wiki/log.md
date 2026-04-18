@@ -1789,5 +1789,5 @@ Closed the next auth/runtime parity block:
 - **Created:** `[[block-192-backend-guest-login-signin-failure-cleanup]]`
 - **Files audited:** `backend/src/app/api/auth/guest-login/route.ts`, `backend/tests/api/auth-guest-login.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-191-backend-guest-login-device-race-recovery.md`
 - **Fixes:** completed the fresh-guest rollback path so sign-in failure after successful local guest creation now deletes both the fresh Supabase guest and the fresh local `User` row instead of leaving a local orphan behind
-- **Inventory refresh:** updated current counts to `5034` in-scope files and `254 in-scope wiki markdown files / 253 wiki pages`
+- **Inventory refresh:** updated current counts to `5019` in-scope files and `254 in-scope wiki markdown files / 253 wiki pages`
 - **Verification:** `cd backend && npx vitest run tests/api/auth-guest-login.test.ts`, `cd backend && npx eslint src/app/api/auth/guest-login/route.ts tests/api/auth-guest-login.test.ts`, `cd backend && npm run build`, and `git diff --check`

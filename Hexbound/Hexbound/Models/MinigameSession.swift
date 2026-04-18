@@ -82,17 +82,7 @@ struct MinigameSessionInfo: Codable, Equatable, Identifiable {
     let passiveGoldAmount: Int
     let capGold: Int
     let gemCap: Int
-    let expiresAt: Date
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case slotIndex = "slot_index"
-        case shaftKey = "shaft_key"
-        case passiveGoldAmount = "passive_gold_amount"
-        case capGold = "cap_gold"
-        case gemCap = "gem_cap"
-        case expiresAt = "expires_at"
-    }
+    let expiresAt: String
 }
 
 /// Result of a completed mini-game, returned by /minigame-bonus.
