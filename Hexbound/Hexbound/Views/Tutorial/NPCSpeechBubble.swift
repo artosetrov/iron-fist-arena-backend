@@ -11,6 +11,11 @@ struct NPCSpeechBubble: View {
     var npcImageName: String? = "shopkeeper"
     var npcFallbackIcon: String = "person.crop.circle.fill"
     var messageId: AnyHashable? = nil
+    var typewriterEnabled: Bool = true
+    var typewriterSpeed: Double = 0.03
+
+    @State private var typewriterText: String = ""
+    @State private var typewriterTask: Task<Void, Never>?
 
     var body: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
@@ -20,17 +25,39 @@ struct NPCSpeechBubble: View {
             // Dialog
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text(npcName.uppercased())
-                    .font(DarkFantasyTheme.buttonLabel)
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .tracking(0.5)
 
-                Text(message)
-                    .font(DarkFantasyTheme.buttonLabel)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .id(messageId)
-                    .transition(.opacity)
+                ZStack(alignment: .topLeading) {
+                    // Hidden full text — reserves layout height so bubble doesn't grow
+                    Text(message)
+                        .font(.custom("Inter-Regular", size: 18))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(typewriterEnabled ? 0 : 1)
+
+                    if typewriterEnabled {
+                        Text(typewriterText)
+                            .font(.custom("Inter-Regular", size: 18))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .id(messageId)
+                .transition(.opacity)
+                .onAppear {
+                    if typewriterEnabled { startTypewriter() }
+                }
+                .onChange(of: message) { _, _ in
+                    if typewriterEnabled { startTypewriter() }
+                }
+                .onDisappear {
+                    typewriterTask?.cancel()
+                    typewriterTask = nil
+                }
             }
         }
         .padding(LayoutConstants.spaceMD)
@@ -42,6 +69,22 @@ struct NPCSpeechBubble: View {
             inset: 2,
             color: DarkFantasyTheme.gold.opacity(0.06)
         )
+    }
+
+    // MARK: - Typewriter
+
+    private func startTypewriter() {
+        typewriterText = ""
+        let chars = Array(message)
+        let speed = typewriterSpeed
+        typewriterTask?.cancel()
+        typewriterTask = Task { @MainActor in
+            for char in chars {
+                try? await Task.sleep(for: .seconds(speed))
+                guard !Task.isCancelled else { return }
+                typewriterText.append(char)
+            }
+        }
     }
 
     // MARK: - NPC Avatar

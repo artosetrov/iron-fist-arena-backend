@@ -185,8 +185,6 @@ final class InboxViewModel {
         // Optimistic: mark claimed instantly
         messages[idx] = messages[idx].withClaimed()
         rebuildUnifiedFeed()
-        HapticManager.success()
-        SFXManager.shared.play(.uiRewardClaim)
 
         // Fire API in background
         Task { [weak self] in
@@ -212,6 +210,10 @@ final class InboxViewModel {
                 if response.claimed?.contains(where: { $0.type == "item" || $0.type == "consumable" }) == true {
                     appState.cachedInventory = nil
                 }
+                appState.claimRewardConfig = buildClaimRewardConfig(
+                    message: savedMessage,
+                    response: response
+                )
             } catch {
                 // Revert on failure
                 if let revertIdx = messages.firstIndex(where: { $0.id == messageId }) {
@@ -221,6 +223,54 @@ final class InboxViewModel {
                 appState.showToast("Failed to claim rewards", subtitle: "Please try again", type: .error)
             }
         }
+    }
+
+    private func buildClaimRewardConfig(
+        message: MailMessage,
+        response: MailClaimResponse
+    ) -> ClaimRewardConfig {
+        ClaimRewardConfig(
+            title: "CLAIMED!",
+            subtitle: message.subject,
+            goldReward: response.gold ?? 0,
+            gemsReward: response.gems ?? 0,
+            xpReward: response.xp ?? 0,
+            lootItems: (response.claimed ?? []).compactMap(buildLootItem)
+        )
+    }
+
+    private func buildLootItem(from attachment: MailAttachment) -> ClaimLootItem? {
+        switch attachment.type {
+        case "consumable":
+            return ClaimLootItem(
+                id: attachment.itemId ?? UUID().uuidString,
+                name: consumableName(attachment.itemId),
+                quantity: attachment.amount,
+                imageKey: attachment.itemId,
+                fallbackIcon: "cross.vial",
+                rarity: .uncommon,
+                rarityColor: DarkFantasyTheme.rarityUncommon
+            )
+        case "item":
+            return ClaimLootItem(
+                id: attachment.itemId ?? UUID().uuidString,
+                name: attachment.itemId ?? "Item",
+                quantity: attachment.amount,
+                imageKey: attachment.itemId,
+                fallbackIcon: "shippingbox",
+                rarity: .rare,
+                rarityColor: DarkFantasyTheme.rarityRare
+            )
+        default:
+            return nil
+        }
+    }
+
+    private func consumableName(_ id: String?) -> String {
+        guard let id else { return "Potion" }
+        return id
+            .replacingOccurrences(of: "_", with: " ")
+            .capitalized
     }
 
     func deleteMail(messageId: String, characterId: String, appState: AppState) {

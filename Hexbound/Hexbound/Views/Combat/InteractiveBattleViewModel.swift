@@ -70,6 +70,29 @@ final class InteractiveBattleViewModel {
     /// its own countdown timer and calls back via `dismissExchange`.
     var currentExchange: RoundExchange?
 
+    /// Phase 4 — player-side portrait framing derived from the current
+    /// exchange's verdict. Non-nil only for peak verdicts (OUTPLAYED /
+    /// OUTREAD). Middle outcomes (STRUCK / HELD) leave the portrait
+    /// at its default look.
+    var playerOutcomeRole: OutcomeRole? {
+        guard let verdict = currentExchange?.verdict else { return nil }
+        switch verdict {
+        case .outplayed:     return .winner
+        case .outread:       return .loser
+        case .struck, .held: return nil
+        }
+    }
+
+    /// Phase 4 — opponent-side portrait framing, mirror of `playerOutcomeRole`.
+    var opponentOutcomeRole: OutcomeRole? {
+        guard let verdict = currentExchange?.verdict else { return nil }
+        switch verdict {
+        case .outplayed:     return .loser
+        case .outread:       return .winner
+        case .struck, .held: return nil
+        }
+    }
+
     /// Full chronological log of every round exchange in the battle.
     /// Appended inside `applyStrikeResponse` at the same time `currentExchange`
     /// is set, so the end-of-battle summary can replay the entire sequence
@@ -196,6 +219,19 @@ final class InteractiveBattleViewModel {
     private var strikeTask: Task<Void, Never>?
     private var completeTask: Task<Void, Never>?
     private var startTask: Task<Void, Never>?
+
+    /// Background `/pvp/match/complete` fired at the moment the match enters
+    /// `.summary`, so that by the time the player taps CONTINUE the response
+    /// is (usually) already in hand. Single-flight: bc the endpoint is NOT
+    /// idempotent — a second call on an already-finalized match returns 409
+    /// — we never re-issue once this task is launched.
+    private var prefetchCompleteTask: Task<Void, Never>?
+
+    /// Terminal state of the prefetch call. Populated when the task finishes:
+    /// `.success(data)` on 2xx, `.failure(error)` otherwise. Consumed by
+    /// `continueFromSummary()` so tapping CONTINUE never fires a second
+    /// `/complete` request.
+    private var prefetchCompleteResult: Result<CombatData, Error>?
     private let appState: AppState
     private let attackerCharacterId: String
     private let defenderCharacterId: String
@@ -283,6 +319,7 @@ final class InteractiveBattleViewModel {
         if state.isFinished {
             if case .reveal = phase {
                 phase = .summary
+                prefetchCompleteMatch()
             }
             return
         }
@@ -292,11 +329,78 @@ final class InteractiveBattleViewModel {
     }
 
     /// Called by the end-of-battle summary screen's CONTINUE button.
-    /// Advances from `.summary` into the existing `completeMatch()` pipeline
-    /// which fetches `/match/complete` and eventually emits `.finished`.
+    ///
+    /// Three paths:
+    ///   1. Prefetch already resolved with success — apply cached data and
+    ///      transition straight to `.finished`, skipping `.completing`.
+    ///   2. Prefetch in-flight — move to `.completing`, await the same task,
+    ///      then apply whatever it produces.
+    ///   3. Prefetch never launched (defensive fallback) — run the original
+    ///      `completeMatch()` pipeline.
     func continueFromSummary() {
         guard case .summary = phase else { return }
+
+        if let cached = prefetchCompleteResult {
+            applyCompleteResult(cached)
+            return
+        }
+
+        if let task = prefetchCompleteTask {
+            phase = .completing
+            Task { [weak self] in
+                await task.value
+                guard let self, case .completing = self.phase else { return }
+                if let result = self.prefetchCompleteResult {
+                    self.applyCompleteResult(result)
+                } else {
+                    self.completeMatch()
+                }
+            }
+            return
+        }
+
         completeMatch()
+    }
+
+    /// Kick off `/pvp/match/complete` in the background at the moment the
+    /// match enters `.summary`, so that by the time the player taps CONTINUE
+    /// the response is usually already in hand. Single-flight: the endpoint
+    /// is NOT idempotent — a second call returns 409 — so we launch at most
+    /// one request per match.
+    private func prefetchCompleteMatch() {
+        guard prefetchCompleteTask == nil else { return }
+        prefetchCompleteTask = Task { [weak self] in
+            await self?.performPrefetchComplete()
+        }
+    }
+
+    private func performPrefetchComplete() async {
+        let body = InteractiveMatchCompleteRequest(matchId: state.matchId)
+        do {
+            let data: CombatData = try await APIClient.shared.post(
+                APIEndpoints.pvpMatchComplete,
+                body: body
+            )
+            prefetchCompleteResult = .success(data)
+        } catch {
+            prefetchCompleteResult = .failure(error)
+        }
+    }
+
+    private func applyCompleteResult(_ result: Result<CombatData, Error>) {
+        switch result {
+        case .success(let data):
+            finalCombatData = data
+            let winnerId = data.result.winnerId ?? state.winnerId ?? state.defenderId
+            phase = .finished(winnerId: winnerId)
+        case .failure(let error):
+            if case APIError.clientError(let status, _, _) = error, status == 404 {
+                phase = .unavailable
+                return
+            }
+            let msg = (error as? APIError)?.errorDescription ?? "Failed to complete match"
+            phase = .error(message: msg)
+        }
     }
 
     /// Called by the view when the Reveal animation finishes.
@@ -307,6 +411,7 @@ final class InteractiveBattleViewModel {
             // when the `currentExchange` log card isn't shown (degraded /
             // direct-advance paths). CONTINUE → `completeMatch()`.
             phase = .summary
+            prefetchCompleteMatch()
             return
         }
         lastOutcome = nil
@@ -625,6 +730,7 @@ final class InteractiveBattleViewModel {
             // Route terminal rounds through the summary screen — same as
             // the log-card dismissal path in `dismissExchange()`.
             phase = .summary
+            prefetchCompleteMatch()
         } else {
             revealCompleted()
         }

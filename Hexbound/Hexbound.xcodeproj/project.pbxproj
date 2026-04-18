@@ -56,6 +56,7 @@
 		14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */; };
 		961E078086264A48C0187425 /* CombatLogEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C089B801E579936A908F9 /* CombatLogEvent.swift */; };
 		81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */; };
+		2E810C944A6C7528083E8330 /* RoundVerdict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BEDA9A595A8F6CB8F0FE0B9 /* RoundVerdict.swift */; };
 		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
 		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
 		7F17A3ED61CE3E287ECEEAC2 /* BattleSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384A549FF75D5E1FD633CE4E /* BattleSummaryView.swift */; };
@@ -500,6 +501,7 @@
 		VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00001 /* CombatVFXEffect.swift */; };
 		VFX00001BLD00002 /* CombatVFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00002 /* CombatVFXManager.swift */; };
 		VFX00001BLD00003 /* CombatVFXOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00003 /* CombatVFXOverlay.swift */; };
+		F26398F8B87FE2FB4ACB9340 /* CombatVerdictFlash.swift in Sources */ = {isa = PBXBuildFile; fileRef = C69B6234DADCA93417D479C5 /* CombatVerdictFlash.swift */; };
 		VFX00001BLD00004 /* DamageHitEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00004 /* DamageHitEffects.swift */; };
 		VFX00001BLD00005 /* DodgeMissBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00005 /* DodgeMissBlock.swift */; };
 		VFX00001BLD00006 /* HealEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00006 /* HealEffect.swift */; };
@@ -904,6 +906,7 @@
 		00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveStanceBonuses.swift; sourceTree = "<group>"; };
 		9F1C089B801E579936A908F9 /* CombatLogEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatLogEvent.swift; sourceTree = "<group>"; };
 		FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundExchange.swift; sourceTree = "<group>"; };
+		6BEDA9A595A8F6CB8F0FE0B9 /* RoundVerdict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundVerdict.swift; sourceTree = "<group>"; };
 		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
 		384A549FF75D5E1FD633CE4E /* BattleSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleSummaryView.swift; sourceTree = "<group>"; };
@@ -1013,6 +1016,7 @@
 		VFX00001REF00001 /* CombatVFXEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00002 /* CombatVFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXManager.swift; sourceTree = "<group>"; };
 		VFX00001REF00003 /* CombatVFXOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXOverlay.swift; sourceTree = "<group>"; };
+		C69B6234DADCA93417D479C5 /* CombatVerdictFlash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVerdictFlash.swift; sourceTree = "<group>"; };
 		VFX00001REF00004 /* DamageHitEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DamageHitEffects.swift; sourceTree = "<group>"; };
 		VFX00001REF00005 /* DodgeMissBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DodgeMissBlock.swift; sourceTree = "<group>"; };
 		VFX00001REF00006 /* HealEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealEffect.swift; sourceTree = "<group>"; };
@@ -1755,6 +1759,7 @@
 				4B8DD10D38C3C6619DCDD923 /* Quest.swift */,
 				CE7DEC31D96099535208BCD1 /* RevengeEntry.swift */,
 				FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */,
+				6BEDA9A595A8F6CB8F0FE0B9 /* RoundVerdict.swift */,
 				7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */,
 				D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */,
 				776542cff60cc81ecdff074b /* StatPurchase.swift */,
@@ -1912,6 +1917,7 @@
 				VFX00001REF00001 /* CombatVFXEffect.swift */,
 				VFX00001REF00002 /* CombatVFXManager.swift */,
 				VFX00001REF00003 /* CombatVFXOverlay.swift */,
+				C69B6234DADCA93417D479C5 /* CombatVerdictFlash.swift */,
 				VFX00001GRP00002 /* Effects */,
 			);
 			path = VFX;
@@ -2285,6 +2291,7 @@
 				14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */,
 				961E078086264A48C0187425 /* CombatLogEvent.swift in Sources */,
 				81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */,
+				2E810C944A6C7528083E8330 /* RoundVerdict.swift in Sources */,
 				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
 				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
 				7F17A3ED61CE3E287ECEEAC2 /* BattleSummaryView.swift in Sources */,
@@ -2299,6 +2306,7 @@
 				VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */,
 				VFX00001BLD00002 /* CombatVFXManager.swift in Sources */,
 				VFX00001BLD00003 /* CombatVFXOverlay.swift in Sources */,
+				F26398F8B87FE2FB4ACB9340 /* CombatVerdictFlash.swift in Sources */,
 				VFX00001BLD00004 /* DamageHitEffects.swift in Sources */,
 				VFX00001BLD00005 /* DodgeMissBlock.swift in Sources */,
 				VFX00001BLD00006 /* HealEffect.swift in Sources */,

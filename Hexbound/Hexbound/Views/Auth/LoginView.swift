@@ -198,12 +198,18 @@ struct StyledTextField: View {
     let placeholder: String
     @Binding var text: String
     var icon: String = ""
+    var assetIcon: String = ""
     var keyboardType: UIKeyboardType = .default
     var autocapitalization: TextInputAutocapitalization = .sentences
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            if !icon.isEmpty {
+            if !assetIcon.isEmpty {
+                Image(assetIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+            } else if !icon.isEmpty {
                 Image(systemName: icon)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .frame(width: LayoutConstants.iconMD)
@@ -235,11 +241,17 @@ struct StyledSecureField: View {
     let placeholder: String
     @Binding var text: String
     var icon: String = ""
+    var assetIcon: String = ""
     @State private var isVisible = false
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            if !icon.isEmpty {
+            if !assetIcon.isEmpty {
+                Image(assetIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+            } else if !icon.isEmpty {
                 Image(systemName: icon)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .frame(width: LayoutConstants.iconMD)

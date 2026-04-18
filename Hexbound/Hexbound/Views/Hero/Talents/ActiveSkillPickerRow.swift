@@ -242,7 +242,7 @@ struct ActiveSkillPickerRow: View {
     }
 
     private var slotFullChip: some View {
-        Text("SLOTS FULL")
+        Text("CHOOSE SLOT")
             .font(DarkFantasyTheme.badge)
             .foregroundStyle(DarkFantasyTheme.textDisabled)
             .tracking(1)
@@ -254,7 +254,7 @@ struct ActiveSkillPickerRow: View {
             .overlay(
                 Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .accessibilityLabel("Loadout full — unequip another skill first")
+            .accessibilityLabel("Loadout full — choose a slot above to replace")
     }
 
     @ViewBuilder

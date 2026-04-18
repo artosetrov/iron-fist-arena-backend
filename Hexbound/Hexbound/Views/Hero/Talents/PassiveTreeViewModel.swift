@@ -364,6 +364,25 @@ final class PassiveTreeViewModel {
         }
     }
 
+    /// Detail-sheet entry point for active talent equip.
+    /// Uses the deterministic direct-equip path while free slots exist,
+    /// and otherwise routes the player into the picker so replacement
+    /// stays slot-aware instead of silently mutating an arbitrary slot.
+    func beginEquipActive(node: PassiveNode) {
+        guard canEquip(node), !isMutating else { return }
+        if let freeSlot = firstFreeActiveSlotIndex() {
+            equipActive(node: node, slotIndex: freeSlot)
+            return
+        }
+
+        openActiveSkillPicker(focusedSlotIndex: nil)
+        appState.showToast(
+            "Choose a slot to replace",
+            subtitle: "Tap a slot in the loadout bar, then equip the talent",
+            type: .info
+        )
+    }
+
     /// Clear a specific slot.
     func clearActive(slotIndex: Int) {
         guard !isMutating else { return }

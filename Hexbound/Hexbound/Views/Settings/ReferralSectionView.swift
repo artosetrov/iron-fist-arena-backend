@@ -298,7 +298,7 @@ struct ReferralSectionView: View {
             applyResult = .success(bonusGold: response.bonusGold)
             alreadyReferred = true
             friendCode = ""
-            appState.showToast("+\(response.bonusGold) gold from referral!", type: .success)
+            appState.claimRewardConfig = buildReferralRewardConfig(bonusGold: response.bonusGold)
             await appState.reloadCharacter()
         } catch let error as APIError {
             switch error {
@@ -320,6 +320,17 @@ struct ReferralSectionView: View {
         } catch {
             applyResult = .error("Connection error")
         }
+    }
+
+    private func buildReferralRewardConfig(bonusGold: Int) -> ClaimRewardConfig {
+        ClaimRewardConfig(
+            title: "CLAIMED!",
+            subtitle: "Referral bonus",
+            goldReward: bonusGold,
+            gemsReward: 0,
+            xpReward: 0,
+            lootItems: []
+        )
     }
 
     private func shareReferralCode(_ code: String) {

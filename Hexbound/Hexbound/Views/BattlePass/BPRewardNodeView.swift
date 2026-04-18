@@ -18,7 +18,7 @@ struct BPRewardNodeView: View {
             ItemCardView(bpReward: reward, state: state) {
                 onClaim()
             }
-            .frame(width: 80, height: 80)
+            .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
             .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: state == .claimable)
             .overlay {
                 if showClaimBurst {

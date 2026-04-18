@@ -103,7 +103,12 @@ enum LayoutConstants {
     static let inventoryCols = 4
     static let inventoryGap: CGFloat = spaceSM             // 8
     static let shopCols = 4
-    static let shopGap: CGFloat = 10                       // Off-grid: visual density compromise
+    static let shopGap: CGFloat = spaceSM                  // 8 — unified with inventory
+    /// Canonical size for a single item-card tile in any fixed-width context
+    /// (modals, preview rows, quest reward cells, BP nodes, loot tiles).
+    /// Matches the rendered grid size for inventory/shop/stash on iPhone SE,
+    /// keeps visual rhythm consistent across all contexts.
+    static let itemCardSize: CGFloat = 80
     static let equipmentCols = 3
     static let equipmentGap: CGFloat = spaceMS             // 12
     static let classGridCols = 2

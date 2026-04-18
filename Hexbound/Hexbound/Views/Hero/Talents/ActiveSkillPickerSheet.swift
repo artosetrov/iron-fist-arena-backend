@@ -10,7 +10,8 @@
 //  Flow:
 //    - Opened from ActiveSlotsBar (empty slot "+" tap) via
 //      PassiveTreeViewModel.openActiveSkillPicker(focusedSlotIndex:).
-//    - Header strip shows the draft 3-slot loadout (tap to clear).
+//    - Header strip shows the draft 3-slot loadout. Tap a slot to focus it
+//      for replacement; tap the focused slot again to clear it.
 //    - TALENTS tab lists unlocked activatable talents.
 //    - POTIONS tab lists allowed health potions with owned count and
 //      inline Buy via ShopService.buyConsumable().
@@ -29,6 +30,8 @@ struct ActiveSkillPickerSheet: View {
     @State private var draftSlots: [ActiveSlot] = []
     /// 0 = TALENTS, 1 = POTIONS
     @State private var selectedTab: Int = 0
+    /// Current slot target for insertion/replacement inside the picker.
+    @State private var focusedSlotIndex: Int? = nil
     /// In-flight buy state per consumable_type — disables the row during the POST.
     @State private var buyingType: String? = nil
     /// In-flight save state.
@@ -75,13 +78,7 @@ struct ActiveSkillPickerSheet: View {
         draftSlots.first(where: { $0.kind == .consumable && $0.consumableType == type })
     }
 
-    private var focusedSlotIndex: Int? {
-        guard let focused = vm.pickerFocusedSlotIndex,
-              (0..<vm.maxActiveSlots).contains(focused) else {
-            return nil
-        }
-        return focused
-    }
+    private var hasFocusedSlot: Bool { focusedSlotIndex != nil }
 
     // MARK: - Body
 
@@ -110,6 +107,10 @@ struct ActiveSkillPickerSheet: View {
         .background(DarkFantasyTheme.bgSecondary.ignoresSafeArea())
         .onAppear {
             draftSlots = vm.activeSlots
+            focusedSlotIndex = initialFocusedSlotIndex()
+        }
+        .onDisappear {
+            vm.pickerFocusedSlotIndex = nil
         }
     }
 
@@ -146,9 +147,17 @@ struct ActiveSkillPickerSheet: View {
     // MARK: - Preview strip (3-slot draft)
 
     private var previewStrip: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            ForEach(0..<vm.maxActiveSlots, id: \.self) { index in
-                previewTile(for: index)
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(0..<vm.maxActiveSlots, id: \.self) { index in
+                    previewTile(for: index)
+                }
+            }
+
+            if draftSlots.count >= vm.maxActiveSlots && !hasFocusedSlot {
+                Text("Loadout full — tap a slot above to choose what to replace.")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
     }
@@ -158,8 +167,17 @@ struct ActiveSkillPickerSheet: View {
         let slot = draftSlots.first(where: { $0.slotIndex == index })
         let isFocused = focusedSlotIndex == index
         Button {
-            guard slot != nil else { return }
-            draftSlots.removeAll { $0.slotIndex == index }
+            if slot == nil {
+                focusedSlotIndex = index
+                HapticManager.light()
+                return
+            }
+
+            if isFocused {
+                draftSlots.removeAll { $0.slotIndex == index }
+            } else {
+                focusedSlotIndex = index
+            }
             HapticManager.light()
         } label: {
             ZStack {
@@ -367,6 +385,7 @@ struct ActiveSkillPickerSheet: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button("RESET") {
                     draftSlots = vm.activeSlots
+                    focusedSlotIndex = initialFocusedSlotIndex()
                     HapticManager.light()
                 }
                 .buttonStyle(.ghost)
@@ -411,14 +430,14 @@ struct ActiveSkillPickerSheet: View {
     }
 
     private func hasRoomForTalent() -> Bool {
-        focusedSlotIndex != nil || draftSlots.count < vm.maxActiveSlots
+        hasFocusedSlot || draftSlots.count < vm.maxActiveSlots
     }
 
     private func hasRoomForConsumable(_ type: String) -> Bool {
         // Already equipped? Row shows "Equipped" and lets user unequip.
         if draftConsumableSlot(for: type) != nil { return true }
         // Focused slot means "replace this slot", even when the loadout is full.
-        if focusedSlotIndex != nil { return true }
+        if hasFocusedSlot { return true }
         // Another consumable occupies the 1-per-loadout budget → no room.
         if consumableInDraft != nil { return false }
         return draftSlots.count < vm.maxActiveSlots
@@ -444,6 +463,7 @@ struct ActiveSkillPickerSheet: View {
         )
         draftSlots.append(slot)
         draftSlots.sort { $0.slotIndex < $1.slotIndex }
+        advanceFocusedSlot(afterFilling: slotIndex)
         HapticManager.light()
     }
 
@@ -473,6 +493,7 @@ struct ActiveSkillPickerSheet: View {
         )
         draftSlots.append(slot)
         draftSlots.sort { $0.slotIndex < $1.slotIndex }
+        advanceFocusedSlot(afterFilling: slotIndex)
         HapticManager.light()
     }
 
@@ -505,5 +526,23 @@ struct ActiveSkillPickerSheet: View {
             appState.showToast("Loadout saved", type: .success)
             dismiss()
         }
+    }
+
+    private func initialFocusedSlotIndex() -> Int? {
+        if let focused = vm.pickerFocusedSlotIndex,
+           (0..<vm.maxActiveSlots).contains(focused) {
+            return focused
+        }
+        let taken = Set(draftSlots.map(\.slotIndex))
+        for index in 0..<vm.maxActiveSlots where !taken.contains(index) {
+            return index
+        }
+        return nil
+    }
+
+    private func advanceFocusedSlot(afterFilling slotIndex: Int) {
+        guard focusedSlotIndex == slotIndex else { return }
+        let taken = Set(draftSlots.map(\.slotIndex))
+        focusedSlotIndex = (0..<vm.maxActiveSlots).first(where: { !taken.contains($0) })
     }
 }

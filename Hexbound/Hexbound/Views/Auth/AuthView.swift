@@ -86,7 +86,7 @@ struct AuthView: View {
                         StyledTextField(
                             placeholder: "Email",
                             text: $email,
-                            icon: "envelope.fill",
+                            assetIcon: "hud-inbox",
                             keyboardType: .emailAddress,
                             autocapitalization: .never
                         )
@@ -95,7 +95,7 @@ struct AuthView: View {
                         StyledSecureField(
                             placeholder: mode.passwordPlaceholder,
                             text: $password,
-                            icon: "lock.fill"
+                            assetIcon: "icon-padlock"
                         )
                         .accessibilityLabel("Password")
 
@@ -103,7 +103,7 @@ struct AuthView: View {
                             StyledSecureField(
                                 placeholder: "Confirm Password",
                                 text: $confirmPassword,
-                                icon: "lock.fill"
+                                assetIcon: "icon-padlock"
                             )
                             .accessibilityLabel("Confirm password")
                             .transition(.opacity)

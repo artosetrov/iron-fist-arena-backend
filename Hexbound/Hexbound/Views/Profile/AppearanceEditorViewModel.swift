@@ -9,6 +9,19 @@ private struct AppearanceChangeRequest: Encodable {
 private struct AppearanceChangeResponse: Decodable {
     let character: Character
     let gold: Int?
+    let wallet: AppearanceWallet?
+
+    var confirmedCharacter: Character {
+        var value = character
+        if let resolvedGold = wallet?.gold ?? gold {
+            value.gold = resolvedGold
+        }
+        return value
+    }
+}
+
+private struct AppearanceWallet: Decodable {
+    let gold: Int
 }
 
 @MainActor @Observable
@@ -271,7 +284,7 @@ final class AppearanceEditorViewModel {
                     body: request
                 )
                 // Update with server-confirmed character data
-                appState.currentCharacter = result.character
+                appState.currentCharacter = result.confirmedCharacter
             } catch {
                 // Revert on failure
                 appState.currentCharacter?.origin = prevOrigin

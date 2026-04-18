@@ -41,7 +41,6 @@ final class DailyLoginService {
                 appState.cachedInventory = nil
             }
 
-            appState.showToast("Reward claimed!", type: .reward)
             return response
         } catch {
             appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)

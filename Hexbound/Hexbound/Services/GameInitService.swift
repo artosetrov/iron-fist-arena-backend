@@ -42,6 +42,7 @@ final class GameInitService {
             appState.maybeEnqueueDailyLogin()
 
             cache.gameConfig = GameConfig(config: response.config)
+            Item.fallbackUpgradeStatBonusPerLevel = response.config.upgradeStatBonusPerLevel
             cache.cacheFeatureFlags(response.featureFlags.compactMapValues(\.boolValue))
             cache.cacheHubLayout(mapLayout(response.hubLayout))
             cache.cacheDungeonMapLayout(mapLayout(response.dungeonMapLayout))
@@ -131,6 +132,7 @@ private struct GameInitEquipmentInventoryEntry: Decodable {
     let isEquipped: Bool
     let equippedSlot: String?
     let rolledStats: [String: Int]?
+    let effectiveStats: [String: Int]?
     let item: GameInitItemRecord
 
     var toItem: Item {
@@ -158,7 +160,8 @@ private struct GameInitEquipmentInventoryEntry: Decodable {
             imageUrl: item.imageUrl,
             imageKey: item.imageKey,
             quantity: nil,
-            consumableType: nil
+            consumableType: nil,
+            authoritativeEffectiveStats: effectiveStats
         )
     }
 }
@@ -244,6 +247,7 @@ private struct GameInitConfigPayload: Decodable {
     let pvpStaminaCost: Int
     let freePvpPerDay: Int
     let upgradeChances: [Int]
+    let upgradeStatBonusPerLevel: Int
     let maxLevel: Int
     let statPointsPerLevel: Int
     let pvpWinGold: Int
@@ -272,6 +276,7 @@ private extension GameConfig {
         pvpStaminaCost = config.pvpStaminaCost
         freePvpPerDay = config.freePvpPerDay
         upgradeChances = config.upgradeChances
+        upgradeStatBonusPerLevel = config.upgradeStatBonusPerLevel
         maxLevel = config.maxLevel
         statPointsPerLevel = config.statPointsPerLevel
         pvpWinGold = config.pvpWinGold

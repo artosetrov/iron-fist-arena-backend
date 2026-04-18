@@ -239,7 +239,7 @@ struct ClaimRewardModalView: View {
     @ViewBuilder
     private var rewardsSection: some View {
         // All rewards on a single horizontal line, centered as one group.
-        HStack(spacing: LayoutConstants.spaceLG) {
+        HStack(alignment: .center, spacing: LayoutConstants.spaceLG) {
             if config.goldReward > 0 {
                 rewardItem(
                     iconImage: "icon-gold",
@@ -265,20 +265,20 @@ struct ClaimRewardModalView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceMD)
         .padding(.horizontal, LayoutConstants.spaceLG)
     }
 
     @ViewBuilder
     private func rewardItem(iconImage: String, value: Int, color: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
+        HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
             Image(iconImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 32, height: 32)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
             Text("+\(value)")
-                .font(DarkFantasyTheme.title)
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -300,7 +300,7 @@ struct ClaimRewardModalView: View {
             HStack(spacing: LayoutConstants.inventoryGap) {
                 ForEach(config.lootItems) { item in
                     lootItemCard(item)
-                        .frame(width: 96, height: 96)
+                        .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)

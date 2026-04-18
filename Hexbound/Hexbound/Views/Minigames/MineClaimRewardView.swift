@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Victory-style modal shown after collecting Gold Mine rewards.
-/// Animates gold + gems earned with a satisfying counter tick-up.
+/// Victory-style modal shown after Gold Mine reward payouts.
+/// Used for collect-all claims and slot-bonus minigame rewards.
 struct MineClaimRewardView: View {
     let goldEarned: Int
     let gemsEarned: Int

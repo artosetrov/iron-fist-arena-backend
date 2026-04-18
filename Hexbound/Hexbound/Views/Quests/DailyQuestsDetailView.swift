@@ -300,7 +300,7 @@ struct DailyQuestsDetailView: View {
                 Image(questIconAsset(for: quest.type))
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 48, height: 48)
+                    .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)

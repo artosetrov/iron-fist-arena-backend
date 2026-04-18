@@ -235,15 +235,15 @@ struct ActiveQuestBanner: View {
             syncLastKnown()
 
             HapticManager.success()
-            SFXManager.shared.play(.uiRewardClaim)
 
-            // Build subtitle from SERVER reward values
-            var parts: [String] = []
-            if result.rewardGold > 0 { parts.append("+\(result.rewardGold)g") }
-            if result.rewardXp > 0 { parts.append("+\(result.rewardXp) XP") }
-            if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
-            let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
-            self.appState.showToast("Quest Complete!", subtitle: subtitle, type: .quest)
+            self.appState.claimRewardConfig = ClaimRewardConfig(
+                title: "CLAIMED!",
+                subtitle: quest.title,
+                goldReward: result.rewardGold,
+                gemsReward: result.rewardGems,
+                xpReward: result.rewardXp,
+                lootItems: []
+            )
         }
     }
 }

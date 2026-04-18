@@ -44,7 +44,8 @@ final class GoldMineViewModel {
     var isCollectingAll: Bool = false
 
     // MARK: - Claim Reward Modal
-    /// When non-nil, the view presents a reward celebration modal.
+    /// When non-nil, the view presents the shared Gold Mine reward
+    /// celebration modal for collect and bonus-round payouts.
     var claimReward: ClaimRewardData?
 
     struct ClaimRewardData {
@@ -511,15 +512,7 @@ final class GoldMineViewModel {
         syncVisualCounters()
 
         if bonusGold > 0 || bonusGems > 0 {
-            let parts: [String] = [
-                bonusGold > 0 ? "+\(bonusGold) gold" : nil,
-                bonusGems > 0 ? "+\(bonusGems) gem" : nil,
-            ].compactMap { $0 }
-            appState.showToast(
-                "Bonus secured!",
-                subtitle: parts.joined(separator: " · "),
-                type: .reward
-            )
+            claimReward = ClaimRewardData(goldEarned: bonusGold, gemsEarned: bonusGems)
         }
     }
 
@@ -573,14 +566,9 @@ final class GoldMineViewModel {
         }
 
         if result.bonusGold > 0 || result.bonusGems > 0 {
-            let parts: [String] = [
-                result.bonusGold > 0 ? "+\(result.bonusGold) gold" : nil,
-                result.bonusGems > 0 ? "+\(result.bonusGems) gem" : nil,
-            ].compactMap { $0 }
-            appState.showToast(
-                "Bonus secured!",
-                subtitle: parts.joined(separator: " · "),
-                type: .reward
+            claimReward = ClaimRewardData(
+                goldEarned: result.bonusGold,
+                gemsEarned: result.bonusGems
             )
         }
     }

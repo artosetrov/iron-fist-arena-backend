@@ -168,7 +168,7 @@ final class DailyQuestsViewModel {
 
         // Show reward modal instead of celebration toast
         claimRewardConfig = ClaimRewardConfig(
-            title: "QUEST\nCOMPLETE!",
+            title: "CLAIMED!",
             subtitle: subtitle,
             goldReward: result.rewardGold,
             gemsReward: result.rewardGems,
@@ -206,7 +206,7 @@ final class DailyQuestsViewModel {
         HapticManager.success()
 
         claimRewardConfig = ClaimRewardConfig(
-            title: "DAILY BONUS\nCLAIMED!",
+            title: "CLAIMED!",
             subtitle: "All quests completed",
             goldReward: result.rewardGold,
             gemsReward: result.rewardGems,

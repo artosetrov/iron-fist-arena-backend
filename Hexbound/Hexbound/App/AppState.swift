@@ -200,6 +200,11 @@ final class AppState {
     // MARK: - Session Expired Modal
     var showSessionExpiredModal = false
 
+    // MARK: - Claim Reward Modal (root-level)
+    // Used by call sites that have no own VM (e.g. ActiveQuestBanner, Hub cards)
+    // so they can surface a CLAIMED ceremony instead of a toast.
+    var claimRewardConfig: ClaimRewardConfig?
+
     // MARK: - Level Up Modal
     var showLevelUpModal = false
     var levelUpNewLevel: Int = 0

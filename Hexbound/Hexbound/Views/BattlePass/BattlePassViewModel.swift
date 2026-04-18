@@ -228,7 +228,7 @@ final class BattlePassViewModel {
         }
 
         return ClaimRewardConfig(
-            title: "BATTLE PASS\nREWARD!",
+            title: "CLAIMED!",
             subtitle: subtitle,
             goldReward: goldReward,
             gemsReward: gemsReward,

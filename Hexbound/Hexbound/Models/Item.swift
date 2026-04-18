@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 
 struct Item: Codable, Identifiable {
+    static var fallbackUpgradeStatBonusPerLevel: Int = 1
+
     let id: String
     var itemName: String
     var itemType: ItemType
@@ -51,7 +53,7 @@ struct Item: Codable, Identifiable {
     }
 
     /// Stats including upgrade bonus. Prefer the authoritative server snapshot
-    /// when present; otherwise fall back to the local legacy computation.
+    /// when present; otherwise fall back to local config-backed computation.
     var effectiveStats: [String: Int] {
         if let authoritativeEffectiveStats, !authoritativeEffectiveStats.isEmpty {
             return authoritativeEffectiveStats
@@ -62,7 +64,7 @@ struct Item: Codable, Identifiable {
         guard level > 0 else { return base }
         var result: [String: Int] = [:]
         for (key, val) in base {
-            result[key] = val + level
+            result[key] = val + (level * Self.fallbackUpgradeStatBonusPerLevel)
         }
         return result
     }
@@ -70,28 +72,29 @@ struct Item: Codable, Identifiable {
     /// The total upgrade bonus currently applied per stat.
     var upgradeBonusPerStat: Int {
         if let authoritativeEffectiveStats,
-           let baseStats,
            let level = upgradeLevel,
            level > 0 {
+            let mergedStats = totalStats
             for key in authoritativeEffectiveStats.keys.sorted() {
-                if let baseValue = baseStats[key],
+                if let mergedValue = mergedStats[key],
                    let effectiveValue = authoritativeEffectiveStats[key] {
-                    return max(0, effectiveValue - baseValue)
+                    return max(0, (effectiveValue - mergedValue) / level)
                 }
             }
         }
-        return upgradeLevel ?? 0
+        return Self.fallbackUpgradeStatBonusPerLevel
     }
 
     /// Best-effort preview for the next upgrade step per stat.
     /// When the item already carries authoritative stats from the backend,
-    /// derive the per-level increment from them; otherwise use the legacy +1 fallback.
+    /// derive the per-level increment from the merged base+rolled stat set;
+    /// otherwise use the current config-backed per-level fallback.
     var upgradeIncrementPerStat: Int {
         if let level = upgradeLevel, level > 0 {
             let totalBonus = upgradeBonusPerStat
-            return max(1, totalBonus / level)
+            return max(1, totalBonus)
         }
-        return 1
+        return Self.fallbackUpgradeStatBonusPerLevel
     }
 
     /// Sum of all effective stats — used for quick power comparison

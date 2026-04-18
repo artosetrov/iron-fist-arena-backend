@@ -90,14 +90,60 @@ struct HubView: View {
                 characterId: charId,
                 questId: questId
             )
-            if let gold = result?.goldDelta, gold > 0 {
-                appState.showToast("Reward claimed! +\(gold) gold", type: .success)
+            if let result, let rewardConfig = buildTutorialQuestRewardConfig(from: result, questId: questId) {
+                appState.claimRewardConfig = rewardConfig
+            } else if result != nil {
+                appState.showToast("Quest updated", type: .info)
             } else {
-                appState.showToast("Reward claimed!", type: .success)
+                appState.showToast("Claim failed", subtitle: "Try again", type: .error)
             }
             // Refresh character data to update currency
             await appState.reloadCharacter()
         }
+    }
+
+    private func buildTutorialQuestRewardConfig(
+        from result: TutorialQuestClaimResponse,
+        questId: String
+    ) -> ClaimRewardConfig? {
+        let goldReward = max(0, result.goldDelta ?? 0)
+        var lootItems: [ClaimLootItem] = []
+
+        if
+            let rewards = result.rewards,
+            let consumableType = rewards.consumableType,
+            let quantity = rewards.consumableAmount,
+            quantity > 0
+        {
+            let metadata = ConsumableCatalog.metadata(
+                consumableType: consumableType,
+                catalogId: consumableType,
+                imageKey: consumableType
+            )
+            let rarity = metadata?.rarity ?? .uncommon
+            lootItems = [
+                ClaimLootItem(
+                    id: consumableType,
+                    name: metadata?.displayName ?? ConsumableCatalog.displayName(forKnownOrRaw: consumableType),
+                    quantity: quantity,
+                    imageKey: metadata?.imageKey,
+                    fallbackIcon: metadata?.systemIcon ?? "cross.vial",
+                    rarity: rarity,
+                    rarityColor: DarkFantasyTheme.rarityColor(for: rarity)
+                )
+            ]
+        }
+
+        guard goldReward > 0 || !lootItems.isEmpty else { return nil }
+
+        return ClaimRewardConfig(
+            title: "CLAIMED!",
+            subtitle: questTitle(for: questId) ?? "Tutorial Quest",
+            goldReward: goldReward,
+            gemsReward: 0,
+            xpReward: 0,
+            lootItems: lootItems
+        )
     }
 
     /// Fallback quest titles (matches backend TUTORIAL_QUESTS)

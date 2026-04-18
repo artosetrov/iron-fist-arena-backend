@@ -264,7 +264,7 @@ final class ShopViewModel {
                 scavengerClaimedThisSession = true
                 // Show reward modal instead of toast
                 claimRewardConfig = .fromOfferContents(
-                    title: "SECURED!",
+                    title: "CLAIMED!",
                     subtitle: "Drop #\(response.claimNumber)",
                     contents: response.contents
                 )
@@ -365,7 +365,7 @@ final class ShopViewModel {
                     )
                     // Show reward modal with the offer's contents
                     claimRewardConfig = .fromOfferContents(
-                        title: "REWARD\nCLAIMED!",
+                        title: "CLAIMED!",
                         subtitle: offer.title,
                         contents: offer.contents
                     )

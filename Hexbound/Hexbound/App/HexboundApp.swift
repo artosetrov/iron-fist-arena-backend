@@ -61,6 +61,17 @@ struct HexboundApp: App {
             }
             .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
             .overlay {
+                if let cfg = appState.claimRewardConfig {
+                    ClaimRewardModalView(config: cfg) {
+                        cfg.onDismiss?()
+                        appState.claimRewardConfig = nil
+                    }
+                    .environment(appState)
+                    .transition(.opacity)
+                    .zIndex(180)
+                }
+            }
+            .overlay {
                 // BUG-08: Hero forge loading overlay owned at root so it
                 // survives the `.loreIntro` / `.characterSelect` transition.
                 // Previously lived inside OnboardingDetailView and was torn

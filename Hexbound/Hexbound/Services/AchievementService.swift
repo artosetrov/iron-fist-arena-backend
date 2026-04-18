@@ -5,7 +5,14 @@ private struct AchievementListResponse: Codable {
     let data: [Achievement]?
 }
 
+struct AchievementClaimReward: Codable {
+    let type: String
+    let amount: Int
+    let id: String?
+}
+
 struct AchievementClaimResult: Codable {
+    let reward: AchievementClaimReward?
     let rewardGold: Int
     let rewardGems: Int
     let rewardXp: Int

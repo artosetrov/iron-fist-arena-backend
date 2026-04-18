@@ -30,7 +30,7 @@ struct NPCCompactHintView: View {
             // Compact text
             if let compactText = hint.compactText {
                 Text(compactText)
-                    .font(DarkFantasyTheme.body)
+                    .font(.custom("Inter-Regular", size: 18))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             }

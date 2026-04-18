@@ -73,7 +73,7 @@ struct NPCGuideWidget: View {
     /// Unique ID for message transition animation
     var messageId: AnyHashable? = nil
     /// Enable typewriter text animation (characters appear one by one)
-    var typewriterEnabled: Bool = false
+    var typewriterEnabled: Bool = true
     /// Speed of typewriter animation (seconds per character)
     var typewriterSpeed: Double = 0.03
 
@@ -86,6 +86,11 @@ struct NPCGuideWidget: View {
     /// Whether to use the player's dynamic avatar (AvatarImageView) instead of a static NPC image
     private var usesPlayerAvatar: Bool {
         avatarSkinKey != nil && avatarClass != nil
+    }
+
+    /// Typewriter only runs for plain text — attributed strings render immediately.
+    private var typewriterRunnable: Bool {
+        typewriterEnabled && plainMessage?.isEmpty == false
     }
 
     var body: some View {
@@ -143,7 +148,7 @@ struct NPCGuideWidget: View {
             // Figma: Header Row (HORIZONTAL, SPACE_BETWEEN)
             HStack {
                 Text(npcTitle.uppercased())
-                    .font(DarkFantasyTheme.cardTitle)
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(2)
 
@@ -183,15 +188,15 @@ struct NPCGuideWidget: View {
                             Text(plain)
                         }
                     }
-                    .font(DarkFantasyTheme.body)
+                    .font(.custom("Inter-Regular", size: 18))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(3)
-                    .opacity(typewriterEnabled ? 0 : 1)
+                    .opacity(typewriterRunnable ? 0 : 1)
 
                     // Visible typewriter text — overlaid on top
-                    if typewriterEnabled {
+                    if typewriterRunnable {
                         Text(typewriterText)
-                            .font(DarkFantasyTheme.body)
+                            .font(.custom("Inter-Regular", size: 18))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .lineLimit(3)
                     }
@@ -199,7 +204,7 @@ struct NPCGuideWidget: View {
                 .id(messageId)
                 .transition(.opacity)
                 .onAppear {
-                    if typewriterEnabled {
+                    if typewriterRunnable {
                         startTypewriter()
                     }
                 }
@@ -209,7 +214,7 @@ struct NPCGuideWidget: View {
                 }
 
                 // Optional CTA button (e.g. "Go to Shop")
-                if let label = ctaLabel, let action = onCTA, (!typewriterEnabled || typewriterDone) {
+                if let label = ctaLabel, let action = onCTA, (!typewriterRunnable || typewriterDone) {
                     Button {
                         action()
                     } label: {

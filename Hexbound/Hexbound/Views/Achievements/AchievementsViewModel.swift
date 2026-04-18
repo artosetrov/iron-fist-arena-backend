@@ -96,13 +96,49 @@ final class AchievementsViewModel {
         HapticManager.success()
         SFXManager.shared.play(.sealStamp)
 
+        let lootItems: [ClaimLootItem]
+        if let reward = result.reward {
+            switch reward.type {
+            case "title":
+                let ref = reward.id ?? achievement.reward?.title ?? "unknown"
+                lootItems = [
+                    ClaimLootItem(
+                        id: "title:\(ref)",
+                        name: "Title: \(ref)",
+                        quantity: max(reward.amount, 1),
+                        imageKey: nil,
+                        fallbackIcon: "sparkles",
+                        rarity: .epic,
+                        rarityColor: DarkFantasyTheme.rarityEpic
+                    )
+                ]
+            case "frame":
+                let ref = reward.id ?? achievement.reward?.frame ?? "unknown"
+                lootItems = [
+                    ClaimLootItem(
+                        id: "frame:\(ref)",
+                        name: "Frame: \(ref)",
+                        quantity: max(reward.amount, 1),
+                        imageKey: nil,
+                        fallbackIcon: "sparkles.rectangle.stack",
+                        rarity: .epic,
+                        rarityColor: DarkFantasyTheme.rarityEpic
+                    )
+                ]
+            default:
+                lootItems = []
+            }
+        } else {
+            lootItems = []
+        }
+
         claimRewardConfig = ClaimRewardConfig(
             title: "CLAIMED!",
             subtitle: achievement.title,
             goldReward: result.rewardGold,
             gemsReward: result.rewardGems,
             xpReward: result.rewardXp,
-            lootItems: []
+            lootItems: lootItems
         )
     }
 

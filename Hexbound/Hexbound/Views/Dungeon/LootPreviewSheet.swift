@@ -21,7 +21,7 @@ struct LootPreviewSheet: View {
                 HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
                     // Item image — unified ItemCardView
                     ItemCardView(loot: loot, context: .preview) { }
-                        .frame(width: 88, height: 88)
+                        .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
 
                     // Info
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {

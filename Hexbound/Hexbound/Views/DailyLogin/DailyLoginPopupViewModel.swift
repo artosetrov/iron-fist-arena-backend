@@ -164,7 +164,7 @@ final class DailyLoginPopupViewModel {
         }
 
         return ClaimRewardConfig(
-            title: "DAILY REWARD\nCLAIMED!",
+            title: "CLAIMED!",
             subtitle: "Day \(claimedDay)",
             goldReward: goldReward,
             gemsReward: gemsReward,

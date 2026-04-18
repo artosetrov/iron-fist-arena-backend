@@ -47,7 +47,7 @@ struct QuestRewardCell: View {
     let type: QuestRewardType
     let value: Int
 
-    private let cellSize: CGFloat = 72
+    private let cellSize: CGFloat = LayoutConstants.itemCardSize
 
     var body: some View {
         cellBase

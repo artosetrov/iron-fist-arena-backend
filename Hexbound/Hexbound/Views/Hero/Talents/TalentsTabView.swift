@@ -60,7 +60,7 @@ struct TalentsTabView: View {
                 onClose: { vm.selectedNode = nil },
                 equippedSlotIndex: vm.equippedSlotIndex(for: node.id),
                 onEquip: {
-                    vm.equipActive(node: node)
+                    vm.beginEquipActive(node: node)
                     vm.selectedNode = nil
                 },
                 onUnequip: {

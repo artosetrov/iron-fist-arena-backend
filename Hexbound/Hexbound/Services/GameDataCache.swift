@@ -562,6 +562,7 @@ final class GameDataCache {
         opponentProfilesFetchedAt = [:]
         featureFlags = [:]
         gameConfig = nil
+        Item.fallbackUpgradeStatBonusPerLevel = 1
         isInitLoaded = false
     }
 }
@@ -574,6 +575,7 @@ struct GameConfig {
     let pvpStaminaCost: Int
     let freePvpPerDay: Int
     let upgradeChances: [Int]
+    let upgradeStatBonusPerLevel: Int
     let maxLevel: Int
     let statPointsPerLevel: Int
     let pvpWinGold: Int

@@ -296,7 +296,7 @@ extension BattleResultCardView {
                                 endPoint: .bottom
                             )
                         )
-                        .frame(width: 72, height: 72)
+                        .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                                 .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
@@ -335,7 +335,7 @@ extension BattleResultCardView {
                     ) {
                         config.onLootTap?(index)
                     }
-                    .frame(width: 72, height: 72)
+                    .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
 
                     Text(item.name)
                         .font(DarkFantasyTheme.body.weight(.semibold))
