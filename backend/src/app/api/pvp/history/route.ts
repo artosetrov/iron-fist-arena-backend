@@ -58,9 +58,13 @@ export async function GET(req: NextRequest) {
     })
 
     // Shape the response to indicate win/loss from this character's perspective
-    const history = matches.map((match) => {
+    const history = matches.flatMap((match) => {
       const isPlayer1 = match.player1Id === characterId
       const opponent = isPlayer1 ? match.player2 : match.player1
+      if (!opponent) {
+        return []
+      }
+
       const won = match.winnerId === characterId
       const ratingBefore = isPlayer1
         ? match.player1RatingBefore
@@ -69,7 +73,7 @@ export async function GET(req: NextRequest) {
         ? match.player1RatingAfter
         : match.player2RatingAfter
 
-      return {
+      return [{
         matchId: match.id,
         opponent: {
           id: opponent.id,
@@ -87,7 +91,7 @@ export async function GET(req: NextRequest) {
         matchType: match.matchType,
         isRevenge: match.isRevenge,
         playedAt: match.playedAt,
-      }
+      }]
     })
 
     return NextResponse.json({

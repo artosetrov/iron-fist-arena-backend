@@ -272,9 +272,17 @@ export async function POST(req: NextRequest) {
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
     }
+    if (!match.player2Id) {
+      return NextResponse.json(
+        { error: 'Player-vs-player opponent missing' },
+        { status: 409 },
+      )
+    }
     if (match.interactiveTimeoutAt && match.interactiveTimeoutAt < new Date()) {
       return NextResponse.json({ error: 'Match timed out' }, { status: 410 })
     }
+
+    const defenderId = match.player2Id
 
     // Auth: player1 must belong to caller
     const attackerRow = await prisma.character.findUnique({
@@ -282,7 +290,7 @@ export async function POST(req: NextRequest) {
       select: { userId: true, maxHp: true, currentHp: true },
     })
     const defenderRow = await prisma.character.findUnique({
-      where: { id: match.player2Id },
+      where: { id: defenderId },
       select: { maxHp: true, currentHp: true },
     })
     if (!attackerRow || !defenderRow) {
@@ -295,7 +303,7 @@ export async function POST(req: NextRequest) {
     await initCombatConfig()
     const [attackerStats, defenderStats] = await Promise.all([
       loadCombatCharacter(match.player1Id),
-      loadCombatCharacter(match.player2Id),
+      loadCombatCharacter(defenderId),
     ])
 
     // Read current HPs from choices (last entry) or from character row (round 0)
@@ -476,12 +484,12 @@ export async function POST(req: NextRequest) {
     let winnerId: string | null = null
     if (matchFinished) {
       if (newDefenderHp <= 0 && newAttackerHp > 0) winnerId = match.player1Id
-      else if (newAttackerHp <= 0 && newDefenderHp > 0) winnerId = match.player2Id
+      else if (newAttackerHp <= 0 && newDefenderHp > 0) winnerId = defenderId
       else {
         // Both alive at MAX_ROUNDS (or both 0, unlikely) → higher HP% wins
         const aPct = newAttackerHp / attackerRow.maxHp
         const dPct = newDefenderHp / defenderRow.maxHp
-        winnerId = aPct >= dPct ? match.player1Id : match.player2Id
+        winnerId = aPct >= dPct ? match.player1Id : defenderId
       }
     }
 

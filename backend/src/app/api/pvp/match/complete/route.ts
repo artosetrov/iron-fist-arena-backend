@@ -92,6 +92,12 @@ export async function POST(req: NextRequest) {
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
     }
+    if (!match.player2Id) {
+      return NextResponse.json(
+        { error: 'Player-vs-player opponent missing' },
+        { status: 409 },
+      )
+    }
 
     const select = {
       id: true, userId: true, characterName: true, class: true, origin: true,

@@ -15,6 +15,7 @@
 | POST | /auth/link-account | Yes | Legacy local profile-link sync compatibility route |
 | POST | /auth/forgot-password | No | Password reset email (redirects to `/reset-password`) |
 | POST | /auth/sync-user | Yes | Sync user data |
+| GET  | /me | Yes | Current account snapshot + missing-local-row bootstrap recovery |
 
 ## Characters (`/api/characters/*`)
 
@@ -82,6 +83,7 @@ Resolves ONE round: the player's attack against the opponent, then (if opponent 
   }
   ```
 - **Errors**: `OUT_OF_CONSUMABLE`, `MATCH_STATE_CHANGED` (surfaced in `detail`).
+- **Contract note**: `/pvp/strike` now returns `409 Player-vs-player opponent missing` if the row does not actually have a `player2Id`, instead of falling through a null-opponent path.
 - **Rate limit**: IP-based via `rateLimit('pvp:strike:' + ip, ...)`.
 - **Round cap**: `MAX_ROUNDS = 15` — match auto-finishes at round cap if neither player has fallen.
 
@@ -105,6 +107,7 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
   }
   ```
 - **Contract note**: iOS reads final HP from `post_combat_hp`, NOT from per-actor `currentHp` fields on the match snapshot (those remain `null` post-Phase 3 and are only populated during classic `/pvp/fight` flow).
+- **Contract note**: `/pvp/match/complete` now returns `409 Player-vs-player opponent missing` if the match row has no `player2Id`; Interactive Combat v1 completion is now explicit about requiring a real PvP opponent.
 
 ## Combat/Training
 

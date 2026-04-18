@@ -121,6 +121,8 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 - **UUID vs Int IDs.** PvpMatch ids are UUIDs — iOS must decode as `String`. Past TS `as number` cast crashed `/match/start` on 2026-04-14. See memory `feedback_uuid_vs_int_ids.md`.
 - **Matchmaking widened 2026-03-23**: ±10 level, ±80% gear score, 3-phase cascade fallback. See memory `project_matchmaking_widened.md`.
 - **Fight 404 fallback**: client falls back to classic when `/pvp/fight` 404s (shipped 2026-04-14). Memory `project_pvp_fight_routing_shipped.md`.
+- **`/pvp/history` now skips snapshot-less rows with no resolved opponent relation.** Old bot/non-PvP residue with `player2Id = null` no longer crashes the whole history response.
+- **Interactive `strike` and `match/complete` now explicitly reject missing PvP opponents.** If an Interactive Combat v1 row is incomplete and `player2Id` is absent, both routes now return `409 Player-vs-player opponent missing` instead of falling into nullability/type drift.
 - **Prisma migration on `pvp_matches.status`**: must run ALTER TABLE via Supabase MCP before deploy. Past incident 2026-04-13 (Interactive Combat), memory `feedback_migration_mcp_apply_to_prod.md`.
 - **Schema field additions without migration** = prod 500s. 2026-04-11 Gold Mine incident pattern applies here too.
 
