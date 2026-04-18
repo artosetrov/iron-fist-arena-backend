@@ -267,7 +267,7 @@ struct PlaceholderView: View {
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, LayoutConstants.spaceXL)
             }
         }
         .navigationBarBackButtonHidden(true)

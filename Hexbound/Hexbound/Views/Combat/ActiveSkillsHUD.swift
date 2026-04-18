@@ -99,7 +99,7 @@ private struct ActiveSkillSlotButton: View {
 
                 if isOnCooldown, let slot {
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(Color.black.opacity(0.55))
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
                     Text("\(slot.cooldownRemaining)")
                         .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -110,7 +110,7 @@ private struct ActiveSkillSlotButton: View {
                     // Mirror cooldown-overlay styling so the slot reads as
                     // "spent" without introducing a new visual vocabulary.
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(Color.black.opacity(0.55))
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
                     Text("USED")
                         .font(DarkFantasyTheme.badge)
                         .tracking(1)

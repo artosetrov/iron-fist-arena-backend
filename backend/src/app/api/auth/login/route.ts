@@ -42,8 +42,6 @@ export async function POST(req: NextRequest) {
 
     // If email not confirmed, auto-confirm and retry
     if (error && error.message?.toLowerCase().includes('not confirmed')) {
-      console.log('login: user email not confirmed — auto-confirming...')
-
       // Look up user in our DB to get their Supabase user ID
       const dbUser = await prisma.user.findFirst({ where: { email } })
       if (dbUser) {
