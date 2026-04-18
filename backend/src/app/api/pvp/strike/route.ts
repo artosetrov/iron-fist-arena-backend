@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import type { BodyZone } from '@/lib/game/balance'
-import { ConsumableType } from '@prisma/client'
+import { ConsumableType, Prisma } from '@prisma/client'
 import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
 
 /**
@@ -267,11 +267,7 @@ export async function POST(req: NextRequest) {
         ? player_active_slot
         : null
 
-    // Local Prisma client may be stale for the 4 Interactive Combat v1 columns
-    // (see memory feedback_stale_prisma_client_triage). schema.prisma + migration
-    // are in sync (drift checker passes); prod `prisma generate` at build fixes.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const match: any = await (prisma.pvpMatch.findUnique as any)({ where: { id: match_id } })
+    const match = await prisma.pvpMatch.findUnique({ where: { id: match_id } })
     if (!match) return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
@@ -304,7 +300,7 @@ export async function POST(req: NextRequest) {
 
     // Read current HPs from choices (last entry) or from character row (round 0)
     const choices = Array.isArray(match.interactiveChoices)
-      ? (match.interactiveChoices as StoredRound[])
+      ? (match.interactiveChoices as unknown as StoredRound[])
       : []
     const last = choices[choices.length - 1]
     // Round 0: both fighters start at full maxHp (match is a discrete duel).
@@ -327,7 +323,7 @@ export async function POST(req: NextRequest) {
 
     // --- Phase 3: validate + prepare active fire for this round ---
     const actives: InteractiveActivesState =
-      (match.interactiveActives as InteractiveActivesState | null) ?? { p1: [], p2: [] }
+      (match.interactiveActives as unknown as InteractiveActivesState | null) ?? { p1: [], p2: [] }
     let firedPlayerActive: ActiveSlotSnapshot | null = null
     let firedIsConsumable = false
     if (firedSlotIndex !== null) {
@@ -546,13 +542,12 @@ export async function POST(req: NextRequest) {
           )
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updated = await (tx.pvpMatch.updateMany as any)({
+        const updated = await tx.pvpMatch.updateMany({
           where: { id: match_id, interactiveStrikeIndex: strikeIndex, status: 'in_progress' },
           data: {
-            interactiveChoices: [...choices, round],
+            interactiveChoices: [...choices, round] as unknown as Prisma.InputJsonValue,
             interactiveStrikeIndex: strikeIndex + 1,
-            interactiveActives: newActives,
+            interactiveActives: newActives as unknown as Prisma.InputJsonValue,
           },
         })
         if (updated.count === 0) {
@@ -569,10 +564,9 @@ export async function POST(req: NextRequest) {
           // Strip the impossible potion slot from the persisted match snapshot
           // so the client can recover in-place instead of getting stuck in a
           // retry loop that keeps failing the same round.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const reconciled = await (prisma.pvpMatch.updateMany as any)({
+          const reconciled = await prisma.pvpMatch.updateMany({
             where: { id: match_id, interactiveStrikeIndex: strikeIndex, status: 'in_progress' },
-            data: { interactiveActives: reconciledActives },
+            data: { interactiveActives: reconciledActives as unknown as Prisma.InputJsonValue },
           })
           if (reconciled.count === 0) {
             return NextResponse.json(

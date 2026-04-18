@@ -7,10 +7,9 @@ import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
 import { getPrestigeConfig } from './live-config'
 import { calculateDerivedStatsFromConfig, getUpgradeStatBonus } from './item-balance'
+import { sumCoreEquipmentStats } from './item-stats'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
-
-const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
 interface DerivedStats {
   maxHp: number
@@ -31,12 +30,13 @@ interface StatBlock {
 
 /**
  * Sum stat bonuses from all equipped items.
- * Each item's base_stats is a JSON like { str: 6, agi: 2 }.
- * Upgrade levels add +upgradeStatBonus per stat that exists on the item.
+ * Each item may contribute base stats plus rolled stats.
+ * Upgrade levels add +upgradeStatBonus per stat that exists on the merged item payload.
  */
 async function sumEquipmentBonuses(
   equippedItems: Array<{
     item: { baseStats: unknown }
+    rolledStats: unknown
     upgradeLevel: number
     durability: number
   }>
@@ -48,12 +48,14 @@ async function sumEquipmentBonuses(
     // Broken items (durability <= 0) provide NO stat bonuses
     if (eq.durability <= 0) continue
 
-    const bs = eq.item.baseStats as Record<string, number> | null
-    if (!bs) continue
-    for (const key of STAT_KEYS) {
-      if (typeof bs[key] === 'number') {
-        bonus[key] += bs[key] + eq.upgradeLevel * upgradeStatBonus
-      }
+    const effectiveCoreStats = sumCoreEquipmentStats(
+      eq.item.baseStats,
+      eq.rolledStats,
+      eq.upgradeLevel,
+      upgradeStatBonus,
+    )
+    for (const [key, value] of Object.entries(effectiveCoreStats) as Array<[keyof StatBlock, number]>) {
+      bonus[key] += value
     }
   }
 
@@ -82,6 +84,7 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
         where: { isEquipped: true },
         select: {
           upgradeLevel: true,
+          rolledStats: true,
           durability: true,
           item: { select: { baseStats: true } },
         },
@@ -94,6 +97,7 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
   const eqBonus = await sumEquipmentBonuses(
     character.equipment.map((e) => ({
       item: { baseStats: e.item.baseStats },
+      rolledStats: e.rolledStats,
       upgradeLevel: e.upgradeLevel,
       durability: e.durability,
     }))

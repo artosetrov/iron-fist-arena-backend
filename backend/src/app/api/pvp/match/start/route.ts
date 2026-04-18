@@ -7,7 +7,7 @@ import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { getStaminaConfig } from '@/lib/game/live-config'
 import { getHpRestoreFraction, isHealthPotion } from '@/lib/game/consumable-effects'
-import { ConsumableType } from '@prisma/client'
+import { ConsumableType, Prisma } from '@prisma/client'
 
 /**
  * POST /api/pvp/match/start — Interactive Combat v1 (FEATURE-FLAGGED)
@@ -261,11 +261,7 @@ export async function POST(req: NextRequest) {
       }
       await tx.character.update({ where: { id: attacker.id }, data: attackerUpdate })
 
-      // Local Prisma client may be stale for the 4 Interactive Combat v1 columns
-      // (memory: feedback_stale_prisma_client_triage). Cast to any; prod build
-      // regenerates the client so types will be precise there.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const match = await (tx.pvpMatch.create as any)({
+      const match = await tx.pvpMatch.create({
         data: {
           player1Id: attacker.id,
           player2Id: defender.id,
@@ -284,8 +280,8 @@ export async function POST(req: NextRequest) {
           status: 'in_progress',
           interactiveStrikeIndex: 0,
           interactiveTimeoutAt: timeoutAt,
-          interactiveChoices: [],
-          interactiveActives,
+          interactiveChoices: [] as Prisma.JsonArray,
+          interactiveActives: interactiveActives as Prisma.InputJsonValue,
         },
       })
 

@@ -92,10 +92,9 @@ export async function POST(
           statPointsAvailable: { decrement: totalPoints },
         },
       })
-    })
 
-    // Recalculate derived stats (maxHp, armor, magicResist) including equipment
-    await recalculateDerivedStats(id)
+      await recalculateDerivedStats(id, tx)
+    })
 
     // Invalidate combat caches so PvP uses fresh stats
     await invalidateSkillCache(id)

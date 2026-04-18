@@ -95,10 +95,9 @@ export async function POST(
         where: { id: user.id },
         data: { gems: { decrement: RESPEC_GEM_COST } },
       })
-    })
 
-    // Recalculate derived stats
-    await recalculateDerivedStats(id)
+      await recalculateDerivedStats(id, tx)
+    })
 
     // Invalidate combat caches
     await invalidateSkillCache(id)

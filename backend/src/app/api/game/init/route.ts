@@ -21,6 +21,8 @@ import {
 import { getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { resolveAllFlags } from '@/lib/game/feature-flags'
 import { QuestType } from '@prisma/client'
+import { getUpgradeStatBonus } from '@/lib/game/item-balance'
+import { buildEffectiveItemStats } from '@/lib/game/item-stats'
 
 // Quest metadata for formatting
 const QUEST_META: Record<QuestType, { title: string; description: (target: number) => string; icon: string }> = {
@@ -282,6 +284,8 @@ export async function GET(req: NextRequest) {
       resolveAllFlags(user.id, { id: character.id, level: character.level, class: character.class }),
     ])
 
+    const upgradeStatBonus = await getUpgradeStatBonus()
+
     const config = {
       staminaMax: staminaConfig.MAX,
       staminaRegenMinutes: staminaConfig.REGEN_INTERVAL_MINUTES,
@@ -290,6 +294,7 @@ export async function GET(req: NextRequest) {
       pvpStaminaCost: staminaConfig.PVP_COST,
       freePvpPerDay: staminaConfig.FREE_PVP_PER_DAY,
       upgradeChances: upgradeChancesConfig,
+      upgradeStatBonusPerLevel: upgradeStatBonus,
       maxLevel: prestigeConfig.MAX_LEVEL,
       statPointsPerLevel: prestigeConfig.STAT_POINTS_PER_LEVEL,
       pvpWinGold: goldRewardsConfig.PVP_WIN_BASE,
@@ -315,6 +320,16 @@ export async function GET(req: NextRequest) {
       interactiveCombatEnabled: process.env.INTERACTIVE_COMBAT_V1 !== 'false',
     }
 
+    const equipmentWithEffectiveStats = equipment.map((entry) => ({
+      ...entry,
+      effectiveStats: buildEffectiveItemStats(
+        entry.item.baseStats,
+        entry.rolledStats,
+        entry.upgradeLevel,
+        upgradeStatBonus,
+      ),
+    }))
+
     return NextResponse.json({
       user: userRecord
         ? {
@@ -329,7 +344,7 @@ export async function GET(req: NextRequest) {
         gold: userRecord?.gold ?? 0,
         gems: userRecord?.gems ?? 0,
       },
-      equipment,
+      equipment: equipmentWithEffectiveStats,
       consumables,
       quests: formattedQuests,
       dailyLogin: dailyLoginStatus,

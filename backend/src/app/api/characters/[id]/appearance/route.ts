@@ -139,10 +139,18 @@ export async function PATCH(
       }
 
       const character = await tx.character.update({ where: { id }, data })
-      return { character, gold: originChanged ? userRow.gold - APPEARANCE_CHANGE_COST : userRow.gold }
+      const gold = originChanged ? userRow.gold - APPEARANCE_CHANGE_COST : userRow.gold
+      return { character, gold }
     })
 
-    return NextResponse.json({ character: { ...updated.character, gold: updated.gold }, gold: updated.gold })
+    return NextResponse.json({
+      // Compatibility alias: current clients still decode `character.gold`.
+      character: { ...updated.character, gold: updated.gold },
+      // Compatibility alias for older lightweight callers.
+      gold: updated.gold,
+      // Canonical wallet boundary for newer callers.
+      wallet: { gold: updated.gold },
+    })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })

@@ -112,8 +112,8 @@ export async function GET(req: NextRequest) {
       return {
         key,
         category: def?.category ?? 'unknown',
-        title: meta?.title ?? formatKeyFallback(key),
-        description: meta?.description ?? `Reach ${a.target}`,
+        title: def?.title ?? meta?.title ?? formatKeyFallback(key),
+        description: def?.description ?? meta?.description ?? `Reach ${a.target}`,
         target: a.target,
         progress: a.progress,
         completed: a.completed || a.progress >= a.target,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 
+const DEFAULT_APP_URL = 'https://api.hexboundapp.com'
+
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,8 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'email is required' }, { status: 400 })
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? DEFAULT_APP_URL
     const { error } = await getSupabaseAdmin().auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://hexboundapp.com'}/reset-password`,
+      redirectTo: `${appUrl.replace(/\/$/, '')}/reset-password`,
     })
 
     if (error) {

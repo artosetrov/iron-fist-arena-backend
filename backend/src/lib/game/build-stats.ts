@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
 import { applyPrestigeBonus } from './progression'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
+import { getUpgradeStatBonus } from './item-balance'
+import { calculateEffectiveItemPower, sumCoreEquipmentStats } from './item-stats'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
@@ -31,23 +33,27 @@ export interface FullDerivedStats {
 
 // --- Equipment Bonuses ---
 
-function sumEquipmentBonuses(
+async function sumEquipmentBonuses(
   equippedItems: Array<{
     item: { baseStats: unknown }
+    rolledStats: unknown
     upgradeLevel: number
     durability: number
   }>
-): StatBlock {
+): Promise<StatBlock> {
+  const upgradeStatBonus = await getUpgradeStatBonus()
   const bonus: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
 
   for (const eq of equippedItems) {
     if (eq.durability <= 0) continue
-    const bs = eq.item.baseStats as Record<string, number> | null
-    if (!bs) continue
-    for (const key of STAT_KEYS) {
-      if (typeof bs[key] === 'number') {
-        bonus[key] += bs[key] + eq.upgradeLevel
-      }
+    const effectiveCoreStats = sumCoreEquipmentStats(
+      eq.item.baseStats,
+      eq.rolledStats,
+      eq.upgradeLevel,
+      upgradeStatBonus,
+    )
+    for (const [key, value] of Object.entries(effectiveCoreStats) as Array<[keyof StatBlock, number]>) {
+      bonus[key] += value
     }
   }
 
@@ -134,6 +140,7 @@ export async function recalculateFullDerivedStats(
         where: { isEquipped: true },
         select: {
           upgradeLevel: true,
+          rolledStats: true,
           durability: true,
           item: { select: { baseStats: true } },
         },
@@ -155,9 +162,10 @@ export async function recalculateFullDerivedStats(
     int: character.int, wis: character.wis, luk: character.luk, cha: character.cha,
   }
 
-  const eqBonus = sumEquipmentBonuses(
+  const eqBonus = await sumEquipmentBonuses(
     character.equipment.map((e) => ({
       item: { baseStats: e.item.baseStats },
+      rolledStats: e.rolledStats,
       upgradeLevel: e.upgradeLevel,
       durability: e.durability,
     }))
@@ -180,10 +188,11 @@ export async function recalculateFullDerivedStats(
     character.prestigeLevel ?? 0,
   )
 
-  // Calculate gear score: sum of all equipment stat bonuses + upgrade levels
-  const gearScore = calculateGearScore(
+  // Calculate gear score from merged base + rolled stats with config-driven upgrade bonuses.
+  const gearScore = await calculateGearScore(
     character.equipment.map((e) => ({
       item: { baseStats: e.item.baseStats },
+      rolledStats: e.rolledStats,
       upgradeLevel: e.upgradeLevel,
       durability: e.durability,
     }))
@@ -206,24 +215,24 @@ export async function recalculateFullDerivedStats(
  * Calculate a gear score based on total equipment bonuses.
  * Used for matchmaking to pair similarly-geared players.
  */
-function calculateGearScore(
+async function calculateGearScore(
   equippedItems: Array<{
     item: { baseStats: unknown }
+    rolledStats: unknown
     upgradeLevel: number
     durability: number
   }>
-): number {
+): Promise<number> {
+  const upgradeStatBonus = await getUpgradeStatBonus()
   let score = 0
   for (const eq of equippedItems) {
     if (eq.durability <= 0) continue
-    const bs = eq.item.baseStats as Record<string, number> | null
-    if (!bs) continue
-    // Sum all stats on the item + upgrade bonus
-    for (const key of STAT_KEYS) {
-      if (typeof bs[key] === 'number') {
-        score += bs[key] + eq.upgradeLevel
-      }
-    }
+    score += calculateEffectiveItemPower(
+      eq.item.baseStats,
+      eq.rolledStats,
+      eq.upgradeLevel,
+      upgradeStatBonus,
+    )
   }
   return score
 }

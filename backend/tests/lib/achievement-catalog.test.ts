@@ -6,6 +6,8 @@ describe('achievement-catalog.ts', () => {
     const catalog = buildAchievementCatalogFromDefinitions([
       {
         key: 'rank_title',
+        title: 'Chosen One',
+        description: 'Reach the chosen rank',
         target: 1,
         category: 'ranking',
         rewardType: 'title',
@@ -14,6 +16,8 @@ describe('achievement-catalog.ts', () => {
       },
       {
         key: 'pvp_wins_10',
+        title: 'Ten Wins',
+        description: 'Win ten PvP battles',
         target: 10,
         category: 'pvp',
         rewardType: 'gold',
@@ -26,6 +30,8 @@ describe('achievement-catalog.ts', () => {
       rank_title: {
         target: 1,
         category: 'ranking',
+        title: 'Chosen One',
+        description: 'Reach the chosen rank',
         rewardType: 'title',
         rewardAmount: 1,
         rewardId: 'chosen',
@@ -33,6 +39,8 @@ describe('achievement-catalog.ts', () => {
       pvp_wins_10: {
         target: 10,
         category: 'pvp',
+        title: 'Ten Wins',
+        description: 'Win ten PvP battles',
         rewardType: 'gold',
         rewardAmount: 500,
       },
@@ -45,6 +53,8 @@ describe('achievement-catalog.ts', () => {
     const catalog = buildAchievementCatalogFromDefinitions([
       {
         key: 'bad_reward',
+        title: 'Bad Reward',
+        description: 'Should be dropped',
         target: 1,
         category: 'pvp',
         rewardType: 'skin',

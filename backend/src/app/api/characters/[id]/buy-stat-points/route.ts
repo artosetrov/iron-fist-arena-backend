@@ -84,6 +84,8 @@ export async function POST(
         data: { gems: { decrement: price } },
       })
 
+      await recalculateDerivedStats(id, tx)
+
       return {
         purchased: purchasesToday + 1,
         price,
@@ -96,8 +98,6 @@ export async function POST(
       }
     })
 
-    // Post-transaction: recalc + invalidate
-    await recalculateDerivedStats(id)
     await invalidateSkillCache(id)
     await invalidatePassiveCache(id)
 

@@ -16,6 +16,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const emailOwner = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    })
+
+    if (emailOwner && emailOwner.id !== user.id) {
+      return NextResponse.json(
+        { error: 'Email already registered with another account.' },
+        { status: 409 }
+      )
+    }
+
     const dbUser = await prisma.user.upsert({
       where: { id: user.id },
       update: {

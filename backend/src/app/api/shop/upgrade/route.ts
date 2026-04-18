@@ -15,6 +15,7 @@ import {
   getUpgradeDowngradeThreshold,
   getUpgradeStatBonus,
 } from '@/lib/game/item-balance'
+import { buildEffectiveItemStats } from '@/lib/game/item-stats'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -158,19 +159,28 @@ export async function POST(req: NextRequest) {
       newLevel = currentLevel - 1
     }
 
-    // Calculate effective stats (baseStats + upgrade bonus) for before and after
+    // Calculate effective stats (base + rolled + upgrade bonus) for before and after
     const upgradeStatBonus = await getUpgradeStatBonus()
-    const baseStats = (result.updatedItem.item.baseStats as Record<string, number>) ?? {}
-
-    const effectiveStats: Record<string, number> = {}
-    const previousEffectiveStats: Record<string, number> = {}
+    const effectiveStats = buildEffectiveItemStats(
+      result.updatedItem.item.baseStats,
+      result.updatedItem.rolledStats,
+      newLevel,
+      upgradeStatBonus,
+    )
+    const previousEffectiveStats = buildEffectiveItemStats(
+      result.updatedItem.item.baseStats,
+      result.updatedItem.rolledStats,
+      currentLevel,
+      upgradeStatBonus,
+    )
     const statChanges: Record<string, { before: number; after: number; diff: number }> = {}
 
-    for (const [stat, baseValue] of Object.entries(baseStats)) {
-      const before = baseValue + currentLevel * upgradeStatBonus
-      const after = baseValue + newLevel * upgradeStatBonus
-      previousEffectiveStats[stat] = before
-      effectiveStats[stat] = after
+    for (const stat of new Set([
+      ...Object.keys(previousEffectiveStats),
+      ...Object.keys(effectiveStats),
+    ])) {
+      const before = previousEffectiveStats[stat] ?? 0
+      const after = effectiveStats[stat] ?? 0
       statChanges[stat] = { before, after, diff: after - before }
     }
 

@@ -59,10 +59,13 @@ export async function POST(
       reward: {
         type: result.rewardType,
         amount: result.rewardAmount,
+        id: result.rewardId,
       },
       reward_gold: result.rewardType === 'gold' ? result.rewardAmount : 0,
       reward_gems: result.rewardType === 'gems' ? result.rewardAmount : 0,
       reward_xp: result.rewardType === 'xp' ? result.rewardAmount : 0,
+      reward_title: result.rewardType === 'title' ? result.rewardId : null,
+      reward_frame: result.rewardType === 'frame' ? result.rewardId : null,
       gold: result.rewardGrantResult.gold,
       gems: result.rewardGrantResult.gems,
       xp: result.rewardGrantResult.xp,

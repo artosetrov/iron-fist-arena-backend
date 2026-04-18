@@ -9,6 +9,8 @@ export type AchievementRewardType = 'gold' | 'gems' | 'xp' | 'title' | 'frame'
 export interface AchievementDef {
   target: number;
   category: string;
+  title?: string;
+  description?: string;
   rewardType: AchievementRewardType;
   rewardAmount: number;
   rewardId?: string;
@@ -169,7 +171,7 @@ function isAchievementRewardType(value: string): value is AchievementRewardType 
 }
 
 export function buildAchievementCatalogFromDefinitions(
-  defs: Pick<AchievementDefinition, 'key' | 'target' | 'category' | 'rewardType' | 'rewardAmount' | 'rewardId'>[],
+  defs: Pick<AchievementDefinition, 'key' | 'title' | 'description' | 'target' | 'category' | 'rewardType' | 'rewardAmount' | 'rewardId'>[],
 ): Record<string, AchievementDef> {
   const catalog: Record<string, AchievementDef> = {}
 
@@ -182,6 +184,8 @@ export function buildAchievementCatalogFromDefinitions(
     catalog[def.key] = {
       target: def.target,
       category: def.category,
+      title: def.title,
+      description: def.description,
       rewardType: def.rewardType,
       rewardAmount: def.rewardAmount,
       rewardId: def.rewardId ?? undefined,

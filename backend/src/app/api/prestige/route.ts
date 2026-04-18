@@ -105,11 +105,11 @@ export async function POST(req: NextRequest) {
         }),
       ])
 
+      await recalculateDerivedStats(character_id, tx)
+
       return { updated, newPrestigeLevel }
     })
 
-    // Recalculate derived stats (prestige bonus affects all stats)
-    await recalculateDerivedStats(character_id)
     await invalidateSkillCache(character_id)
     await invalidatePassiveCache(character_id)
 

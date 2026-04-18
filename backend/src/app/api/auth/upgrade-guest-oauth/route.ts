@@ -10,6 +10,10 @@ function maxDate(a: Date | null, b: Date | null): Date | null {
   return a.getTime() >= b.getTime() ? a : b
 }
 
+function sumInt(a: number | null | undefined, b: number | null | undefined): number {
+  return (a ?? 0) + (b ?? 0)
+}
+
 /**
  * POST /api/auth/upgrade-guest-oauth
  *
@@ -60,7 +64,14 @@ export async function POST(req: NextRequest) {
     // 1. Verify the caller is a guest
     const guestDbUser = await prisma.user.findUnique({
       where: { id: guestUser.id },
-      select: { id: true, authProvider: true, gems: true, premiumUntil: true },
+      select: {
+        id: true,
+        authProvider: true,
+        gold: true,
+        gems: true,
+        premiumUntil: true,
+        premiumGemClaimDate: true,
+      },
     })
 
     if (!guestDbUser) {
@@ -142,7 +153,12 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction(async (tx) => {
       const existingOAuthDbUser = await tx.user.findUnique({
         where: { id: oauthUserId },
-        select: { premiumUntil: true },
+        select: {
+          gold: true,
+          gems: true,
+          premiumUntil: true,
+          premiumGemClaimDate: true,
+        },
       })
 
       // Ensure OAuth user record exists in Prisma
@@ -158,11 +174,17 @@ export async function POST(req: NextRequest) {
           authProvider: provider,
           username: displayName,
           lastLogin: new Date(),
-          // Carry over premium/gems from guest
-          gems: guestDbUser.gems,
+          // Merge wallet state conservatively so guest upgrade never drops
+          // already-owned balance from either side.
+          gold: sumInt(existingOAuthDbUser?.gold, guestDbUser.gold),
+          gems: sumInt(existingOAuthDbUser?.gems, guestDbUser.gems),
           premiumUntil: maxDate(
             existingOAuthDbUser?.premiumUntil ?? null,
             guestDbUser.premiumUntil,
+          ),
+          premiumGemClaimDate: maxDate(
+            existingOAuthDbUser?.premiumGemClaimDate ?? null,
+            guestDbUser.premiumGemClaimDate,
           ),
         },
         create: {
@@ -170,8 +192,10 @@ export async function POST(req: NextRequest) {
           email: oauthEmail,
           username: displayName,
           authProvider: provider,
+          gold: guestDbUser.gold,
           gems: guestDbUser.gems,
           premiumUntil: guestDbUser.premiumUntil,
+          premiumGemClaimDate: guestDbUser.premiumGemClaimDate,
           lastLogin: new Date(),
         },
       })
@@ -201,10 +225,34 @@ export async function POST(req: NextRequest) {
       })
 
       // Transfer daily gem card (unique constraint — delete old if OAuth user somehow has one)
-      const guestGemCard = await tx.dailyGemCard.findUnique({
-        where: { userId: guestUser.id },
-      })
-      if (guestGemCard) {
+      const [guestGemCard, oauthGemCard] = await Promise.all([
+        tx.dailyGemCard.findUnique({
+          where: { userId: guestUser.id },
+        }),
+        tx.dailyGemCard.findUnique({
+          where: { userId: oauthUserId },
+        }),
+      ])
+      if (guestGemCard && oauthGemCard) {
+        const keepGuestCard =
+          guestGemCard.expiresAt.getTime() > oauthGemCard.expiresAt.getTime()
+          || (
+            guestGemCard.expiresAt.getTime() === oauthGemCard.expiresAt.getTime()
+            && guestGemCard.daysRemaining > oauthGemCard.daysRemaining
+          )
+
+        if (keepGuestCard) {
+          await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
+          await tx.dailyGemCard.update({
+            where: { userId: guestUser.id },
+            data: { userId: oauthUserId },
+          })
+        } else {
+          await tx.dailyGemCard.delete({
+            where: { userId: guestUser.id },
+          })
+        }
+      } else if (guestGemCard) {
         await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
         await tx.dailyGemCard.update({
           where: { userId: guestUser.id },

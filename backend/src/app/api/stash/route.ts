@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getUpgradeStatBonus } from '@/lib/game/item-balance'
+import { buildEffectiveItemStats } from '@/lib/game/item-stats'
 
 const STASH_MAX_SLOTS = 100
 
@@ -31,11 +32,12 @@ export async function GET(req: NextRequest) {
 
     const upgradeStatBonus = await getUpgradeStatBonus()
     const enriched = stashItems.map((si) => {
-      const baseStats = (si.item.baseStats as Record<string, number>) ?? {}
-      const effectiveStats: Record<string, number> = {}
-      for (const [stat, baseValue] of Object.entries(baseStats)) {
-        effectiveStats[stat] = baseValue + si.upgradeLevel * upgradeStatBonus
-      }
+      const effectiveStats = buildEffectiveItemStats(
+        si.item.baseStats,
+        si.rolledStats,
+        si.upgradeLevel,
+        upgradeStatBonus,
+      )
       return { ...si, effectiveStats }
     })
 

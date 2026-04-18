@@ -25,6 +25,7 @@ import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultip
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { Prisma } from '@prisma/client'
 
 /**
  * POST /api/pvp/match/complete — Interactive Combat v1 (FEATURE-FLAGGED)
@@ -85,11 +86,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'match_id required' }, { status: 400 })
     }
 
-    // Stale Prisma client tolerance (memory: feedback_stale_prisma_client_triage):
-    // the 4 Interactive Combat v1 columns exist in schema.prisma + migration file,
-    // but the locally generated client may not yet know about them.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const match: any = await (prisma.pvpMatch.findUnique as any)({ where: { id: match_id } })
+    const match = await prisma.pvpMatch.findUnique({ where: { id: match_id } })
     if (!match) return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
@@ -248,14 +245,13 @@ export async function POST(req: NextRequest) {
 
     // Transactional finalize: idempotent via updateMany(status='in_progress')
     const finalizeResult = await prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await (tx.pvpMatch.updateMany as any)({
+      const res = await tx.pvpMatch.updateMany({
         where: { id: match_id, status: 'in_progress' },
         data: {
           player1RatingAfter: attackerNewRating,
           player2RatingAfter: defenderNewRating,
           winnerId, loserId,
-          combatLog: JSON.parse(JSON.stringify(combat_log)),
+          combatLog: JSON.parse(JSON.stringify(combat_log)) as Prisma.InputJsonValue,
           turnsTaken: combat_log.length,
           goldReward, xpReward,
           status: 'completed',

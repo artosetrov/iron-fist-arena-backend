@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getUpgradeStatBonus } from '@/lib/game/item-balance'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
+import { buildEffectiveItemStats } from '@/lib/game/item-stats'
 
 /**
  * Builds the canonical inventory payload — the exact same shape that
@@ -45,11 +46,12 @@ export async function buildInventoryResponse(characterId: string) {
 
   const upgradeStatBonus = await getUpgradeStatBonus()
   const equipmentWithEffectiveStats = equipment.map((eq) => {
-    const baseStats = (eq.item.baseStats as Record<string, number>) ?? {}
-    const effectiveStats: Record<string, number> = {}
-    for (const [stat, baseValue] of Object.entries(baseStats)) {
-      effectiveStats[stat] = baseValue + eq.upgradeLevel * upgradeStatBonus
-    }
+    const effectiveStats = buildEffectiveItemStats(
+      eq.item.baseStats,
+      eq.rolledStats,
+      eq.upgradeLevel,
+      upgradeStatBonus,
+    )
     const isTwoHanded =
       eq.item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(eq.item.catalogId)
     return { ...eq, effectiveStats, isTwoHanded }

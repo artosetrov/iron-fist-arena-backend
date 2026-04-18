@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * Legacy compatibility surface.
+ *
+ * This route only syncs local profile fields after an already-authenticated
+ * provider link flow. It is not the main guest->email/social upgrade path.
+ */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,6 +27,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'User not found. Create a guest account first.' },
         { status: 404 }
+      )
+    }
+
+    const emailOwner = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    })
+
+    if (emailOwner && emailOwner.id !== user.id) {
+      return NextResponse.json(
+        { error: 'Email already registered with another account.' },
+        { status: 409 }
       )
     }
 
