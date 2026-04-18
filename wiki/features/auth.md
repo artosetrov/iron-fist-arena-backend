@@ -48,6 +48,7 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 - `POST /api/auth/link-account`           — `backend/src/app/api/auth/link-account/route.ts` — legacy compatibility route for local profile-link sync after external provider linking
 
 #### User account mgmt
+- `GET /api/me`                          — `backend/src/app/api/me/route.ts` — current account snapshot + missing-local-row bootstrap recovery
 - `POST /api/user/email`                  — `backend/src/app/api/user/email/route.ts` — change email
 - `POST /api/user/password`               — `backend/src/app/api/user/password/route.ts` — change password
 - `POST /api/user/delete`                 — `backend/src/app/api/user/delete/route.ts` — full account deletion (cascade)
@@ -109,9 +110,12 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 - **`/auth/sync-user` now hard-fails cleanly on identity collisions.** If the incoming email already belongs to another user row, the route returns `409` instead of relying on a later unique-constraint failure during upsert.
 - **`/auth/guest-login` no longer returns orphan guest sessions on device races.** If a fresh guest creation loses a `deviceId` race at local `User` creation time, the route now deletes the just-created Supabase guest and restores the already-linked guest account instead of returning tokens for a session with no local profile row.
 - **Fresh guest sign-in failure now cleans both sides.** If `guest-login` has already created the local guest row and the follow-up sign-in still fails, the route now deletes both the fresh Supabase guest and the local `User` row instead of leaving a local orphan behind.
+- **`/auth/guest` now really can recreate the missing local guest row.** The route now authenticates against Supabase directly, creates the local `User` row when it is missing, and reloads the existing row if a concurrent request wins the create race instead of dead-ending behind `401`/`500`.
 - **OAuth first-login collisions now fail cleanly.** If Google or Apple sign-in comes in for an email that already belongs to another local account, the route now deletes the fresh Supabase OAuth user and returns `409` with an explicit “log in and link from settings” direction instead of falling through to a generic local-create failure.
 - **OAuth first-login local init failures now clean up Supabase too.** If Google or Apple sign-in creates/authenticates the Supabase user but local `User` initialization still fails, the route now deletes the fresh auth user instead of leaving an auth-only orphan behind for the next retry.
 - **Email register local-init failures now clean up Supabase too.** If `/auth/register` creates the Supabase user and even signs in successfully but local `User` initialization still fails, the route now deletes the fresh auth user and returns `500 Failed to initialize account` instead of keeping an auth-only email account alive.
+- **Email login now distinguishes missing local-row recovery from real collisions.** If `/auth/login` succeeds against Supabase but the local row is missing, the route now recreates it explicitly; if that bootstrap fails, login returns `500`, and if the email is already tied to another local row, login returns `409` instead of silently issuing tokens with a broken local identity.
+- **`/api/me` now self-heals missing local identity rows.** If the auth token is valid but the local `User` row is absent, `/api/me` now bootstraps the row, reloads it on create races, and returns `409` on duplicate-email collisions instead of drifting into `401`/`404` ambiguity.
 - **Deletion cascade.** `POST /api/user/delete` must cascade into all 60+ character-owned tables; any missing `onDelete: Cascade` = orphaned rows forever.
 - **Email delivery still runs through Supabase.** The password-reset email is still sent by Supabase Auth, but the repo now keeps the source template at `backend/email-templates/reset-password.html` and the reset flow lands on the hosted `backend/src/app/reset-password/page.tsx`.
 

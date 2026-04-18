@@ -21,7 +21,9 @@ const {
     prismaMock: {
       user: {
         findFirst: vi.fn(),
-        upsert: vi.fn(),
+        findUnique: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
       },
     },
     supabaseClientMock,
@@ -45,6 +47,7 @@ import { POST } from '@/app/api/auth/login/route'
 describe('POST /api/auth/login', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    prismaMock.user.findUnique.mockResolvedValue({ id: 'user-1' })
   })
 
   it('returns 400 when email is missing', async () => {
@@ -136,7 +139,7 @@ describe('POST /api/auth/login', () => {
       error: null,
     })
 
-    prismaMock.user.upsert.mockResolvedValue({
+    prismaMock.user.update.mockResolvedValue({
       id: 'user-1',
       email: 'user@example.com',
       username: 'user',
@@ -162,10 +165,10 @@ describe('POST /api/auth/login', () => {
         role: 'authenticated',
       },
     })
-    expect(prismaMock.user.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'user-1' },
-        update: { lastLogin: expect.any(Date) },
+        data: { lastLogin: expect.any(Date) },
       }),
     )
   })
@@ -204,7 +207,7 @@ describe('POST /api/auth/login', () => {
       user: { id: 'user-1', email: 'user@example.com' },
     })
 
-    prismaMock.user.upsert.mockResolvedValue({
+    prismaMock.user.update.mockResolvedValue({
       id: 'user-1',
       email: 'user@example.com',
       username: 'user',
@@ -224,5 +227,130 @@ describe('POST /api/auth/login', () => {
       email_confirm: true,
     })
     expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns 409 when login would need to create a local row but the email already belongs to another user row', async () => {
+    mockRateLimit.mockResolvedValue(true)
+
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+          refresh_token: 'refresh-token-456',
+          expires_in: 3600,
+        },
+        user: {
+          id: 'user-2',
+          email: 'user@example.com',
+          role: 'authenticated',
+        },
+      },
+      error: null,
+    })
+
+    prismaMock.user.findUnique.mockResolvedValue(null)
+    prismaMock.user.findFirst.mockResolvedValue({ id: 'other-user' })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
+      }),
+    )
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Email already registered with another account.',
+    })
+    expect(prismaMock.user.create).not.toHaveBeenCalled()
+  })
+
+  it('returns 500 when login needs to initialize a missing local user row and creation fails', async () => {
+    mockRateLimit.mockResolvedValue(true)
+
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+          refresh_token: 'refresh-token-456',
+          expires_in: 3600,
+        },
+        user: {
+          id: 'user-2',
+          email: 'user@example.com',
+          role: 'authenticated',
+        },
+      },
+      error: null,
+    })
+
+    prismaMock.user.findUnique.mockResolvedValue(null)
+    prismaMock.user.findFirst.mockResolvedValue(null)
+    prismaMock.user.create.mockRejectedValueOnce(new Error('db create failed'))
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Failed to initialize account',
+    })
+  })
+
+  it('creates the missing local user row on successful login when auth succeeds but no local row exists yet', async () => {
+    mockRateLimit.mockResolvedValue(true)
+
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+          refresh_token: 'refresh-token-456',
+          expires_in: 3600,
+        },
+        user: {
+          id: 'user-2',
+          email: 'user@example.com',
+          role: 'authenticated',
+        },
+      },
+      error: null,
+    })
+
+    prismaMock.user.findUnique.mockResolvedValue(null)
+    prismaMock.user.findFirst.mockResolvedValue(null)
+    prismaMock.user.create.mockResolvedValue({
+      id: 'user-2',
+      email: 'user@example.com',
+      username: 'user',
+      authProvider: 'email',
+      lastLogin: new Date(),
+    })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          id: 'user-2',
+          email: 'user@example.com',
+          username: 'user',
+          authProvider: 'email',
+          lastLogin: expect.any(Date),
+        }),
+      }),
+    )
   })
 })

@@ -5,7 +5,7 @@ import { cacheGet, cacheSet, cacheDelete } from '@/lib/cache'
 
 const BAN_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-export async function getAuthUser(req: NextRequest) {
+async function fetchSupabaseAuthUser(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
   const token = authHeader.replace('Bearer ', '')
@@ -21,6 +21,17 @@ export async function getAuthUser(req: NextRequest) {
 
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
+
+  return user
+}
+
+export async function getSupabaseAuthUser(req: NextRequest) {
+  return fetchSupabaseAuthUser(req)
+}
+
+export async function getAuthUser(req: NextRequest) {
+  const user = await fetchSupabaseAuthUser(req)
+  if (!user) return null
 
   // Ban check with caching (avoids DB hit on every request)
   const banCacheKey = `ban:${user.id}`

@@ -61,20 +61,55 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Ensure user record exists in our database
-    try {
-      await prisma.user.upsert({
-        where: { id: data.user.id },
-        update: { lastLogin: new Date() },
-        create: {
-          id: data.user.id,
-          email: data.user.email ?? email,
-          username: email.split('@')[0],
-          authProvider: 'email',
-        },
-      })
-    } catch (dbErr) {
-      console.warn('login db upsert warning:', dbErr)
+    const existingUser = await prisma.user.findUnique({
+      where: { id: data.user.id },
+      select: { id: true },
+    })
+
+    if (existingUser) {
+      try {
+        await prisma.user.update({
+          where: { id: data.user.id },
+          data: { lastLogin: new Date() },
+        })
+      } catch (dbErr) {
+        console.warn('login db update warning:', dbErr)
+      }
+    } else {
+      const conflictingUser = (data.user.email ?? email)
+        ? await prisma.user.findFirst({
+            where: {
+              email: data.user.email ?? email,
+              NOT: { id: data.user.id },
+            },
+            select: { id: true },
+          })
+        : null
+
+      if (conflictingUser) {
+        return NextResponse.json(
+          { error: 'Email already registered with another account.' },
+          { status: 409 }
+        )
+      }
+
+      try {
+        await prisma.user.create({
+          data: {
+            id: data.user.id,
+            email: data.user.email ?? email,
+            username: email.split('@')[0],
+            authProvider: 'email',
+            lastLogin: new Date(),
+          },
+        })
+      } catch (dbErr) {
+        console.error('login db create error:', dbErr)
+        return NextResponse.json(
+          { error: 'Failed to initialize account' },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json({
