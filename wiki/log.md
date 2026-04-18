@@ -1789,5 +1789,41 @@ Closed the next auth/runtime parity block:
 - **Created:** `[[block-192-backend-guest-login-signin-failure-cleanup]]`
 - **Files audited:** `backend/src/app/api/auth/guest-login/route.ts`, `backend/tests/api/auth-guest-login.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-191-backend-guest-login-device-race-recovery.md`
 - **Fixes:** completed the fresh-guest rollback path so sign-in failure after successful local guest creation now deletes both the fresh Supabase guest and the fresh local `User` row instead of leaving a local orphan behind
-- **Inventory refresh:** updated current counts to `5019` in-scope files and `254 in-scope wiki markdown files / 253 wiki pages`
+- **Inventory refresh:** updated current counts to `5037` in-scope files and `254 in-scope wiki markdown files / 253 wiki pages`
 - **Verification:** `cd backend && npx vitest run tests/api/auth-guest-login.test.ts`, `cd backend && npx eslint src/app/api/auth/guest-login/route.ts tests/api/auth-guest-login.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 193 backend upgrade-guest full Supabase rollback
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-193-backend-upgrade-guest-full-supabase-rollback]]`
+- **Files audited:** `backend/src/app/api/auth/upgrade-guest/route.ts`, `backend/tests/api/auth-upgrade-guest.test.ts`, `wiki/features/auth.md`
+- **Fixes:** completed the guest→email rollback path so repeated Prisma persistence failure now restores the previous guest auth identity materially in Supabase, including guest metadata and the prior guest email, instead of leaving auth upgraded while Prisma still says anonymous
+- **Inventory refresh:** updated current counts to `5040` in-scope files and `256 in-scope wiki markdown files / 255 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-upgrade-guest.test.ts`, `cd backend && npx eslint src/app/api/auth/upgrade-guest/route.ts tests/api/auth-upgrade-guest.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 194 backend OAuth local init cleanup and collision guards
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-194-backend-oauth-local-init-cleanup-and-collision-guards]]`
+- **Files audited:** `backend/src/app/api/auth/google/route.ts`, `backend/src/app/api/auth/apple/route.ts`, `backend/tests/api/auth-google-apple.test.ts`, `wiki/features/auth.md`
+- **Fixes:** added duplicate-email guards and cleanup for first-time Google/Apple local bootstrap so OAuth sign-in now deletes the fresh Supabase user on local-init failure, returns `409` on duplicate-email collisions, and points the player at the explicit “log in and link from settings” path instead of a vague init error
+- **Inventory refresh:** updated current counts to `5040` in-scope files and `256 in-scope wiki markdown files / 255 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npx eslint src/app/api/auth/upgrade-guest/route.ts src/app/api/auth/google/route.ts src/app/api/auth/apple/route.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 195 backend upgrade-guest-oauth transaction cleanup
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-195-backend-upgrade-guest-oauth-transaction-cleanup]]`
+- **Files audited:** `backend/src/app/api/auth/upgrade-guest-oauth/route.ts`, `backend/tests/api/auth-upgrade-guest-oauth.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-186-backend-guest-oauth-wallet-merge-parity.md`
+- **Fixes:** completed the guest→OAuth failure cleanup story so a transfer-transaction failure after successful OAuth sign-in now deletes the fresh OAuth auth user when no local OAuth row existed yet, instead of leaving an auth-only identity behind
+- **Inventory refresh:** updated current counts to `5041` in-scope files and `257 in-scope wiki markdown files / 256 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npx eslint src/app/api/auth/upgrade-guest-oauth/route.ts src/app/api/auth/upgrade-guest/route.ts src/app/api/auth/google/route.ts src/app/api/auth/apple/route.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 196 backend register local-init cleanup
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-196-backend-register-local-init-cleanup]]`
+- **Files audited:** `backend/src/app/api/auth/register/route.ts`, `backend/tests/api/auth-register.test.ts`, `wiki/features/auth.md`
+- **Fixes:** completed the email-register cleanup story so a local `User` bootstrap failure after successful Supabase create/sign-in now deletes the fresh auth user and returns `500 Failed to initialize account` instead of returning success with an auth-only email account
+- **Inventory refresh:** updated current counts to `5042` in-scope files and `258 in-scope wiki markdown files / 257 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npx eslint src/app/api/auth/register/route.ts src/app/api/auth/upgrade-guest-oauth/route.ts src/app/api/auth/upgrade-guest/route.ts src/app/api/auth/google/route.ts src/app/api/auth/apple/route.ts tests/api/auth-register.test.ts tests/api/auth-upgrade-guest-oauth.test.ts tests/api/auth-upgrade-guest.test.ts tests/api/auth-google-apple.test.ts`, `cd backend && npm run build`, and `git diff --check`

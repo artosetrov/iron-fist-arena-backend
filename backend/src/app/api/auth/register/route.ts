@@ -100,8 +100,14 @@ export async function POST(req: NextRequest) {
         },
       })
     } catch (dbErr) {
-      // May fail if user already exists — that's OK
-      console.warn('register db create warning:', dbErr)
+      console.error('register db create error:', dbErr)
+      await supabase.auth.admin.deleteUser(createData.user.id).catch((deleteErr: unknown) => {
+        console.warn('register cleanup warning after failed local initialization:', deleteErr)
+      })
+      return NextResponse.json(
+        { error: 'Failed to initialize account' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({

@@ -10,6 +10,7 @@ const {
     auth: {
       admin: {
         createUser: vi.fn(),
+        deleteUser: vi.fn(),
       },
       signInWithPassword: vi.fn(),
     },
@@ -44,6 +45,8 @@ import { POST } from '@/app/api/auth/register/route'
 describe('POST /api/auth/register', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.admin.deleteUser.mockResolvedValue({ error: null })
   })
 
   it('returns 400 when email is missing', async () => {
@@ -265,5 +268,51 @@ describe('POST /api/auth/register', () => {
         }),
       }),
     )
+  })
+
+  it('returns 500 and deletes the fresh Supabase user when local user initialization fails after sign-in', async () => {
+    mockRateLimit.mockResolvedValue(true)
+
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.admin.createUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-new-3',
+          email: 'broken@example.com',
+          role: 'authenticated',
+        },
+      },
+      error: null,
+    })
+
+    supabaseClient.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token',
+          refresh_token: 'refresh-token',
+          expires_in: 3600,
+        },
+      },
+      error: null,
+    })
+
+    prismaMock.user.create.mockRejectedValueOnce(new Error('db create failed'))
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'broken@example.com',
+          password: 'test123',
+          username: 'broken',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Failed to initialize account',
+    })
+    expect(supabaseClient.auth.admin.deleteUser).toHaveBeenCalledWith('user-new-3')
   })
 })

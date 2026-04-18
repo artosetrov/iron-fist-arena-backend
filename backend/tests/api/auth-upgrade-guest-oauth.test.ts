@@ -84,16 +84,22 @@ describe('POST /api/auth/upgrade-guest-oauth', () => {
     mockGetAuthUser.mockResolvedValue({ id: 'guest-user' })
     mockRateLimit.mockResolvedValue(true)
 
-    prismaMock.user.findUnique.mockResolvedValue({
-      id: 'guest-user',
-      authProvider: 'anonymous',
-      gold: 120,
-      gems: 40,
-      premiumUntil: new Date('2026-05-10T00:00:00.000Z'),
-      premiumGemClaimDate: new Date('2026-04-17T00:00:00.000Z'),
+    prismaMock.user.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => {
+      if (where.id === 'guest-user') {
+        return {
+          id: 'guest-user',
+          authProvider: 'anonymous',
+          gold: 120,
+          gems: 40,
+          premiumUntil: new Date('2026-05-10T00:00:00.000Z'),
+          premiumGemClaimDate: new Date('2026-04-17T00:00:00.000Z'),
+        }
+      }
+      return null
     })
 
     prismaMock.character.findFirst.mockResolvedValue(null)
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof txMock) => Promise<void>) => callback(txMock))
 
     supabaseClientMock.auth.signInWithIdToken.mockResolvedValue({
       data: {
@@ -205,5 +211,25 @@ describe('POST /api/auth/upgrade-guest-oauth', () => {
     })
     expect(txMock.dailyGemCard.deleteMany).not.toHaveBeenCalled()
     expect(txMock.dailyGemCard.update).not.toHaveBeenCalled()
+  })
+
+  it('deletes the fresh OAuth auth user if the guest->oauth transfer transaction fails before local attach', async () => {
+    prismaMock.$transaction.mockRejectedValueOnce(new Error('tx failed'))
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/upgrade-guest-oauth', {
+        method: 'POST',
+        body: JSON.stringify({
+          id_token: 'oauth-token',
+          provider: 'google',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Failed to link account. Please try again.',
+    })
+    expect(supabaseClientMock.auth.admin.deleteUser).toHaveBeenCalledWith('oauth-user')
   })
 })

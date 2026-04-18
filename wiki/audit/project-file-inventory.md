@@ -10,9 +10,9 @@ updated: 2026-04-17
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 4972
-- Untracked project-owned files: 47
-- In-scope files listed here: 5019
+- Tracked files: 5036
+- Untracked project-owned files: 6
+- In-scope files listed here: 5042
 
 ## Excluded Generated / Vendor Areas
 
@@ -789,7 +789,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/auth-login.test.ts
 - backend/tests/api/auth-register.test.ts
 - backend/tests/api/auth-forgot-password.test.ts _(untracked)_
+- backend/tests/api/auth-google-apple.test.ts _(untracked)_
 - backend/tests/api/auth-guest-login.test.ts _(untracked)_
+- backend/tests/api/auth-upgrade-guest.test.ts _(untracked)_
 - backend/tests/api/auth-link-account.test.ts _(untracked)_
 - backend/tests/api/auth-sync-user.test.ts _(untracked)_
 - backend/tests/api/auth-upgrade-guest-oauth.test.ts _(untracked)_
@@ -5102,7 +5104,11 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-189-backend-link-account-duplicate-email-guard.md _(untracked)_
 - wiki/audit/block-190-backend-sync-user-duplicate-email-guard.md _(untracked)_
 - wiki/audit/block-191-backend-guest-login-device-race-recovery.md _(untracked)_
-- wiki/audit/block-192-backend-guest-login-signin-failure-cleanup.md _(untracked)_
+- wiki/audit/block-192-backend-guest-login-signin-failure-cleanup.md
+- wiki/audit/block-193-backend-upgrade-guest-full-supabase-rollback.md _(untracked)_
+- wiki/audit/block-194-backend-oauth-local-init-cleanup-and-collision-guards.md _(untracked)_
+- wiki/audit/block-195-backend-upgrade-guest-oauth-transaction-cleanup.md _(untracked)_
+- wiki/audit/block-196-backend-register-local-init-cleanup.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

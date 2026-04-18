@@ -212,6 +212,10 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 190 | [[block-190-backend-sync-user-duplicate-email-guard]] — `/auth/sync-user` now guards duplicate-email collisions explicitly and returns `409` instead of falling through to a later upsert conflict | Fixed |
 | 191 | [[block-191-backend-guest-login-device-race-recovery]] — `guest-login` now deletes the fresh Supabase guest and restores the already-linked guest on `deviceId` races instead of returning an orphan local-profile-less session | Fixed |
 | 192 | [[block-192-backend-guest-login-signin-failure-cleanup]] — `guest-login` now also deletes the fresh local `User` row if sign-in fails after local guest creation, so fresh guest bootstrap rolls back both sides cleanly | Fixed |
+| 193 | [[block-193-backend-upgrade-guest-full-supabase-rollback]] — `upgrade-guest` now restores the previous guest auth identity fully if local persistence fails after Supabase email/password upgrade | Fixed |
+| 194 | [[block-194-backend-oauth-local-init-cleanup-and-collision-guards]] — Google/Apple auth now clean up fresh Supabase users on local init failure and return `409` on duplicate-email collisions instead of generic bootstrap failure | Fixed |
+| 195 | [[block-195-backend-upgrade-guest-oauth-transaction-cleanup]] — `upgrade-guest-oauth` now deletes the fresh OAuth auth user if the guest→OAuth transfer transaction fails before any local OAuth row was attached | Fixed |
+| 196 | [[block-196-backend-register-local-init-cleanup]] — `register` now deletes the fresh Supabase auth user if local `User` bootstrap fails after successful create/sign-in instead of returning success with an auth-only account | Fixed |
 
 ## Status Legend
 

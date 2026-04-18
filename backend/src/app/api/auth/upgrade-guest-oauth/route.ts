@@ -140,6 +140,11 @@ export async function POST(req: NextRequest) {
       select: { id: true, characterName: true },
     })
 
+    const existingOAuthDbUser = await prisma.user.findUnique({
+      where: { id: oauthUserId },
+      select: { id: true },
+    })
+
     if (existingOAuthCharacter) {
       return NextResponse.json(
         {
@@ -150,152 +155,168 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Transfer all data from guest user to OAuth user inside a transaction
-    await prisma.$transaction(async (tx) => {
-      const existingOAuthDbUser = await tx.user.findUnique({
-        where: { id: oauthUserId },
-        select: {
-          gold: true,
-          gems: true,
-          premiumUntil: true,
-          premiumGemClaimDate: true,
-        },
-      })
+    try {
+      await prisma.$transaction(async (tx) => {
+        const existingOAuthDbUserWallet = await tx.user.findUnique({
+          where: { id: oauthUserId },
+          select: {
+            gold: true,
+            gems: true,
+            premiumUntil: true,
+            premiumGemClaimDate: true,
+          },
+        })
 
-      // Ensure OAuth user record exists in Prisma
-      const displayName =
-        oauthData.user.user_metadata?.full_name ||
-        oauthEmail.split('@')[0] ||
-        `${provider}_${oauthUserId.slice(0, 8)}`
+        // Ensure OAuth user record exists in Prisma
+        const displayName =
+          oauthData.user.user_metadata?.full_name ||
+          oauthEmail.split('@')[0] ||
+          `${provider}_${oauthUserId.slice(0, 8)}`
 
-      await tx.user.upsert({
-        where: { id: oauthUserId },
-        update: {
-          email: oauthEmail,
-          authProvider: provider,
-          username: displayName,
-          lastLogin: new Date(),
-          // Merge wallet state conservatively so guest upgrade never drops
-          // already-owned balance from either side.
-          gold: sumInt(existingOAuthDbUser?.gold, guestDbUser.gold),
-          gems: sumInt(existingOAuthDbUser?.gems, guestDbUser.gems),
-          premiumUntil: maxDate(
-            existingOAuthDbUser?.premiumUntil ?? null,
-            guestDbUser.premiumUntil,
-          ),
-          premiumGemClaimDate: maxDate(
-            existingOAuthDbUser?.premiumGemClaimDate ?? null,
-            guestDbUser.premiumGemClaimDate,
-          ),
-        },
-        create: {
-          id: oauthUserId,
-          email: oauthEmail,
-          username: displayName,
-          authProvider: provider,
-          gold: guestDbUser.gold,
-          gems: guestDbUser.gems,
-          premiumUntil: guestDbUser.premiumUntil,
-          premiumGemClaimDate: guestDbUser.premiumGemClaimDate,
-          lastLogin: new Date(),
-        },
-      })
+        await tx.user.upsert({
+          where: { id: oauthUserId },
+          update: {
+            email: oauthEmail,
+            authProvider: provider,
+            username: displayName,
+            lastLogin: new Date(),
+            // Merge wallet state conservatively so guest upgrade never drops
+            // already-owned balance from either side.
+            gold: sumInt(existingOAuthDbUserWallet?.gold, guestDbUser.gold),
+            gems: sumInt(existingOAuthDbUserWallet?.gems, guestDbUser.gems),
+            premiumUntil: maxDate(
+              existingOAuthDbUserWallet?.premiumUntil ?? null,
+              guestDbUser.premiumUntil,
+            ),
+            premiumGemClaimDate: maxDate(
+              existingOAuthDbUserWallet?.premiumGemClaimDate ?? null,
+              guestDbUser.premiumGemClaimDate,
+            ),
+          },
+          create: {
+            id: oauthUserId,
+            email: oauthEmail,
+            username: displayName,
+            authProvider: provider,
+            gold: guestDbUser.gold,
+            gems: guestDbUser.gems,
+            premiumUntil: guestDbUser.premiumUntil,
+            premiumGemClaimDate: guestDbUser.premiumGemClaimDate,
+            lastLogin: new Date(),
+          },
+        })
 
-      // Transfer characters
-      await tx.character.updateMany({
-        where: { userId: guestUser.id },
-        data: { userId: oauthUserId },
-      })
-
-      // Transfer cosmetics
-      await tx.cosmetic.updateMany({
-        where: { userId: guestUser.id },
-        data: { userId: oauthUserId },
-      })
-
-      // Transfer push tokens
-      await tx.pushToken.updateMany({
-        where: { userId: guestUser.id },
-        data: { userId: oauthUserId },
-      })
-
-      // Transfer IAP transactions
-      await tx.iapTransaction.updateMany({
-        where: { userId: guestUser.id },
-        data: { userId: oauthUserId },
-      })
-
-      // Transfer daily gem card (unique constraint — delete old if OAuth user somehow has one)
-      const [guestGemCard, oauthGemCard] = await Promise.all([
-        tx.dailyGemCard.findUnique({
+        // Transfer characters
+        await tx.character.updateMany({
           where: { userId: guestUser.id },
-        }),
-        tx.dailyGemCard.findUnique({
-          where: { userId: oauthUserId },
-        }),
-      ])
-      if (guestGemCard && oauthGemCard) {
-        const keepGuestCard =
-          guestGemCard.expiresAt.getTime() > oauthGemCard.expiresAt.getTime()
-          || (
-            guestGemCard.expiresAt.getTime() === oauthGemCard.expiresAt.getTime()
-            && guestGemCard.daysRemaining > oauthGemCard.daysRemaining
-          )
+          data: { userId: oauthUserId },
+        })
 
-        if (keepGuestCard) {
+        // Transfer cosmetics
+        await tx.cosmetic.updateMany({
+          where: { userId: guestUser.id },
+          data: { userId: oauthUserId },
+        })
+
+        // Transfer push tokens
+        await tx.pushToken.updateMany({
+          where: { userId: guestUser.id },
+          data: { userId: oauthUserId },
+        })
+
+        // Transfer IAP transactions
+        await tx.iapTransaction.updateMany({
+          where: { userId: guestUser.id },
+          data: { userId: oauthUserId },
+        })
+
+        // Transfer daily gem card (unique constraint — delete old if OAuth user somehow has one)
+        const [guestGemCard, oauthGemCard] = await Promise.all([
+          tx.dailyGemCard.findUnique({
+            where: { userId: guestUser.id },
+          }),
+          tx.dailyGemCard.findUnique({
+            where: { userId: oauthUserId },
+          }),
+        ])
+        if (guestGemCard && oauthGemCard) {
+          const keepGuestCard =
+            guestGemCard.expiresAt.getTime() > oauthGemCard.expiresAt.getTime()
+            || (
+              guestGemCard.expiresAt.getTime() === oauthGemCard.expiresAt.getTime()
+              && guestGemCard.daysRemaining > oauthGemCard.daysRemaining
+            )
+
+          if (keepGuestCard) {
+            await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
+            await tx.dailyGemCard.update({
+              where: { userId: guestUser.id },
+              data: { userId: oauthUserId },
+            })
+          } else {
+            await tx.dailyGemCard.delete({
+              where: { userId: guestUser.id },
+            })
+          }
+        } else if (guestGemCard) {
           await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
           await tx.dailyGemCard.update({
             where: { userId: guestUser.id },
             data: { userId: oauthUserId },
           })
-        } else {
-          await tx.dailyGemCard.delete({
+        }
+
+        // Transfer Premium Pass subscription row without dropping entitlement.
+        const [guestPremiumSubscription, oauthPremiumSubscription] = await Promise.all([
+          tx.premiumSubscription.findUnique({ where: { userId: guestUser.id } }),
+          tx.premiumSubscription.findUnique({ where: { userId: oauthUserId } }),
+        ])
+
+        if (guestPremiumSubscription && oauthPremiumSubscription) {
+          if (guestPremiumSubscription.expiresAt.getTime() > oauthPremiumSubscription.expiresAt.getTime()) {
+            await tx.premiumSubscription.update({
+              where: { userId: oauthUserId },
+              data: {
+                productId: guestPremiumSubscription.productId,
+                originalTransactionId: guestPremiumSubscription.originalTransactionId,
+                latestTransactionId: guestPremiumSubscription.latestTransactionId,
+                startedAt: guestPremiumSubscription.startedAt,
+                expiresAt: guestPremiumSubscription.expiresAt,
+                autoRenew: guestPremiumSubscription.autoRenew,
+                status: guestPremiumSubscription.status,
+                latestReceipt: guestPremiumSubscription.latestReceipt,
+              },
+            })
+          }
+
+          await tx.premiumSubscription.delete({
             where: { userId: guestUser.id },
           })
-        }
-      } else if (guestGemCard) {
-        await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
-        await tx.dailyGemCard.update({
-          where: { userId: guestUser.id },
-          data: { userId: oauthUserId },
-        })
-      }
-
-      // Transfer Premium Pass subscription row without dropping entitlement.
-      const [guestPremiumSubscription, oauthPremiumSubscription] = await Promise.all([
-        tx.premiumSubscription.findUnique({ where: { userId: guestUser.id } }),
-        tx.premiumSubscription.findUnique({ where: { userId: oauthUserId } }),
-      ])
-
-      if (guestPremiumSubscription && oauthPremiumSubscription) {
-        if (guestPremiumSubscription.expiresAt.getTime() > oauthPremiumSubscription.expiresAt.getTime()) {
+        } else if (guestPremiumSubscription) {
           await tx.premiumSubscription.update({
-            where: { userId: oauthUserId },
-            data: {
-              productId: guestPremiumSubscription.productId,
-              originalTransactionId: guestPremiumSubscription.originalTransactionId,
-              latestTransactionId: guestPremiumSubscription.latestTransactionId,
-              startedAt: guestPremiumSubscription.startedAt,
-              expiresAt: guestPremiumSubscription.expiresAt,
-              autoRenew: guestPremiumSubscription.autoRenew,
-              status: guestPremiumSubscription.status,
-              latestReceipt: guestPremiumSubscription.latestReceipt,
-            },
+            where: { userId: guestUser.id },
+            data: { userId: oauthUserId },
           })
         }
 
-        await tx.premiumSubscription.delete({
-          where: { userId: guestUser.id },
-        })
-      } else if (guestPremiumSubscription) {
-        await tx.premiumSubscription.update({
-          where: { userId: guestUser.id },
-          data: { userId: oauthUserId },
-        })
+        // Delete the old guest user (cascades PushLog etc.)
+        await tx.user.delete({ where: { id: guestUser.id } })
+      })
+    } catch (txError) {
+      console.error('upgrade-guest-oauth transaction error:', txError)
+
+      if (!existingOAuthDbUser) {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(oauthUserId)
+        if (deleteError) {
+          console.warn('upgrade-guest-oauth: failed to delete fresh oauth user after transaction error:', deleteError)
+        }
       }
 
-      // Delete the old guest user (cascades PushLog etc.)
-      await tx.user.delete({ where: { id: guestUser.id } })
-    })
+      return NextResponse.json(
+        { error: 'Failed to link account. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     // 5. Delete the guest user from Supabase auth
     const { error: deleteError } = await supabase.auth.admin.deleteUser(guestUser.id)
