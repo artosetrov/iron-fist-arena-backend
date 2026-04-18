@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strike Reveal — Direction B (v3, RPS reads)</title>
+<style>
+:root {
+  --bg: #0b0f15;
+  --bg-deep: #060a10;
+  --surface: #12171f;
+  --surface-2: #1a212c;
+  --border: #2a323f;
+  --border-dim: #1e2530;
+  --gold: #d4af37;
+  --gold-bright: #f5d060;
+  --gold-dim: #8a6d1f;
+  --success: #4ade80;
+  --success-deep: #16a34a;
+  --danger: #ef4444;
+  --danger-deep: #991b1b;
+  --text: #e5e7eb;
+  --text-2: #9ca3af;
+  --text-dim: #6b7280;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #1a1f2a 0%, #060a10 70%);
+  font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+}
+.page {
+  padding: 40px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.page h1 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+.page .badge {
+  display: inline-block;
+  background: rgba(212,175,55,0.12);
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.page .subtitle {
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0;
+  max-width: 680px;
+  text-align: center;
+  line-height: 1.6;
+}
+.page .subtitle strong { color: var(--text); }
+.controls {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.controls button {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.controls button.primary {
+  background: linear-gradient(180deg, #d4af37, #a88a2b);
+  color: #1a1206;
+  border-color: var(--gold);
+}
+.controls button:hover { filter: brightness(1.1); }
+.split {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ================= PHONE FRAME ================= */
+.phone {
+  width: 378px;
+  height: 820px;
+  background: #000;
+  border-radius: 44px;
+  border: 10px solid #1a1a1a;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 0 0 1px #2a2a2a;
+}
+.dynamic-island {
+  position: absolute;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  width: 118px; height: 32px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 10;
+}
+.status-bar {
+  position: absolute;
+  top: 14px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 5;
+  letter-spacing: 0.3px;
+}
+.status-bar .right { opacity: 0.85; letter-spacing: 2px; }
+.screen {
+  padding: 52px 14px 18px;
+  height: 100%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+/* ================= FULL-SCREEN FLASH (opacity only) ================= */
+.screen-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+  transition: opacity 700ms ease;
+}
+.screen-flash.gold.active  { opacity: 0.22; background: radial-gradient(ellipse at center, rgba(245,208,96,0.9) 0%, rgba(245,208,96,0) 70%); }
+.screen-flash.green.active { opacity: 0.18; background: radial-gradient(ellipse at center, rgba(74,222,128,0.8) 0%, rgba(74,222,128,0) 70%); }
+.screen-flash.red.active   { opacity: 0.22; background: radial-gradient(ellipse at center, rgba(239,68,68,0.85) 0%, rgba(239,68,68,0) 70%); }
+
+/* ================= CHARACTER ================= */
+.char-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.char { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.char .tag { font-size: 10px; letter-spacing: 3px; font-weight: 700; }
+.char.you .tag { color: var(--success); }
+.char.enemy .tag { color: var(--danger); }
+.portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 140px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2d3440, #10151c);
+  border: 2px solid;
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 64px;
+  transition: opacity 400ms ease, box-shadow 400ms ease;
+}
+.char.you .portrait { border-color: var(--success); }
+.char.enemy .portrait { border-color: var(--danger); }
+.char.you  .portrait.loser  { opacity: 0.55; }
+.char.enemy .portrait.loser { opacity: 0.55; }
+.char.you  .portrait.winner { box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(245,208,96,0.5); }
+.char.enemy .portrait.winner { box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(245,208,96,0.5); }
+.char .name { font-size: 14px; font-weight: 700; letter-spacing: 1.5px; }
+.char .class { font-size: 10px; color: var(--text-2); letter-spacing: 0.5px; }
+
+/* ================= HP BARS ================= */
+.hp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.hp { display: flex; flex-direction: column; gap: 3px; }
+.hp-label {
+  font-size: 10px;
+  color: var(--danger);
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.hp-bar {
+  height: 7px;
+  background: #1a1f28;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+  transition: width 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ================= VERDICT BANNER ================= */
+.verdict-banner {
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 400ms ease, max-height 400ms ease;
+  position: relative;
+}
+.verdict-banner.shown { opacity: 1; max-height: 80px; }
+.verdict-banner .sub {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+/* States */
+.verdict-banner.outplayed {
+  background: linear-gradient(180deg, rgba(245,208,96,0.22), rgba(212,175,55,0.10));
+  border: 1px solid var(--gold);
+  color: var(--gold-bright);
+  box-shadow: 0 0 24px rgba(245,208,96,0.25);
+}
+.verdict-banner.outplayed.pulse { animation: goldPulse 800ms ease; }
+@keyframes goldPulse {
+  0%   { box-shadow: 0 0 24px rgba(245,208,96,0.25); }
+  40%  { box-shadow: 0 0 44px rgba(245,208,96,0.7); }
+  100% { box-shadow: 0 0 24px rgba(245,208,96,0.25); }
+}
+.verdict-banner.struck {
+  background: linear-gradient(180deg, rgba(74,222,128,0.18), rgba(22,163,74,0.06));
+  border: 1px solid rgba(74,222,128,0.5);
+  color: var(--success);
+}
+.verdict-banner.held {
+  background: linear-gradient(180deg, rgba(74,222,128,0.14), rgba(22,163,74,0.04));
+  border: 1px solid rgba(74,222,128,0.4);
+  color: var(--success);
+}
+.verdict-banner.traded {
+  background: linear-gradient(180deg, rgba(180,160,100,0.14), rgba(120,100,60,0.04));
+  border: 1px solid rgba(180,160,100,0.35);
+  color: #d6c48e;
+}
+.verdict-banner.outread {
+  background: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(153,27,27,0.06));
+  border: 1px solid rgba(239,68,68,0.45);
+  color: #fca5a5;
+}
+
+/* ================= STANCE CHIPS ================= */
+.stance-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 2px;
+}
+.stance-col { display: flex; flex-direction: column; gap: 4px; }
+.chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 300ms ease, border-color 300ms ease;
+  min-height: 28px;
+}
+.chip::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.chip.attack::before { background: var(--danger); }
+.chip.defend::before { background: var(--success); }
+.chip .icon { opacity: 0.85; }
+.chip .zone { letter-spacing: 1.2px; }
+.chip .mod { margin-left: auto; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+.chip.attack .mod { color: var(--danger); }
+.chip.defend .mod { color: var(--success); }
+.chip.hidden { opacity: 0.55; }
+.chip.hidden .zone,
+.chip.hidden .mod { color: var(--text-dim); }
+.chip.winzone { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,208,96,0.25); }
+
+/* ================= CLASH STRIP ================= */
+.clash-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  opacity: 0;
+  max-height: 0;
+  transition: opacity 400ms ease, max-height 400ms ease;
+  overflow: hidden;
+}
+.clash-strip.shown { opacity: 1; max-height: 240px; }
+.clash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 300ms ease, box-shadow 400ms ease;
+}
+.clash-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.clash-card.outgoing::before { background: var(--success); }
+.clash-card.incoming::before { background: var(--danger); }
+.clash-card.player-win {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(245,208,96,0.2);
+}
+.clash-card.player-loss {
+  opacity: 0.72;
+}
+
+.clash-cap {
+  font-size: 9px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.clash-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+.clash-line .atk { color: var(--danger); }
+.clash-line .def { color: var(--success); }
+.clash-line .arrow { color: var(--text-dim); font-size: 10px; }
+.clash-verdict {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 1px;
+}
+.clash-verdict .label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+.clash-verdict.struck   .label { color: var(--success); }
+.clash-verdict.critical .label { color: var(--gold-bright); }
+.clash-verdict.guarded  .label { color: var(--text-dim); }
+.clash-verdict.held     .label { color: var(--success); }
+.clash-verdict.dodged   .label { color: var(--gold-bright); }
+.clash-verdict.exposed  .label { color: var(--danger); }
+.clash-verdict .dmg {
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.clash-verdict.struck   .dmg { color: var(--success); }
+.clash-verdict.critical .dmg { color: var(--gold-bright); }
+.clash-verdict.guarded  .dmg { color: var(--text); opacity: 0.6; }
+.clash-verdict.held     .dmg { color: var(--success); opacity: 0.85; }
+.clash-verdict.dodged   .dmg { color: var(--gold-bright); opacity: 0.8; }
+.clash-verdict.exposed  .dmg { color: var(--danger); }
+
+.breakdown {
+  margin-top: 4px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border-dim);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+.clash-card.expanded .breakdown { display: flex; }
+.breakdown .row { display: flex; justify-content: space-between; }
+.breakdown .row.total {
+  color: var(--text);
+  font-weight: 700;
+  border-top: 1px dashed var(--border);
+  padding-top: 3px;
+  margin-top: 2px;
+}
+
+/* ================= DOTS ================= */
+.dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin: 2px 0;
+}
+.dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #2a323f;
+  border: 1px solid #1a1f28;
+}
+.dot.active {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ================= ZONE PICKERS ================= */
+.picker-section { display: flex; flex-direction: column; gap: 4px; }
+.picker-label { font-size: 10px; color: var(--text-2); letter-spacing: 2px; font-weight: 700; }
+.picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+.zone {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 3px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  min-height: 62px;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+.zone.selected {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.08);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.zone .icon { font-size: 16px; opacity: 0.85; }
+.zone .perks {
+  font-size: 8px;
+  color: var(--text-2);
+  letter-spacing: 0.4px;
+  line-height: 1.35;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.zone .perks .chance { color: var(--text-dim); font-weight: 600; }
+
+/* ================= BOTTOM BUTTONS ================= */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 8px;
+  margin-top: auto;
+}
+.btn {
+  padding: 13px;
+  border-radius: 6px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+}
+.btn.skip {
+  background: #0e1319;
+  border: 1px solid var(--gold-dim);
+  color: var(--text-2);
+}
+.btn.strike {
+  background: linear-gradient(180deg, #d4af37 0%, #a88a2b 100%);
+  color: #1a1206;
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 2px #0e1319, 0 0 0 3px var(--gold-dim);
+}
+.btn.strike.disabled { opacity: 0.35; pointer-events: none; }
+
+/* ================= ANNOTATIONS ================= */
+.annotations {
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+.annotations h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.annotations h3:not(:first-child) { margin-top: 20px; }
+.annotations ul { margin: 0; padding-left: 18px; }
+.annotations li { margin-bottom: 7px; }
+.annotations code {
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--gold);
+  font-family: 'SF Mono', monospace;
+}
+.annotations .tag-ok  { color: var(--success); font-weight: 700; }
+.annotations .tag-bad { color: var(--danger);  font-weight: 700; }
+.annotations .tag-gold{ color: var(--gold-bright); font-weight: 700; }
+.matrix {
+  border-collapse: collapse;
+  font-size: 11px;
+  width: 100%;
+  margin: 6px 0;
+}
+.matrix th, .matrix td {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.matrix th { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.matrix td:first-child { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.matrix .cell-win   { background: rgba(74,222,128,0.08);  color: var(--success); }
+.matrix .cell-loss  { background: rgba(239,68,68,0.08);   color: #fca5a5; }
+.matrix .cell-dual-win  { background: rgba(245,208,96,0.15); color: var(--gold-bright); font-weight: 800; }
+.matrix .cell-dual-loss { background: rgba(239,68,68,0.2);  color: #fca5a5; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Strike reveal — Direction B <span class="badge">v3 · RPS reads</span></h1>
+  <p class="subtitle">
+    Every turn is a <strong>double rock-paper-scissors</strong>: you predict their attack zone (defense read) and their defend zone (offense read).
+    Landing one read = satisfying. Landing both = <span style="color:var(--gold-bright); font-weight:700;">OUTPLAYED</span> moment.
+    Missing both = painful. The verdict banner, card emphasis, and screen flash all scale to the moment.
+  </p>
+
+  <div class="controls">
+    <button class="primary" id="btnStrike">Fire STRIKE</button>
+    <button id="btnReset">Reset</button>
+    <button id="btnVariant">Variant: Outplayed (double win)</button>
+  </div>
+
+  <div class="split">
+    <!-- ==================== PHONE ==================== -->
+    <div class="phone">
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <span>2:07</span>
+        <span class="right">• • • • &nbsp;🛜&nbsp;▮</span>
+      </div>
+      <div class="screen">
+        <div class="screen-flash" id="screenFlash"></div>
+
+        <div class="char-row">
+          <div class="char you">
+            <div class="tag">YOU</div>
+            <div class="portrait" id="portraitYou">🧙‍♂️</div>
+          </div>
+          <div class="char enemy">
+            <div class="tag">ENEMY</div>
+            <div class="portrait" id="portraitEnemy">👹</div>
+          </div>
+        </div>
+
+        <div class="char-row">
+          <div class="char you">
+            <div class="name">THORNSTRIKE</div>
+            <div class="class">Lv.4 Guardian</div>
+          </div>
+          <div class="char enemy">
+            <div class="name">WARWIND</div>
+            <div class="class">Lv.2 Warrior</div>
+          </div>
+        </div>
+
+        <div class="hp-row">
+          <div class="hp">
+            <div class="hp-label"><span id="hpYou">214</span> / 214</div>
+            <div class="hp-bar"><div class="hp-fill" id="hpFillYou" style="width: 100%;"></div></div>
+          </div>
+          <div class="hp">
+            <div class="hp-label"><span id="hpEnemy">160</span> / 160</div>
+            <div class="hp-bar"><div class="hp-fill" id="hpFillEnemy" style="width: 100%;"></div></div>
+          </div>
+        </div>
+
+        <!-- Verdict banner -->
+        <div class="verdict-banner" id="verdictBanner">
+          <span id="verdictText">OUTPLAYED</span>
+          <span class="sub" id="verdictSub">full read · both wins</span>
+        </div>
+
+        <div class="stance-row">
+          <div class="stance-col">
+            <div class="chip attack" id="youAttack">
+              <span class="icon">⚔</span>
+              <span class="zone">CHEST</span>
+              <span class="mod">+5 dmg</span>
+            </div>
+            <div class="chip defend" id="youDefend">
+              <span class="icon">🛡</span>
+              <span class="zone">HEAD</span>
+              <span class="mod">−8 · 👁 +10%</span>
+            </div>
+          </div>
+          <div class="stance-col">
+            <div class="chip attack hidden" id="enemyAttack">
+              <span class="icon">⚔</span>
+              <span class="zone">???</span>
+              <span class="mod">—</span>
+            </div>
+            <div class="chip defend hidden" id="enemyDefend">
+              <span class="icon">🛡</span>
+              <span class="zone">???</span>
+              <span class="mod">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clash strip -->
+        <div class="clash-strip" id="clashStrip">
+          <div class="clash-card outgoing" id="cardOut">
+            <div class="clash-cap">YOUR STRIKE</div>
+            <div class="clash-line">
+              <span class="atk">⚔ <span id="outAtk">CHEST</span></span>
+              <span class="arrow">→</span>
+              <span class="def">🛡 <span id="outDef">LEGS</span></span>
+            </div>
+            <div class="clash-verdict struck" id="outVerdict">
+              <span class="label" id="outLabel">STRUCK</span>
+              <span class="dmg" id="outDmg">−45</span>
+            </div>
+            <div class="breakdown" id="outBreakdown"></div>
+          </div>
+          <div class="clash-card incoming" id="cardIn">
+            <div class="clash-cap">ENEMY STRIKE</div>
+            <div class="clash-line">
+              <span class="atk">⚔ <span id="inAtk">HEAD</span></span>
+              <span class="arrow">→</span>
+              <span class="def">🛡 <span id="inDef">HEAD</span></span>
+            </div>
+            <div class="clash-verdict held" id="inVerdict">
+              <span class="label" id="inLabel">HELD</span>
+              <span class="dmg" id="inDmg">−17</span>
+            </div>
+            <div class="breakdown" id="inBreakdown"></div>
+          </div>
+        </div>
+
+        <div class="dots">
+          <div class="dot active"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+
+        <div class="picker-section">
+          <div class="picker-label">ATTACK</div>
+          <div class="picker" id="atkPicker">
+            <div class="zone" data-zone="HEAD">
+              <span class="icon">🪖</span>
+              <span>HEAD</span>
+              <span class="perks">+3 dmg<br><span class="chance">✦ +10% crit</span></span>
+            </div>
+            <div class="zone selected" data-zone="CHEST">
+              <span class="icon">🛡</span>
+              <span>CHEST</span>
+              <span class="perks">+5 dmg</span>
+            </div>
+            <div class="zone" data-zone="LEGS">
+              <span class="icon">👢</span>
+              <span>LEGS</span>
+              <span class="perks">+2 dmg</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="picker-section">
+          <div class="picker-label">DEFEND</div>
+          <div class="picker" id="defPicker">
+            <div class="zone selected" data-zone="HEAD">
+              <span class="icon">🪖</span>
+              <span>HEAD</span>
+              <span class="perks">−8 dmg<br><span class="chance">👁 +10% dodge</span></span>
+            </div>
+            <div class="zone" data-zone="CHEST">
+              <span class="icon">🛡</span>
+              <span>CHEST</span>
+              <span class="perks">−15 dmg</span>
+            </div>
+            <div class="zone" data-zone="LEGS">
+              <span class="icon">👢</span>
+              <span>LEGS</span>
+              <span class="perks">−6 dmg<br><span class="chance">👁 +4% dodge</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="btn skip">SKIP</div>
+          <div class="btn strike" id="btnStrikeIn">STRIKE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ANNOTATIONS ==================== -->
+    <div class="annotations">
+      <h3>The read-game in one table</h3>
+      <table class="matrix">
+        <tr><th></th><th>Offense read ✓</th><th>Offense read ✗</th></tr>
+        <tr><td>Defense read ✓</td><td class="cell-dual-win">OUTPLAYED</td><td class="cell-win">HELD THE LINE</td></tr>
+        <tr><td>Defense read ✗</td><td class="cell-win">STRUCK THROUGH</td><td class="cell-dual-loss">OUTREAD</td></tr>
+      </table>
+      <ul>
+        <li><strong>Offense read ✓</strong> = your atk zone ≠ their def zone → you hit a weak spot.</li>
+        <li><strong>Defense read ✓</strong> = their atk zone = your def zone → you blocked the incoming hit.</li>
+        <li>CRIT / DODGE layer on top as gold flourishes (✦ crit on a STRUCK, 👁 dodge on a HELD).</li>
+      </ul>
+
+      <h3>Reveal choreography (~800ms)</h3>
+      <ul>
+        <li><strong>0ms</strong> — STRIKE pressed. Button locks.</li>
+        <li><strong>0–300ms</strong> — enemy chips fade in (opacity only).</li>
+        <li><strong>200ms</strong> — <strong>verdict banner</strong> fades in with color + glow. For OUTPLAYED, a 22% gold screen flash pulses once.</li>
+        <li><strong>400ms</strong> — clash cards fade in. Winning axis card gets a gold border + soft glow; losing axis card is at 72% opacity.</li>
+        <li><strong>500ms</strong> — HP bars drain. On OUTPLAYED, enemy portrait dims to loser state.</li>
+      </ul>
+
+      <h3>Why this communicates the RPS stakes</h3>
+      <ul>
+        <li><strong>Banner sets the emotion</strong> before the player reads the numbers. You feel the outcome, then verify it.</li>
+        <li><strong>Card emphasis</strong> tells you <em>which axis</em> you won or lost. One glance locates the skill moment.</li>
+        <li><strong>Gold reserved for the double-win</strong> keeps it special — not every turn gets celebrated the same way.</li>
+        <li><strong>OUTREAD is painful but not punishing</strong> — red tint, dimmed cards, no flash. The feedback is clear without twisting the knife.</li>
+      </ul>
+
+      <h3>Try the four variants</h3>
+      <ul>
+        <li><span class="tag-gold">Outplayed</span> — CHEST atk hits exposed LEGS; HEAD def blocks their HEAD atk. Gold banner + flash.</li>
+        <li><span class="tag-gold">Outplayed · CRIT + DODGE</span> — the jackpot version. HEAD atk crits, LEGS def dodges. Banner adds a ✦ flourish.</li>
+        <li><span class="tag-ok">Held the Line</span> — offense read lost, defense read won. Green banner, incoming card glows gold.</li>
+        <li><span class="tag-bad">Outread</span> — both reads wrong. Red banner, both cards dimmed, red screen flash.</li>
+      </ul>
+
+      <h3>Open questions</h3>
+      <ul>
+        <li>Banner copy — "OUTPLAYED" vs "DOMINATION" vs something more lore-flavored ("PREDATOR'S EYE", "CLEAN READ")?</li>
+        <li>Should we pulse the <em>winning zone on the opponent's portrait</em> (red flash on their chest when you pierce CHEST) to make the zone layer literal, not just symbolic?</li>
+        <li>OUTREAD — enough of a sting, or should it also subtly dim the screen for ~300ms to drive the "bad read" feeling harder?</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const screenFlash = $('screenFlash');
+  const verdictBanner = $('verdictBanner');
+  const verdictText = $('verdictText');
+  const verdictSub = $('verdictSub');
+  const portraitYou = $('portraitYou');
+  const portraitEnemy = $('portraitEnemy');
+  const clashStrip = $('clashStrip');
+  const cardOut = $('cardOut');
+  const cardIn = $('cardIn');
+  const youAttack = $('youAttack');
+  const youDefend = $('youDefend');
+  const enemyAttack = $('enemyAttack');
+  const enemyDefend = $('enemyDefend');
+  const hpYou = $('hpYou');
+  const hpEnemy = $('hpEnemy');
+  const hpFillYou = $('hpFillYou');
+  const hpFillEnemy = $('hpFillEnemy');
+  const atkPicker = $('atkPicker');
+  const defPicker = $('defPicker');
+  const btnStrikeIn = $('btnStrikeIn');
+
+  const VARIANTS = [
+    {
+      name: 'Outplayed (double win)',
+      you:    { atkZone: 'CHEST', atkMod: '+5 dmg',       defZone: 'HEAD',  defMod: '−8 · 👁 +10%' },
+      enemy:  { atkZone: 'HEAD',  atkMod: '+3 · ✦ +10%',  defZone: 'LEGS',  defMod: '−6 · 👁 +4%' },
+      out: {
+        atk: 'CHEST', def: 'LEGS', verdict: 'struck', label: 'STRUCK', dmg: '−45', winner: true,
+        rows: [['Base damage','40'],['+ CHEST atk bonus','+5'],['− Enemy DEF (no zone match)','0']],
+        total: '45'
+      },
+      in: {
+        atk: 'HEAD', def: 'HEAD', verdict: 'held', label: 'HELD', dmg: '−17', winner: true,
+        rows: [['Base damage','22'],['+ Enemy HEAD atk','+3'],['− Your HEAD def (zone match)','−8']],
+        total: '17'
+      },
+      hp: { you: 197, enemy: 115 },
+      banner: { state: 'outplayed', text: 'OUTPLAYED', sub: 'full read · you won both axes', pulse: true, flash: 'gold' }
+    },
+    {
+      name: 'Outplayed · CRIT + DODGE',
+      you:    { atkZone: 'HEAD',  atkMod: '+3 · ✦ +10%', defZone: 'LEGS',  defMod: '−6 · 👁 +4%' },
+      enemy:  { atkZone: 'LEGS',  atkMod: '+2 dmg',       defZone: 'CHEST', defMod: '−12 dmg' },
+      out: {
+        atk: 'HEAD', def: 'CHEST', verdict: 'critical', label: 'STRUCK · CRIT', dmg: '−69', winner: true,
+        rows: [['Base damage','40'],['+ HEAD atk bonus','+3'],['− Enemy DEF (no zone match)','0'],['✦ CRIT (×1.6)','+26']],
+        total: '69'
+      },
+      in: {
+        atk: 'LEGS', def: 'LEGS', verdict: 'dodged', label: 'DODGED', dmg: '−0', winner: true,
+        rows: [['Base damage','18'],['+ Enemy LEGS atk','+2'],['👁 DODGE proc (LEGS defense)','full negate']],
+        total: '0'
+      },
+      hp: { you: 214, enemy: 91 },
+      banner: { state: 'outplayed', text: 'OUTPLAYED', sub: '✦ critical + 👁 dodge', pulse: true, flash: 'gold' }
+    },
+    {
+      name: 'Held the Line (defense read wins)',
+      you:    { atkZone: 'CHEST', atkMod: '+5 dmg',  defZone: 'CHEST', defMod: '−15 dmg' },
+      enemy:  { atkZone: 'CHEST', atkMod: '+3 dmg',  defZone: 'CHEST', defMod: '−12 dmg' },
+      out: {
+        atk: 'CHEST', def: 'CHEST', verdict: 'guarded', label: 'GUARDED', dmg: '−33', winner: false,
+        rows: [['Base damage','40'],['+ CHEST atk bonus','+5'],['− Enemy CHEST def (match)','−12']],
+        total: '33'
+      },
+      in: {
+        atk: 'CHEST', def: 'CHEST', verdict: 'held', label: 'HELD', dmg: '−10', winner: true,
+        rows: [['Base damage','22'],['+ Enemy CHEST atk','+3'],['− Your CHEST def (match)','−15']],
+        total: '10'
+      },
+      hp: { you: 204, enemy: 127 },
+      banner: { state: 'held', text: 'HELD THE LINE', sub: 'clean defensive read', pulse: false, flash: 'green' }
+    },
+    {
+      name: 'Outread (double loss)',
+      you:    { atkZone: 'HEAD',  atkMod: '+3 · ✦ +10%', defZone: 'LEGS',  defMod: '−6 · 👁 +4%' },
+      enemy:  { atkZone: 'CHEST', atkMod: '+3 dmg',       defZone: 'HEAD',  defMod: '−10 · 👁 +8%' },
+      out: {
+        atk: 'HEAD', def: 'HEAD', verdict: 'guarded', label: 'GUARDED', dmg: '−33', winner: false,
+        rows: [['Base damage','40'],['+ HEAD atk bonus','+3'],['− Enemy HEAD def (match)','−10']],
+        total: '33'
+      },
+      in: {
+        atk: 'CHEST', def: 'LEGS', verdict: 'exposed', label: 'EXPOSED', dmg: '−35', winner: false,
+        rows: [['Base damage','32'],['+ Enemy CHEST atk','+3'],['− Your LEGS def (no zone match)','0']],
+        total: '35'
+      },
+      hp: { you: 179, enemy: 127 },
+      banner: { state: 'outread', text: 'OUTREAD', sub: 'they read both axes', pulse: false, flash: 'red' }
+    }
+  ];
+
+  let variantIdx = 0;
+
+  function selectZone(picker, zone) {
+    [...picker.querySelectorAll('.zone')].forEach(z => {
+      z.classList.toggle('selected', z.dataset.zone === zone);
+    });
+  }
+
+  function fillBreakdown(el, rows, total) {
+    el.innerHTML =
+      rows.map(r => `<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('') +
+      `<div class="row total"><span>Total</span><span>${total}</span></div>`;
+  }
+
+  function applyVariant(v) {
+    // Player chips & picker highlights
+    youAttack.querySelector('.zone').textContent = v.you.atkZone;
+    youAttack.querySelector('.mod').textContent = v.you.atkMod;
+    youDefend.querySelector('.zone').textContent = v.you.defZone;
+    youDefend.querySelector('.mod').textContent = v.you.defMod;
+    selectZone(atkPicker, v.you.atkZone);
+    selectZone(defPicker, v.you.defZone);
+
+    // Clash cards content
+    $('outAtk').textContent = v.out.atk;
+    $('outDef').textContent = v.out.def;
+    $('outLabel').textContent = v.out.label;
+    $('outDmg').textContent = v.out.dmg;
+    $('outVerdict').className = 'clash-verdict ' + v.out.verdict;
+    fillBreakdown($('outBreakdown'), v.out.rows, v.out.total);
+
+    $('inAtk').textContent = v.in.atk;
+    $('inDef').textContent = v.in.def;
+    $('inLabel').textContent = v.in.label;
+    $('inDmg').textContent = v.in.dmg;
+    $('inVerdict').className = 'clash-verdict ' + v.in.verdict;
+    fillBreakdown($('inBreakdown'), v.in.rows, v.in.total);
+  }
+
+  function fire() {
+    const v = VARIANTS[variantIdx];
+
+    // Reveal enemy chips
+    enemyAttack.classList.remove('hidden');
+    enemyAttack.querySelector('.zone').textContent = v.enemy.atkZone;
+    enemyAttack.querySelector('.mod').textContent = v.enemy.atkMod;
+    enemyDefend.classList.remove('hidden');
+    enemyDefend.querySelector('.zone').textContent = v.enemy.defZone;
+    enemyDefend.querySelector('.mod').textContent = v.enemy.defMod;
+
+    // Banner
+    setTimeout(() => {
+      verdictBanner.className = 'verdict-banner ' + v.banner.state + ' shown' + (v.banner.pulse ? ' pulse' : '');
+      verdictText.textContent = v.banner.text;
+      verdictSub.textContent = v.banner.sub;
+    }, 200);
+
+    // Screen flash (single pulse)
+    setTimeout(() => {
+      if (!v.banner.flash) return;
+      screenFlash.className = 'screen-flash ' + v.banner.flash + ' active';
+      setTimeout(() => screenFlash.classList.remove('active'), 700);
+    }, 200);
+
+    // Clash cards
+    setTimeout(() => {
+      clashStrip.classList.add('shown');
+      cardOut.classList.toggle('player-win', v.out.winner);
+      cardOut.classList.toggle('player-loss', !v.out.winner);
+      cardIn.classList.toggle('player-win', v.in.winner);
+      cardIn.classList.toggle('player-loss', !v.in.winner);
+    }, 400);
+
+    // HP drain + portrait states
+    setTimeout(() => {
+      hpYou.textContent = v.hp.you;
+      hpFillYou.style.width = ((v.hp.you / 214) * 100).toFixed(1) + '%';
+      hpEnemy.textContent = v.hp.enemy;
+      hpFillEnemy.style.width = ((v.hp.enemy / 160) * 100).toFixed(1) + '%';
+
+      portraitYou.classList.remove('winner','loser');
+      portraitEnemy.classList.remove('winner','loser');
+      if (v.banner.state === 'outplayed') {
+        portraitYou.classList.add('winner');
+        portraitEnemy.classList.add('loser');
+      } else if (v.banner.state === 'outread') {
+        portraitYou.classList.add('loser');
+        portraitEnemy.classList.add('winner');
+      }
+    }, 500);
+
+    btnStrikeIn.classList.add('disabled');
+  }
+
+  function reset() {
+    const v = VARIANTS[variantIdx];
+    applyVariant(v);
+    enemyAttack.classList.add('hidden');
+    enemyAttack.querySelector('.zone').textContent = '???';
+    enemyAttack.querySelector('.mod').textContent = '—';
+    enemyDefend.classList.add('hidden');
+    enemyDefend.querySelector('.zone').textContent = '???';
+    enemyDefend.querySelector('.mod').textContent = '—';
+
+    verdictBanner.className = 'verdict-banner';
+    screenFlash.className = 'screen-flash';
+    clashStrip.classList.remove('shown');
+    cardOut.classList.remove('expanded','player-win','player-loss');
+    cardIn.classList.remove('expanded','player-win','player-loss');
+    portraitYou.classList.remove('winner','loser');
+    portraitEnemy.classList.remove('winner','loser');
+
+    hpYou.textContent = '214';
+    hpFillYou.style.width = '100%';
+    hpEnemy.textContent = '160';
+    hpFillEnemy.style.width = '100%';
+    btnStrikeIn.classList.remove('disabled');
+  }
+
+  applyVariant(VARIANTS[0]);
+  enemyAttack.classList.add('hidden');
+  enemyAttack.querySelector('.zone').textContent = '???';
+  enemyAttack.querySelector('.mod').textContent = '—';
+  enemyDefend.classList.add('hidden');
+  enemyDefend.querySelector('.zone').textContent = '???';
+  enemyDefend.querySelector('.mod').textContent = '—';
+
+  $('btnStrike').addEventListener('click', fire);
+  btnStrikeIn.addEventListener('click', fire);
+  $('btnReset').addEventListener('click', reset);
+  $('btnVariant').addEventListener('click', () => {
+    variantIdx = (variantIdx + 1) % VARIANTS.length;
+    $('btnVariant').textContent = 'Variant: ' + VARIANTS[variantIdx].name;
+    reset();
+  });
+  cardOut.addEventListener('click', () => cardOut.classList.toggle('expanded'));
+  cardIn.addEventListener('click', () => cardIn.classList.toggle('expanded'));
+</script>
+</body>
+</html>

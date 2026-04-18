@@ -11,8 +11,8 @@ updated: 2026-04-17
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
 - Tracked files: 4972
-- Untracked project-owned files: 62
-- In-scope files listed here: 5034
+- Untracked project-owned files: 47
+- In-scope files listed here: 5019
 
 ## Excluded Generated / Vendor Areas
 

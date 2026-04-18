@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strike Reveal — Integration Shapes A / B / C</title>
+<style>
+  :root {
+    --bg: #0E0B08;
+    --panel: #1A140E;
+    --panel-2: #221A12;
+    --border: #3A2E20;
+    --border-dim: #2A1F14;
+    --gold: #C9A253;
+    --gold-dim: #7A6434;
+    --ink: #EDE3CE;
+    --ink-dim: #A89A7D;
+    --ink-mute: #6B6249;
+    --danger: #C64A3A;
+    --danger-dim: #5A1E15;
+    --success: #6FA85A;
+    --success-dim: #345522;
+    --tan: #8A7548;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #050408;
+    color: var(--ink);
+    font-family: -apple-system, 'Cinzel', Georgia, serif;
+    min-height: 100vh;
+  }
+  .page {
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 20px 16px 140px;
+  }
+  .title {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-family: -apple-system, Georgia, serif;
+  }
+
+  /* ======================== SHAPE TABS ======================== */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .tabs button {
+    padding: 11px 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--ink-mute);
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: -apple-system, sans-serif;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .tabs button .sub {
+    display: block;
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 1px;
+    margin-top: 3px;
+    font-weight: 400;
+  }
+  .tabs button.active {
+    background: var(--panel-2);
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  /* ======================== STAGE ======================== */
+  .stage {
+    position: relative;
+    background:
+      radial-gradient(ellipse at 50% 15%, rgba(201,162,83,0.06), transparent 60%),
+      linear-gradient(180deg, #0E0B08 0%, #130E09 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px;
+    height: 680px;
+    overflow: hidden;
+  }
+
+  /* HP bars */
+  .hp-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hp-block { flex: 1; }
+  .hp-block .name {
+    font-size: 9px;
+    letter-spacing: 1.3px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    font-family: -apple-system, sans-serif;
+  }
+  .hp-block.opp .name { text-align: right; }
+  .hp-bar {
+    height: 5px;
+    background: #1A140E;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--danger) 0%, #E5614F 100%);
+    transition: width 700ms ease;
+  }
+  .hp-num {
+    font-size: 9px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Fighter cards */
+  .fighters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .fighter {
+    height: 180px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(201,162,83,0.10), transparent 70%),
+      linear-gradient(180deg, #1E1812 0%, #0E0B08 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 54px;
+    color: var(--ink-mute);
+    transition: opacity 400ms ease, box-shadow 400ms ease, border-color 400ms ease;
+  }
+  .fighter.loser { opacity: 0.55; }
+  .fighter.winner {
+    box-shadow: 0 0 24px rgba(201,162,83,0.35);
+    border-color: var(--gold-dim);
+  }
+  .fighter .pip {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Reveal slot — where the picker / modal / card lives */
+  .reveal-slot {
+    position: relative;
+    min-height: 260px;
+  }
+
+  /* Zone picker (idle state) */
+  .picker {
+    background: linear-gradient(180deg, #1A140E 0%, #0E0B08 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    opacity: 1;
+    transition: opacity 260ms ease;
+  }
+  .picker.hide { opacity: 0; pointer-events: none; }
+  .picker-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .picker-row .title-row {
+    grid-column: 1 / -1;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: -apple-system, sans-serif;
+  }
+  .zone-btn {
+    padding: 14px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: var(--ink-dim);
+    text-align: center;
+    text-transform: uppercase;
+    font-family: -apple-system, sans-serif;
+  }
+  .strike-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(180deg, #3A2E20 0%, #261E14 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: -apple-system, Georgia, serif;
+    margin-top: 6px;
+  }
+
+  /* ======================== SHARED REVEAL PIECES ======================== */
+  .flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 50;
+  }
+  .flash.on { animation: flash 700ms ease-out forwards; }
+  @keyframes flash {
+    0%   { opacity: 0; }
+    30%  { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+  .flash.gold  { background: radial-gradient(ellipse at 50% 40%, rgba(201,162,83,0.42), transparent 72%); }
+  .flash.green { background: radial-gradient(ellipse at 50% 40%, rgba(111,168,90,0.30), transparent 72%); }
+  .flash.red   { background: radial-gradient(ellipse at 50% 40%, rgba(198,74,58,0.36), transparent 72%); }
+  .flash.tan   { background: radial-gradient(ellipse at 50% 40%, rgba(138,117,72,0.22), transparent 72%); }
+
+  /* Verdict band — shared across shapes */
+  .verdict {
+    text-align: center;
+    font-size: 15px;
+    letter-spacing: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 11px 14px 10px;
+    position: relative;
+  }
+  .verdict.outplayed {
+    background: linear-gradient(180deg, rgba(201,162,83,0.26) 0%, rgba(201,162,83,0.06) 100%);
+    color: var(--gold);
+    animation: pulse-gold 1.3s ease-in-out infinite;
+  }
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: inset 0 0 14px rgba(201,162,83,0.18); }
+    50%      { box-shadow: inset 0 0 24px rgba(201,162,83,0.42); }
+  }
+  .verdict.held    { background: rgba(111,168,90,0.14); color: #9FD28A; }
+  .verdict.struck  { background: rgba(111,168,90,0.14); color: #9FD28A; }
+  .verdict.traded  { background: rgba(138,117,72,0.16); color: #C9A98B; }
+  .verdict.outread { background: rgba(198,74,58,0.16); color: #E5867A; }
+
+  /* Clash row */
+  .clash {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .side { text-align: center; }
+  .side .who {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    font-family: -apple-system, sans-serif;
+  }
+  .stance {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+  .chip {
+    padding: 3px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--ink-dim);
+    font-family: -apple-system, sans-serif;
+  }
+  .chip.atk { border-color: var(--danger-dim); color: #E58575; }
+  .chip.def { border-color: var(--gold-dim); color: var(--gold); }
+  .chip.hit { box-shadow: 0 0 8px rgba(229,133,117,0.40); }
+  .chip.held { box-shadow: 0 0 8px rgba(111,168,90,0.40); border-color: var(--success-dim); color: #9FD28A; }
+  .vs-divider {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--ink-mute);
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* HP delta row */
+  .delta-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 14px 12px;
+    background: rgba(0,0,0,0.25);
+  }
+  .delta { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .delta .label {
+    font-size: 8.5px;
+    letter-spacing: 1.4px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    font-family: -apple-system, sans-serif;
+  }
+  .delta .value {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: -apple-system, sans-serif;
+  }
+  .delta .value.good { color: #E5867A; }
+  .delta .value.bad  { color: #9FD28A; }
+  .delta .value.zero { color: var(--ink-mute); }
+  .delta-sep { width: 1px; height: 22px; background: var(--border); }
+
+  /* Log rows (only used in Shapes B, C-middle) */
+  .log-rows {
+    padding: 6px 14px 12px;
+    font-family: -apple-system, sans-serif;
+  }
+  .log-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    padding: 4px 0;
+    color: var(--ink-dim);
+    border-bottom: 1px dashed rgba(106,98,73,0.18);
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row .who-lbl { letter-spacing: 1.2px; text-transform: uppercase; font-size: 9.5px; color: var(--ink-mute); }
+  .log-row .txt { flex: 1; margin-left: 8px; }
+  .log-row .num { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .log-row.crit .num { color: var(--gold); }
+  .log-row.blocked .num { color: #9FD28A; }
+  .log-row.dodged .num { color: #9FD28A; }
+
+  /* Auto-dismiss footer */
+  .dismiss-bar {
+    height: 2px;
+    background: var(--panel-2);
+    overflow: hidden;
+    position: relative;
+  }
+  .dismiss-bar .fill {
+    position: absolute; inset: 0 auto 0 0;
+    background: var(--gold);
+    opacity: 0.7;
+  }
+  .reveal-container.open .dismiss-bar .fill {
+    animation: drain var(--dismiss, 1400ms) linear forwards;
+  }
+  @keyframes drain { from { width: 100%; } to { width: 0; } }
+
+  /* ======================== SHAPE A — Modal Replace ======================== */
+  .shape-a.reveal-container {
+    background: linear-gradient(180deg, #1C1710 0%, #120D08 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 260ms ease;
+    position: absolute;
+    inset: 0;
+  }
+  .shape-a.reveal-container.open { opacity: 1; }
+
+  /* ======================== SHAPE B — Banner Augments Log Card ======================== */
+  .shape-b.reveal-container {
+    background: linear-gradient(180deg, #1C1710 0%, #120D08 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 260ms ease;
+    position: absolute;
+    inset: 0;
+    box-shadow: 0 0 16px rgba(201,162,83,0.14);
+  }
+  .shape-b.reveal-container.open { opacity: 1; }
+  .shape-b .log-rows { border-top: 1px solid var(--border); }
+
+  /* ======================== SHAPE C — Hybrid ======================== */
+  /* Middle outcomes use the B-style inline card */
+  /* Peak outcomes use a full-stage overlay */
+  .shape-c.reveal-container { position: absolute; inset: 0; opacity: 0; transition: opacity 260ms ease; }
+  .shape-c.reveal-container.open { opacity: 1; }
+
+  .shape-c.peak {
+    background: linear-gradient(180deg, rgba(14,11,8,0.85) 0%, rgba(14,11,8,0.95) 100%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .shape-c.peak .peak-card {
+    width: 100%;
+    max-width: 360px;
+    background: linear-gradient(180deg, #1C1710 0%, #120D08 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(201,162,83,0.30);
+  }
+  .shape-c.peak .verdict {
+    font-size: 20px;
+    padding: 18px 16px 16px;
+    letter-spacing: 5px;
+  }
+  .shape-c.peak .clash {
+    padding: 18px 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .shape-c.peak .delta-row { padding: 14px 16px 16px; }
+  .shape-c.peak.outread .peak-card {
+    border-color: var(--danger-dim);
+    box-shadow: 0 0 32px rgba(198,74,58,0.24);
+  }
+
+  .shape-c.middle {
+    background: linear-gradient(180deg, #1C1710 0%, #120D08 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .shape-c.middle .log-rows { border-top: 1px solid var(--border); }
+
+  /* ======================== CONTROLS ======================== */
+  .controls {
+    margin-top: 18px;
+  }
+  .variant-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 8px;
+    font-family: -apple-system, sans-serif;
+  }
+  .variants {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .variants button {
+    padding: 12px 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--ink-dim);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    font-family: -apple-system, sans-serif;
+    line-height: 1.4;
+  }
+  .variants button .v-sub {
+    display: block;
+    color: var(--ink-mute);
+    font-size: 9px;
+    margin-top: 3px;
+    font-weight: 400;
+  }
+  .variants button:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .variants button.peak { border-color: var(--gold-dim); }
+
+  /* ======================== NOTES ======================== */
+  .notes {
+    margin-top: 22px;
+    padding: 16px;
+    background: rgba(26,20,14,0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    font-family: -apple-system, Georgia, serif;
+  }
+  .notes h4 {
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+    font-family: -apple-system, sans-serif;
+  }
+  .notes ul { margin: 4px 0 12px 16px; padding: 0; }
+  .notes li { margin-bottom: 5px; }
+  .notes em { color: var(--gold); font-style: normal; }
+  .notes .tag {
+    display: inline-block;
+    padding: 1px 6px;
+    background: rgba(201,162,83,0.14);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    color: var(--gold);
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-right: 4px;
+    font-family: -apple-system, sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="title">Strike Reveal · Integration Shapes</div>
+  <div class="subtitle">
+    Three ways the verdict layer can land inside the existing combat screen.<br/>
+    Pick a shape, then cycle the variants. Flash + HP drain fire on each turn.
+  </div>
+
+  <!-- Shape tabs -->
+  <div class="tabs">
+    <button data-shape="A" class="active">
+      A · Replace<span class="sub">modal only</span>
+    </button>
+    <button data-shape="B">
+      B · Augment<span class="sub">banner + log</span>
+    </button>
+    <button data-shape="C">
+      C · Hybrid<span class="sub">peaks vs middle</span>
+    </button>
+  </div>
+
+  <!-- Stage -->
+  <div class="stage" id="stage">
+    <div class="flash" id="flash"></div>
+
+    <!-- HP -->
+    <div class="hp-row">
+      <div class="hp-block">
+        <div class="name">You · Lvl 14</div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-you" style="width: 82%"></div></div>
+        <div class="hp-num" id="hp-you-num">164 / 200</div>
+      </div>
+      <div class="hp-block opp">
+        <div class="name">Opp · Lvl 13</div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-opp" style="width: 68%"></div></div>
+        <div class="hp-num" id="hp-opp-num">136 / 200</div>
+      </div>
+    </div>
+
+    <!-- Fighters -->
+    <div class="fighters">
+      <div class="fighter" id="fighter-you">🛡️<div class="pip">You</div></div>
+      <div class="fighter" id="fighter-opp">⚔️<div class="pip">Opp</div></div>
+    </div>
+
+    <!-- Reveal slot: holds picker OR any shape's reveal -->
+    <div class="reveal-slot" id="reveal-slot">
+      <!-- idle picker (shown before strike) -->
+      <div class="picker" id="picker">
+        <div class="picker-row">
+          <div class="title-row">Your Attack</div>
+          <div class="zone-btn">Head</div>
+          <div class="zone-btn" style="border-color: var(--gold-dim); color: var(--gold);">Chest</div>
+          <div class="zone-btn">Legs</div>
+        </div>
+        <div class="picker-row">
+          <div class="title-row">Your Defense</div>
+          <div class="zone-btn" style="border-color: var(--gold-dim); color: var(--gold);">Head</div>
+          <div class="zone-btn">Chest</div>
+          <div class="zone-btn">Legs</div>
+        </div>
+        <div class="strike-btn">◆ STRIKE ◆</div>
+      </div>
+
+      <!-- Shape mounts here dynamically -->
+      <div id="reveal-mount"></div>
+    </div>
+  </div>
+
+  <!-- Variant controls -->
+  <div class="controls">
+    <div class="variant-title">Tap a variant to run the reveal</div>
+    <div class="variants">
+      <button data-variant="0" class="peak">Outplayed<span class="v-sub">double win · gold peak</span></button>
+      <button data-variant="1" class="peak">Outplayed + Crit<span class="v-sub">jackpot · gold+crit</span></button>
+      <button data-variant="2">Struck Through<span class="v-sub">you hit, you took · green</span></button>
+      <button data-variant="3">Held the Line<span class="v-sub">both blocked · green</span></button>
+      <button data-variant="4">Traded Blows<span class="v-sub">both hit equal · tan</span></button>
+      <button data-variant="5" class="peak" style="border-color: var(--danger-dim); color: #E5867A;">Outread<span class="v-sub">double miss · red peak</span></button>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h4>What to compare</h4>
+    <ul>
+      <li><span class="tag">A</span> <em>Replace.</em> Modal card swaps in where the picker was. Clean, one source. Log rows are gone — you see verdict + clash + deltas and nothing else.</li>
+      <li><span class="tag">B</span> <em>Augment.</em> The existing gold-bordered log card gets a verdict header + clash chip row. Detailed strike/crit/blocked rows stay below. Safer for v1.</li>
+      <li><span class="tag">C</span> <em>Hybrid.</em> Middle outcomes use the compact B-style inline card. Peaks (OUTPLAYED / OUTREAD) break out to a dimmed full-stage overlay. Spectacle reserved for emotional beats.</li>
+    </ul>
+    <h4>Things to feel for</h4>
+    <ul>
+      <li>Does the OUTPLAYED gold pulse hit hard enough in A and B, or does it <em>need</em> the C treatment?</li>
+      <li>In B, is the card too tall when log rows + clash + verdict all stack? Check OUTPLAYED + Crit.</li>
+      <li>In C, does the peak overlay feel too heavy to fire twice in 6 rounds? Or does the scarcity make it land?</li>
+      <li>Auto-dismiss is 1.4s on middle outcomes, 2.0s on peaks in C. Watch the drain bar at the bottom of each card.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // ======================== VARIANT DATA ========================
+  // offHit  = you.atk != opp.def  (your atk lands clean)
+  // defHeld = opp.atk == you.def  (you block their atk)
+  // verdict = f(offHit, defHeld)
+  const VARIANTS = [
+    {
+      key: 'outplayed',
+      verdictClass: 'outplayed',
+      verdictText: 'OUTPLAYED',
+      flash: 'gold',
+      peak: true,
+      you:  { atk: 'CHEST', def: 'HEAD'  },
+      enemy:{ atk: 'HEAD',  def: 'LEGS'  },
+      yourOff:  'CLEAN',   // STRUCK
+      yourDef:  'HELD',
+      hp: { opp: -12, you: 0 },
+      winner: 'you',
+      portraits: { you: 'winner', opp: 'loser' },
+      log: [
+        { who: 'YOU',  type: 'strike',  txt: 'Strike to CHEST',     num: '-12' },
+        { who: 'OPP',  type: 'blocked', txt: 'HEAD blow — HELD',    num: '0' }
+      ]
+    },
+    {
+      key: 'outplayed-crit',
+      verdictClass: 'outplayed',
+      verdictText: 'OUTPLAYED',
+      flash: 'gold',
+      peak: true,
+      you:  { atk: 'HEAD',  def: 'CHEST' },
+      enemy:{ atk: 'CHEST', def: 'LEGS'  },
+      yourOff:  'CRIT',
+      yourDef:  'DODGED',
+      hp: { opp: -18, you: 0 },
+      winner: 'you',
+      portraits: { you: 'winner', opp: 'loser' },
+      log: [
+        { who: 'YOU',  type: 'strike',  txt: 'Strike to HEAD',     num: '-13' },
+        { who: 'YOU',  type: 'crit',    txt: '✦ Critical Strike',   num: '-5'  },
+        { who: 'OPP',  type: 'dodged',  txt: 'CHEST blow — DODGED', num: '0'   }
+      ]
+    },
+    {
+      key: 'struck',
+      verdictClass: 'struck',
+      verdictText: 'STRUCK THROUGH',
+      flash: 'green',
+      peak: false,
+      you:  { atk: 'CHEST', def: 'HEAD'  },
+      enemy:{ atk: 'LEGS',  def: 'LEGS'  },
+      yourOff:  'CLEAN',
+      yourDef:  'EXPOSED',
+      hp: { opp: -11, you: -8 },
+      winner: null,
+      portraits: { you: 'neutral', opp: 'neutral' },
+      log: [
+        { who: 'YOU', type: 'strike', txt: 'Strike to CHEST', num: '-11' },
+        { who: 'OPP', type: 'strike', txt: 'Strike to LEGS',  num: '-8'  }
+      ]
+    },
+    {
+      key: 'held',
+      verdictClass: 'held',
+      verdictText: 'HELD THE LINE',
+      flash: 'green',
+      peak: false,
+      you:  { atk: 'CHEST', def: 'HEAD'  },
+      enemy:{ atk: 'HEAD',  def: 'CHEST' },
+      yourOff:  'GUARDED',
+      yourDef:  'HELD',
+      hp: { opp: -4, you: -3 },
+      winner: null,
+      portraits: { you: 'neutral', opp: 'neutral' },
+      log: [
+        { who: 'YOU', type: 'blocked', txt: 'CHEST blow — GUARDED', num: '-4' },
+        { who: 'OPP', type: 'blocked', txt: 'HEAD blow — HELD',     num: '-3' }
+      ]
+    },
+    {
+      key: 'traded',
+      verdictClass: 'traded',
+      verdictText: 'TRADED BLOWS',
+      flash: 'tan',
+      peak: false,
+      you:  { atk: 'LEGS',  def: 'CHEST' },
+      enemy:{ atk: 'HEAD',  def: 'HEAD'  },
+      yourOff:  'GUARDED',
+      yourDef:  'EXPOSED',
+      hp: { opp: -4, you: -10 },
+      winner: null,
+      portraits: { you: 'neutral', opp: 'neutral' },
+      log: [
+        { who: 'YOU', type: 'blocked', txt: 'LEGS blow — GUARDED', num: '-4'  },
+        { who: 'OPP', type: 'strike',  txt: 'Strike to HEAD',      num: '-10' }
+      ]
+    },
+    {
+      key: 'outread',
+      verdictClass: 'outread',
+      verdictText: 'OUTREAD',
+      flash: 'red',
+      peak: true,
+      you:  { atk: 'LEGS',  def: 'CHEST' },
+      enemy:{ atk: 'HEAD',  def: 'LEGS'  },
+      yourOff:  'GUARDED',
+      yourDef:  'EXPOSED',
+      hp: { opp: 0, you: -14 },
+      winner: 'opp',
+      portraits: { you: 'loser', opp: 'winner' },
+      log: [
+        { who: 'YOU', type: 'blocked', txt: 'LEGS blow — GUARDED', num: '0'   },
+        { who: 'OPP', type: 'strike',  txt: 'Strike to HEAD',      num: '-14' }
+      ]
+    }
+  ];
+
+  // Baseline HP (so deltas animate from this)
+  const BASE_YOU = 82; // %
+  const BASE_OPP = 68; // %
+
+  // ======================== RENDERERS ========================
+  function chipClass(result) {
+    switch(result) {
+      case 'CLEAN':   return 'chip atk hit';
+      case 'CRIT':    return 'chip atk hit';
+      case 'GUARDED': return 'chip atk';
+      case 'HELD':    return 'chip def held';
+      case 'DODGED':  return 'chip def';
+      case 'EXPOSED': return 'chip def';
+      default:        return 'chip';
+    }
+  }
+
+  function renderClash(v) {
+    return `
+      <div class="clash">
+        <div class="side">
+          <div class="who">You</div>
+          <div class="stance">
+            <span class="${chipClass(v.yourOff)}">ATK ${v.you.atk}</span>
+            <span class="${chipClass(v.yourDef)}">DEF ${v.you.def}</span>
+          </div>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="side">
+          <div class="who">Opp</div>
+          <div class="stance">
+            <span class="chip atk">ATK ${v.enemy.atk}</span>
+            <span class="chip def">DEF ${v.enemy.def}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeltas(v) {
+    const oppDelta = v.hp.opp;
+    const youDelta = v.hp.you;
+    const oppClass = oppDelta < 0 ? 'good' : (oppDelta === 0 ? 'zero' : 'bad');
+    const youClass = youDelta < 0 ? 'bad' : (youDelta === 0 ? 'zero' : 'good');
+    return `
+      <div class="delta-row">
+        <div class="delta">
+          <div class="label">Dealt</div>
+          <div class="value ${oppClass}">${oppDelta === 0 ? '0' : Math.abs(oppDelta)}</div>
+        </div>
+        <div class="delta-sep"></div>
+        <div class="delta">
+          <div class="label">Taken</div>
+          <div class="value ${youClass}">${youDelta === 0 ? '0' : Math.abs(youDelta)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLogRows(v) {
+    return `
+      <div class="log-rows">
+        ${v.log.map(r => `
+          <div class="log-row ${r.type}">
+            <span class="who-lbl">${r.who}</span>
+            <span class="txt">${r.txt}</span>
+            <span class="num">${r.num}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ======================== SHAPE RENDERERS ========================
+  function renderShapeA(v, dismissMs) {
+    return `
+      <div class="shape-a reveal-container open" style="--dismiss: ${dismissMs}ms;">
+        <div class="verdict ${v.verdictClass}">${v.verdictText}</div>
+        ${renderClash(v)}
+        ${renderDeltas(v)}
+        <div style="flex:1"></div>
+        <div class="dismiss-bar"><div class="fill"></div></div>
+      </div>
+    `;
+  }
+
+  function renderShapeB(v, dismissMs) {
+    return `
+      <div class="shape-b reveal-container open" style="--dismiss: ${dismissMs}ms;">
+        <div class="verdict ${v.verdictClass}">${v.verdictText}</div>
+        ${renderClash(v)}
+        ${renderLogRows(v)}
+        ${renderDeltas(v)}
+        <div class="dismiss-bar"><div class="fill"></div></div>
+      </div>
+    `;
+  }
+
+  function renderShapeC(v, dismissMs) {
+    if (v.peak) {
+      // Full-stage overlay
+      return `
+        <div class="shape-c reveal-container peak ${v.verdictClass} open" style="--dismiss: ${dismissMs}ms;">
+          <div class="peak-card">
+            <div class="verdict ${v.verdictClass}">${v.verdictText}</div>
+            ${renderClash(v)}
+            ${renderDeltas(v)}
+            <div class="dismiss-bar"><div class="fill"></div></div>
+          </div>
+        </div>
+      `;
+    }
+    // Middle = inline compact
+    return `
+      <div class="shape-c reveal-container middle open" style="--dismiss: ${dismissMs}ms;">
+        <div class="verdict ${v.verdictClass}">${v.verdictText}</div>
+        ${renderClash(v)}
+        ${renderLogRows(v)}
+        ${renderDeltas(v)}
+        <div class="dismiss-bar"><div class="fill"></div></div>
+      </div>
+    `;
+  }
+
+  // ======================== STATE ========================
+  let currentShape = 'A';
+  let dismissTimer = null;
+
+  const stage = document.getElementById('stage');
+  const flash = document.getElementById('flash');
+  const picker = document.getElementById('picker');
+  const mount = document.getElementById('reveal-mount');
+  const fighterYou = document.getElementById('fighter-you');
+  const fighterOpp = document.getElementById('fighter-opp');
+  const hpYou = document.getElementById('hp-you');
+  const hpOpp = document.getElementById('hp-opp');
+  const hpYouNum = document.getElementById('hp-you-num');
+  const hpOppNum = document.getElementById('hp-opp-num');
+
+  // ======================== RUN REVEAL ========================
+  function runReveal(variantIdx) {
+    const v = VARIANTS[variantIdx];
+    if (dismissTimer) clearTimeout(dismissTimer);
+
+    // Dismiss timing: peaks get longer breathing room in shape C
+    const dismissMs = (currentShape === 'C' && v.peak) ? 2000 : 1400;
+
+    // Hide picker
+    picker.classList.add('hide');
+
+    // Render the shape
+    let html = '';
+    if (currentShape === 'A') html = renderShapeA(v, dismissMs);
+    if (currentShape === 'B') html = renderShapeB(v, dismissMs);
+    if (currentShape === 'C') html = renderShapeC(v, dismissMs);
+    mount.innerHTML = html;
+
+    // Fire flash (behind card in A/B, behind overlay in C)
+    flash.className = 'flash';
+    void flash.offsetWidth;
+    flash.className = 'flash ' + v.flash + ' on';
+
+    // Portrait states
+    fighterYou.classList.remove('winner', 'loser');
+    fighterOpp.classList.remove('winner', 'loser');
+    if (v.portraits.you === 'winner') fighterYou.classList.add('winner');
+    if (v.portraits.you === 'loser')  fighterYou.classList.add('loser');
+    if (v.portraits.opp === 'winner') fighterOpp.classList.add('winner');
+    if (v.portraits.opp === 'loser')  fighterOpp.classList.add('loser');
+
+    // HP drain
+    const youPct = Math.max(0, BASE_YOU + (v.hp.you / 200) * 100);
+    const oppPct = Math.max(0, BASE_OPP + (v.hp.opp / 200) * 100);
+    hpYou.style.width = youPct + '%';
+    hpOpp.style.width = oppPct + '%';
+    hpYouNum.textContent = Math.round(youPct / 100 * 200) + ' / 200';
+    hpOppNum.textContent = Math.round(oppPct / 100 * 200) + ' / 200';
+
+    // Auto-dismiss — return to picker
+    dismissTimer = setTimeout(() => {
+      mount.innerHTML = '';
+      picker.classList.remove('hide');
+      fighterYou.classList.remove('winner', 'loser');
+      fighterOpp.classList.remove('winner', 'loser');
+      // Reset HP to baseline for next demo
+      hpYou.style.width = BASE_YOU + '%';
+      hpOpp.style.width = BASE_OPP + '%';
+      hpYouNum.textContent = Math.round(BASE_YOU / 100 * 200) + ' / 200';
+      hpOppNum.textContent = Math.round(BASE_OPP / 100 * 200) + ' / 200';
+    }, dismissMs + 400);
+  }
+
+  // ======================== WIRE UP ========================
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentShape = btn.dataset.shape;
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // clear current reveal
+      if (dismissTimer) clearTimeout(dismissTimer);
+      mount.innerHTML = '';
+      picker.classList.remove('hide');
+      fighterYou.classList.remove('winner', 'loser');
+      fighterOpp.classList.remove('winner', 'loser');
+      hpYou.style.width = BASE_YOU + '%';
+      hpOpp.style.width = BASE_OPP + '%';
+      hpYouNum.textContent = Math.round(BASE_YOU / 100 * 200) + ' / 200';
+      hpOppNum.textContent = Math.round(BASE_OPP / 100 * 200) + ' / 200';
+    });
+  });
+
+  document.querySelectorAll('.variants button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      runReveal(parseInt(btn.dataset.variant, 10));
+    });
+  });
+</script>
+
+</body>
+</html>

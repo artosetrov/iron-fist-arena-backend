@@ -155,7 +155,30 @@ try {
 
 **Scanner pattern:** `grep -rn "setIs[A-Z]" admin/src/ --include="*.tsx" -A 8` — flag any handler that sets `isSomething(true)` without a `} finally {` block following it.
 
-### 9. Deploy Awareness
+### 9. Auth Route Hardening
+
+**9a. No hardcoded backend URLs.**
+Auth and API routes MUST NOT contain hardcoded non-production backend origins. The canonical production API origin is `api.hexboundapp.com`. Any reference to legacy Vercel preview URLs (e.g. `iron-fist-arena-backend.vercel.app`, `*.vercel.app` for backend calls) is a stale fallback that will silently hit the wrong server.
+
+**Scanner pattern:** `grep -rn "vercel\.app\|iron-fist\|localhost:3000" backend/src/ --include="*.ts"` — flag any hardcoded URL that isn't the canonical `api.hexboundapp.com` or a local test constant.
+
+**Incident (2026-04-17, block 187):** `forgot-password/route.ts` contained `iron-fist-arena-backend.vercel.app` as a fallback host. The route constructed reset URLs pointing at the wrong server in environments where `NEXTAUTH_URL` was not set.
+
+---
+
+**9b. Email-collision 409 guards in auth routes.**
+Any route that performs `prisma.user.update({ where: { email } })` or `prisma.character.update({ data: { email } })` where `email` is not guaranteed unique MUST have an explicit duplicate-email guard returning `409` **before** the Prisma call. Without it, Prisma raises a generic `P2002` unique-constraint error that surfaces as an opaque 500.
+
+**Correct pattern:**
+```ts
+const existing = await prisma.user.findFirst({ where: { email: newEmail } })
+if (existing) return NextResponse.json({ error: 'email_conflict' }, { status: 409 })
+// then proceed with update
+```
+
+**Incident (2026-04-17, blocks 189-190):** Both `/auth/link-account` and `/auth/sync-user` were missing the pre-flight email uniqueness check. On duplicate email the routes fell through to a Prisma constraint failure (P2002) which was surfaced as a 500 instead of a meaningful 409. Fixed with explicit pre-flight guards in both routes.
+
+### 10. Deploy Awareness
 
 If changes touch admin/:
 - Remind about `git subtree push --prefix=admin admin-deploy main` after pushing to origin.

@@ -6,6 +6,8 @@
 #
 # Asset sync: optionally runs sync-assets.sh before each commit when
 # HEXBOUND_AUTO_SYNC_ASSETS=1 is set in the shell environment.
+# Staging mode: tracked changes only by default (`git add -u`). To include
+# untracked files, set HEXBOUND_GIT_HELPER_STAGE_ALL=1 in the shell environment.
 # =============================================================================
 
 set -euo pipefail
@@ -15,6 +17,7 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 TRIGGER="$REPO_DIR/.git-trigger"
 SYNC_SCRIPT="$REPO_DIR/scripts/sync-assets.sh"
 AUTO_SYNC_ASSETS="${HEXBOUND_AUTO_SYNC_ASSETS:-0}"
+STAGE_ALL="${HEXBOUND_GIT_HELPER_STAGE_ALL:-0}"
 
 clear_stale_lock() {
   local lock_file="$1"
@@ -32,6 +35,11 @@ clear_stale_lock() {
 }
 
 echo "🔮 Git watcher started. Watching for $TRIGGER..."
+if [ "$STAGE_ALL" = "1" ]; then
+  echo "📦 Staging mode: tracked + untracked changes (git add -A)"
+else
+  echo "📦 Staging mode: tracked changes only (git add -u)"
+fi
 
 while true; do
   if [ -f "$TRIGGER" ]; then
@@ -58,7 +66,15 @@ while true; do
       echo "---"
     fi
 
-    git add -A
+    if [ "$STAGE_ALL" = "1" ]; then
+      git add -A
+    else
+      git add -u
+      UNTRACKED_COUNT="$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')"
+      if [ "${UNTRACKED_COUNT:-0}" -gt 0 ]; then
+        echo "⚠️  Leaving $UNTRACKED_COUNT untracked file(s) unstaged. Set HEXBOUND_GIT_HELPER_STAGE_ALL=1 to include them."
+      fi
+    fi
 
     if git diff --cached --quiet; then
       echo "Nothing to commit."

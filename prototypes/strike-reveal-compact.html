@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strike Reveal — Compact Modal</title>
+<style>
+  :root {
+    --bg: #0E0B08;
+    --panel: #1A140E;
+    --panel-2: #221A12;
+    --border: #3A2E20;
+    --gold: #C9A253;
+    --gold-dim: #7A6434;
+    --ink: #EDE3CE;
+    --ink-dim: #A89A7D;
+    --ink-mute: #6B6249;
+    --danger: #C64A3A;
+    --danger-dim: #5A1E15;
+    --success: #6FA85A;
+    --success-dim: #345522;
+    --tan: #8A7548;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #07060A;
+    color: var(--ink);
+    font-family: -apple-system, 'Cinzel', Georgia, serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 24px 16px 120px;
+  }
+  .title-bar {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2.2px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+    line-height: 1.5;
+    font-family: -apple-system, Georgia, serif;
+  }
+
+  /* ======================== COMBAT STAGE MOCK ======================== */
+  .stage {
+    position: relative;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(201,162,83,0.08), transparent 60%),
+      linear-gradient(180deg, #0E0B08 0%, #150F09 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    height: 640px;
+    overflow: hidden;
+  }
+
+  /* Top HP bars */
+  .hp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .hp-block {
+    flex: 1;
+  }
+  .hp-block .name {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-family: -apple-system, sans-serif;
+  }
+  .hp-bar {
+    height: 6px;
+    background: #1A140E;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--danger) 0%, #E5614F 100%);
+    transition: width 600ms ease;
+  }
+  .hp-num {
+    font-size: 10px;
+    color: var(--ink-dim);
+    margin-top: 3px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Portraits */
+  .portraits {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px 8px;
+    gap: 12px;
+  }
+  .portrait {
+    width: 110px;
+    height: 150px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(201,162,83,0.12), transparent 70%),
+      linear-gradient(180deg, #1E1812 0%, #0E0B08 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    color: var(--ink-mute);
+    position: relative;
+    transition: opacity 400ms ease, box-shadow 400ms ease;
+  }
+  .portrait.loser { opacity: 0.55; }
+  .portrait.winner {
+    box-shadow: 0 0 24px rgba(201,162,83,0.35);
+    border-color: var(--gold-dim);
+  }
+  .vs {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--ink-mute);
+  }
+
+  /* Zone grid at bottom */
+  .zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .zone {
+    height: 50px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    font-family: -apple-system, sans-serif;
+  }
+
+  .strike-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(180deg, #3A2E20 0%, #261E14 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: -apple-system, Georgia, serif;
+  }
+
+  /* ======================== MODAL ======================== */
+  .backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(7,6,10,0.62);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 260ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .backdrop.show { opacity: 1; pointer-events: auto; }
+
+  /* Screen flash behind modal */
+  .flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 19;
+  }
+  .flash.on { animation: flash 700ms ease-out forwards; }
+  @keyframes flash {
+    0%   { opacity: 0; }
+    30%  { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+  .flash.gold {
+    background: radial-gradient(ellipse at 50% 40%, rgba(201,162,83,0.38), transparent 70%);
+  }
+  .flash.green {
+    background: radial-gradient(ellipse at 50% 40%, rgba(111,168,90,0.28), transparent 70%);
+  }
+  .flash.red {
+    background: radial-gradient(ellipse at 50% 40%, rgba(198,74,58,0.32), transparent 70%);
+  }
+
+  .modal {
+    width: calc(100% - 28px);
+    max-width: 320px;
+    background:
+      linear-gradient(180deg, #1C1710 0%, #120D08 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 240ms ease;
+    position: relative;
+  }
+  .backdrop.show .modal { opacity: 1; }
+
+  /* Verdict band at top */
+  .verdict {
+    text-align: center;
+    padding: 12px 16px 10px;
+    font-size: 16px;
+    letter-spacing: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .verdict.outplayed {
+    background: linear-gradient(180deg, rgba(201,162,83,0.22) 0%, rgba(201,162,83,0.06) 100%);
+    color: var(--gold);
+    animation: pulse-gold 1.3s ease-in-out infinite;
+  }
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: inset 0 0 12px rgba(201,162,83,0.15); }
+    50%      { box-shadow: inset 0 0 22px rgba(201,162,83,0.40); }
+  }
+  .verdict.held   { background: rgba(111,168,90,0.12); color: #9FD28A; }
+  .verdict.struck { background: rgba(111,168,90,0.12); color: #9FD28A; }
+  .verdict.traded { background: rgba(138,117,72,0.15); color: #C9A98B; }
+  .verdict.outread {
+    background: rgba(198,74,58,0.14);
+    color: #E5867A;
+  }
+
+  /* Clash row — super compact */
+  .clash {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .side {
+    text-align: center;
+  }
+  .side .who {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-family: -apple-system, sans-serif;
+  }
+  .stance {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .chip {
+    padding: 3px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    letter-spacing: 1.1px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--ink-dim);
+    font-family: -apple-system, sans-serif;
+  }
+  .chip.atk { border-color: var(--danger-dim); color: #E58575; }
+  .chip.def { border-color: var(--gold-dim); color: var(--gold); }
+  .chip.hit { box-shadow: 0 0 8px rgba(229,133,117,0.35); }
+  .chip.held { box-shadow: 0 0 8px rgba(111,168,90,0.35); border-color: var(--success-dim); color: #9FD28A; }
+
+  .vs-divider {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--ink-mute);
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Outcome row — the single clearest data point */
+  .outcome {
+    padding: 12px 16px 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    background: rgba(0,0,0,0.25);
+  }
+  .delta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .delta .label {
+    font-size: 8.5px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    font-family: -apple-system, sans-serif;
+  }
+  .delta .value {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: -apple-system, sans-serif;
+    letter-spacing: 0.5px;
+  }
+  .delta .value.good { color: #E5867A; }
+  .delta .value.bad  { color: #9FD28A; }
+  .delta .value.zero { color: var(--ink-mute); }
+
+  .delta-sep {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  /* Icons strip for crit/dodge */
+  .icons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px 12px;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    font-family: -apple-system, sans-serif;
+  }
+  .icons:empty { display: none; }
+  .icon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: rgba(201,162,83,0.12);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+  }
+  .icon-badge.dodge { color: #9FD28A; background: rgba(111,168,90,0.12); border-color: var(--success-dim); }
+
+  /* Tap-to-continue footer (tap mode) */
+  .tap-hint {
+    text-align: center;
+    padding: 10px 16px 12px;
+    font-size: 9px;
+    letter-spacing: 2.2px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    border-top: 1px solid var(--border);
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* Auto-dismiss progress bar */
+  .auto-bar {
+    height: 2px;
+    background: var(--panel-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .auto-bar .fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--gold);
+    width: 100%;
+    transform-origin: left;
+    opacity: 0;
+  }
+  .backdrop.show.auto .auto-bar .fill {
+    opacity: 0.7;
+    animation: drain 1400ms linear forwards;
+  }
+  @keyframes drain {
+    from { width: 100%; }
+    to   { width: 0; }
+  }
+
+  /* ======================== CONTROLS ======================== */
+  .controls {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .mode-toggle button {
+    flex: 1;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    color: var(--ink-mute);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: -apple-system, sans-serif;
+    font-weight: 600;
+  }
+  .mode-toggle button.active {
+    background: var(--panel-2);
+    color: var(--gold);
+  }
+  .variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .variant-row button {
+    padding: 12px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--ink-dim);
+    font-size: 10px;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    font-family: -apple-system, sans-serif;
+    line-height: 1.4;
+  }
+  .variant-row button:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+  .variant-row button .vn {
+    display: block;
+    color: var(--ink-mute);
+    font-size: 9px;
+    margin-top: 3px;
+  }
+
+  /* Comparison notes */
+  .notes {
+    margin-top: 24px;
+    padding: 16px;
+    background: rgba(26,20,14,0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    font-family: -apple-system, Georgia, serif;
+  }
+  .notes h4 {
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    font-family: -apple-system, sans-serif;
+  }
+  .notes ul { margin: 4px 0 14px 18px; padding: 0; }
+  .notes li { margin-bottom: 4px; }
+  .notes em { color: var(--gold); font-style: normal; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="title-bar">Strike Reveal · Compact Modal</div>
+  <div class="subtitle">
+    Lightweight overlay that fires after STRIKE, sits over the combat screen, and gets out of the way.
+    Two dismissal modes below — see which pace feels right.
+  </div>
+
+  <!-- ======= Stage (static combat screen behind modal) ======= -->
+  <div class="stage" id="stage">
+    <div class="flash" id="flash"></div>
+
+    <div class="hp-row">
+      <div class="hp-block">
+        <div class="name">You · Lvl 14</div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-you" style="width: 82%"></div></div>
+        <div class="hp-num" id="hp-you-num">164 / 200</div>
+      </div>
+      <div class="hp-block">
+        <div class="name" style="text-align:right">Opp · Lvl 13</div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-opp" style="width: 68%"></div></div>
+        <div class="hp-num" id="hp-opp-num">136 / 200</div>
+      </div>
+    </div>
+
+    <div class="portraits">
+      <div class="portrait" id="portrait-you">🛡️</div>
+      <div class="vs">VS</div>
+      <div class="portrait" id="portrait-opp">⚔️</div>
+    </div>
+
+    <div class="zones">
+      <div class="zone">Head</div>
+      <div class="zone">Chest</div>
+      <div class="zone">Legs</div>
+    </div>
+
+    <div class="strike-btn">◆ STRIKE ◆</div>
+
+    <!-- Modal -->
+    <div class="backdrop" id="backdrop">
+      <div class="modal" id="modal">
+        <div class="verdict" id="verdict">OUTPLAYED</div>
+        <div class="clash" id="clash"></div>
+        <div class="outcome" id="outcome"></div>
+        <div class="icons" id="icons"></div>
+        <div class="tap-hint" id="tap-hint">tap to continue</div>
+        <div class="auto-bar"><div class="fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= Controls ======= -->
+  <div class="controls">
+    <div class="mode-toggle">
+      <button id="mode-tap" class="active">Tap to dismiss</button>
+      <button id="mode-auto">Auto (1.4s)</button>
+    </div>
+    <div class="variant-row">
+      <button data-variant="0">Outplayed<span class="vn">double read hit · gold</span></button>
+      <button data-variant="1">Outplayed + Crit<span class="vn">jackpot · gold pulse</span></button>
+      <button data-variant="2">Held the Line<span class="vn">defense only · green</span></button>
+      <button data-variant="3">Outread<span class="vn">double miss · red</span></button>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h4>Compact vs Full Screen — Trade-offs</h4>
+    <ul>
+      <li><em>Compact wins:</em> keeps combat screen spatial context (HP bars, portraits, zones all still visible behind dim), less per-turn friction, easier to iterate on reveal timing.</li>
+      <li><em>Full screen wins:</em> more emotional punch on the OUTPLAYED / OUTREAD quadrants, room for bigger clash breakdowns, hides HP drain animation surprise.</li>
+      <li><em>Hybrid option:</em> compact modal by default, full-screen reveal only on <em>double-win</em> and <em>double-miss</em> (the emotional peaks).</li>
+    </ul>
+    <h4>Tap vs Auto-dismiss</h4>
+    <ul>
+      <li><em>Auto (~1.4s):</em> faster match pacing, feels toast-like. Risk: Outread goes by too quick to internalize the miss.</li>
+      <li><em>Tap:</em> one extra tap per turn, but lets player <em>feel</em> the outcome before moving on. Better for RPS read-game.</li>
+      <li><em>Suggestion:</em> Tap on OUTPLAYED / OUTREAD (peaks), Auto on Held / Struck / Traded (middle ground). Player-driven where it matters.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const VARIANTS = [
+    {
+      // 0: Outplayed — you hit undefended + they hit your defended
+      verdictClass: 'outplayed',
+      verdictText: 'OUTPLAYED',
+      flash: 'gold',
+      you:  { atk: 'CHEST', def: 'LEGS' },
+      enemy:{ atk: 'HEAD',  def: 'HEAD' },
+      yourHit:  'CLEAN',   // your atk CHEST vs their def HEAD → clean
+      theirHit: 'HELD',    // their atk HEAD vs your def LEGS? NO — wait, my def needs to match
+      // Re-do: to "outplay" you need to (1) attack where they don't defend, and (2) defend where they attack.
+      // So: you atk CHEST, they def HEAD → CLEAN. They atk HEAD, you def HEAD → HELD. Let me fix:
+      hp: { opp: -12, you: 0 },
+      winner: 'you',
+      portraits: { you: 'winner', opp: 'loser' },
+      icons: []
+    },
+    {
+      // 1: Outplayed + Crit + Dodge — jackpot
+      verdictClass: 'outplayed',
+      verdictText: 'OUTPLAYED',
+      flash: 'gold',
+      you:  { atk: 'HEAD',  def: 'CHEST' },
+      enemy:{ atk: 'CHEST', def: 'LEGS' },
+      yourHit:  'CRIT',
+      theirHit: 'DODGED',
+      hp: { opp: -18, you: 0 },
+      winner: 'you',
+      portraits: { you: 'winner', opp: 'loser' },
+      icons: [
+        { text: '✦ CRIT', type: 'crit' },
+        { text: '👁 DODGE', type: 'dodge' }
+      ]
+    },
+    {
+      // 2: Held the Line — you blocked their hit, they blocked yours
+      verdictClass: 'held',
+      verdictText: 'HELD THE LINE',
+      flash: 'green',
+      you:  { atk: 'CHEST', def: 'HEAD' },
+      enemy:{ atk: 'HEAD',  def: 'CHEST' },
+      yourHit:  'GUARDED', // your atk blocked
+      theirHit: 'HELD',    // their atk blocked
+      hp: { opp: -4, you: -3 },
+      winner: null,
+      portraits: { you: 'neutral', opp: 'neutral' },
+      icons: []
+    },
+    {
+      // 3: Outread — they hit undefended + you hit their defended
+      verdictClass: 'outread',
+      verdictText: 'OUTREAD',
+      flash: 'red',
+      you:  { atk: 'LEGS',  def: 'CHEST' },
+      enemy:{ atk: 'HEAD',  def: 'LEGS' },
+      yourHit:  'GUARDED',
+      theirHit: 'CLEAN',
+      hp: { opp: 0, you: -14 },
+      winner: 'opp',
+      portraits: { you: 'loser', opp: 'winner' },
+      icons: []
+    }
+  ];
+
+  // Fix variant 0's hit logic: they also have def HEAD; you atk CHEST (undefended) = CLEAN for you.
+  // Their atk HEAD, your def LEGS — that's a miss on def so you'd get hit. To make this a true OUTPLAYED,
+  // you need to defend their atk zone too. Let me rewrite variant 0 properly.
+  VARIANTS[0] = {
+    verdictClass: 'outplayed',
+    verdictText: 'OUTPLAYED',
+    flash: 'gold',
+    you:  { atk: 'CHEST', def: 'HEAD' },   // def HEAD — their atk is HEAD → you defend it
+    enemy:{ atk: 'HEAD',  def: 'LEGS' },   // def LEGS — your atk is CHEST → undefended
+    yourHit:  'CLEAN',
+    theirHit: 'HELD',
+    hp: { opp: -12, you: 0 },
+    winner: 'you',
+    portraits: { you: 'winner', opp: 'loser' },
+    icons: []
+  };
+
+  let mode = 'tap'; // 'tap' | 'auto'
+  let autoTimer = null;
+
+  const backdrop = document.getElementById('backdrop');
+  const modal    = document.getElementById('modal');
+  const verdict  = document.getElementById('verdict');
+  const clash    = document.getElementById('clash');
+  const outcome  = document.getElementById('outcome');
+  const icons    = document.getElementById('icons');
+  const tapHint  = document.getElementById('tap-hint');
+  const flash    = document.getElementById('flash');
+  const portraitYou = document.getElementById('portrait-you');
+  const portraitOpp = document.getElementById('portrait-opp');
+  const hpYou = document.getElementById('hp-you');
+  const hpOpp = document.getElementById('hp-opp');
+  const hpYouNum = document.getElementById('hp-you-num');
+  const hpOppNum = document.getElementById('hp-opp-num');
+
+  function hitChipClass(result) {
+    switch(result) {
+      case 'CLEAN':   return 'chip atk hit';
+      case 'CRIT':    return 'chip atk hit';
+      case 'GUARDED': return 'chip atk';
+      case 'HELD':    return 'chip def held';
+      case 'DODGED':  return 'chip def';
+      default:        return 'chip';
+    }
+  }
+
+  function hitLabel(result, role) {
+    if (role === 'you-out') {
+      return { CLEAN: 'STRUCK', CRIT: 'CRIT HIT', GUARDED: 'GUARDED' }[result] || result;
+    }
+    return { HELD: 'HELD', DODGED: 'DODGED', CLEAN: 'EXPOSED' }[result] || result;
+  }
+
+  function renderVariant(idx) {
+    const v = VARIANTS[idx];
+
+    // Reset state first
+    modal.querySelectorAll('.verdict').forEach(e => e.className = 'verdict');
+    verdict.className = 'verdict ' + v.verdictClass;
+    verdict.textContent = v.verdictText;
+
+    // Clash row — three columns: YOU / VS / OPP
+    clash.innerHTML = `
+      <div class="side">
+        <div class="who">You</div>
+        <div class="stance">
+          <span class="${hitChipClass(v.yourHit)}">ATK ${v.you.atk}</span>
+          <span class="${hitChipClass(v.theirHit)}">DEF ${v.you.def}</span>
+        </div>
+      </div>
+      <div class="vs-divider">VS</div>
+      <div class="side">
+        <div class="who">Opp</div>
+        <div class="stance">
+          <span class="chip atk">ATK ${v.enemy.atk}</span>
+          <span class="chip def">DEF ${v.enemy.def}</span>
+        </div>
+      </div>
+    `;
+
+    // Outcome row — HP deltas
+    const oppDelta = v.hp.opp;
+    const youDelta = v.hp.you;
+    const oppClass = oppDelta < 0 ? 'good' : (oppDelta === 0 ? 'zero' : 'bad');
+    const youClass = youDelta < 0 ? 'bad' : (youDelta === 0 ? 'zero' : 'good');
+    outcome.innerHTML = `
+      <div class="delta">
+        <div class="label">Dealt</div>
+        <div class="value ${oppClass}">${oppDelta === 0 ? '0' : Math.abs(oppDelta)}</div>
+      </div>
+      <div class="delta-sep"></div>
+      <div class="delta">
+        <div class="label">Taken</div>
+        <div class="value ${youClass}">${youDelta === 0 ? '0' : Math.abs(youDelta)}</div>
+      </div>
+    `;
+
+    // Icons
+    icons.innerHTML = v.icons.map(i =>
+      `<span class="icon-badge ${i.type}">${i.text}</span>`
+    ).join('');
+
+    // Flash
+    flash.className = 'flash';
+    // force reflow to restart animation
+    void flash.offsetWidth;
+    flash.className = 'flash ' + v.flash + ' on';
+
+    // Portrait states
+    portraitYou.classList.remove('winner', 'loser');
+    portraitOpp.classList.remove('winner', 'loser');
+    if (v.portraits.you === 'winner') portraitYou.classList.add('winner');
+    if (v.portraits.you === 'loser')  portraitYou.classList.add('loser');
+    if (v.portraits.opp === 'winner') portraitOpp.classList.add('winner');
+    if (v.portraits.opp === 'loser')  portraitOpp.classList.add('loser');
+
+    // HP drain
+    const youPct = Math.max(0, 82 + (youDelta / 200) * 100);
+    const oppPct = Math.max(0, 68 + (oppDelta / 200) * 100);
+    hpYou.style.width = youPct + '%';
+    hpOpp.style.width = oppPct + '%';
+    hpYouNum.textContent = Math.round(youPct / 100 * 200) + ' / 200';
+    hpOppNum.textContent = Math.round(oppPct / 100 * 200) + ' / 200';
+
+    // Show modal
+    backdrop.classList.add('show');
+    backdrop.classList.toggle('auto', mode === 'auto');
+
+    // Auto-dismiss timer
+    if (autoTimer) clearTimeout(autoTimer);
+    if (mode === 'auto') {
+      tapHint.style.display = 'none';
+      autoTimer = setTimeout(() => backdrop.classList.remove('show'), 1400);
+    } else {
+      tapHint.style.display = 'block';
+    }
+  }
+
+  // Wire controls
+  document.querySelectorAll('.variant-row button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.variant, 10);
+      renderVariant(idx);
+    });
+  });
+  document.getElementById('mode-tap').addEventListener('click', (e) => {
+    mode = 'tap';
+    document.getElementById('mode-tap').classList.add('active');
+    document.getElementById('mode-auto').classList.remove('active');
+  });
+  document.getElementById('mode-auto').addEventListener('click', (e) => {
+    mode = 'auto';
+    document.getElementById('mode-auto').classList.add('active');
+    document.getElementById('mode-tap').classList.remove('active');
+  });
+  backdrop.addEventListener('click', () => {
+    if (mode === 'tap') backdrop.classList.remove('show');
+  });
+
+  // Open with variant 0 on load
+  setTimeout(() => renderVariant(0), 400);
+</script>
+
+</body>
+</html>
