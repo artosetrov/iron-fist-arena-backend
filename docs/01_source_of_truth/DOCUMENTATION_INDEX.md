@@ -349,7 +349,7 @@ Per-feature documentation with overview, key files, API, UI states:
 - `features/dungeons/DUNGEONS_OVERVIEW.md` — PvE dungeons, Dungeon Rush, difficulties
 - `features/battle-pass/BATTLE_PASS_OVERVIEW.md` — Seasonal Battle Pass, free+premium tiers
 - `features/daily-systems/DAILY_SYSTEMS_OVERVIEW.md` — Daily Login + Daily Quests
-- `features/achievements/ACHIEVEMENTS_OVERVIEW.md` — 3 categories, 21 achievements, tracking
+- `features/achievements/ACHIEVEMENTS_OVERVIEW.md` — 3 categories, 18 achievements, tracking
 - `features/inventory/INVENTORY_OVERVIEW.md` — Items, equipment, slots, ItemCardView
 - `features/combat/COMBAT_OVERVIEW.md` — Turn-based combat engine, VFX, damage system
 - `features/gold-mine/GOLD_MINE_OVERVIEW.md` — Idle gold production, slots, boost

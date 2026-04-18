@@ -36,100 +36,7 @@ function Label({ text }: { text: string }) {
   )
 }
 
-// ─── 1. Hero Widget Previews ────────────────────────────────────
-
-export function HeroWidgetPreviews() {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: s.spaceMD,
-      background: c.background.bgSecondary, border: `1px solid ${c.border.borderSubtle}`,
-      borderRadius: r.radiusLG, padding: s.spaceMD,
-    }}>
-      {/* Avatar */}
-      <div style={{
-        width: 72, height: 72, borderRadius: 36,
-        background: c.background.bgTertiary, border: `2px solid ${c.accent.gold}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 28 }}>🗡️</span>
-      </div>
-      {/* Info */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ color: c.accent.goldBright, fontFamily: '"Oswald", sans-serif', fontSize: 14, letterSpacing: 0.5 }}>
-          ShadowBlade
-        </span>
-        {/* HP bar */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: c.accent.success, fontFamily: '"Inter", sans-serif', fontSize: 9, fontWeight: 600 }}>HP</span>
-            <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9 }}>340/420</span>
-          </div>
-          <div style={{ height: 10, borderRadius: 5, background: c.background.bgAbyss, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: '81%', borderRadius: 5, background: 'linear-gradient(90deg, #2ECC71, #55EFC4)' }} />
-          </div>
-        </div>
-        {/* Stamina bar */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: c.accent.stamina, fontFamily: '"Inter", sans-serif', fontSize: 9, fontWeight: 600 }}>STA</span>
-            <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9 }}>85/120</span>
-          </div>
-          <div style={{ height: 10, borderRadius: 5, background: c.background.bgAbyss, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: '71%', borderRadius: 5, background: 'linear-gradient(90deg, #E67E22, #F39C12)' }} />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── 2. Stance Display Previews ─────────────────────────────────
-
-export function StanceDisplayPreviews() {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'stretch',
-      background: c.background.bgSecondary, border: `1px solid ${c.border.borderSubtle}`,
-      borderRadius: r.radiusLG, overflow: 'hidden',
-    }}>
-      {/* Attack zone */}
-      <div style={{
-        flex: 1, padding: s.spaceMS, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        background: `${c.stance.zoneHead}10`,
-      }}>
-        <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Attack</span>
-        <div style={{
-          width: 40, height: 40, borderRadius: 20,
-          background: `${c.stance.zoneHead}20`, border: `2px solid ${c.stance.zoneHead}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize: 16 }}>🎯</span>
-        </div>
-        <span style={{ color: c.stance.zoneHead, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Head</span>
-      </div>
-      {/* Gold divider */}
-      <div style={{ width: 2, background: `linear-gradient(180deg, transparent, ${c.accent.gold}, transparent)` }} />
-      {/* Defense zone */}
-      <div style={{
-        flex: 1, padding: s.spaceMS, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        background: `${c.stance.zoneChest}10`,
-      }}>
-        <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Defense</span>
-        <div style={{
-          width: 40, height: 40, borderRadius: 20,
-          background: `${c.stance.zoneChest}20`, border: `2px solid ${c.stance.zoneChest}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize: 16 }}>🛡️</span>
-        </div>
-        <span style={{ color: c.stance.zoneChest, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Chest</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── 3. Arena Opponent Card Previews ────────────────────────────
+// ─── 1. Arena Opponent Card Previews ────────────────────────────
 
 export function ArenaOpponentCardPreviews() {
   return (
@@ -179,7 +86,7 @@ export function ArenaOpponentCardPreviews() {
   )
 }
 
-// ─── 4. Battle Result Card Previews ─────────────────────────────
+// ─── 2. Battle Result Card Previews ─────────────────────────────
 
 export function BattleResultCardPreviews() {
   const results = [
@@ -220,7 +127,7 @@ export function BattleResultCardPreviews() {
   )
 }
 
-// ─── 5. Leaderboard Row Previews ────────────────────────────────
+// ─── 3. Leaderboard Row Previews ────────────────────────────────
 
 export function LeaderboardRowPreviews() {
   const rows = [

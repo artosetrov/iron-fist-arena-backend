@@ -11,16 +11,17 @@ export const ACHIEVEMENT_CATEGORIES = [
   'daily',
 ] as const
 
-export const ACHIEVEMENT_REWARD_TYPES = ['gold', 'gems', 'xp'] as const
-const LEGACY_ACHIEVEMENT_REWARD_TYPES = ['title', 'frame'] as const
-const STORED_ACHIEVEMENT_REWARD_TYPES = [
-  ...ACHIEVEMENT_REWARD_TYPES,
-  ...LEGACY_ACHIEVEMENT_REWARD_TYPES,
+export const ACHIEVEMENT_REWARD_TYPES = [
+  'gold',
+  'gems',
+  'xp',
+  'title',
+  'frame',
 ] as const
+export const ACHIEVEMENT_COSMETIC_REWARD_TYPES = ['title', 'frame'] as const
 
 export type AchievementCategory = typeof ACHIEVEMENT_CATEGORIES[number]
 export type AchievementRewardType = typeof ACHIEVEMENT_REWARD_TYPES[number]
-type StoredAchievementRewardType = typeof STORED_ACHIEVEMENT_REWARD_TYPES[number]
 
 export type AchievementDefinitionRecord = {
   id: string
@@ -104,23 +105,12 @@ export function parseAchievementRewardType(value: unknown): AchievementRewardTyp
   return normalized as AchievementRewardType
 }
 
-function parseStoredAchievementRewardType(
-  value: unknown
-): StoredAchievementRewardType {
-  if (typeof value !== 'string') {
-    throw new Error('Reward type is required')
-  }
-
-  const normalized = value.trim().toLowerCase()
-  if (
-    !STORED_ACHIEVEMENT_REWARD_TYPES.includes(
-      normalized as StoredAchievementRewardType
-    )
-  ) {
-    throw new Error('Invalid reward type')
-  }
-
-  return normalized as StoredAchievementRewardType
+export function rewardTypeRequiresRewardId(
+  rewardType: AchievementRewardType
+): boolean {
+  return ACHIEVEMENT_COSMETIC_REWARD_TYPES.includes(
+    rewardType as typeof ACHIEVEMENT_COSMETIC_REWARD_TYPES[number]
+  )
 }
 
 export function sanitizeAchievementDefinitionInput(
@@ -142,7 +132,15 @@ export function sanitizeAchievementDefinitionInput(
     : parseAchievementCategory(existing?.category ?? '')
   const rewardType = input.rewardType !== undefined
     ? parseAchievementRewardType(input.rewardType)
-    : parseStoredAchievementRewardType(existing?.rewardType ?? '')
+    : parseAchievementRewardType(existing?.rewardType ?? '')
+  const rawRewardId = input.rewardId !== undefined
+    ? typeof input.rewardId === 'string'
+      ? input.rewardId.trim()
+      : ''
+    : existing?.rewardId?.trim() ?? ''
+  const rewardId = rewardTypeRequiresRewardId(rewardType)
+    ? rawRewardId || (() => { throw new Error('Reward ID is required for cosmetic rewards') })()
+    : null
 
   return {
     key,
@@ -156,7 +154,7 @@ export function sanitizeAchievementDefinitionInput(
     rewardAmount: input.rewardAmount !== undefined
       ? parsePositiveInt(input.rewardAmount, 'Reward amount')
       : parsePositiveInt(existing?.rewardAmount, 'Reward amount'),
-    rewardId: null,
+    rewardId,
     icon: input.icon !== undefined
       ? input.icon?.trim() || null
       : existing?.icon ?? null,

@@ -2,6 +2,8 @@
 
 *Создано: 2026-03-30. На основе анализа 38+ экранов и всех игровых систем.*
 
+**Status boundary:** historical prompt/audio-planning snapshot from `2026-03-30`. The file/extension column preserves the original acquisition plan (`.mp3`), but live bundled runtime names, actual available cues, and extension truth now belong to `Hexbound/Hexbound/Persistence/SFXCatalog.swift` and the current app bundle.
+
 **Общее количество звуков: ~95 SFX + ~12 музыкальных треков**
 
 ---

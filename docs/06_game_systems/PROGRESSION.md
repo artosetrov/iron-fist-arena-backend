@@ -356,17 +356,17 @@ Achievements track permanent milestones:
 
 | Reward Type | Value |
 |------------|-------|
-| Gold | 100–1000 gold per achievement |
-| Gems | 5–50 gems (rare) |
-| XP | 200–500 XP boost |
-| Cosmetics | Skins, titles, emotes |
-| Battle Pass XP | +100 BP XP |
+| Gold | 100–1000 gold in the current fallback catalog |
+| Gems | 1–25 gems on selected milestones |
+| XP | Supported by the live claim/runtime contract when definitions author it |
+| Titles | Supported by the live claim/runtime contract when definitions author them |
+| Frames | Supported by the live claim/runtime contract when definitions author them |
 
 ### Achievement Discovery
 
 - Tracked in real-time as players perform actions
 - Unlock notifications sent on completion
-- Rewards claimed automatically or via menu
+- Rewards claimed from the Achievements UI after completion
 - Progress visible in Achievement catalog
 
 ---

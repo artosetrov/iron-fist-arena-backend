@@ -457,17 +457,14 @@ on the first progress event of the week.
 
 ## Achievements
 
-**30+ lifetime objectives with progress tracking and rewards.**
+**18 lifetime objectives with progress tracking and claimable rewards.**
 
-### Categories (Examples)
-| Category | Type | Count | Reward |
-|----------|------|-------|--------|
-| PvP | Combat achievements | 8 | 50g + 2 gems |
-| Dungeon | Progression achievements | 6 | 75g + 3 gems |
-| Progression | Leveling milestones | 5 | 100g + 1 gem |
-| Cosmetics | Collection achievements | 4 | 25g |
-| Economy | Spending milestones | 4 | 50g + 1 gem |
-| Prestige | Endgame achievements | 3 | 200g + 5 gems |
+### Categories
+| Category | Type | Count | Reward Surface |
+|----------|------|-------|----------------|
+| PvP | Combat + revenge achievements | 9 | Mixed currency / cosmetic grants |
+| Progression | Leveling + prestige milestones | 5 | Mixed currency / cosmetic grants |
+| Ranking | Rating milestones | 4 | Mixed currency / cosmetic grants |
 
 ### Achievement Types
 - **One-time**: Win 100 battles (never repeats)
@@ -475,9 +472,9 @@ on the first progress event of the week.
 - **Tracker**: Collect 50 rare items (progress bar)
 
 ### Reward Structure
-- **Individual reward**: 25-200 gold per achievement
-- **Bonus**: 2-5 gems per achievement (rare/special only)
-- **Prestige reset**: Achievements reset per prestige cycle, rewards re-claimable
+- **Claimable rewards**: Achievements are claimed from the achievements screen, not auto-granted
+- **Live reward surface**: `gold`, `gems`, `xp`, `title`, `frame`
+- **Persistence**: Achievement progress/claims stay on the character; prestige milestones are separate achievements, not a full reset cycle
 
 ---
 

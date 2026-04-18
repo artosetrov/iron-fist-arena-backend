@@ -33,7 +33,7 @@ Still open:
 - production migration apply is still an explicit step, not part of Vercel build
 - iOS Fastlane `Appfile` still contains placeholder Apple identity/team values
 - iOS staging currently points at the same production API URL as release
-- landing/legal static deploy flow is still not fully codified in this repo
+- landing/legal static deploy is manual/external, but its ownership path is now documented in `docs/10_operations/DEPLOY.md`
 
 ---
 
@@ -216,7 +216,7 @@ That means “push + build green” is **not** the same thing as “database has
 |------|--------|--------|
 | `Appfile` placeholder Apple ID | unresolved | blocks clean Fastlane/TestFlight ownership setup |
 | Team ID / ITC team ID placeholders | unresolved | release setup still environment-dependent/manual |
-| staging URL equals production URL | unresolved | debug/staging traffic still points at prod API unless future URL is introduced |
+| staging URL equals production URL | documented caveat | debug/staging traffic still points at prod API unless future URL is introduced |
 | hardcoded Supabase anon key in app bundle | known | key rotation requires app update |
 
 ---
@@ -236,7 +236,6 @@ That means “push + build green” is **not** the same thing as “database has
 | Risk | Why it matters |
 |------|----------------|
 | iOS staging currently equals production | no clean client-side environment split yet |
-| Landing/static deploy contract is undocumented | legal/support surface can drift from the rest of operations |
 | branch protection status is undocumented here | human process still carries part of the release safety |
 
 ### Resolved since the previous audit snapshot
@@ -293,8 +292,8 @@ npm run db:migrate:deploy
 | Migration apply | explicit `npm run db:migrate:deploy` | Manual but defined |
 | iOS release lanes | `Hexbound/fastlane/Fastfile` | OK |
 | iOS release identity/team setup | `Hexbound/fastlane/Appfile` | Needs setup |
-| iOS environment targeting | `Hexbound/Hexbound/App/AppConstants.swift` | Needs review |
-| Landing/static deploy | repo docs not fully codified | Needs review |
+| iOS environment targeting | `Hexbound/Hexbound/App/AppConstants.swift` + `docs/10_operations/RELEASE_IOS.md` | Documented; staging currently aliases production |
+| Landing/static deploy | `docs/10_operations/DEPLOY.md` + `artosetrov/hexbound-landing` | Manual but defined |
 
 ---
 

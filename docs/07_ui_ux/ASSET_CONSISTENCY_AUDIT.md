@@ -31,9 +31,9 @@ On iPhone 14 Pro (3x display), iOS upscales every 1x PNG by 3× at runtime → *
 
 ---
 
-### A2. 🔴 sync-assets.sh RESIZES ALL DOWNLOADED IMAGES TO MAX 512px
+### A2. 🔴 Historical Finding — sync-assets.sh originally resized downloaded images to max 512px
 
-**File:** `scripts/sync-assets.sh:332`
+**Historical file state at audit time:** `scripts/sync-assets.sh`
 ```bash
 optimize_image "$tmp_file" 512    # ← MAX 512px dimension
 ```
@@ -41,6 +41,8 @@ optimize_image "$tmp_file" 512    # ← MAX 512px dimension
 All Items (68), Skins, and Bosses (40+) downloaded from Supabase are forcefully resized to max 512px before being saved to xcassets. If original art is 1024px+, it loses 75% of its pixel data before it even reaches the app.
 
 Combined with the 1x-only issue → a 1024px original becomes 512px, which gets upscaled 3× on Pro devices → effectively 6× quality loss.
+
+**Later resolution:** the cap was subsequently raised to `1024px`, so this section should now be read as historical provenance for the rule, not as a statement about the current script implementation.
 
 ---
 
@@ -153,7 +155,7 @@ Character skins — imagesets with `Contents.json` but **no PNG file inside:**
 | # | Cause | Severity | Scope | Fix Effort |
 |---|---|---|---|---|
 | **D1** | 1x-only assets on 3x Retina devices | 🔴 CRITICAL | ALL 362 assets | HIGH — re-export at 2x/3x or use PDF vectors |
-| **D2** | sync-assets.sh resizes to 512px max | 🔴 CRITICAL | 168 assets (Items+Bosses+Skins) | LOW — remove resize or increase limit |
+| **D2** | Historical: sync-assets.sh resized to 512px max at audit time | 🔴 CRITICAL | 168 assets (Items+Bosses+Skins) | LOW — later raised to 1024; continue revalidating source resolution rather than assuming this exact cap still exists |
 | **D3** | Building images 128-300px displayed at 500+ pt | 🔴 CRITICAL | 10 buildings on Hub | MEDIUM — re-export at 1024px+ |
 | **D4** | Network images loaded as UIImage(data:) = 1x scale | 🔴 CRITICAL | All network assets | MEDIUM — add scale-aware loading |
 | **D5** | No .interpolation() control anywhere | 🟡 MODERATE | All Image() views | LOW — add .interpolation(.high) |
@@ -180,7 +182,7 @@ Character skins — imagesets with `Contents.json` but **no PNG file inside:**
 **Component:** `ItemImageView.swift`, `ItemCardView.swift`
 **Problem:** Item images 128×140px displayed at 82pt = 246px@3x → noticeable upscale
 **Files to fix:**
-- `scripts/sync-assets.sh` — remove 512px cap or increase to 1024
+- `scripts/sync-assets.sh` — historical fix already landed by raising the old 512px cap to 1024; re-audit should start from the current script, not this old number
 - All `Items/*.imageset/` — verify source resolution on Supabase
 
 ### E3. Boss Portraits (MEDIUM PRIORITY)
@@ -251,9 +253,10 @@ Character skins — imagesets with `Contents.json` but **no PNG file inside:**
 1. **Fix missing asset crash:**
    - Create `rush-ui-escape.imageset` or fix code reference in `DungeonRushDetailView.swift:1120`
 
-2. **Remove sync-assets.sh 512px cap:**
-   - `scripts/sync-assets.sh:332` — change `optimize_image "$tmp_file" 512` → `optimize_image "$tmp_file" 1024`
-   - Re-run sync to get full-resolution items/bosses
+2. **Historical resolution note: old sync-assets.sh 512px cap**
+   - At audit time the script used `optimize_image "$tmp_file" 512`
+   - That cap was later raised to `1024`
+   - Re-audits should verify current source-asset resolution and runtime presentation rather than treating `512` as still-live behavior
 
 3. **Re-export building assets at 1024×1024:**
    - All 10 `building-*.imageset` need source art at minimum 1024px
@@ -372,7 +375,7 @@ UIImage(data: data, scale: UIScreen.main.scale)
 Never use bare `UIImage(data:)` for display images.
 
 ### Rule 12: No sync-assets.sh Downsizing Below Display Needs
-`sync-assets.sh` optimization MUST NOT resize below the maximum display size × 3 (for 3x devices). Current 512px cap is insufficient for buildings (need 1800px).
+`sync-assets.sh` optimization MUST NOT resize below the maximum display size × 3 (for 3x devices). At audit time the current 512px cap was insufficient for buildings (need 1800px); later script updates raised that floor, but the rule itself remains live.
 
 ### Rule 13: Pre-Commit Asset Validation
 Before every commit touching assets:

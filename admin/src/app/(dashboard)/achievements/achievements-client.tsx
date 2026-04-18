@@ -26,7 +26,9 @@ import {
 } from '@/actions/achievement-definitions'
 import {
   ACHIEVEMENT_CATEGORIES,
+  ACHIEVEMENT_COSMETIC_REWARD_TYPES,
   ACHIEVEMENT_REWARD_TYPES,
+  rewardTypeRequiresRewardId,
   type AchievementDefinitionRecord,
 } from '@/lib/achievement-definitions'
 
@@ -60,6 +62,7 @@ type FormData = {
   target: string
   rewardType: string
   rewardAmount: string
+  rewardId: string
   icon: string
   sortOrder: string
 }
@@ -67,7 +70,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
   key: '', title: '', description: '', category: '',
   target: '1', rewardType: 'gold', rewardAmount: '100',
-  icon: '', sortOrder: '0',
+  rewardId: '', icon: '', sortOrder: '0',
 }
 
 const CATEGORIES = [...ACHIEVEMENT_CATEGORIES]
@@ -128,6 +131,10 @@ export function AchievementsClient({
   const updateField = (field: keyof FormData, value: string) =>
     setForm((f) => ({ ...f, [field]: value }))
 
+  const cosmeticRewardSelected = rewardTypeRequiresRewardId(
+    form.rewardType as (typeof ACHIEVEMENT_REWARD_TYPES)[number]
+  )
+
   const openCreate = () => {
     setEditingDef(null)
     setForm(EMPTY_FORM)
@@ -144,6 +151,7 @@ export function AchievementsClient({
       target: String(def.target),
       rewardType: def.rewardType,
       rewardAmount: String(def.rewardAmount),
+      rewardId: def.rewardId ?? '',
       icon: def.icon ?? '',
       sortOrder: String(def.sortOrder),
     })
@@ -166,6 +174,7 @@ export function AchievementsClient({
           target: parseWholeNumber(form.target),
           rewardType: form.rewardType,
           rewardAmount: parseWholeNumber(form.rewardAmount),
+          rewardId: form.rewardId || null,
           icon: form.icon || null,
           sortOrder: parseWholeNumber(form.sortOrder),
         })
@@ -178,6 +187,7 @@ export function AchievementsClient({
           target: parseWholeNumber(form.target),
           rewardType: form.rewardType,
           rewardAmount: parseWholeNumber(form.rewardAmount),
+          rewardId: form.rewardId || null,
           icon: form.icon || undefined,
           sortOrder: parseWholeNumber(form.sortOrder),
         })
@@ -417,6 +427,11 @@ export function AchievementsClient({
                       <td className="px-4 py-3">
                         <span className="font-medium">{def.rewardAmount}</span>{' '}
                         <span className="text-muted-foreground">{def.rewardType}</span>
+                        {def.rewardId && (
+                          <div className="mt-1 font-mono text-[11px] text-muted-foreground">
+                            {def.rewardId}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <button
@@ -608,6 +623,22 @@ export function AchievementsClient({
               </div>
             </div>
 
+            {cosmeticRewardSelected && (
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium">Reward ID</label>
+                <Input
+                  placeholder={ACHIEVEMENT_COSMETIC_REWARD_TYPES.includes(form.rewardType as 'title' | 'frame')
+                    ? `e.g. ${form.rewardType === 'title' ? 'chosen' : 'ornate_gold'}`
+                    : 'reward identifier'}
+                  value={form.rewardId}
+                  onChange={(e) => updateField('rewardId', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cosmetic achievement rewards use this catalog identifier for the unlocked title or frame.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1.5">
                 <label className="text-sm font-medium">Icon</label>
@@ -629,7 +660,7 @@ export function AchievementsClient({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Live achievement reward claims currently support gold, gems, and XP only.
+              Live achievement reward claims support gold, gems, XP, and cosmetic title/frame rewards.
             </p>
           </div>
 
@@ -639,7 +670,7 @@ export function AchievementsClient({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !form.title || !form.category || !form.target}
+              disabled={saving || !form.title || !form.category || !form.target || (cosmeticRewardSelected && !form.rewardId.trim())}
             >
               {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
               {editingDef ? 'Save Changes' : 'Create'}

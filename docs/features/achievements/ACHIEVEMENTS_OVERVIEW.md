@@ -1,6 +1,6 @@
 # Feature: Achievements
 
-> **Status:** Complete (3 categories, 21 achievements)
+> **Status:** Complete (3 categories, 18 achievements)
 > **Owner:** Progression / Retention
 > **Last updated:** 2026-03-26
 > **Source of truth:** `backend/src/lib/game/achievement-catalog.ts`
@@ -9,7 +9,7 @@
 
 ## Overview
 
-21 достижение в 3 категориях. Все tracked автоматически. Rewards можно claim.
+18 достижений в 3 категориях. Все tracked автоматически. Rewards можно claim как currency или cosmetics.
 
 ## Categories & Tracking
 
@@ -46,7 +46,7 @@
 
 1. Add to `ACHIEVEMENT_CATALOG` in `achievement-catalog.ts`
 2. Add tracking call in relevant route
-3. Add display metadata in `achievements/route.ts`
+3. Add definition text metadata in the active definitions table when you need custom player-facing copy (route fallback text still exists for legacy rows)
 4. Verify iOS `tabCategories` includes category
 5. **НЕ добавляй без шага 2** — будет 0/N навсегда
 
