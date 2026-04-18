@@ -10,7 +10,7 @@ sources:
   - backend/src/app/api/events/active/route.ts
   - backend/src/app/api/iap/products/route.ts
   - backend/src/app/api/minigames/shell-game/play/route.ts
-updated: 2026-04-15
+updated: 2026-04-17
 status: Fixed
 ---
 
@@ -48,8 +48,8 @@ The result was mixed:
   - dead local `updatedUser` variable after the gold deduction
   - user-facing error text still said “change race” while the route now works in terms of `origin`
   - the route still mixes wallet data into the returned `character` object shape, which is convenient for clients but muddles entity boundaries
-- **What was fixed:** removed the dead variable and aligned the error text to `origin`
-- **Needs review:** response-shape mixing of `character` + wallet data
+- **What was fixed:** removed the dead variable, aligned the error text to `origin`, and later added a canonical top-level `wallet.gold` field while keeping `character.gold` as a compatibility alias for existing callers
+- **Later follow-up:** re-audited in [[block-170-backend-appearance-wallet-response-boundary]]; the route now exposes a clean wallet boundary without breaking the existing iOS decode path
 - **Status:** Fixed
 
 ### `backend/src/app/api/characters/[id]/respec-stats/route.ts`
@@ -63,7 +63,7 @@ The result was mixed:
   - dead constants `STAT_POINTS_PER_LEVEL` and `INITIAL_STAT_POINTS`
   - post-transaction `recalculateDerivedStats(...)` and cache invalidation are still outside the transaction, so a downstream failure can turn a successful respec into a `500` response even though the respec already committed
 - **What was fixed:** removed the dead constants
-- **Needs review:** whether derived-stat recomputation should be folded into a safer post-commit strategy or transactionally guaranteed
+- **Later follow-up:** re-audited in [[block-168-backend-character-progression-derived-stats-transaction-parity]]; derived-stat recomputation now runs inside the same transaction as the stat reset
 - **Status:** Fixed
 
 ### `backend/src/app/api/combat/simulate/route.ts`
@@ -119,4 +119,4 @@ The result was mixed:
 ## Follow-up
 
 - `respec-stats` still deserves a deeper runtime pass around post-transaction recomputation semantics
-- `appearance` should eventually decide whether wallet data belongs in a separate top-level response field instead of piggybacking on the `character` payload
+- `appearance` still carries a temporary compatibility alias (`character.gold`) for older callers even though `wallet.gold` is now the canonical boundary

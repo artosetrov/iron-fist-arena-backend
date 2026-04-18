@@ -13,7 +13,7 @@ sources:
   - Hexbound/Hexbound/Models/PassiveTree.swift
   - backend/src/app/api/passives/active-slots/route.ts
   - backend/src/app/api/passives/active-slots/batch/route.ts
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 022 — iOS Active Skill Picker and Passive Tree Contracts
@@ -27,7 +27,7 @@ This block continues the passive-tree and interactive-combat cleanup from [[bloc
 
 - **Files audited in this block:** 10
 - **Primary file types:** Swift UI, Swift view model/service/model files, backend route contracts
-- **Status:** Picker replacement semantics now honor the tapped slot, direct full-loadout equip no longer silently overwrites slot 0, and `PassiveTreeService` now uses typed contracts for unlock/respec/equip/save flows
+- **Status:** Picker replacement semantics now honor the tapped slot, detail-sheet equip now routes through the same slot-aware loadout editor when replacement is needed, and `PassiveTreeService` now uses typed contracts for unlock/respec/equip/save flows
 - **Related pages:** [[audit-index]], [[project-file-inventory]], [[passive-tree]], [[bug-patterns]], [[block-011-backend-passives-interactive-combat-runtime]]
 
 ## Summary
@@ -60,8 +60,8 @@ This block continues the passive-tree and interactive-combat cleanup from [[bloc
 | `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift` | iOS talent-loadout picker row | Presentational row for activatable talents and eligible potions. | Used by `ActiveSkillPickerSheet`; depends on `PassiveNode`, `ConsumableMeta`, theme tokens. | Row should reflect whether the item is already equipped, buyable, or can replace a focused slot. | Re-audited against the new replacement semantics; row logic is now consistent with focused-slot `hasRoom` decisions. | OK |
 | `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift` | iOS active-loadout editor | Main editor for the 3-slot active loadout and inline potion buys. | Used by `TalentsTabView`; depends on `PassiveTreeViewModel`, `ShopService`, `AppState`. | Picker is the safest place to edit the whole loadout because backend prefers atomic batch save. | Fixed slot-focused replacement, preview highlighting, and replacement-aware room checks. | Fixed |
 | `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` | iOS active-slot entry surface | Shows current 3-slot loadout above the tree and opens the picker. | Used by `TalentsTabView`; depends on `PassiveTreeViewModel`. | Slot taps should route into the picker instead of doing hidden mutations inline. | Re-audited; current "open picker for any tap" behavior matches the single-editor direction. | OK |
-| `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift` | iOS passive-tree screen container | Hosts the passive tree, active slots bar, detail sheet, picker sheet, and respec flow. | Used by hero detail UI; depends on `PassiveTreeViewModel` and talent subviews. | Should keep unlock staging and active-slot editing coherent across multiple sheets. | Still routes detail-sheet equip directly to `vm.equipActive(node:)`, so full-loadout editing degrades to an info toast instead of opening slot selection. | Needs review |
-| `Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift` | iOS node detail modal | Shows node details plus unlock / equip / unequip actions. | Used by `TalentsTabView`. Depends on `PassiveNode` and view-model callbacks. | For activatable nodes, equip semantics should stay aligned with picker semantics. | No runtime bug remains after the view-model guard, but the sheet still represents a second edit path with less context than the picker. | Needs review |
+| `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift` | iOS passive-tree screen container | Hosts the passive tree, active slots bar, detail sheet, picker sheet, and respec flow. | Used by hero detail UI; depends on `PassiveTreeViewModel` and talent subviews. | Should keep unlock staging and active-slot editing coherent across multiple sheets. | Detail-sheet equip was later unified in [[block-153-ios-talent-detail-sheet-slot-aware-picker-unification]] so full-loadout replacement now routes into the picker instead of degrading to a dead-end toast. | Fixed |
+| `Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift` | iOS node detail modal | Shows node details plus unlock / equip / unequip actions. | Used by `TalentsTabView`. Depends on `PassiveNode` and view-model callbacks. | For activatable nodes, equip semantics should stay aligned with picker semantics. | The sheet still exposes an equip CTA, but slot-selection ownership now lives in the view model + picker and was unified in [[block-153-ios-talent-detail-sheet-slot-aware-picker-unification]]. | Fixed |
 | `Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift` | iOS passive-tree orchestration | Coordinates tree loading, unlock staging, active-slot state, picker state, and commit flows. | Used by `TalentsTabView`, picker, active slots bar, detail sheet. Depends on `PassiveTreeService`. | View model owns mutation guards and should prevent accidental slot replacement. | Added first-free-slot helper and blocked silent slot-0 replacement when no explicit target exists. | Fixed |
 | `Hexbound/Hexbound/Services/PassiveTreeService.swift` | iOS passive-tree API client | Loads tree/character/active-slot data and performs unlock/respec/loadout mutations. | Used by `PassiveTreeViewModel`; depends on `APIClient`. | Should consume backend contracts in a typed, snake_case-safe way. | Converted remaining mutation flows from raw dictionaries to typed request/response bodies. | Fixed |
 | `Hexbound/Hexbound/Models/PassiveTree.swift` | iOS passive-tree contract models | Defines tree nodes, unlocked nodes, active-slot DTOs, and loadout entries. | Used by `PassiveTreeService`, `PassiveTreeViewModel`, and talent UI. | Must stay compatible with `convertFromSnakeCase` and older payloads that may omit active-slot fields. | Re-audited; current defaults and decoder notes still correctly document forward-compat behavior. | OK |
@@ -70,7 +70,7 @@ This block continues the passive-tree and interactive-combat cleanup from [[bloc
 
 ## Duplicate / Split Logic Found
 
-- Active-slot editing is still split between the picker and the talent detail sheet. The risk is much smaller now because the view model blocks silent replacement, but the UX is still not fully unified.
+- Active-slot editing can still start from both the picker and the talent detail sheet, but after [[block-153-ios-talent-detail-sheet-slot-aware-picker-unification]] the slot-selection and replacement semantics are centralized again and no longer drift between the two entry points.
 - Backend and iOS contract naming are in better shape here than in earlier reward/inventory areas. `PassiveTree.swift` already documents the `convertFromSnakeCase` rule clearly, and this block removes the last raw request bodies from the service layer.
 
 ## Files Without Clear Current Role
@@ -79,15 +79,11 @@ This block continues the passive-tree and interactive-combat cleanup from [[bloc
 
 ## Repository Hygiene Risk
 
-- `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift`
-- `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift`
-
-Both files are active compiled product source but still untracked in git after the file-graph move. They have a clear runtime role, but fresh clones would miss them until the repository state is finalized.
+- None in the active picker files anymore. `ActiveSkillPickerRow.swift` and `ActiveSkillPickerSheet.swift` are tracked product source now.
 
 ## Candidates For Refactor
 
-- Route all active-slot edits through the picker, even when starting from `TalentDetailSheet`, so slot choice always happens in one place.
-- If the detail sheet keeps an equip CTA, pass an explicit slot target or open the picker pre-focused instead of using a generic "equip if possible" action.
+- If we want a stricter single-editor UX later, we can still remove the detail-sheet equip CTA entirely. That is now a product choice rather than a safety fix.
 
 ## Documentation Missing Or Stale
 
@@ -95,8 +91,7 @@ Both files are active compiled product source but still untracked in git after t
 
 ## Requires Separate Decision
 
-- Should `TalentDetailSheet` keep direct equip / unequip controls, or should it always route into `ActiveSkillPickerSheet` for slot-aware editing?
-- Should the current untracked picker source files be normalized as tracked product code now that the graph/file move has settled?
+- Should `TalentDetailSheet` keep its convenience equip CTA long term, or should the picker become the only visible loadout editor once players are comfortable with the slot bar?
 
 ## Verification
 

@@ -36,6 +36,7 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 - `POST /api/auth/register`               — `backend/src/app/api/auth/register/route.ts` — email signup
 - `POST /api/auth/login`                  — `backend/src/app/api/auth/login/route.ts` — email login
 - `POST /api/auth/forgot-password`        — `backend/src/app/api/auth/forgot-password/route.ts` — password reset email
+- `GET /reset-password`                   — `backend/src/app/reset-password/page.tsx` — hosted password-reset landing page for Supabase email links
 
 #### OAuth
 - `POST /api/auth/google`                 — `backend/src/app/api/auth/google/route.ts` — Google Sign-In token exchange
@@ -44,7 +45,7 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 #### Upgrade + linking
 - `POST /api/auth/upgrade-guest`          — `backend/src/app/api/auth/upgrade-guest/route.ts` — guest → email+password
 - `POST /api/auth/upgrade-guest-oauth`    — `backend/src/app/api/auth/upgrade-guest-oauth/route.ts` — guest → Google/Apple
-- `POST /api/auth/link-account`           — `backend/src/app/api/auth/link-account/route.ts` — link extra provider to existing account
+- `POST /api/auth/link-account`           — `backend/src/app/api/auth/link-account/route.ts` — legacy compatibility route for local profile-link sync after external provider linking
 
 #### User account mgmt
 - `POST /api/user/email`                  — `backend/src/app/api/user/email/route.ts` — change email
@@ -93,15 +94,22 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 
 - `docs/03_backend_and_api/API_REFERENCE.md` — auth routes
 - `docs/10_operations/DEPLOY.md` — Supabase Auth keys + JWT secrets
+- `backend/email-templates/reset-password.html` — repo-owned source for the Supabase reset email template
 
 ## Notable gotchas
 
 - **Supabase JWT on every authed request.** Backend validates via shared secret; rotating the secret requires matching admin + backend redeploy.
 - **Guest accounts persist.** A `User` row with `authUserId == null` (or guest flag) survives app uninstall only if `guest-login` token was saved by client — otherwise orphaned row.
 - **Upgrade is atomic.** Guest → email/oauth must transact `User` update AND bring all `Character`/inventory rows with it; partial upgrade = player loses progress.
+- **Guest → OAuth merge policy is now explicit.** When an OAuth-side `User` row already exists without a character, guest upgrade merges `gold` + `gems`, keeps the later premium expiry/claim date, and preserves the longer-lived `dailyGemCard`.
+- **Reset-password fallback host is now canonical.** If `NEXT_PUBLIC_APP_URL` is unset, forgot-password mail falls back to `https://api.hexboundapp.com/reset-password`, not the old temporary Vercel hostname.
+- **`/auth/link-account` is not the main upgrade path.** The live iOS settings flow sends guests to `upgradeGuest`; `link-account` remains a narrower compatibility surface for syncing local profile fields after an already-authenticated provider-link step, and now returns `409` for duplicate-email collisions instead of bubbling a generic update failure.
+- **`/auth/sync-user` now hard-fails cleanly on identity collisions.** If the incoming email already belongs to another user row, the route returns `409` instead of relying on a later unique-constraint failure during upsert.
+- **`/auth/guest-login` no longer returns orphan guest sessions on device races.** If a fresh guest creation loses a `deviceId` race at local `User` creation time, the route now deletes the just-created Supabase guest and restores the already-linked guest account instead of returning tokens for a session with no local profile row.
+- **Fresh guest sign-in failure now cleans both sides.** If `guest-login` has already created the local guest row and the follow-up sign-in still fails, the route now deletes both the fresh Supabase guest and the local `User` row instead of leaving a local orphan behind.
 - **OAuth account collision.** If a Google email matches an existing email-only account, backend must return "link me" path, not "already exists" error.
 - **Deletion cascade.** `POST /api/user/delete` must cascade into all 60+ character-owned tables; any missing `onDelete: Cascade` = orphaned rows forever.
-- **Email-only via Supabase.** Email confirmation + password-reset emails are Supabase-hosted — custom template lives in Supabase dashboard.
+- **Email delivery still runs through Supabase.** The password-reset email is still sent by Supabase Auth, but the repo now keeps the source template at `backend/email-templates/reset-password.html` and the reset flow lands on the hosted `backend/src/app/reset-password/page.tsx`.
 
 ## Tests / fixtures
 

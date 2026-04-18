@@ -11,7 +11,7 @@ sources:
   - backend/tests/api/tutorial-quest.test.ts
   - backend/tests/lib/achievement-catalog.test.ts
   - backend/tests/lib/weekly-challenges.test.ts
-updated: 2026-04-15
+updated: 2026-04-17
 status: Fixed
 ---
 
@@ -93,7 +93,7 @@ There was also one intentional non-fix: tutorial quest definitions still declare
 - **What was fixed:**
   - removed the `any` Prisma access
   - added a typed catalog-builder path that filters unsupported DB reward types instead of polluting the live catalog
-- **Needs review:** the broader achievement surface still has a policy mismatch where list metadata can represent `title/frame` rewards but claim runtime currently only grants `gold/gems/xp`
+- **Later follow-up:** cosmetic achievement rewards (`title/frame`) were implemented in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]]
 - **Status:** Fixed
 
 ### `backend/src/app/api/achievements/route.ts`
@@ -160,6 +160,10 @@ There was also one intentional non-fix: tutorial quest definitions still declare
    - Risk: unsupported DB reward types could enter the live catalog and only explode later during claim.
    - Fix: normalized DB definitions through a typed filter step.
 
+5. **Achievement list metadata and claim runtime were split for cosmetic rewards**
+   - Risk: the catalog could describe `title/frame` rewards that the player could not actually receive.
+   - Fix: resolved later in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]] by teaching claim runtime + iOS ceremony to handle cosmetic rewards end to end.
+
 ## Verification
 
 - targeted backend `eslint`:
@@ -182,5 +186,5 @@ There was also one intentional non-fix: tutorial quest definitions still declare
 ## Follow-up
 
 - tutorial quests still have two declared-but-unimplemented reward types: `instant_mine` and `bp_levels`
-- achievement catalog/list and achievement claim runtime still need one policy decision for cosmetic achievement rewards (`title/frame`) before more DB-defined achievements ship
+- achievement cosmetic rewards (`title/frame`) were later closed in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]]
 - the next backend warning-heavy slice is still `combat-simulator`, `combat`, `feature-flags`, `progression`, `push/send`, and adjacent helpers

@@ -18,7 +18,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
   - `Hexbound/Hexbound/Views/Social/GuildHallAlliesTab.swift` — friends/members
   - `Hexbound/Hexbound/Views/Social/GuildHallDuelsTab.swift` — challenge queue
   - `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — guild-wide messaging/notes
-- **Shared entry:** Opponent Profile card (Challenge / Message / AddFriend buttons) reused from leaderboard / arena / mail (see memory `opponent_profile_feature`)
+- **Shared entry:** Opponent Profile card (Challenge / Message / AddFriend buttons) reused from leaderboard / arena / mail
 - **Player action:** Hub → Guild Hall building OR Leaderboard row tap
 
 ## Backend
@@ -82,7 +82,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 ## Docs
 
 - `docs/02_product_and_features/GAME_SYSTEMS.md` — social systems overview
-- Memory: `project_guild_system_spec` (guild draft 2026-04-01), `opponent_profile_feature` (tap-row actions)
+- Memory: `project_guild_system_spec` (guild draft 2026-04-01)
 
 ## Notable gotchas
 
@@ -102,4 +102,4 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 - [[mail]] — system mail and direct messages share the UI but different backend tables
 - [[leaderboard]] — tap row → opponent profile → social actions
 - [[pvp-combat]] — challenges funnel directly into PvP
-- [[opponent-profile]] — the shared profile component used everywhere (documented as a separate project memory, not yet a feature file)
+- [[opponent-profile]] — the shared profile surface used everywhere for Challenge / Message / Add Ally actions

@@ -9,7 +9,7 @@ sources:
   - Hexbound/Hexbound/Models/Quest.swift
   - Hexbound/Hexbound/Services/AchievementService.swift
   - Hexbound/Hexbound/Services/QuestService.swift
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 018 — Typed Achievement and Quest Loaders
@@ -50,7 +50,7 @@ This block continues the achievement/quest contract cleanup after [[block-017-io
 | Path | Zone / Role | Purpose / What It Does | Depends On / Used By | Main Rules / Business Logic | Problems / Fixes | Status |
 |------|-------------|------------------------|----------------------|-----------------------------|------------------|--------|
 | `backend/src/app/api/achievements/route.ts` | Backend achievements list API | Returns the player achievement catalog/status in iOS-facing form. | Used by `AchievementService`. Depends on auth, Prisma, achievement catalog metadata. | Route must keep reward metadata and `rewardClaimed` shape stable for the client. | Re-audited here; no code change required for the typed client migration. | OK |
-| `backend/src/app/api/quests/daily/route.ts` | Backend daily quest list/claim API | Returns the daily quest list and handles claim POST. | Used by `QuestService`. Depends on auth, Prisma, reward grants, battle-pass XP. | GET shape must remain decodable into `Quest` plus bonus-claimed flag. | Re-audited here; GET shape is stable enough for typed decoding, but the file still carries legacy `any` debt from earlier blocks. | Needs review |
+| `backend/src/app/api/quests/daily/route.ts` | Backend daily quest list/claim API | Returns the daily quest list and handles claim POST. | Used by `QuestService`. Depends on auth, Prisma, reward grants, battle-pass XP. | GET shape must remain decodable into `Quest` plus bonus-claimed flag. | Re-audited here and again in [[block-156-stale-audit-tail-quests-and-interactive-pvp-sync]]; the GET shape is stable for typed decoding and the old legacy `any` debt is no longer present in the live file. | OK |
 | `Hexbound/Hexbound/Models/Achievement.swift` | Achievement DTO/model | Strongly typed client model for achievement list payloads. | Used by achievements screens, cache, hub prefetch, and now typed loader wrappers. | Model must stay compatible with server response keys and reward subtypes. | Re-audited; existing model already supported the typed loader move cleanly. | OK |
 | `Hexbound/Hexbound/Models/Quest.swift` | Quest DTO/model | Strongly typed client model for daily quest payloads. | Used by quests screens, hub banner surfaces, cache, and typed list loader. | Custom coding keys must continue matching backend `reward_*` and `reward_claimed` fields. | Re-audited; existing model already fit the typed loader migration. | OK |
 | `Hexbound/Hexbound/Services/AchievementService.swift` | iOS achievements service | Loads and claims achievements. | Used by `AchievementsViewModel` and hub prefetch. Depends on `APIClient` and `AppState`. | Loader should stay compatible with legacy wrapper keys without falling back to raw dictionaries. | Added `AchievementListResponse` and switched `loadAchievements()` to typed GET decoding. | Fixed |
@@ -78,4 +78,3 @@ This block continues the achievement/quest contract cleanup after [[block-017-io
 
 - `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` completed with `** BUILD SUCCEEDED **`.
 - `git diff --check` passes after the loader changes.
-

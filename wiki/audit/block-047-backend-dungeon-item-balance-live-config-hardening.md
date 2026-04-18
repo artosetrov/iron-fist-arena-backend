@@ -71,7 +71,7 @@ This pass started from the last warning-heavy backend helpers, but it quickly tu
   - malformed class-damage config now falls back to the class default instead of poisoning runtime math
   - cache entries now have a TTL, and the backend admin profile update route invalidates the touched item-type cache immediately in-process
   - focused tests cover cache refresh behavior, malformed profile weights, and malformed class-damage scaling
-- **Needs review:** the separate admin app still writes profiles directly through its own process, so cross-process freshness relies on the new TTL rather than synchronous invalidation
+- **Later follow-up:** [[block-177-stale-audit-tail-item-balance-cross-process-sync]] confirmed the old cross-process write concern was resolved after [[block-048-admin-item-balance-backend-proxy-alignment]] moved admin profile writes onto the backend canonical route
 - **Status:** Fixed
 
 ### `backend/src/lib/game/live-config.ts`

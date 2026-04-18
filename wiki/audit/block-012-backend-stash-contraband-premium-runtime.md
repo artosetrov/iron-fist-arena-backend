@@ -7,7 +7,7 @@ sources:
   - backend/src/app/api/shop/contraband/
   - backend/src/app/api/daily-login/
   - backend/src/lib/game/premium.ts
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 012 — Backend Stash, Contraband, and Premium Runtime
@@ -51,13 +51,13 @@ This block covers the backend runtime that sits on top of the stash, contraband-
 | `backend/src/app/api/stash/route.ts` | Stash read API | Returns the user's account-level stash with item metadata and effective upgraded stats. | Depends on auth, stash items, item catalog, upgrade-stat helper. Used by inventory/stash UI. | Stash is shared per user and capped at 100 slots. | Read path is fine. `STASH_MAX_SLOTS` is duplicated across stash routes and should move to a shared constant later. | OK |
 | `backend/src/app/api/stash/deposit/route.ts` | Equipment → stash move API | Moves one unequipped equipment item from character inventory into account stash. | Depends on auth, equipment inventory, stash storage, user ownership. | Equipped items cannot be deposited; stash cap is 100. | Fixed capacity race and item-state TOCTOU by rechecking everything inside a locked transaction. | Fixed |
 | `backend/src/app/api/stash/withdraw/route.ts` | Stash → equipment move API | Moves one stash item back into a character's equipment inventory. | Depends on auth, character inventory capacity, stash ownership. | Character inventory cap must not be exceeded; withdrawn items are created unequipped. | Fixed capacity race and stash-item TOCTOU by rechecking everything inside a locked transaction. | Fixed |
-| `backend/src/app/api/shop/contraband/route.ts` | Contraband claim API | Serves the deterministic contraband offer and atomically claims/grants its contents. | Depends on auth, contraband claim table, user/character balances, consumable inventory. | 2-hour cooldown, alternating free/paid claims, deterministic seeded loot by character + claim number. | Route is mostly coherent and already uses stronger transaction discipline than stash. Main remaining concern: XP rewards are incremented directly here, and the same pattern exists in `shop/offers`, without explicit level-up handling in this route family. | Needs review |
+| `backend/src/app/api/shop/contraband/route.ts` | Contraband claim API | Serves the deterministic contraband offer and atomically claims/grants its contents. | Depends on auth, contraband claim table, user/character balances, consumable inventory. | 2-hour cooldown, alternating free/paid claims, deterministic seeded loot by character + claim number. | Re-audited after later reward-contract passes: the route now uses shared `grantRewardEntries(...)` and returns level-up parity fields (`leveled_up`, `new_level`, `stat_points_awarded`, `passive_points_awarded`). | Fixed |
 
 ## Duplicate / Split Logic Found
 
 - `STASH_MAX_SLOTS` is duplicated in multiple stash routes instead of living in a single inventory/stash constant source.
 - Premium entitlement rollout is split: `premium.ts` supports subscriptions, but many reward routes outside this block still select only `premiumUntil`.
-- Shop-style reward routes (`contraband`, and based on grep also `shop/offers`) increment XP directly without a shared “grant XP + level-up” helper.
+- The earlier contraband/offers XP-grant drift is now resolved; both routes use the shared reward-grant path with level-up parity fields.
 
 ## Files Without Clear Current Role
 

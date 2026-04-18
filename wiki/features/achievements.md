@@ -1,10 +1,10 @@
 # Feature: Achievements
 
-> Single-file map of every file that touches the Achievements system — 3-category, 21-entry persistent goal list with claimable rewards.
+> Single-file map of every file that touches the Achievements system — 3-category, 18-entry persistent goal list with claimable rewards.
 
 ## One-liner
 
-Players earn achievements across PvP / Progression / Ranking categories; progress accrues automatically from gameplay events and rewards are claimed on completion.
+Players earn achievements across PvP / Progression / Ranking categories; progress accrues automatically from gameplay events and rewards are claimed on completion as currency or cosmetic grants.
 
 ## Status
 
@@ -21,7 +21,7 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 
 ### Routes
 
-- `GET  /api/achievements`               — `backend/src/app/api/achievements/route.ts` — list achievements with progress + claim state
+- `GET  /api/achievements`               — `backend/src/app/api/achievements/route.ts` — list achievements with progress + claim state, preferring active definition `title` / `description`
 - `POST /api/achievements/claim`         — `backend/src/app/api/achievements/claim/route.ts` — batch claim completed entries
 - `POST /api/achievements/[key]/claim`   — `backend/src/app/api/achievements/[key]/claim/route.ts` — claim single achievement by key
 - `GET  /api/admin/achievements`         — `backend/src/app/api/admin/achievements/route.ts` — admin view / tuning
@@ -29,9 +29,9 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 
 ### Business logic
 
-- `backend/src/lib/game/achievement-catalog.ts` — canonical 21-achievement catalog (keys, targets, rewards, categories)
+- `backend/src/lib/game/achievement-catalog.ts` — canonical 18-achievement catalog fallback plus live definition text/reward normalization
 - `backend/src/lib/game/achievements.ts` — `updateMultipleAchievements()` with `absolute: true` semantics for ratings/levels/streaks
-- `backend/src/lib/game/achievement-claims.ts` — reward granting on claim
+- `backend/src/lib/game/achievement-claims.ts` — reward granting on claim, including cosmetic `title/frame` ownership
 
 ### Prisma models touched
 
@@ -68,7 +68,7 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 
 ## Admin
 
-- `admin/src/app/(dashboard)/achievements/achievements-client.tsx` — definition editor (title, target, reward, category)
+- `admin/src/app/(dashboard)/achievements/achievements-client.tsx` — definition editor (title, target, reward, category, and cosmetic `rewardId` for title/frame rewards)
 - `admin/src/actions/achievement-definitions.ts` — server actions
 - `admin/src/lib/achievement-definitions.ts` — shared logic
 
@@ -83,12 +83,15 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 - **Tracking coverage is mandatory.** Adding a catalog entry without a corresponding `updateMultipleAchievements()` call = achievement stuck at 0/N forever. No fire-on-signup logic.
 - **`absolute: true` semantics.** Streaks/ratings/levels that can DECREASE must use `absolute: true`; otherwise decrement is silently dropped.
 - **Category → tab mapping.** iOS tab order `["PvP", "Progress", "Ranking"]` maps to backend categories `["pvp", "progression", "ranking"]`. Mismatched enum = empty tab.
-- **Dual catalog source.** `achievement-catalog.ts` (code-first, deploy-gated) AND `achievement_definitions` table (admin-tunable) exist in parallel — keep them aligned manually.
+- **Dual catalog source.** `achievement-catalog.ts` (code-first fallback, deploy-gated) AND `achievement_definitions` table (admin-tunable/live text) exist in parallel — keep them aligned manually.
+- **Cosmetic claim payloads carry identifiers.** `title/frame` achievement rewards now return `reward.id` plus route-level `reward_title` / `reward_frame` so clients can present the exact cosmetic grant without inventing local lookup keys.
 - **pvp/fight vs pvp/resolve hooks.** Both endpoints fire tracking — avoid double-counting when touching either.
 
 ## Tests / fixtures
 
 - `backend/tests/lib/achievement-catalog.test.ts` — catalog shape + reward validity
+- `backend/tests/api/achievement-list.test.ts` — player-facing list uses admin-authored definition text when present
+- `backend/tests/lib/achievement-claims.test.ts` + `backend/tests/api/achievement-claim.test.ts` — cosmetic claim runtime and route serialization for `title/frame`
 
 ## Related features
 

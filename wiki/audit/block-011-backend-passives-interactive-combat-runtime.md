@@ -6,7 +6,7 @@ sources:
   - backend/src/app/api/passives/
   - backend/src/app/api/pvp/
   - backend/src/lib/game/
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 011 — Backend Passives and Interactive Combat Runtime
@@ -53,14 +53,14 @@ This block audits the runtime consumers of the active-slot and interactive-comba
 | `backend/src/app/api/passives/respec/route.ts` | Passive reset mutation | Refunds passive points, clears unlocked passives and active slots, charges gems, recalculates stats, invalidates caches. | Depends on live config, build-stats recalculation, auth, Prisma, cache layer. | Respec is gem-gated and wipes active slots because they depend on unlocked passives. | Coherent route; no new bug found. | OK |
 | `backend/src/app/api/passives/active-slots/route.ts` | Single-slot active-loadout API | Lists equipped active slots, exposes consumable picker metadata, equips one slot, and clears one slot. | Depends on auth, cache, rate-limit, active-slot table, passive unlock state, item catalog, game config. | Exactly one of `node_id` or `consumable_type`; at most one consumable in the loadout; only unlocked activatable nodes may be equipped. | Re-audited later in [[block-025-backend-active-slot-consumable-ownership-reconciliation]]: shared active-slot constants/cache helper added, zero-quantity potion slots are now reconciled on read, and server-side equip now validates real ownership before accepting a consumable slot. | Fixed |
 | `backend/src/app/api/passives/active-slots/batch/route.ts` | Atomic full-loadout save API | Replaces all three active slots in one transaction to avoid intermediate invalid states. | Depends on auth, rate-limit, cache, active-slot table, passive unlock state. | Payload must fully cover slots `0..2`; max one consumable; duplicate node IDs are rejected. | Re-audited later in [[block-025-backend-active-slot-consumable-ownership-reconciliation]]: the route now shares the canonical active-slot allowlist/cache helper and rejects batch saves that reference potions the character does not actually own. | Fixed |
-| `backend/src/app/api/pvp/match/start/route.ts` | Interactive match bootstrap | Creates an in-progress PvP match, reserves stamina/free entry, snapshots both fighters' active slots, and returns the initial duel state. | Depends on auth, rate-limit, stamina/live-config helpers, combat loader, active-slot data, pvp match persistence. | Interactive duel starts both fighters at full HP for the match UI while still enforcing the 30% persisted HP gate for entry. | Works, but still carries raw-SQL/manual typing and `as any` Prisma-client workarounds from the stale-client incident. Those are survivable, but worth cleaning once Prisma generation is fully trustworthy in every environment. | Needs review |
-| `backend/src/app/api/pvp/strike/route.ts` | Interactive round resolver | Resolves one duel round, applies actives, persists round history, updates active cooldown/consumed state, and decrements consumables atomically when fired. | Depends on auth, rate-limit, combat engine, combat loader, interactive match snapshot state, consumable inventory. | Player stun suppresses the counter this round; consumables are 1/battle and also decremented from real inventory when used. | Fixed two real defects: fired cooldowns were one turn too short, and opponent AI could choose a stun action that had no effect. Still contains some intentional v1 asymmetry and manual state shaping that should stay under close review. | Fixed |
+| `backend/src/app/api/pvp/match/start/route.ts` | Interactive match bootstrap | Creates an in-progress PvP match, reserves stamina/free entry, snapshots both fighters' active slots, and returns the initial duel state. | Depends on auth, rate-limit, stamina/live-config helpers, combat loader, active-slot data, pvp match persistence. | Interactive duel starts both fighters at full HP for the match UI while still enforcing the 30% persisted HP gate for entry. | Follow-up in [[block-154-backend-pvp-match-start-prisma-create-parity]] removed the stale `tx.pvpMatch.create as any` workaround and replaced it with typed Prisma JSON field casts. Raw SQL slot snapshotting remains intentional here for now. | Fixed |
+| `backend/src/app/api/pvp/strike/route.ts` | Interactive round resolver | Resolves one duel round, applies actives, persists round history, updates active cooldown/consumed state, and decrements consumables atomically when fired. | Depends on auth, rate-limit, combat engine, combat loader, interactive match snapshot state, consumable inventory. | Player stun suppresses the counter this round; consumables are 1/battle and also decremented from real inventory when used. | Initial cooldown / AI bugs were fixed in this block. Follow-up in [[block-155-backend-pvp-strike-complete-prisma-json-parity]] also removed the stale Prisma `findUnique/updateMany as any` workaround and replaced it with explicit JSON-boundary casts. | Fixed |
 
 ## Duplicate / Split Logic Found
 
 - Follow-up in [[block-025-backend-active-slot-consumable-ownership-reconciliation]] consolidated the active-slot consumable allowlist/cache key into a shared helper. Follow-up in [[block-026-backend-shop-consumable-pricing-parity]] then centralized the remaining consumable fallback pricing shared by shop and active-slot routes.
 - Passive cache versioning is split across route-local cache keys and shared invalidation helpers. The mismatch caused a live stale-cache bug.
-- `pvp/match/start` and `pvp/strike` both still carry workaround code for locally stale Prisma client generation (`as any`, raw typed rows) even though migration/schema parity is now much stronger.
+- Follow-up in [[block-155-backend-pvp-strike-complete-prisma-json-parity]] removed the remaining interactive-PvP Prisma workaround tail from `pvp/strike` and `pvp/match/complete`, so the duplicate/split concern in this area is now mostly about runtime state shaping rather than schema-client drift.
 
 ## Files Without Clear Current Role
 
@@ -69,7 +69,7 @@ This block audits the runtime consumers of the active-slot and interactive-comba
 ## Candidates For Refactor
 
 - Centralize passive cache keys in one helper module so future cache-version changes cannot drift again.
-- Replace the remaining local `as any` Prisma-client workarounds in interactive PvP once generated-client freshness is enforced in all environments.
+- The remaining refactor opportunity here is to centralize the interactive PvP JSON read/write shaping in one helper module; the stale Prisma workaround itself is now removed across `match/start`, `strike`, and `match/complete`.
 
 ## Documentation Missing Or Stale
 

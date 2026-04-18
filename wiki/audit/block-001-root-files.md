@@ -24,9 +24,9 @@ Current transition note: a later cleanup pass moved the legacy HTML prototype/le
 
 | File | Purpose / What it does | Depends on | Used by | Main units | Business rules | Problems found | Fixed now | Separate decision | Status |
 |------|-------------------------|------------|---------|------------|----------------|----------------|-----------|-------------------|--------|
-| `.gitignore` | Defines ignored local/build/prototype artifacts. | Git ignore syntax. | Git tooling. | Ignore patterns. | Prevent re-adding generated/vendor files and deleted prototypes. | Root contains tracked files matching prototype patterns, so ignore policy and repository state disagree. | None. | Decide whether tracked root prototypes should move to `prototypes/` or `docs/features/*` and be untracked from root. | Needs review |
+| `.gitignore` | Defines ignored local/build/prototype artifacts. | Git ignore syntax. | Git tooling. | Ignore patterns. | Prevent re-adding generated/vendor files and deleted prototypes. | Earlier root prototype clutter made the ignore policy look inconsistent with repository state. | Root cleanup/relocation work through blocks `134–152` removed that contradiction; no ignore-pattern change was needed. | Keep using root as a small bootstrap surface so ignore parity stays true. | Fixed |
 | `.mcp.json` | Local MCP config for Figma HTTP MCP. | Figma MCP URL. | Local assistant/editor tooling. | `mcpServers.figma`. | No secrets should live here. | No issue; JSON parses and contains no credential. | None. | Keep local-vs-shared ownership clear. | OK |
-| `CLAUDE.md` | Root project rules and architecture guardrails for AI/collaboration. | `docs/`, `Hexbound/CLAUDE.md`, `backend/CLAUDE.md`, Figma DS. | Humans and AI agents. | Architecture rules, DS rules, Xcode pbxproj rules, scanner commands. | Server-authoritative game logic, DS tokens, pbxproj entries for new Swift files. | Very large and duplicates canonical docs; contains agent/orchestrator protocol that can conflict with local tool rules. | None. | Split long-lived rules into canonical docs and keep root file as compact entrypoint. | Needs review |
+| `CLAUDE.md` | Root project bootstrap for cross-domain repo rules. | `docs/`, `Hexbound/CLAUDE.md`, `backend/CLAUDE.md`, wiki audit/docs. | Humans and AI agents. | Canonical doc pointers, architecture invariants, Xcode rule, schema sync, deploy summary, root hygiene. | Server-authoritative game logic, schema parity, and compact root bootstrap. | Had become too large, count-heavy, and duplicative; also carried legacy orchestrator/process material beyond the root file's ideal role. | Rewritten as a compact cross-domain entrypoint in `block-152`, with domain detail pushed back to canonical docs and domain CLAUDE files. | Keep this file small; future domain-specific detail belongs elsewhere. | Fixed |
 | `COMBAT_UX_AUDIT.md` | Historical combat screen UX audit and A/B/C prototype rationale. | Combat prototypes A/B/C. | `combat-prototypes.html`, later combat plans. | UX findings, recommendation, prototype links. | Interactive combat should reduce duplicate stance UI and clarify strike ownership. | Status was stale after B2/B2-v3 direction and the file lived noisily in root. | Marked as historical/superseded and later moved to `docs/features/combat/COMBAT_UX_AUDIT.md` in `block-149`. | Keep as historical combat design rationale inside feature docs. | Fixed |
 | `COMBAT_UX_IMPLEMENTATION_PLAN.md` | v2 implementation plan based on B2 prototype. | `COMBAT_UX_AUDIT.md`, `combat-proto-B2.html`. | Historical planning. | Phases, risks, file list. | Reuse existing combat resolver; avoid full rewrite. | Status said planning/not started though v3 superseded it; root placement was noisy. | Marked as superseded by v3/B2-v3 and later moved to `docs/features/combat/COMBAT_UX_IMPLEMENTATION_PLAN.md` in `block-149`. | Keep as historical v2 decision record beside other combat docs. | Fixed |
 | `COMBAT_V3_IMPLEMENTATION_PLAN.md` | v3 combat implementation plan for B2-v3 round log UI. | `combat-proto-B2-v3.html`, Swift combat files. | New Swift files and pbxproj references. | `CombatLogEvent`, `RoundExchange`, `CombatLogRow`, `InteractiveRoundLogCard`, `LogDivider`, `YourChoiceButton`. | Client stays server-authoritative; UI only renders server reveal payload. | Status said not started even though workspace has implementation files and pbxproj entries; root placement was noisy. | Marked implemented-in-workspace / re-verify before active use and later moved to `docs/features/combat/COMBAT_V3_IMPLEMENTATION_PLAN.md` in `block-149`. | Keep as implementation history beside combat feature docs. | Fixed |
@@ -54,9 +54,8 @@ Current transition note: a later cleanup pass moved the legacy HTML prototype/le
 
 ## Duplicate / Unclear Role Findings
 
-- Root contains many design prototypes even though `.gitignore` says deleted prototypes should not be re-added. This is the main root hygiene issue.
-- Combat prototype chain has historical duplicates: A/B/C → B2 → B2-v2 → B2-v3. Keep B2-v3 as active reference; archive older variants with the audit.
-- Special offer prototype chain has v1/v2/v3. Keep v3 only if it is still an active visual source.
+- Root prototype/legal/doc sprawl has now been removed; the remaining root surface is the intended bootstrap/config trio.
+- Historical combat and Gold Mine planning history now lives in feature docs instead of root.
 - The dated report and responsiveness audit that used to live in root have now been moved into `qa-reports/` and `docs/07_ui_ux/`.
 
 ## Fixes Applied
@@ -66,6 +65,7 @@ Current transition note: a later cleanup pass moved the legacy HTML prototype/le
 - Removed duplicate Google Fonts `@import` from `privacy.html` and `terms.html`.
 - Added `alt=""` to decorative DiceBear images in combat prototypes.
 - Moved the dated root QA/UI/combat/Gold Mine/release audit docs into their canonical folders in `blocks 148–151`.
+- Compacted `CLAUDE.md` back into a root bootstrap file and closed the old root/ignore parity warning in `block-152`.
 
 ## Files to Delete / Move Candidates
 
@@ -77,4 +77,4 @@ Current transition note: a later cleanup pass moved the legacy HTML prototype/le
 
 ## Block Status
 
-Status: Fixed with the dated root-audit doc relocation slice closed in blocks `148–151`.
+Status: Fixed with the root bootstrap/ignore parity slice closed in `block-152`.

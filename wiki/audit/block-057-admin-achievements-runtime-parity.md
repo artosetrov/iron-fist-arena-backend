@@ -8,7 +8,7 @@ sources:
   - admin/src/app/(dashboard)/achievements/achievements-client.tsx
   - backend/src/lib/game/achievement-catalog.ts
   - backend/src/lib/game/achievement-claims.ts
-updated: 2026-04-15
+updated: 2026-04-17
 status: Fixed
 ---
 
@@ -26,7 +26,7 @@ status: Fixed
 
 The admin achievements surface had drifted in two directions at once: its server actions accepted much weaker payloads than the live runtime should trust, and its seed still used the pre-fix `rank_diamond` / `rank_grandmaster` thresholds even though the backend catalog had already been corrected to `3000 / 4250`.
 
-On top of that, the admin editor still exposed reward editing through a generic form flow even though the live achievement claim path currently only grants `gold`, `gems`, and `xp`.
+On top of that, the admin editor still exposed reward editing through a generic form flow even though the live achievement claim path at the time only granted `gold`, `gems`, and `xp`.
 
 ## Related pages
 
@@ -45,8 +45,8 @@ On top of that, the admin editor still exposed reward editing through a generic 
 - **What was added:**
   - normalized `key` handling
   - strict category parsing
-  - live-safe reward type parsing for `gold/gems/xp`
-  - compatibility parsing for already-stored legacy `title/frame` rows on update-only paths
+  - originally introduced a live-safe reward type gate while runtime was still currency-only
+  - later widened again in [[block-181-admin-achievement-cosmetic-authoring-parity]] to support live `title/frame` authoring with required `rewardId`
   - positive target/reward validation and non-negative sort-order validation
 - **Status:** Fixed
 
@@ -77,9 +77,8 @@ On top of that, the admin editor still exposed reward editing through a generic 
 - **What was fixed:**
   - moved feedback onto toast-based success/error reporting
   - removed dead imports and unused transition state
-  - aligned reward type choices to the live claim-safe set
-  - removed `rewardId` editing from the live admin form
-  - added an explicit note in the editor about current runtime-supported reward types
+  - originally aligned reward type choices to the then-live-safe set while runtime was still currency-only
+  - later widened again in [[block-181-admin-achievement-cosmetic-authoring-parity]] so cosmetic `title/frame` rewards and `rewardId` authoring match the live runtime
 - **Status:** Fixed
 
 ### `backend/src/lib/game/achievement-catalog.ts`
@@ -95,9 +94,9 @@ On top of that, the admin editor still exposed reward editing through a generic 
 - **Zone:** backend / runtime reference
 - **Purpose:** live claim-time reward grant logic for achievements
 - **Why it mattered here:**
-  - the live claim path currently supports only `gold`, `gems`, and `xp`
-  - admin editing is now aligned to that live-safe surface instead of silently authoring definitions the runtime cannot grant
-- **Status:** Needs review
+  - this block originally aligned admin authoring to the then-live-safe currency-only claim path
+  - cosmetic achievement runtime support was added later in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]]
+- **Status:** Fixed
 
 ## Problems found
 
@@ -113,9 +112,10 @@ On top of that, the admin editor still exposed reward editing through a generic 
    - Risk: operators could configure definitions that the runtime would later reject as misconfigured.
    - Fix: aligned the UI to the currently supported live claim reward types and removed the unused `rewardId` path.
 
-4. **Legacy catalog/runtime mismatch still exists for `title/frame`**
-   - Risk: the broader catalog can still represent reward types that the live claim helper does not grant.
+4. **Legacy catalog/runtime mismatch existed for `title/frame`**
+   - Risk: the broader catalog could still represent reward types that the live claim helper did not grant.
    - Fix in this block: contained the problem at the admin authoring layer and preserved compatibility for already-stored legacy rows during updates.
+   - Later follow-up: resolved end to end in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]].
 
 ## Verification
 
@@ -128,5 +128,6 @@ On top of that, the admin editor still exposed reward editing through a generic 
 
 ## Follow-up
 
-- the next deeper fix would be deciding whether achievements should truly support cosmetic/title/frame rewards at runtime or whether the backend catalog should be narrowed to match the live claim helper
+- cosmetic achievement runtime support was later implemented in [[block-180-backend-achievement-cosmetic-claim-runtime-parity]]
+- admin authoring was later widened back to the full live reward surface in [[block-181-admin-achievement-cosmetic-authoring-parity]]
 - the broader remaining admin warning-heavy slice is now concentrated in `design-system`, `appearances`, and a few media-heavy editor surfaces

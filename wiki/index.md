@@ -10,7 +10,7 @@
 - [[stamina]] — Energy gating, regen, refill costs, session design
 - [[stance-system]] — Attack/defense zones, bonuses, matching, metagame
 - [[passive-tree]] — Node-based talents, active abilities, staged unlock, respec
-- [[achievements]] — 3 categories, 21 achievements, absolute tracking, gem rewards
+- [[achievements]] — 3 categories, 18 achievements, absolute tracking, claimable currency/cosmetic rewards
 - [[dungeons]] — Structured floors + Dungeon Rush endless mode
 - [[gold-mine]] — Passive income, slot mechanics, shaft system, bonus minigame
 - [[minigames]] — Gold Mine, Shell Game, Fortune Wheel, Tavern
@@ -28,6 +28,7 @@
 - [[why-k-factor-48]] — Calibration volatility, 10-game convergence, industry standard
 - [[why-rogue-execute]] — Finisher mechanic, prevents kiting, thematic RPG pattern
 - [[why-diminishing-refills]] — Whale spending cap, economy protection, industry precedent
+- [[why-reward-modal-over-toast]] — Gold/XP rewards surface as CLAIMED modals, never toasts
 - [[rebalance-w3d3]] — 2026-04-10 economy rebalance: CHA cap, streak cap, price increases
 
 ## Entities
@@ -39,6 +40,7 @@
 ## Features
 
 - [[auth]] — end-to-end feature map for guest/email/OAuth auth, upgrades, linking, and account deletion
+- [[onboarding]] — end-to-end feature map for first-time hero forging, appearance/name flow, and tutorial handoff
 - [[characters]] — end-to-end feature map for creation, profile, appearance, stat allocation, and respec
 - [[daily-login]] — end-to-end feature map for streak rewards, popup gating, and calendar claims
 - [[achievements]] — end-to-end feature map for persistent achievement tracking and reward claims
@@ -54,6 +56,7 @@
 - [[pvp-combat]] — end-to-end feature map for matchmaking, classic/interactive combat, and rating resolution
 - [[interactive-combat]] — end-to-end feature map for active-slot rounds, strike resolver, and cooldown HUD
 - [[leaderboard]] — end-to-end feature map for rating boards, search, and profile drill-down surfaces
+- [[opponent-profile]] — end-to-end feature map for the shared player-profile drill-down with challenge/message/ally actions
 - [[quests]] — end-to-end feature map for daily quest rotation, bonus claims, and tutorial quest overlap
 - [[referral]] — end-to-end feature map for invite codes, milestone-gated rewards, and both-sides reward claims
 - [[session-summary]] — end-to-end feature map for since-you-last-played diff summaries and aggregated progress reporting
@@ -219,7 +222,48 @@
 - [[block-149-root-combat-history-doc-relocation]] — relocation of the root combat audit/plan history into `docs/features/combat/` plus dead prototype-link cleanup
 - [[block-150-root-gold-mine-doc-relocation]] — relocation of the root Gold Mine plan/balance docs into `docs/features/gold-mine/` plus code-reference path parity
 - [[block-151-root-release-audit-relocation]] — relocation of the historical root pre-release audit into `docs/10_operations/`
+- [[block-152-root-bootstrap-and-ignore-parity]] — root bootstrap compaction for `CLAUDE.md` plus closure of the old `.gitignore` parity warning after the root cleanup wave
+- [[block-153-ios-talent-detail-sheet-slot-aware-picker-unification]] — slot-aware unification of detail-sheet equip flow with the active-skill picker plus replacement-target selection inside the picker itself
+- [[block-154-backend-pvp-match-start-prisma-create-parity]] — removal of the stale Prisma `create as any` workaround in interactive PvP match-start plus narrowing of the remaining workaround tail
+- [[block-155-backend-pvp-strike-complete-prisma-json-parity]] — removal of the remaining interactive PvP Prisma `findUnique/updateMany as any` workaround tail via explicit JSON-boundary typing
+- [[block-156-stale-audit-tail-quests-and-interactive-pvp-sync]] — truth-sync cleanup for stale audit warnings around daily quests typing and interactive PvP strike recovery/parity
+- [[block-157-stale-audit-tail-contraband-and-social-challenges-sync]] — truth-sync cleanup for stale audit warnings around contraband reward-path parity and social-challenges typing debt
+- [[block-158-backend-item-stat-authority-rolled-stats-parity]] — backend stat-authority fix wiring rolled stats into inventory/stash snapshots, upgrade deltas, derived stats, and gear score
+- [[block-159-ios-game-init-item-stat-preview-parity]] — game-init and iOS item-model parity fix so cold-start inventory carries authoritative stats and rolled gear no longer inflates upgrade preview deltas
+- [[block-160-ios-strike-reveal-partial-implementation-boundary]] — strike-reveal truth-sync aligning the live verdict UI, remaining proposal phases, and retained prototype references
+- [[block-161-auth-reset-password-surface-parity]] — auth password-reset truth-sync aligning the repo-owned email template, hosted reset page, and public docs
+- [[block-162-daily-login-reward-toast-tail-removal]] — removal of the leftover daily-login success toast so the CLAIMED modal is the only reward surface on success
+- [[block-163-hub-tutorial-quest-reward-modal-parity]] — hub tutorial quest claim moved from success toast to the shared CLAIMED reward ceremony
+- [[block-164-ios-gold-mine-bonus-reward-modal-parity]] — gold-mine slot-bonus and collect reward surfaces unified under the existing mine reward modal
+- [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]] — game-init config now exports upgrade-stat bonus so iOS local item fallback math stops assuming a hard-coded `+1`
+- [[block-166-ios-referral-apply-reward-modal-parity]] — referral code apply bonus moved from success toast to the shared CLAIMED reward ceremony
+- [[block-167-ios-mail-claim-reward-modal-parity]] — inbox mail attachment claim now uses the shared CLAIMED reward ceremony instead of a silent success path
+- [[block-168-backend-character-progression-derived-stats-transaction-parity]] — allocate-stats, buy-stat-points, respec, and prestige now recalculate derived stats inside the write transaction
+- [[block-169-stale-audit-tail-item-stat-preview-sync]] — stale inventory warning removed after later iOS item-stat parity fixes already closed the old `+1` fallback drift
+- [[block-170-backend-appearance-wallet-response-boundary]] — appearance response now exposes canonical `wallet.gold` while the iOS client prefers the new field and legacy `character.gold` stays as a compatibility alias
+- [[block-171-project-git-helper-tracked-only-staging]] — project git helpers now stage tracked changes by default and require explicit opt-in before sweeping untracked files into operator commits
+- [[block-172-audio-and-asset-doc-boundary-parity]] — sound catalog and asset consistency docs now state their historical/planning role instead of pretending old `.mp3` and `512px` assumptions are live runtime truth
+- [[block-173-admin-design-system-dead-preview-export-removal]] — deleted dead hero/stance preview exports from the legacy admin design-system surface once the Figma-derived variants became the only live consumers
+- [[block-174-stale-audit-tail-prototype-decision-sync]] — old prototype/legal records in `block-121` now truthfully show that their open keep/delete questions were already resolved by later cleanup blocks
+- [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] — added missing `opponent-profile` and `onboarding` feature pages so the remaining `block-122` dead-end links now resolve cleanly
+- [[block-176-stale-audit-tail-audio-bootstrap-boundary-sync]] — closed the stale `download_sounds.py` drift warning once the audio catalog was explicitly reframed as historical planning, not runtime truth
+- [[block-177-stale-audit-tail-item-balance-cross-process-sync]] — closed the stale `block-047` warning once item-balance profile writes were confirmed to flow through the backend proxy/canonical invalidation path
+- [[block-178-stale-audit-tail-tutorial-migration-sync]] — closed stale tutorial-migration open statuses in `block-009` once the later backfill and replay-guard repairs were already in place
+- [[block-179-instant-retro-local-state-de-tracking]] — moved mutable instant-retro session state out of tracked `.claude/skills` into ignored `.claude/tmp` storage and deleted the tracked JSON from the working tree
+- [[block-180-backend-achievement-cosmetic-claim-runtime-parity]] — achievement claim runtime now grants cosmetic `title/frame` rewards end to end, returns stable cosmetic ids from both claim routes, and presents them in the iOS CLAIMED modal
+- [[block-181-admin-achievement-cosmetic-authoring-parity]] — admin achievements authoring now exposes cosmetic `title/frame` rewards again, requires `rewardId` for them, and matches the widened live runtime contract
+- [[block-182-backend-achievement-list-definition-text-parity]] — achievement list responses now prefer admin-authored definition `title/description` instead of stale route-local display text when live definitions provide it
+- [[block-183-achievement-doc-count-and-reward-summary-parity]] — achievements summary docs now match the live `18`-entry catalog and the widened currency/cosmetic reward surface
+- [[block-184-achievement-product-doc-runtime-parity]] — older product/system docs now describe the live `18`-achievement runtime, mixed reward surface, and non-resetting prestige semantics instead of the old concept model
+- [[block-185-stale-operations-tail-env-and-landing-sync]] — closed stale deploy-audit warnings once landing/static deploy and current iOS environment targeting semantics were already documented elsewhere
+- [[block-186-backend-guest-oauth-wallet-merge-parity]] — guest→OAuth upgrade now merges wallet state deterministically and keeps the longer-lived daily gem card instead of dropping or overwriting value
+- [[block-187-backend-forgot-password-canonical-host-fallback]] — forgot-password now falls back to the canonical production backend host instead of the stale temporary Vercel domain when `NEXT_PUBLIC_APP_URL` is unset
+- [[block-188-auth-link-account-surface-parity]] — auth docs now describe `/auth/link-account` as the narrower local profile-link compatibility route it actually is, instead of the live guest→social upgrade surface
+- [[block-189-backend-link-account-duplicate-email-guard]] — `/auth/link-account` now guards duplicate-email collisions explicitly and returns `409` instead of leaking a generic database failure
+- [[block-190-backend-sync-user-duplicate-email-guard]] — `/auth/sync-user` now guards duplicate-email collisions explicitly and returns `409` instead of falling through to a later upsert conflict
+- [[block-191-backend-guest-login-device-race-recovery]] — `guest-login` now deletes the fresh Supabase guest and restores the already-linked guest on `deviceId` races instead of returning an orphan local-profile-less session
+- [[block-192-backend-guest-login-signin-failure-cleanup]] — `guest-login` now also deletes the fresh local `User` row if sign-in fails after local guest creation, so fresh guest bootstrap rolls back both sides cleanly
 
 ---
 
-*210 in-scope wiki markdown files | 206 wiki pages (13 systems, 11 decisions, 3 entities, 151 audit blocks, 25 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-17*
+*254 in-scope wiki markdown files | 253 wiki pages (13 systems, 12 decisions, 3 entities, 192 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-18*

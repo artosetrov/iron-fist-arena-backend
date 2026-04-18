@@ -10,7 +10,7 @@ sources:
   - .claude/skills/error-scanner/
   - .claude/skills/qa-audit/
   - .claude/skills/*/SKILL.md
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 004 — Claude Product and Governance Skills
@@ -79,8 +79,8 @@ Ignored runtime files observed but not counted in inventory because `.gitignore`
 | `.claude/skills/gate/SKILL.md` | Release manager | Reviews change inventory, pre-deploy checklist, deploy sequence, rollback plan. | CI/build/deploy docs and scripts. | Release planning. | Risk level, pre-deploy, rollback verdict. | Releases need build, migration, env, and rollback coverage. | No direct defect. | None. | Overlaps with herald/release-checklist. | OK |
 | `.claude/skills/gauntlet/SKILL.md` | Gameplay QA tester | Reviews fun, exploit risk, frustration, pacing. | Gameplay features, economy/combat flows. | QA/gameplay reviews. | Fun score, exploit/frustration/pacing template. | A feature can be technically correct and still not fun. | No direct defect. | None. | Validate via manual playtest later. | OK |
 | `.claude/skills/heartbeat/SKILL.md` | Core loop designer | Reviews loop position, loop health, session design, one-more-round hooks. | Core loop docs, session systems. | Product/game-design reviews. | Loop position, reward/spend/growth/re-entry checks. | Features should strengthen the core loop. | No direct defect. | None. | Compare to live UX later. | OK |
-| `.claude/skills/instant-retro/SKILL.md` | Session retro | Summarizes work since last retro by git history, diff stat, status, transcripts. | Git history, optional Cowork transcripts, `last-retro.json`. | Retro/progress reports. | Date range, data gathering, domain grouping, state update. | Retro should distinguish done vs unfinished and update state intentionally. | Unbounded git-log path and mutable tracked state dependency. | Added bounded log guidance and no-merge fallback. | Move `last-retro.json` out of tracked project files or confirm it is intentional. | Fixed |
-| `.claude/skills/instant-retro/last-retro.json` | Retro state | Stores timestamp, commit, summary, and retro count from last retro. | `instant-retro/SKILL.md`, git HEAD. | Instant retro workflow. | `timestamp`, `commit`, `summary`, `retro_count`. | State should reflect the latest retro if this workflow is used. | Mutable session state is tracked in repo and can become stale/noisy. | JSON validity checked. | Candidate to de-track or relocate to local state. | Needs review |
+| `.claude/skills/instant-retro/SKILL.md` | Session retro | Summarizes work since last retro by git history, diff stat, status, transcripts. | Git history, optional Cowork transcripts, ignored local state in `.claude/tmp/instant-retro-last.json`. | Retro/progress reports. | Date range, data gathering, domain grouping, state update. | Retro should distinguish done vs unfinished and update state intentionally. | Unbounded git-log path and tracked mutable state dependency. | Added bounded log guidance, no-merge fallback, and moved retro state to ignored local storage. | None. | Fixed |
+| `.claude/skills/instant-retro/last-retro.json` _(deleted in working tree)_ | Retro state | Former tracked retro state file storing timestamp, commit, summary, and retro count. | `instant-retro/SKILL.md`, git HEAD. | Historical instant retro workflow. | `timestamp`, `commit`, `summary`, `retro_count`. | Runtime retro state should live in ignored local storage, not tracked project files. | Mutable session state was tracked in repo and could become stale/noisy. | Replaced by ignored `.claude/tmp/instant-retro-last.json`; tracked file removed from the working tree in [[block-179-instant-retro-local-state-de-tracking]]. | None. | Fixed |
 | `.claude/skills/ledger/SKILL.md` | Economy QA analyst | Reviews farm loops, arbitrage, inflation, concurrent exploit risk. | Economy routes/balance docs. | Economy QA. | Farm/arbitrage/inflation/concurrency verdict. | Economy loops must not produce unbounded or double-claim rewards. | No direct defect. | None. | Validate actual economy routes later. | OK |
 | `.claude/skills/lens/SKILL.md` | Data analyst | Defines events, success metrics, failure signals, funnels, sample thresholds. | Analytics/event tracking. | Product analytics reviews. | Event design, metric/funnel framework. | Metrics need measurable success/failure definitions. | No direct defect. | None. | Pair with analytics implementation audit. | OK |
 | `.claude/skills/liveops-readiness/SKILL.md` | LiveOps readiness | Checks config, content management, economy levers, monitoring, rollback. | Admin/live-config/monitoring/deploy. | Release/liveops checks. | Five-section readiness checklist. | Live content should be changeable, observable, and reversible. | No direct defect. | None. | Validate with admin and deploy blocks. | OK |
@@ -133,12 +133,11 @@ These files were already covered in earlier blocks but were safely corrected whi
 ## Files Without Clear Project Role
 
 - `.claude/skills/cdo/SKILL.md` includes non-Hexbound domains (Amazon, finance, marketing, sales, office docs). It may be a personal/global orchestrator rather than a Hexbound project file.
-- `.claude/skills/instant-retro/last-retro.json` is mutable local state but is tracked in the project.
+- Ignored local retro state now lives under `.claude/tmp/instant-retro-last.json`; it is runtime state, not a tracked project source file.
 - Ignored `.claude/agent-bus/chronicler.md` is runtime output, not a source-of-truth document.
 
 ## Candidates For Removal / De-Tracking
 
-- `.claude/skills/instant-retro/last-retro.json` — candidate to move to ignored local state.
 - `.claude/skills/cdo/SKILL.md` — candidate to move to a personal/global skill repo unless Hexbound explicitly wants project-local orchestration.
 - `.claude/agent-bus/chronicler.md` — ignored runtime output; safe candidate for local cleanup, not a project source file.
 
@@ -152,5 +151,5 @@ These files were already covered in earlier blocks but were safely corrected whi
 ## Verification
 
 - Searched `.claude/skills` and `.skills/skills` for stale `IronFistArena`, unconditional parallel-agent phrasing, unsafe agent-bus cleanup, and GNU-only `grep -P`/`grep -oP`; no remaining matches in audited areas.
-- `instant-retro/last-retro.json` parses as JSON.
+- `.claude/tmp/instant-retro-last.json` parses as JSON and replaces the old tracked retro-state file.
 - Herald deploy scripts pass `bash -n` after scheme update.

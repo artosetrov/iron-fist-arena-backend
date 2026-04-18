@@ -12,7 +12,7 @@ sources:
   - Hexbound/Hexbound/Services/InventoryService.swift
   - Hexbound/Hexbound/Services/StashService.swift
   - Hexbound/Hexbound/Views/Inventory/ItemDetailActions.swift
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 021 — Item Stat Authority and Shared Consumable Catalog
@@ -57,10 +57,10 @@ This block continues the inventory/stash cleanup from [[block-020-inventory-type
 
 | Path | Zone / Role | Purpose / What It Does | Depends On / Used By | Main Rules / Business Logic | Problems / Fixes | Status |
 |------|-------------|------------------------|----------------------|-----------------------------|------------------|--------|
-| `backend/src/lib/game/inventory-response.ts` | Backend inventory snapshot helper | Builds the canonical inventory payload for inventory GET/equip/unequip. | Used by inventory routes; consumed by `InventoryService`. | Snapshot owns `effectiveStats` for equipment rows and should remain the server contract source of truth. | Re-audited because iOS now consumes its `effectiveStats`; still only derives them from `baseStats`, so rolled-stat authority remains unresolved. | Needs review |
-| `backend/src/app/api/stash/route.ts` | Backend stash snapshot API | Returns account-level stash items plus slot counts. | Used by `StashService`. Depends on Prisma and item-balance config. | Stash snapshot should follow the same stat-authority rules as inventory snapshots. | Re-audited because iOS now consumes `effectiveStats`; same remaining ambiguity as inventory about rolled stats vs effective stats. | Needs review |
+| `backend/src/lib/game/inventory-response.ts` | Backend inventory snapshot helper | Builds the canonical inventory payload for inventory GET/equip/unequip. | Used by inventory routes; consumed by `InventoryService`. | Snapshot owns `effectiveStats` for equipment rows and should remain the server contract source of truth. | Re-audited again in [[block-158-backend-item-stat-authority-rolled-stats-parity]]; snapshot `effectiveStats` now include `rolledStats` through the shared backend item-stat helper. | Fixed |
+| `backend/src/app/api/stash/route.ts` | Backend stash snapshot API | Returns account-level stash items plus slot counts. | Used by `StashService`. Depends on Prisma and item-balance config. | Stash snapshot should follow the same stat-authority rules as inventory snapshots. | Re-audited again in [[block-158-backend-item-stat-authority-rolled-stats-parity]]; stash `effectiveStats` now follow the same merged `baseStats + rolledStats` rule as inventory. | Fixed |
 | `Hexbound/Hexbound/Models/ConsumableCatalog.swift` | iOS shared consumable presentation helper | Centralizes consumable display metadata and legacy key normalization. | Used by `Item`, `ShopItem`, `ShopOffer`, and `InventoryService`. | Canonical place for consumable names, rarity, image keys, icons, and legacy remaps on iOS. | New helper removed repeated metadata tables from multiple files. | Fixed |
-| `Hexbound/Hexbound/Models/Item.swift` | iOS shared item model | Represents equipment and consumables across inventory, loot, shop, and comparison UI. | Used broadly across the app. | Should prefer authoritative server stats when present without regressing legacy callers. | Added `authoritativeEffectiveStats`, consumed server stats when available, and exposed best-effort upgrade preview increment. Remaining open question: backend `effectiveStats` currently ignores rolled stats. | Needs review |
+| `Hexbound/Hexbound/Models/Item.swift` | iOS shared item model | Represents equipment and consumables across inventory, loot, shop, and comparison UI. | Used broadly across the app. | Should prefer authoritative server stats when present without regressing legacy callers. | Added `authoritativeEffectiveStats`, consumed server stats when available, and exposed best-effort upgrade preview increment. [[block-159-ios-game-init-item-stat-preview-parity]] fixed the rolled-gear preview drift by deriving preview bonus from merged `base + rolled` stats, and [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]] removed the last hard-coded `+1` fallback by seeding local preview math from backend config. The remaining client question is only whether local preview should exist at all in zero-level / partial contexts. | Fixed |
 | `Hexbound/Hexbound/Models/ShopItem.swift` | iOS shop catalog DTO | Represents shop items and consumables in store surfaces. | Used by `ShopService` and shop UI. | Consumable presentation must stay aligned with inventory/item-detail UI. | Removed duplicated consumable remap/icon logic and delegated to `ConsumableCatalog`. | Fixed |
 | `Hexbound/Hexbound/Models/ShopOffer.swift` | iOS special-offer DTO | Renders bundle offers and human-readable offer descriptions. | Used by shop offer UI and purchase flows. | Offer descriptions should not leak raw catalog ids to the player. | Replaced local known-item table with shared catalog display resolution. | Fixed |
 | `Hexbound/Hexbound/Services/InventoryService.swift` | iOS inventory service | Loads full inventory snapshots and performs inventory mutations. | Used by `InventoryViewModel`, hero, and inventory surfaces. | Contract consumer should preserve authoritative server stat payloads instead of recomputing everything locally. | Threaded backend `effectiveStats` into `Item` and switched consumable mapping to the shared catalog helper. | Fixed |
@@ -70,7 +70,7 @@ This block continues the inventory/stash cleanup from [[block-020-inventory-type
 ## Duplicate / Split Logic Found
 
 - Consumable presentation metadata was duplicated in four separate client files before this block. That duplication is now collapsed into `ConsumableCatalog`.
-- Stat authority is better than before, but still split between backend-generated `effectiveStats` and the client fallback path for items that do not yet carry authoritative snapshot data.
+- Stat authority is better than before: backend rolled-stat parity is closed by [[block-158-backend-item-stat-authority-rolled-stats-parity]], cold-start item hydration/rolled preview parity is closed by [[block-159-ios-game-init-item-stat-preview-parity]], and config-driven fallback preview parity is closed by [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]]. A local client fallback still exists for item flows that do not carry authoritative snapshot data yet.
 
 ## Files Without Clear Current Role
 
@@ -78,8 +78,7 @@ This block continues the inventory/stash cleanup from [[block-020-inventory-type
 
 ## Candidates For Refactor
 
-- Expose `upgrade_stat_bonus_per_level` to iOS bootstrap/config so zero-upgrade preview can stop falling back to a hard-coded `1`.
-- Move inventory and stash snapshot stat enrichment onto a shared backend helper so both endpoints cannot drift separately.
+- None in this block after [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]] closed the config-exposed upgrade preview tail.
 
 ## Documentation Missing Or Stale
 
@@ -87,7 +86,7 @@ This block continues the inventory/stash cleanup from [[block-020-inventory-type
 
 ## Requires Separate Decision
 
-- Backend inventory/stash snapshots currently compute `effectiveStats` from `baseStats` only. If `rolledStats` are meant to affect visible item power, the contract needs one more pass so iOS and backend agree on whether rolled stats belong inside authoritative `effectiveStats` or outside it.
+- The remaining decision is now very narrow and client-focused: in zero-level or partial/local-only item contexts, should iOS keep rendering a best-effort fallback preview, or should those surfaces wait for authoritative backend `effectiveStats` before showing upgrade deltas?
 
 ## Verification
 

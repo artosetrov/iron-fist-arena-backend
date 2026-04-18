@@ -24,7 +24,9 @@ sources:
   - wiki/features/stamina.md
   - wiki/features/stash.md
   - wiki/features/tutorial.md
-updated: 2026-04-16
+  - wiki/features/opponent-profile.md
+  - wiki/features/onboarding.md
+updated: 2026-04-17
 status: Fixed
 ---
 
@@ -118,9 +120,9 @@ That is a source-of-truth problem, even if the pages themselves are good.
 - **Purpose:** end-to-end map for character creation, stats, appearance, profile, and respec
 - **Review outcome:**
   - useful live map with solid backend/iOS coverage
-  - `[[passive-tree]]`, `[[inventory]]`, and `[[prestige]]` now resolve, but `[[opponent-profile]]` still dead-ends
-- **Needs separate decision:** create an `opponent-profile` feature page or remap that dependency onto an existing canonical page
-- **Status:** Needs review
+  - `[[passive-tree]]`, `[[inventory]]`, `[[prestige]]`, and `[[opponent-profile]]` now all resolve
+  - later follow-up in [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] created the missing opponent-profile page and closed the old dead-end
+- **Status:** Fixed
 
 ### `wiki/features/daily-login.md`
 
@@ -173,9 +175,9 @@ That is a source-of-truth problem, even if the pages themselves are good.
 - **Purpose:** end-to-end map for leaderboard list/search and opponent profile drill-down
 - **Review outcome:**
   - deserved index visibility
-  - `[[social]]` and `[[achievements]]` now resolve, but `[[opponent-profile]]` still dead-ends
-- **Needs separate decision:** create an opponent-profile feature page or remap the dependency reference
-- **Status:** Needs review
+  - `[[social]]`, `[[achievements]]`, and `[[opponent-profile]]` now all resolve
+  - later follow-up in [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] created the missing opponent-profile page and closed the remaining drill-down dead-end
+- **Status:** Fixed
 
 ### `wiki/features/mail.md`
 
@@ -237,9 +239,9 @@ That is a source-of-truth problem, even if the pages themselves are good.
 - **Purpose:** end-to-end map for friends, challenges, direct messages, and guild hall surfaces
 - **Review outcome:**
   - deserved visibility as a real feature atlas page, not just a system note
-  - still links to missing `[[opponent-profile]]`
-- **Needs separate decision:** create an opponent-profile feature page or re-anchor the shared-entry explanation
-- **Status:** Needs review
+  - `[[opponent-profile]]` now resolves as a first-class feature page rather than a memory-only reference
+  - later follow-up in [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] closed the remaining shared-entry dead-end
+- **Status:** Fixed
 
 ### `wiki/features/stamina.md`
 
@@ -265,9 +267,9 @@ That is a source-of-truth problem, even if the pages themselves are good.
 - **Purpose:** end-to-end map for first-run progression, scripted fights, tutorial quests, and referral bind window
 - **Review outcome:**
   - important onboarding-adjacent map that resolves older `auth` and `quests` feature-atlas gaps
-  - still links to missing `[[onboarding]]`
-- **Needs separate decision:** create an `onboarding` feature page or remap that dependency onto the current character-creation/tutorial entrypoint pages
-- **Status:** Needs review
+  - `[[onboarding]]` now resolves as its own feature page, which makes the tutorial handoff explicit instead of implied
+  - later follow-up in [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] created the missing onboarding page and closed the old dead-end
+- **Status:** Fixed
 
 ## Problems found
 
@@ -279,9 +281,9 @@ That is a source-of-truth problem, even if the pages themselves are good.
    - Risk: the main index communicates the wrong project-documentation coverage level.
    - Fix: resynchronized the footer counts with the current feature-map set.
 
-3. **A smaller set of true related-page gaps still remains**
-   - Risk: the feature layer feels less trustworthy because a few dependency links still dead-end.
-   - Fix: narrowed the open gaps to the real missing pages and recorded them explicitly instead of carrying forward stale gap lists.
+3. **The last true related-page gaps were real, but later resolved**
+   - Risk: the feature layer felt less trustworthy because a few dependency links still dead-ended even after the atlas expansion.
+   - Fix: later follow-up in [[block-175-wiki-opponent-profile-and-onboarding-feature-pages]] created the missing `opponent-profile` and `onboarding` pages and closed those final dead-ends.
 
 ## Verification
 

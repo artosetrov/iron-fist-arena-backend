@@ -1,5 +1,12 @@
 # Hexbound Wiki — Log
 
+## [2026-04-17] decision | Quest reward banners → CLAIMED modal
+
+Replaced `showToast("Quest Complete!", subtitle: "+Xg +Y XP", .quest)` in two inline quest-claim sites (`HubBannerCards.swift:596`, `ActiveQuestBanner.swift:246`) with `ClaimRewardModalView` ceremony. Added root-level `AppState.claimRewardConfig` slot + overlay mount in `HexboundApp.swift` (zIndex 180) so inline banners without their own VM can surface the modal.
+- **Created:** `[[why-reward-modal-over-toast]]` (rationale + scope: which earn-points use modal vs toast)
+- **Updated:** `[[quests]]` feature map (notable gotcha added), `wiki/index.md` (decisions list + page count 207→208)
+- **Code touched:** `AppState.swift`, `HexboundApp.swift`, `HubBannerCards.swift`, `ActiveQuestBanner.swift` (no schema change, no balance change)
+
 ## [2026-04-14] init | Wiki created
 
 Initial population from existing documentation:
@@ -71,7 +78,8 @@ Completed second `.claude/` sub-block:
 - **Files audited:** 53 files covering product, QA, security, release, economy, design-review, and governance skill docs
 - **Fixes:** made CDO optional and explicit-request only, replaced unsafe agent-bus cleanup examples, converted `qa-audit` from mandatory parallel agents to audit streams, converted `error-scanner` commands to `rg`, marked QA addenda as historical snapshots, reframed economy historical issues as regression checks, bounded instant-retro git-log guidance, and removed remaining auto-spawn wording from chronicler duplicates
 - **Inventory refresh:** updated current counts to 4765 in-scope files and added new graph-move files/docs/wiki page to `[[project-file-inventory]]`
-- **Open decisions:** revalidate March 25 QA findings, decide whether CDO belongs in this project repo, move mutable `last-retro.json` to local state, decide whether ignored agent-bus protocol files should be tracked or generated
+- **Open decisions at the time:** revalidate March 25 QA findings, decide whether CDO belongs in this project repo, decide whether ignored agent-bus protocol files should be tracked or generated
+- **Later follow-up:** mutable `last-retro.json` was moved to ignored local state in `[[block-179-instant-retro-local-state-de-tracking]]`
 
 ## [2026-04-15] audit | Block 005 Claude Figma and design-system skills
 
@@ -1422,3 +1430,364 @@ Closed the next root-doc cleanup block:
 - **Files moved:** `HEXBOUND_PRE_RELEASE_AUDIT.md` -> `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`
 - **Fixes:** removed the dated pre-release audit from root and moved it into the operations doc family where historical release-audit snapshots belong
 - **Verification:** confirmed the file is gone from root, confirmed the new operations path exists, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 152 root bootstrap and ignore parity
+
+Closed the next root-policy cleanup block:
+- **Created:** `[[block-152-root-bootstrap-and-ignore-parity]]`
+- **Files audited:** `.gitignore`, `CLAUDE.md`, `wiki/audit/block-001-root-files.md`
+- **Fixes:** compacted `CLAUDE.md` back into a root bootstrap entrypoint, removed the old count-heavy/orchestrator noise from that file, and closed the outdated `.gitignore` parity warning now that root prototype/doc residue is gone
+- **Verification:** confirmed root now contains only `.gitignore`, `.mcp.json`, and `CLAUDE.md`; confirmed `CLAUDE.md` still points to canonical docs/domain rules; and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 153 iOS talent detail sheet slot-aware picker unification
+
+Closed the next iOS talents/runtime block:
+- **Created:** `[[block-153-ios-talent-detail-sheet-slot-aware-picker-unification]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift`, `Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift`, `Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift`, `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift`, `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift`
+- **Fixes:** routed detail-sheet equip through a new slot-aware VM entry point, opened the picker instead of dead-ending when the loadout is full, added in-picker slot targeting for replacement, and updated picker row copy so it matches the real replacement flow
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` completed with `** BUILD SUCCEEDED **`, and `git diff --check` passed after the code/wiki updates
+
+## [2026-04-17] audit | Block 154 backend PvP match-start Prisma create parity
+
+Closed the next interactive PvP cleanup block:
+- **Created:** `[[block-154-backend-pvp-match-start-prisma-create-parity]]`
+- **Files audited:** `backend/src/app/api/pvp/match/start/route.ts`, `wiki/audit/block-011-backend-passives-interactive-combat-runtime.md`
+- **Fixes:** removed the stale `tx.pvpMatch.create as any` workaround from `pvp/match/start`, replaced it with typed Prisma JSON-field casts for the interactive payload, and narrowed the old block-011 follow-up note so it now points only at the still-open `strike` / `match/complete` workaround tail
+- **Verification:** `npx eslint src/app/api/pvp/match/start/route.ts`, `npm run build`, and `git diff --check` all passed
+
+## [2026-04-17] audit | Block 155 backend PvP strike and complete Prisma JSON parity
+
+Closed the next interactive PvP cleanup block:
+- **Created:** `[[block-155-backend-pvp-strike-complete-prisma-json-parity]]`
+- **Files audited:** `backend/src/app/api/pvp/strike/route.ts`, `backend/src/app/api/pvp/match/complete/route.ts`, `wiki/audit/block-011-backend-passives-interactive-combat-runtime.md`
+- **Fixes:** removed the remaining `findUnique as any` / `updateMany as any` workaround tail from the live interactive PvP routes and replaced it with explicit JSON-boundary typing through `unknown` + `Prisma.InputJsonValue`
+- **Verification:** `npx eslint src/app/api/pvp/match/complete/route.ts src/app/api/pvp/strike/route.ts`, `npm run build`, and targeted `git diff --check -- ...` all passed
+
+## [2026-04-17] audit | Block 156 stale audit tail sync for quests and interactive PvP
+
+Closed the next truth-sync block:
+- **Created:** `[[block-156-stale-audit-tail-quests-and-interactive-pvp-sync]]`
+- **Files audited:** `backend/src/app/api/quests/daily/route.ts`, `backend/src/app/api/pvp/strike/route.ts`, `wiki/audit/block-017-ios-claim-services-authoritative-reward-sync.md`, `wiki/audit/block-018-ios-typed-achievements-quests-loaders.md`, `wiki/audit/block-023-ios-interactive-combat-terminal-state-and-round-log.md`
+- **Fixes:** removed stale audit warnings that still claimed `quests/daily` had live `any` debt and that `pvp/strike` still had an unresolved out-of-combat consumable recovery bug, even though those concerns were already closed by later code changes
+- **Verification:** re-checked the live backend files, confirmed no remaining `any` usage in `quests/daily`, confirmed later PvP follow-up blocks already closed the old strike-path warnings, and re-ran targeted `git diff --check -- ...`
+
+## [2026-04-17] audit | Block 157 stale audit tail sync for contraband and social challenges
+
+Closed the next truth-sync block:
+- **Created:** `[[block-157-stale-audit-tail-contraband-and-social-challenges-sync]]`
+- **Files audited:** `backend/src/app/api/shop/contraband/route.ts`, `backend/src/app/api/shop/offers/route.ts`, `backend/src/app/api/social/challenges/route.ts`, `wiki/audit/block-012-backend-stash-contraband-premium-runtime.md`, `wiki/audit/block-013-backend-reward-premium-parity.md`
+- **Fixes:** removed stale audit warnings that still claimed contraband/offers were bypassing shared reward grants and that `social/challenges` still carried route-local `any` debt
+- **Verification:** re-checked live route usage of `grantRewardEntries(...)`, re-checked `social/challenges` for remaining `any` usage, ran targeted `eslint`, and re-ran targeted `git diff --check -- ...`
+
+## [2026-04-17] audit | Block 158 backend item stat authority and rolled stats parity
+
+Closed the next backend stat-authority block:
+- **Created:** `[[block-158-backend-item-stat-authority-rolled-stats-parity]]`
+- **Files audited:** `backend/src/lib/game/item-stats.ts`, `backend/tests/lib/item-stats.test.ts`, `backend/src/lib/game/inventory-response.ts`, `backend/src/app/api/inventory/route.ts`, `backend/src/app/api/stash/route.ts`, `backend/src/app/api/shop/upgrade/route.ts`, `backend/src/lib/game/equipment-stats.ts`, `backend/src/lib/game/build-stats.ts`, `wiki/audit/block-021-item-stat-authority-consumable-catalog.md`
+- **Fixes:** added a shared backend helper for merged item stats, wired `rolledStats` into inventory/stash `effectiveStats`, upgrade before/after deltas, derived stat recomputation, and gear score, and removed the last raw `+ upgradeLevel` fallback from the full stat pipeline
+- **Verification:** `cd backend && npx vitest run tests/lib/item-stats.test.ts`, targeted `eslint`, `cd backend && npm run build`, and targeted `git diff --check -- ...`
+
+## [2026-04-17] audit | Block 159 iOS game init and item stat preview parity
+
+Closed the next client stat-authority block:
+- **Created:** `[[block-159-ios-game-init-item-stat-preview-parity]]`
+- **Files audited:** `backend/src/app/api/game/init/route.ts`, `Hexbound/Hexbound/Models/Item.swift`, `Hexbound/Hexbound/Services/GameInitService.swift`, `wiki/audit/block-021-item-stat-authority-consumable-catalog.md`
+- **Fixes:** added authoritative `effectiveStats` to the `game/init` equipment payload, threaded that snapshot into iOS cold-start inventory hydration, and fixed rolled-gear upgrade preview math so it subtracts merged `base + rolled` stats instead of `baseStats` only
+- **Verification:** targeted backend `eslint`, `cd backend && npm run build`, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and targeted `git diff --check -- ...`
+
+## [2026-04-17] audit | Block 160 iOS strike reveal partial-implementation boundary
+
+Closed the next combat/docs truth-sync block:
+- **Created:** `[[block-160-ios-strike-reveal-partial-implementation-boundary]]`
+- **Files audited:** `Hexbound/Hexbound/Models/RoundVerdict.swift`, `Hexbound/Hexbound/Models/RoundExchange.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift`, `Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift`, `docs/07_ui_ux/STRIKE_REVEAL_SHAPE_B_PLAN.md`, `prototypes/strike-reveal-b.html`, `prototypes/strike-reveal-compact.html`, `prototypes/strike-reveal-integration.html`
+- **Fixes:** removed the false pre-code framing from the Shape B plan, documented that verdict flash + verdict header are already live, and kept the three strike-reveal prototypes as intentional historical/design references instead of treating them like orphan residue
+- **Inventory refresh:** updated current counts to `4992` in-scope files and `220 in-scope wiki markdown files / 216 wiki pages`
+- **Verification:** re-checked live usages with `rg`, confirmed the reveal code is already wired in the shipped combat views/models, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 161 auth reset-password surface parity
+
+Closed the next auth/docs truth-sync block:
+- **Created:** `[[block-161-auth-reset-password-surface-parity]]`
+- **Files audited:** `backend/src/app/api/auth/forgot-password/route.ts`, `backend/src/app/reset-password/page.tsx`, `backend/email-templates/reset-password.html`, `wiki/features/auth.md`, `docs/03_backend_and_api/API_REFERENCE.md`
+- **Fixes:** updated auth docs so they no longer imply password reset lives only in Supabase dashboard state, documented the repo-owned reset email template and hosted `/reset-password` landing page, and clarified the public API reference wording for the reset flow
+- **Inventory refresh:** updated current counts to `4993` in-scope files and `221 in-scope wiki markdown files / 217 wiki pages`
+- **Verification:** re-checked the live forgot-password route, reset page, and template references with `rg`, and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 162 daily-login reward toast tail removal
+
+Closed the next iOS reward-surface cleanup block:
+- **Created:** `[[block-162-daily-login-reward-toast-tail-removal]]`
+- **Files audited:** `Hexbound/Hexbound/Services/DailyLoginService.swift`, `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupViewModel.swift`, `Hexbound/Hexbound/Views/Components/ClaimRewardModalView.swift`, `Hexbound/Hexbound/App/AppState.swift`, `wiki/decisions/why-reward-modal-over-toast.md`, `wiki/audit/block-016-backend-daily-login-battle-pass-reward-contracts.md`
+- **Fixes:** removed the leftover success toast from `DailyLoginService.claimReward()` so the CLAIMED modal remains the only reward surface on the happy path while error toasts stay intact
+- **Inventory refresh:** updated current counts to `4994` in-scope files and `222 in-scope wiki markdown files / 218 wiki pages`
+- **Verification:** confirmed the old success-toast string no longer exists in the daily-login service and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 163 hub tutorial quest reward modal parity
+
+Closed the next iOS reward-surface cleanup block:
+- **Created:** `[[block-163-hub-tutorial-quest-reward-modal-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hub/HubView.swift`, `Hexbound/Hexbound/Tutorial/TutorialManager.swift`, `Hexbound/Hexbound/Views/Components/ClaimRewardModalView.swift`, `Hexbound/Hexbound/App/AppState.swift`, `wiki/decisions/why-reward-modal-over-toast.md`, `wiki/audit/block-078-ios-tutorial-manager-typed-contract-cleanup.md`
+- **Fixes:** replaced the Hub tutorial quest success toast with the shared CLAIMED modal ceremony, built reward config from the typed tutorial quest claim payload, and expanded the reward-modal decision page so tutorial quest claim is explicitly inside the rule
+- **Inventory refresh:** updated current counts to `4995` in-scope files and `223 in-scope wiki markdown files / 219 wiki pages`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` completed with `BUILD SUCCEEDED`, and `git diff --check` passed
+
+## [2026-04-17] audit | Block 164 iOS gold mine bonus reward modal parity
+
+Closed the next iOS reward-surface cleanup block:
+- **Created:** `[[block-164-ios-gold-mine-bonus-reward-modal-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Minigames/GoldMineViewModel.swift`, `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift`, `Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift`, `wiki/features/gold-mine.md`, `wiki/decisions/why-reward-modal-over-toast.md`
+- **Fixes:** replaced the remaining Gold Mine bonus payout reward toasts with the existing mine reward modal, clarified the modal's shared role for collect and bonus payouts, and updated the feature/decision docs so the reward surface matches runtime reality
+- **Inventory refresh:** updated current counts to `4996` in-scope files and `224 in-scope wiki markdown files / 220 wiki pages`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` completed with `BUILD SUCCEEDED`, and `git diff --check` passed
+
+## [2026-04-17] audit | Block 165 iOS upgrade stat bonus config fallback parity
+
+Closed the next item-stat parity block:
+- **Created:** `[[block-165-ios-upgrade-stat-bonus-config-fallback-parity]]`
+- **Files audited:** `backend/src/app/api/game/init/route.ts`, `Hexbound/Hexbound/Models/Item.swift`, `Hexbound/Hexbound/Services/GameInitService.swift`, `Hexbound/Hexbound/Services/GameDataCache.swift`, `wiki/audit/block-021-item-stat-authority-consumable-catalog.md`, `wiki/audit/block-159-ios-game-init-item-stat-preview-parity.md`
+- **Fixes:** exported `upgradeStatBonusPerLevel` through `game/init`, seeded iOS local item fallback math from typed bootstrap config instead of a hard-coded `+1`, and reset the fallback bonus during cache invalidation so stale config does not leak across logout/reset boundaries
+- **Inventory refresh:** updated current counts to `4997` in-scope files and `225 in-scope wiki markdown files / 221 wiki pages`
+- **Verification:** `cd backend && npm run build`, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check` all passed
+
+## [2026-04-17] audit | Block 166 iOS referral apply reward modal parity
+
+Closed the next iOS reward-surface cleanup block:
+- **Created:** `[[block-166-ios-referral-apply-reward-modal-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Settings/ReferralSectionView.swift`, `Hexbound/Hexbound/Views/Components/ClaimRewardModalView.swift`, `Hexbound/Hexbound/App/AppState.swift`, `wiki/features/referral.md`, `wiki/decisions/why-reward-modal-over-toast.md`
+- **Fixes:** replaced the invitee-side referral apply gold toast with the shared CLAIMED modal, kept the inline status message for local confirmation, and expanded the feature/decision docs so referral apply is explicitly inside the modal-only reward rule
+- **Inventory refresh:** updated current counts to `4998` in-scope files and `226 in-scope wiki markdown files / 222 wiki pages`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` and `git diff --check` both passed
+
+## [2026-04-17] audit | Block 167 iOS mail claim reward modal parity
+
+Closed the next iOS reward-surface cleanup block:
+- **Created:** `[[block-167-ios-mail-claim-reward-modal-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Inbox/InboxViewModel.swift`, `Hexbound/Hexbound/Models/MailMessage.swift`, `Hexbound/Hexbound/Views/Components/ClaimRewardModalView.swift`, `Hexbound/Hexbound/App/AppState.swift`, `wiki/features/mail.md`, `wiki/decisions/why-reward-modal-over-toast.md`
+- **Fixes:** removed the premature reward haptic/sound from the optimistic inbox claim path, built a `CLAIMED!` modal from the authoritative mail claim payload plus attached loot, and updated the mail feature/decision docs so inbox reward claim is explicitly inside the shared reward-ceremony rule
+- **Inventory refresh:** updated current counts to `4999` in-scope files and `227 in-scope wiki markdown files / 223 wiki pages`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` and `git diff --check` both passed
+
+## [2026-04-17] audit | Block 168 backend character progression derived-stats transaction parity
+
+Closed the next backend progression-safety block:
+- **Created:** `[[block-168-backend-character-progression-derived-stats-transaction-parity]]`
+- **Files audited:** `backend/src/app/api/characters/[id]/allocate-stats/route.ts`, `backend/src/app/api/characters/[id]/buy-stat-points/route.ts`, `backend/src/app/api/characters/[id]/respec-stats/route.ts`, `backend/src/app/api/prestige/route.ts`, `backend/src/lib/game/equipment-stats.ts`, `backend/tests/api/character-progression-derived-stats.test.ts`, `wiki/audit/block-038-backend-utility-routes-and-character-warning-cleanup.md`
+- **Fixes:** moved derived-stat recomputation for allocate-stats, bought stat points, respec, and prestige inside the same write transaction as the base progression mutation, added focused regression coverage for all four routes, and closed the old `respec-stats` audit tail that still described recomputation as post-commit risk
+- **Inventory refresh:** updated current counts to `5001` in-scope files and `228 in-scope wiki markdown files / 224 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/character-progression-derived-stats.test.ts`, `cd backend && npx eslint 'src/app/api/characters/[id]/allocate-stats/route.ts' 'src/app/api/characters/[id]/buy-stat-points/route.ts' 'src/app/api/characters/[id]/respec-stats/route.ts' 'src/app/api/prestige/route.ts' tests/api/character-progression-derived-stats.test.ts`, `cd backend && npm run build`, and `git diff --check` all passed
+
+## [2026-04-17] audit | Block 169 stale audit tail item stat preview sync
+
+Closed the next truth-sync block:
+- **Created:** `[[block-169-stale-audit-tail-item-stat-preview-sync]]`
+- **Files audited:** `wiki/audit/block-020-inventory-typed-snapshots-legacy-consumables.md`, `wiki/audit/block-159-ios-game-init-item-stat-preview-parity.md`, `wiki/audit/block-165-ios-upgrade-stat-bonus-config-fallback-parity.md`
+- **Fixes:** removed the stale `Needs review` warning from the old `Item.swift` record in `block-020`, linked it to the later `block-159` and `block-165` fixes, and narrowed the remaining question to intentional local-preview policy instead of broken upgrade-bonus math
+- **Inventory refresh:** updated current counts to `5002` in-scope files and `229 in-scope wiki markdown files / 225 wiki pages`
+- **Verification:** re-read the synced item-stat audit chain and re-ran `git diff --check`
+
+## [2026-04-17] audit | Block 170 backend appearance wallet response boundary
+
+Closed the next backend/API boundary block:
+- **Created:** `[[block-170-backend-appearance-wallet-response-boundary]]`
+- **Files audited:** `backend/src/app/api/characters/[id]/appearance/route.ts`, `Hexbound/Hexbound/Views/Profile/AppearanceEditorViewModel.swift`, `wiki/audit/block-038-backend-utility-routes-and-character-warning-cleanup.md`
+- **Fixes:** added canonical `wallet.gold` to the appearance response, kept the old `character.gold` and top-level `gold` only as compatibility aliases, taught the iOS appearance editor to prefer the typed wallet field, and closed the old mixed-boundary audit warning in `block-038`
+- **Inventory refresh:** updated current counts to `5003` in-scope files and `230 in-scope wiki markdown files / 226 wiki pages`
+- **Verification:** `cd backend && npx eslint 'src/app/api/characters/[id]/appearance/route.ts'`, `cd backend && npm run build`, `xcodebuild -project /Users/artosetrov/Documents/Cursor\ AI/PVP\ RPG/Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 171 project git helper tracked-only staging
+
+Closed the next project-script safety block:
+- **Created:** `[[block-171-project-git-helper-tracked-only-staging]]`
+- **Files audited:** `scripts/git-commit-push.sh`, `scripts/git-watcher.sh`, `wiki/audit/block-006-project-scripts.md`
+- **Fixes:** changed both Git helper scripts to stage tracked changes only by default via `git add -u`, left untracked files as an explicit opt-in via `--all` / `HEXBOUND_GIT_HELPER_STAGE_ALL=1`, and updated the old scripts audit so the Git-helper records no longer advertise whole-tree auto-stage as an unresolved risk
+- **Inventory refresh:** updated current counts to `5004` in-scope files and `231 in-scope wiki markdown files / 227 wiki pages`
+- **Verification:** `bash -n scripts/git-commit-push.sh scripts/git-watcher.sh` and `git diff --check`
+
+## [2026-04-17] audit | Block 172 audio and asset doc boundary parity
+
+Closed the next scripts/docs truth-sync block:
+- **Created:** `[[block-172-audio-and-asset-doc-boundary-parity]]`
+- **Files audited:** `docs/08_prompts/SOUND_CATALOG.md`, `docs/07_ui_ux/ASSET_CONSISTENCY_AUDIT.md`, `Hexbound/Hexbound/Persistence/SFXCatalog.swift`, `scripts/sync-assets.sh`, `wiki/audit/block-006-project-scripts.md`
+- **Fixes:** added an explicit historical/planning boundary to `SOUND_CATALOG.md`, rewrote the old `512px` `sync-assets.sh` references in `ASSET_CONSISTENCY_AUDIT.md` so they read as audit-time findings rather than current script truth, and narrowed the old `block-006` docs tail to boundary wording instead of silent source-of-truth drift
+- **Inventory refresh:** updated current counts to `5005` in-scope files and `232 in-scope wiki markdown files / 228 wiki pages`
+- **Verification:** `git diff --check` plus targeted grep re-checks against `SFXCatalog.swift`, `scripts/sync-assets.sh`, and the updated docs
+
+## [2026-04-17] audit | Block 173 admin design-system dead preview export removal
+
+Closed the next admin design-system cleanup block:
+- **Created:** `[[block-173-admin-design-system-dead-preview-export-removal]]`
+- **Files audited:** `admin/src/app/(dashboard)/design-system/ds-components-2.tsx`, `admin/src/app/(dashboard)/design-system/design-system-client.tsx`, `wiki/audit/block-059-admin-design-system-residual-debt-and-warning-cleanup.md`
+- **Fixes:** confirmed `HeroWidgetPreviews` and `StanceDisplayPreviews` had no live imports, deleted both dead exports from the legacy preview file, and closed the stale `Needs review` note in `block-059`
+- **Inventory refresh:** updated current counts to `5006` in-scope files and `233 in-scope wiki markdown files / 229 wiki pages`
+- **Verification:** `cd admin && npx eslint 'src/app/(dashboard)/design-system/ds-components-2.tsx'`, `cd admin && npx next build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 174 stale audit tail prototype decision sync
+
+Closed the next truth-sync block:
+- **Created:** `[[block-174-stale-audit-tail-prototype-decision-sync]]`
+- **Files audited:** `wiki/audit/block-121-prototypes-link-parity-and-transition-state.md`, `wiki/audit/block-146-delete-legal-transition-prototype-copies.md`, `wiki/audit/block-147-delete-final-combat-history-prototypes.md`
+- **Fixes:** updated the stale `Needs review` records for `combat-proto-B2.html`, `combat-proto-B2-v3.html`, and `privacy.html` so they now explicitly point at the later cleanup blocks that resolved those keep/delete decisions
+- **Inventory refresh:** updated current counts to `5007` in-scope files and `234 in-scope wiki markdown files / 230 wiki pages`
+- **Verification:** `git diff --check`
+
+## [2026-04-17] audit | Block 175 wiki opponent-profile and onboarding feature pages
+
+Closed the next wiki atlas gap block:
+- **Created:** `[[block-175-wiki-opponent-profile-and-onboarding-feature-pages]]`
+- **Files audited:** `wiki/features/opponent-profile.md`, `wiki/features/onboarding.md`, `wiki/features/social.md`, `wiki/audit/block-122-wiki-feature-map-visibility-and-related-link-gaps.md`, `wiki/index.md`
+- **Fixes:** created the missing `opponent-profile` and `onboarding` feature pages, surfaced both in the main feature atlas, updated the stale “memory-only” wording in `social.md`, and closed the last remaining `block-122` dead-end link records as resolved follow-up work
+- **Inventory refresh:** updated current counts to `5010` in-scope files and `237 in-scope wiki markdown files / 233 wiki pages`
+- **Verification:** `git diff --check` and related-link rescans for `[[opponent-profile]]` / `[[onboarding]]`
+
+## [2026-04-17] audit | Block 176 stale audit tail audio bootstrap boundary sync
+
+Closed the next truth-sync block:
+- **Created:** `[[block-176-stale-audit-tail-audio-bootstrap-boundary-sync]]`
+- **Files audited:** `wiki/audit/block-006-project-scripts.md`, `scripts/download_sounds.py`, `docs/08_prompts/SOUND_CATALOG.md`
+- **Fixes:** removed the stale open warning on `download_sounds.py` from `block-006` now that the script explicitly documents itself as a bootstrap helper and `SOUND_CATALOG.md` is explicitly framed as a historical planning snapshot rather than runtime truth
+- **Inventory refresh:** updated current counts to `5011` in-scope files and `238 in-scope wiki markdown files / 234 wiki pages`
+- **Verification:** `git diff --check` plus re-read of the updated script/docs boundary chain
+
+## [2026-04-17] audit | Block 177 stale audit tail item-balance cross-process sync
+
+Closed the next truth-sync block:
+- **Created:** `[[block-177-stale-audit-tail-item-balance-cross-process-sync]]`
+- **Files audited:** `wiki/audit/block-047-backend-dungeon-item-balance-live-config-hardening.md`, `wiki/audit/block-048-admin-item-balance-backend-proxy-alignment.md`, `admin/src/app/api/admin/item-balance/profiles/route.ts`, `admin/src/lib/backend-api.ts`, `backend/src/app/api/admin/item-balance/profiles/route.ts`
+- **Fixes:** removed the stale `block-047` warning that still assumed the separate admin app wrote item-balance profiles through its own process; after the later proxy cutover, profile writes now go through the backend canonical route that also owns immediate cache invalidation
+- **Inventory refresh:** updated current counts to `5012` in-scope files and `239 in-scope wiki markdown files / 235 wiki pages`
+- **Verification:** `git diff --check` plus re-read of the current admin proxy path and backend invalidation route
+
+## [2026-04-17] audit | Block 178 stale audit tail tutorial migration sync
+
+Closed the next truth-sync block:
+- **Created:** `[[block-178-stale-audit-tail-tutorial-migration-sync]]`
+- **Files audited:** `wiki/audit/block-009-prisma-migrations-onboarding-gold-and-w3d5.md`, `backend/prisma/migrations/20260407_add_tutorial_onboarding/migration.sql`, `backend/prisma/migrations/20260410_add_tutorial_completed/migration.sql`, `backend/prisma/migrations/20260415_backfill_tutorial_completion_state/migration.sql`, `backend/src/app/api/tutorial/skip/route.ts`, `backend/src/app/api/tutorial/scripted-fight/preload/route.ts`, `backend/src/app/api/tutorial/scripted-fight/resolve/route.ts`
+- **Fixes:** removed the stale open-status tail on the two tutorial-state migrations in `block-009` now that the later backfill migration and replay-guard fixes are already in place and documented in the same chain
+- **Inventory refresh:** updated current counts to `5013` in-scope files and `240 in-scope wiki markdown files / 236 wiki pages`
+- **Verification:** `git diff --check` plus re-read of the migration/repair chain inside `block-009`
+
+## [2026-04-17] audit | Block 179 instant retro local state de-tracking
+
+Closed the next cleanup block:
+- **Created:** `[[block-179-instant-retro-local-state-de-tracking]]`
+- **Files audited:** `.claude/skills/instant-retro/SKILL.md`, `.claude/skills/instant-retro/last-retro.json`, `.gitignore`, `wiki/audit/block-004-claude-product-governance-skills.md`
+- **Fixes:** moved mutable `instant-retro` checkpoint state out of tracked `.claude/skills` into ignored `.claude/tmp/instant-retro-last.json`, seeded the new local JSON for continuity, deleted the tracked `last-retro.json` from the working tree, and closed the old `block-004` de-tracking decision
+- **Inventory refresh:** updated current counts to `5014` in-scope files and `241 in-scope wiki markdown files / 235 wiki pages`
+- **Verification:** `git diff --check` plus re-read of the updated skill path and seeded ignored local-state JSON
+
+## [2026-04-17] audit | Block 180 backend achievement cosmetic claim runtime parity
+
+Closed the next achievement/runtime parity block:
+- **Created:** `[[block-180-backend-achievement-cosmetic-claim-runtime-parity]]`
+- **Files audited:** `backend/src/lib/game/achievement-claims.ts`, `backend/src/app/api/achievements/claim/route.ts`, `backend/src/app/api/achievements/[key]/claim/route.ts`, `backend/tests/lib/achievement-claims.test.ts`, `backend/tests/api/achievement-claim.test.ts`, `Hexbound/Hexbound/Services/AchievementService.swift`, `Hexbound/Hexbound/Views/Achievements/AchievementsViewModel.swift`, `docs/03_backend_and_api/API_REFERENCE.md`, `wiki/features/achievements.md`
+- **Fixes:** extended achievement claim runtime to grant cosmetic `title/frame` rewards through the cosmetics table, returned stable cosmetic identifiers from both claim routes, taught the iOS achievements CLAIMED modal to present cosmetic rewards instead of dropping them, and closed the old open mismatch records in `block-045` and `block-057`
+- **Inventory refresh:** updated current counts to `5016` in-scope files and `242 in-scope wiki markdown files / 236 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/lib/achievement-claims.test.ts tests/api/achievement-claim.test.ts`, `cd backend && npm run build`, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 181 admin achievement cosmetic authoring parity
+
+Closed the next admin/runtime parity block:
+- **Created:** `[[block-181-admin-achievement-cosmetic-authoring-parity]]`
+- **Files audited:** `admin/src/lib/achievement-definitions.ts`, `admin/src/actions/achievement-definitions.ts`, `admin/src/app/(dashboard)/achievements/achievements-client.tsx`, `wiki/features/achievements.md`
+- **Fixes:** widened admin achievement authoring back to the live `gold/gems/xp/title/frame` reward surface, made `rewardId` required for cosmetic rewards, surfaced stored `rewardId` values in the definitions table, and synced the achievements feature page so the admin surface no longer lies about currency-only claims
+- **Inventory refresh:** updated current counts to `5017` in-scope files and `243 in-scope wiki markdown files / 237 wiki pages`
+- **Verification:** `cd admin && npx eslint src/lib/achievement-definitions.ts 'src/app/(dashboard)/achievements/achievements-client.tsx' src/actions/achievement-definitions.ts`, `cd admin && npx next build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 182 backend achievement list definition text parity
+
+Closed the next achievement/runtime parity block:
+- **Created:** `[[block-182-backend-achievement-list-definition-text-parity]]`
+- **Files audited:** `backend/src/lib/game/achievement-catalog.ts`, `backend/src/app/api/achievements/route.ts`, `backend/tests/lib/achievement-catalog.test.ts`, `backend/tests/api/achievement-list.test.ts`, `wiki/features/achievements.md`
+- **Fixes:** preserved admin-authored `title` / `description` in the normalized achievement catalog, made `GET /api/achievements` prefer live definition text over stale route-local display copy, and added route coverage proving the player-facing list now honors active definition text while still serializing cosmetic rewards
+- **Inventory refresh:** updated current counts to `5018` in-scope files and `244 in-scope wiki markdown files / 238 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/lib/achievement-catalog.test.ts tests/api/achievement-list.test.ts`, `cd backend && npx eslint src/lib/game/achievement-catalog.ts src/app/api/achievements/route.ts tests/lib/achievement-catalog.test.ts tests/api/achievement-list.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 183 achievement doc count and reward summary parity
+
+Closed the next truth-sync block:
+- **Created:** `[[block-183-achievement-doc-count-and-reward-summary-parity]]`
+- **Files audited:** `backend/src/lib/game/achievement-catalog.ts`, `wiki/index.md`, `wiki/features/achievements.md`, `wiki/systems/achievements.md`, `docs/features/achievements/ACHIEVEMENTS_OVERVIEW.md`, `docs/01_source_of_truth/DOCUMENTATION_INDEX.md`
+- **Fixes:** updated high-visibility achievement summaries from the stale `21`-entry / gem-only wording to the live `18`-entry catalog and the current currency/cosmetic reward surface, and clarified that list copy now comes from active definitions when present
+- **Inventory refresh:** updated current counts to `5019` in-scope files and `245 in-scope wiki markdown files / 239 wiki pages`
+- **Verification:** re-read `backend/src/lib/game/achievement-catalog.ts` against all touched docs plus `git diff --check`
+
+## [2026-04-17] audit | Block 184 achievement product doc runtime parity
+
+Closed the next product-doc truth-sync block:
+- **Created:** `[[block-184-achievement-product-doc-runtime-parity]]`
+- **Files audited:** `backend/src/lib/game/achievement-catalog.ts`, `docs/02_product_and_features/GAME_SYSTEMS.md`, `docs/06_game_systems/BALANCE_CONSTANTS.md`, `docs/06_game_systems/PROGRESSION.md`
+- **Fixes:** replaced the stale `30+` / extra-category / prestige-reset achievement narrative in older product/system docs with the live `18`-achievement runtime, clarified that achievement rewards are a mixed currency/cosmetic surface, and removed the false impression that achievements are a gem-only or reset-per-prestige lane
+- **Inventory refresh:** updated current counts to `5020` in-scope files and `246 in-scope wiki markdown files / 240 wiki pages`
+- **Verification:** re-read `backend/src/lib/game/achievement-catalog.ts` against the touched docs plus `git diff --check`
+
+## [2026-04-17] audit | Block 185 stale operations tail env and landing sync
+
+Closed the next stale-doc tail:
+- **Created:** `[[block-185-stale-operations-tail-env-and-landing-sync]]`
+- **Files audited:** `docs/10_operations/GIT_AND_DEPLOY_AUDIT.md`, `docs/10_operations/DEPLOY.md`, `docs/10_operations/RELEASE_IOS.md`, `Hexbound/Hexbound/App/AppConstants.swift`, `wiki/audit/block-109-operations-deploy-docs-reality-sync.md`
+- **Fixes:** removed the stale “landing/static deploy undocumented” warning now that `DEPLOY.md` already codifies the hosted landing/legal path, and reclassified iOS environment targeting from a docs-status unknown to a documented caveat because `RELEASE_IOS.md` already explains that `staging` currently aliases the production API host
+- **Inventory refresh:** updated current counts to `5021` in-scope files and `247 in-scope wiki markdown files / 241 wiki pages`
+- **Verification:** re-read `DEPLOY.md`, `RELEASE_IOS.md`, and `AppConstants.swift` against `GIT_AND_DEPLOY_AUDIT.md` plus `git diff --check`
+
+## [2026-04-17] audit | Block 186 backend guest OAuth wallet merge parity
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-186-backend-guest-oauth-wallet-merge-parity]]`
+- **Files audited:** `backend/src/app/api/auth/upgrade-guest-oauth/route.ts`, `backend/tests/api/auth-upgrade-guest-oauth.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-013-backend-reward-premium-parity.md`
+- **Fixes:** made guest→OAuth upgrade merge `gold` and `gems` instead of dropping/overwriting wallet state, preserved the later `premiumGemClaimDate`, and taught the route to keep the longer-lived `dailyGemCard` when both guest and OAuth-side rows exist
+- **Inventory refresh:** updated current counts to `5023` in-scope files and `248 in-scope wiki markdown files / 242 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-upgrade-guest-oauth.test.ts`, `cd backend && npx eslint src/app/api/auth/upgrade-guest-oauth/route.ts tests/api/auth-upgrade-guest-oauth.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 187 backend forgot-password canonical host fallback
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-187-backend-forgot-password-canonical-host-fallback]]`
+- **Files audited:** `backend/src/app/api/auth/forgot-password/route.ts`, `backend/tests/api/auth-forgot-password.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-161-auth-reset-password-surface-parity.md`, `docs/10_operations/DEPLOY.md`
+- **Fixes:** replaced the stale `iron-fist-arena-backend.vercel.app` fallback in forgot-password with the canonical `api.hexboundapp.com` production backend origin, added regression coverage for both the default host and env override path, and synced the auth wiki/audit trail so the reset-flow host contract is explicit
+- **Inventory refresh:** updated current counts to `5025` in-scope files and `249 in-scope wiki markdown files / 248 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-forgot-password.test.ts`, `cd backend && npx eslint src/app/api/auth/forgot-password/route.ts tests/api/auth-forgot-password.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 188 auth link-account surface parity
+
+Closed the next auth truth-sync block:
+- **Created:** `[[block-188-auth-link-account-surface-parity]]`
+- **Files audited:** `backend/src/app/api/auth/link-account/route.ts`, `Hexbound/Hexbound/Views/Settings/SettingsViewModel.swift`, `docs/03_backend_and_api/API_REFERENCE.md`, `wiki/features/auth.md`
+- **Fixes:** reclassified `/auth/link-account` from the misleading “guest merge with social” wording to the narrower compatibility route it actually is, added an explicit legacy/compatibility note to the backend route, and documented that the live iOS settings flow sends guests through `upgradeGuest` instead of this endpoint
+- **Inventory refresh:** updated current counts to `5026` in-scope files and `250 in-scope wiki markdown files / 249 wiki pages`
+- **Verification:** `rg -n "link-account|upgradeGuest" Hexbound backend docs wiki -S` and `git diff --check`
+
+## [2026-04-17] audit | Block 189 backend link-account duplicate email guard
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-189-backend-link-account-duplicate-email-guard]]`
+- **Files audited:** `backend/src/app/api/auth/link-account/route.ts`, `backend/tests/api/auth-link-account.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-188-auth-link-account-surface-parity.md`
+- **Fixes:** added an explicit duplicate-email guard to `/auth/link-account` so the compatibility route now returns `409` instead of falling through to a generic update failure, added route coverage for auth/conflict/success paths, and synced the auth feature page with the new collision behavior
+- **Inventory refresh:** updated current counts to `5028` in-scope files and `251 in-scope wiki markdown files / 250 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-link-account.test.ts`, `cd backend && npx eslint src/app/api/auth/link-account/route.ts tests/api/auth-link-account.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-17] audit | Block 190 backend sync-user duplicate email guard
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-190-backend-sync-user-duplicate-email-guard]]`
+- **Files audited:** `backend/src/app/api/auth/sync-user/route.ts`, `backend/tests/api/auth-sync-user.test.ts`, `wiki/features/auth.md`
+- **Fixes:** added an explicit duplicate-email guard to `/auth/sync-user` so the route now returns `409` instead of relying on a later upsert conflict, added route coverage for auth/conflict/success paths, and synced the auth feature page with the new collision behavior
+- **Inventory refresh:** updated current counts to `5030` in-scope files and `252 in-scope wiki markdown files / 251 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-sync-user.test.ts`, `cd backend && npx eslint src/app/api/auth/sync-user/route.ts tests/api/auth-sync-user.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 191 backend guest-login device race recovery
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-191-backend-guest-login-device-race-recovery]]`
+- **Files audited:** `backend/src/app/api/auth/guest-login/route.ts`, `backend/tests/api/auth-guest-login.test.ts`, `wiki/features/auth.md`
+- **Fixes:** extracted the guest restore path into a shared helper, moved fresh guest sign-in to after successful local `User` creation, and made the route delete the just-created Supabase guest then restore the existing device-linked guest when a `deviceId` race is detected instead of returning an orphan session with no local profile row
+- **Inventory refresh:** updated current counts to `5033` in-scope files and `253 in-scope wiki markdown files / 252 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-guest-login.test.ts`, `cd backend && npx eslint src/app/api/auth/guest-login/route.ts tests/api/auth-guest-login.test.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-18] audit | Block 192 backend guest-login sign-in failure cleanup
+
+Closed the next auth/runtime parity block:
+- **Created:** `[[block-192-backend-guest-login-signin-failure-cleanup]]`
+- **Files audited:** `backend/src/app/api/auth/guest-login/route.ts`, `backend/tests/api/auth-guest-login.test.ts`, `wiki/features/auth.md`, `wiki/audit/block-191-backend-guest-login-device-race-recovery.md`
+- **Fixes:** completed the fresh-guest rollback path so sign-in failure after successful local guest creation now deletes both the fresh Supabase guest and the fresh local `User` row instead of leaving a local orphan behind
+- **Inventory refresh:** updated current counts to `5034` in-scope files and `254 in-scope wiki markdown files / 253 wiki pages`
+- **Verification:** `cd backend && npx vitest run tests/api/auth-guest-login.test.ts`, `cd backend && npx eslint src/app/api/auth/guest-login/route.ts tests/api/auth-guest-login.test.ts`, `cd backend && npm run build`, and `git diff --check`

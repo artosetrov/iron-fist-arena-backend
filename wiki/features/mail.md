@@ -58,6 +58,12 @@ System and admin broadcast mail lands in each player's inbox; some carry attache
 
 - `GameDataCache.inbox` — list + unread count (invalidated on read/claim/delete)
 
+### Reward surface
+
+- Mail attachment claim now presents the reward through the shared `ClaimRewardModalView` ceremony, not a success toast.
+- `InboxViewModel` writes into the root-level `AppState.claimRewardConfig`, because the inbox screens do not own a local claim modal slot.
+- Error paths stay as toasts; only the successful currency / loot payout is ceremonial. See [[why-reward-modal-over-toast]].
+
 ## Admin
 
 - `admin/src/app/(dashboard)/mail/` — compose & broadcast mail, attach rewards, target segments

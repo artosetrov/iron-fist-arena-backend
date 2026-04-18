@@ -80,6 +80,7 @@ Daily-rotated quest set (e.g. "win 3 PvP, clear 2 dungeons") with progress track
 - **Bonus gate.** Bonus reward only claimable when ALL dailies complete — check `bonus` endpoint guard.
 - **Tutorial quests separate.** `TutorialQuest` rows live in their own table and fire from `backend/src/lib/game/tutorial.ts` (see [[tutorial]]).
 - **Two catalog sources.** `quests.ts` (code-first) + `QuestDefinition` table (admin-tunable) — keep aligned.
+- **Reward surface is the CLAIMED modal, not a toast.** Both the detail-screen claim (`DailyQuestsViewModel`) and the inline banner claim (`ActiveQuestBanner`, `HubBannerCards`) present rewards via `ClaimRewardModalView`. The inline banners set `appState.claimRewardConfig` (root-level overlay in `HexboundApp`); the detail screen sets its own VM-local `claimRewardConfig`. Do NOT replace with `showToast(type: .quest, subtitle: "+Xg +Y XP")` — see [[why-reward-modal-over-toast]].
 
 ## Tests / fixtures
 

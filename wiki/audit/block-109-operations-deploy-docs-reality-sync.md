@@ -130,9 +130,9 @@ But the live docs still described a much older repo state. That is risky because
 - **Purpose:** app-side API environment selection
 - **Review outcome:**
   - `DEBUG` defaults to staging, but staging still points at the production API URL
-  - this is an unresolved environment split issue, not a stale-doc issue
-- **Action:** no code change; preserved as an open operational risk
-- **Status:** Needs review
+  - this is still a runtime environment-split caveat, but later release docs explicitly documented the behavior instead of leaving it as a docs-status unknown
+- **Action:** no code change in this block; later truth-sync in [[block-185-stale-operations-tail-env-and-landing-sync]] closed the stale documentation warning while keeping the runtime caveat explicit
+- **Status:** Fixed
 
 ### `.claude/agent-bus/herald.md`
 
@@ -158,6 +158,10 @@ But the live docs still described a much older repo state. That is risky because
    - Risk: “no CI, broken schemas, ignored builds” noise hides the actual current weak points: admin subtree push, iOS release setup, and environment targeting.
    - Fix: narrowed the risk section to current unresolved issues.
 
+4. **Two documentation-risk labels later became stale**
+   - Risk: the deploy audit itself would start lagging behind `DEPLOY.md` and `RELEASE_IOS.md`.
+   - Later fix: [[block-185-stale-operations-tail-env-and-landing-sync]] reclassified landing/static deploy as manual-but-defined and iOS environment targeting as documented-with-caveat.
+
 ## Verification
 
 - `git ls-files | wc -l`
@@ -180,3 +184,4 @@ But the live docs still described a much older repo state. That is risky because
   - production migration apply is still explicit
   - iOS Fastlane/Appfile setup is still incomplete
   - iOS staging still shares the production API URL
+  - later truth-sync in [[block-185-stale-operations-tail-env-and-landing-sync]] closed the stale landing/env documentation warnings without pretending the runtime caveats vanished

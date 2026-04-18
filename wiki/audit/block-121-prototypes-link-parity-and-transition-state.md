@@ -134,8 +134,8 @@ So the goal here was not to redesign the prototypes. It was to make the transiti
   - still useful as transition evidence between A/B/C and B2-v3
   - but not a current source of truth by itself
 - **What changed later:** deleted from the working tree in `block-147` after the historical implementation plans stopped needing the raw HTML artifact itself
-- **Needs separate decision:** keep for implementation history or archive once B2-v3 history is captured elsewhere
-- **Status:** Needs review
+- **Later resolution:** `block-147` closed the keep/delete decision by removing the raw HTML artifact after the implementation history was captured in docs and shipped code
+- **Status:** Fixed
 
 ### `prototypes/combat-proto-B2-v2.html`
 
@@ -159,8 +159,8 @@ So the goal here was not to redesign the prototypes. It was to make the transiti
   - strongest candidate to keep among the combat prototypes because it is the nearest historical bridge to the shipped direction
   - still not a live source of truth
 - **What changed later:** deleted from the working tree in `block-147` after the implementation record and shipped code were treated as the retained history surface
-- **Needs separate decision:** keep as reference artifact or archive after a fuller current-state combat spec exists
-- **Status:** Needs review
+- **Later resolution:** `block-147` closed the keep/archive question by deleting the raw HTML artifact once the retained history moved fully into docs and shipped code
+- **Status:** Fixed
 
 ### `prototypes/combat-proto-C.html`
 
@@ -208,8 +208,8 @@ So the goal here was not to redesign the prototypes. It was to make the transiti
 - **What was fixed:**
   - no mechanical change in this pass; the only safe fix was on the Terms side where a local cross-link was clearly intended
 - **What changed later:** deleted from the working tree in `block-146` after the app and docs no longer needed local legal HTML copies
-- **Needs separate decision:** finalize the legal-page move and define the real landing/static deploy contract
-- **Status:** Needs review
+- **Later resolution:** `block-146` resolved the local-copy question by deleting the prototype legal HTML surfaces; the remaining hosted legal/static ownership question now lives in operations docs instead of this file record
+- **Status:** Fixed
 
 ### `prototypes/terms.html`
 

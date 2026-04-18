@@ -13,7 +13,7 @@ sources:
   - Hexbound/Hexbound/Models/CombatData.swift
   - backend/src/app/api/pvp/match/start/route.ts
   - backend/src/app/api/pvp/strike/route.ts
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 023 — iOS Interactive Combat Terminal State and Round Log
@@ -69,7 +69,7 @@ That surfaced two separate problems:
 | `Hexbound/Hexbound/Models/RoundExchange.swift` | iOS round-log model builder | Re-shapes one `/strike` response into ordered ally/enemy log rows. | Used by `InteractiveBattleViewModel`, `InteractiveRoundLogCard`, `BattleSummaryView`. | Expects a 1-based `roundNumber`; intentionally does not derive it itself. | Re-audited; builder contract was correct and documented, which helped isolate the caller bug quickly. | OK |
 | `Hexbound/Hexbound/Models/CombatData.swift` | iOS final combat result DTO | Decodes `/pvp/match/complete` payload including result metadata and winner id. | Used by interactive combat completion and classic result surfaces. | `result.winnerId` is the best final source for finished-phase routing when present. | Re-audited because `InteractiveBattleViewModel` now uses `data.result.winnerId` first. | OK |
 | `backend/src/app/api/pvp/match/start/route.ts` | Backend interactive match bootstrap | Starts an interactive duel, snapshots actives, and reserves stamina/free-PvP state. | Used by `InteractiveBattleViewModel.startMatch()`. Depends on combat loader, stamina rules, and actives snapshot build. | Active loadout is snapshotted at match start so mid-match loadout edits do not mutate the duel. | Re-audited as the source of fresh-match state; no direct code change in this block. | OK |
-| `backend/src/app/api/pvp/strike/route.ts` | Backend interactive strike resolver | Resolves one round, updates actives, decrements consumables, and returns `match_finished` / `winner_id`. | Used by `InteractiveBattleViewModel.resolveStrike()`. Depends on combat resolver, match state, and actives state. | Server is authoritative for HP, cooldowns, end-of-match decision, and winner identity. | Re-audited as the contract source; still has one edge-case flow around out-of-combat consumable depletion that deserves a follow-up pass. | Needs review |
+| `backend/src/app/api/pvp/strike/route.ts` | Backend interactive strike resolver | Resolves one round, updates actives, decrements consumables, and returns `match_finished` / `winner_id`. | Used by `InteractiveBattleViewModel.resolveStrike()`. Depends on combat resolver, match state, and actives state. | Server is authoritative for HP, cooldowns, end-of-match decision, and winner identity. | Follow-ups in [[block-024-interactive-combat-consumable-recovery]] and [[block-155-backend-pvp-strike-complete-prisma-json-parity]] closed the old recovery and Prisma-workaround tails; the remaining work here is future state-shaping refactor, not an open runtime bug. | Fixed |
 
 ## Duplicate / Split Logic Found
 
@@ -82,7 +82,7 @@ That surfaced two separate problems:
 
 ## Candidates For Refactor
 
-- The `/strike` error path for `OUT_OF_CONSUMABLE` still deserves a graceful client/server reconciliation strategy instead of dropping into a generic error flow mid-match.
+- The remaining refactor opportunity in `/strike` is to centralize interactive JSON state shaping, not to repair the old `OUT_OF_CONSUMABLE` runtime path, which is already resolved.
 - Consider making `InteractiveMatchState` explicitly carry the latest `matchFinished`/`winnerId` from the response object in a dedicated nested struct, so future combat surfaces don't regress to HP-only heuristics.
 
 ## Documentation Missing Or Stale

@@ -68,7 +68,7 @@ Global ranked list of players by PvP rating; search, browse top, tap row to open
 
 - **Live-query pressure.** Global sort-by-rating needs an index on `Character.rating` — verify index exists or scan will cost.
 - **Guest exclusion.** Leaderboard filters out guest accounts / banned / soft-deleted — changing filter = rank shift visible to users.
-- **Tap-row actions work.** Challenge / Message / AddFriend from leaderboard row route through shared [[opponent-profile]] system (see memory `opponent_profile_feature`).
+- **Tap-row actions work.** Challenge / Message / AddFriend from leaderboard row route through the shared [[opponent-profile]] surface.
 - **Search is name-prefix.** Full-text search is not implemented — just `startsWith` (case-insensitive). Don't promise substring matching.
 - **Achievement hook.** `ranking` category achievements fire on PvP resolve based on rank milestones reached.
 

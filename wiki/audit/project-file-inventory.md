@@ -10,9 +10,9 @@ updated: 2026-04-17
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 4913
-- Untracked project-owned files: 91
-- In-scope files listed here: 5004
+- Tracked files: 4972
+- Untracked project-owned files: 62
+- In-scope files listed here: 5034
 
 ## Excluded Generated / Vendor Areas
 
@@ -31,21 +31,21 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .cursor: 10
 - .github: 1
 - .skills: 17
-- [root]: 27
+- [root]: 3
 - admin: 217
-- backend: 361
+- backend: 366
 - Buildings: 21
-- docs: 171
+- docs: 176
 - figma-assets: 333
 - graphify-out: 869
-- Hexbound: 1495
+- Hexbound: 1497
 - onboarding-assets: 10
-- prototypes: 0
-- qa-reports: 3
-- scripts: 15
+- prototypes: 3
+- qa-reports: 4
+- scripts: 17
 - sounds: 33
 - User: 1059
-- wiki: 211
+- wiki: 237
 
 ## File List By Block
 
@@ -153,7 +153,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .claude/skills/heartbeat/SKILL.md
 - .claude/skills/herald/scripts/deploy.sh
 - .claude/skills/herald/SKILL.md
-- .claude/skills/instant-retro/last-retro.json
+- .claude/skills/instant-retro/last-retro.json _(deleted in working tree; local state moved to `.claude/tmp/instant-retro-last.json`)_
 - .claude/skills/instant-retro/SKILL.md
 - .claude/skills/ledger/SKILL.md
 - .claude/skills/lens/SKILL.md
@@ -471,11 +471,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (361)
+### backend (363)
 
 - backend/.env.example
 - backend/.gitignore
 - backend/CLAUDE.md
+- backend/email-templates/reset-password.html _(untracked)_
 - backend/eslint.config.mjs
 - backend/next.config.ts
 - backend/package-lock.json
@@ -754,6 +755,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/hp-regen.ts
 - backend/src/lib/game/inventory-response.ts
 - backend/src/lib/game/item-balance.ts
+- backend/src/lib/game/item-stats.ts _(untracked)_
 - backend/src/lib/game/item-constants.ts
 - backend/src/lib/game/item-sets.ts
 - backend/src/lib/game/item-validation.ts
@@ -786,9 +788,17 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/middleware.ts
 - backend/tests/api/auth-login.test.ts
 - backend/tests/api/auth-register.test.ts
+- backend/tests/api/auth-forgot-password.test.ts _(untracked)_
+- backend/tests/api/auth-guest-login.test.ts _(untracked)_
+- backend/tests/api/auth-link-account.test.ts _(untracked)_
+- backend/tests/api/auth-sync-user.test.ts _(untracked)_
+- backend/tests/api/auth-upgrade-guest-oauth.test.ts _(untracked)_
 - backend/tests/api/battle-pass-claim.test.ts
 - backend/tests/api/admin-config.test.ts
 - backend/tests/api/admin-config-restore.test.ts
+- backend/tests/api/achievement-claim.test.ts _(untracked)_
+- backend/tests/api/achievement-list.test.ts _(untracked)_
+- backend/tests/api/character-progression-derived-stats.test.ts _(untracked)_
 - backend/tests/api/dungeon-rush-resolve.test.ts
 - backend/tests/api/iap-apple-notifications.test.ts
 - backend/tests/api/iap-restore-purchases.test.ts
@@ -821,6 +831,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/lib/dungeon.test.ts
 - backend/tests/lib/elo.test.ts
 - backend/tests/lib/item-balance.test.ts
+- backend/tests/lib/item-stats.test.ts _(untracked)_
 - backend/tests/lib/progression.test.ts
 - backend/tests/lib/rate-limit.test.ts
 - backend/tests/lib/rogue-execute.test.ts
@@ -859,7 +870,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (178)
+### docs (176)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -1035,6 +1046,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/rules/rules-swift.md
 - docs/rules/rules-ui-design.md
 - docs/SOURCE_OF_TRUTH.md
+- docs/07_ui_ux/STRIKE_REVEAL_SHAPE_B_PLAN.md _(untracked)_
 - docs/templates/TEMPLATE_API_MODULE.md
 - docs/templates/TEMPLATE_FEATURE.md
 - docs/templates/TEMPLATE_RULE.md
@@ -2248,7 +2260,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - graphify-out/graph.json
 - graphify-out/manifest.json
 
-### Hexbound (1495)
+### Hexbound (1497)
 
 - Hexbound/.gitignore
 - Hexbound/.swiftlint.yml
@@ -3745,6 +3757,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/UI/combat_result/reward-rating-up.png
 - Hexbound/UI/combat_result/reward-turns.png
 - Hexbound/UI/combat_result/reward-xp.png
+- Hexbound/Hexbound/Models/RoundVerdict.swift _(untracked)_
+- Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift _(untracked)_
 
 ### onboarding-assets (10)
 
@@ -3759,7 +3773,11 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - onboarding-assets/panel-3-1b-dungeon-victory.png
 - onboarding-assets/panel-3-2-forge.png
 
-### prototypes (0)
+### prototypes (3)
+
+- prototypes/strike-reveal-b.html _(untracked)_
+- prototypes/strike-reveal-compact.html _(untracked)_
+- prototypes/strike-reveal-integration.html _(untracked)_
 
 ### qa-reports (4)
 
@@ -3780,11 +3798,11 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts/sync-assets.sh
 - scripts/sync-figma-tokens.js
 - scripts/sync-figma-tokens.sh
-- scripts/wiki/check-drift.sh _(untracked)_
-- scripts/wiki/generate-all.sh _(untracked)_
-- scripts/wiki/generate-api-routes.mjs _(untracked)_
-- scripts/wiki/generate-prisma-models.mjs _(untracked)_
-- scripts/wiki/generate-tokens.mjs _(untracked)_
+- scripts/wiki/check-drift.sh
+- scripts/wiki/generate-all.sh
+- scripts/wiki/generate-api-routes.mjs
+- scripts/wiki/generate-prisma-models.mjs
+- scripts/wiki/generate-tokens.mjs
 
 ### sounds (33)
 
@@ -4884,14 +4902,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (200)
+### wiki (225)
 
-- wiki/_generated/README.md _(untracked)_
-- wiki/_generated/api-routes.json _(untracked)_
-- wiki/_generated/balance-constants.json _(untracked)_
-- wiki/_generated/ios-screens.json _(untracked)_
-- wiki/_generated/prisma-models.json _(untracked)_
-- wiki/_generated/tokens.json _(untracked)_
+- wiki/_generated/README.md
+- wiki/_generated/api-routes.json
+- wiki/_generated/balance-constants.json
+- wiki/_generated/ios-screens.json
+- wiki/_generated/prisma-models.json
+- wiki/_generated/tokens.json
 - wiki/audit/audit-index.md
 - wiki/audit/block-001-root-files.md
 - wiki/audit/block-002-repo-automation.md
@@ -5001,49 +5019,90 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity.md
 - wiki/audit/block-107-ios-dead-model-parse-bridge-cleanup.md
 - wiki/audit/block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal.md
-- wiki/audit/block-109-operations-deploy-docs-reality-sync.md _(untracked)_
-- wiki/audit/block-110-operations-git-workflow-and-ios-release-doc-parity.md _(untracked)_
-- wiki/audit/block-111-operations-database-migration-runbook-parity.md _(untracked)_
-- wiki/audit/block-112-ios-testflight-helper-identity-validation-parity.md _(untracked)_
-- wiki/audit/block-113-wiki-generation-tooling-and-generated-indexes.md _(untracked)_
-- wiki/audit/block-114-wiki-feature-maps-and-index-visibility.md _(untracked)_
-- wiki/audit/block-115-operations-figma-and-historical-doc-boundaries.md _(untracked)_
-- wiki/audit/block-116-source-of-truth-doc-index-parity.md _(untracked)_
-- wiki/audit/block-117-source-of-truth-project-overview-parity.md _(untracked)_
-- wiki/audit/block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity.md _(untracked)_
-- wiki/audit/block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries.md _(untracked)_
-- wiki/audit/block-120-ui-audit-artifacts-historical-boundary-cleanup.md _(untracked)_
-- wiki/audit/block-121-prototypes-link-parity-and-transition-state.md _(untracked)_
-- wiki/audit/block-122-wiki-feature-map-visibility-and-related-link-gaps.md _(untracked)_
-- wiki/audit/block-123-ui-review-and-plan-docs-historical-boundaries.md _(untracked)_
-- wiki/audit/block-124-w1-w3-plan-docs-historical-boundaries.md _(untracked)_
-- wiki/audit/block-125-ui-prototype-and-figma-workflow-boundaries.md _(untracked)_
-- wiki/audit/block-126-design-system-roadmap-and-screen-inventory-live-parity.md _(untracked)_
-- wiki/audit/block-127-dated-product-economy-and-architecture-doc-boundaries.md _(untracked)_
-- wiki/audit/block-128-retro-log-historical-boundaries.md _(untracked)_
-- wiki/audit/block-129-archive-legacy-doc-boundaries.md _(untracked)_
-- wiki/audit/block-130-top-level-source-of-truth-and-orchestration-boundaries.md _(untracked)_
-- wiki/audit/block-131-empty-doc-placeholders-and-deprecation-markers.md _(untracked)_
-- wiki/audit/block-132-obsidian-base-artifacts.md _(untracked)_
-- wiki/audit/block-133-live-doc-tbd-and-url-cleanup.md _(untracked)_
-- wiki/audit/block-134-delete-placeholder-and-editor-artifact-files.md _(untracked)_
-- wiki/audit/block-135-delete-archive-duplicate-docs.md _(untracked)_
-- wiki/audit/block-136-delete-root-orphan-prototype-artifacts.md _(untracked)_
-- wiki/audit/block-137-root-prototype-relocation-state-sync.md _(untracked)_
-- wiki/audit/block-138-delete-deprecated-prototype-residue.md _(untracked)_
-- wiki/audit/block-139-delete-superseded-combat-prototype-set.md _(untracked)_
-- wiki/audit/block-140-delete-orphan-feature-prototype-residue.md _(untracked)_
-- wiki/audit/block-141-prototype-reference-doc-sync.md _(untracked)_
-- wiki/audit/block-142-delete-wiki-obsidian-editor-residue.md _(untracked)_
-- wiki/audit/block-143-delete-final-special-offer-prototype-reference.md _(untracked)_
-- wiki/audit/block-144-delete-victory-rewards-prototype-set.md _(untracked)_
-- wiki/audit/block-145-delete-gold-mine-minigame-prototype-reference.md _(untracked)_
-- wiki/audit/block-146-delete-legal-transition-prototype-copies.md _(untracked)_
-- wiki/audit/block-147-delete-final-combat-history-prototypes.md _(untracked)_
-- wiki/audit/block-148-root-dated-qa-and-ui-audit-relocation.md _(untracked)_
-- wiki/audit/block-149-root-combat-history-doc-relocation.md _(untracked)_
-- wiki/audit/block-150-root-gold-mine-doc-relocation.md _(untracked)_
-- wiki/audit/block-151-root-release-audit-relocation.md _(untracked)_
+- wiki/audit/block-109-operations-deploy-docs-reality-sync.md
+- wiki/audit/block-110-operations-git-workflow-and-ios-release-doc-parity.md
+- wiki/audit/block-111-operations-database-migration-runbook-parity.md
+- wiki/audit/block-112-ios-testflight-helper-identity-validation-parity.md
+- wiki/audit/block-113-wiki-generation-tooling-and-generated-indexes.md
+- wiki/audit/block-114-wiki-feature-maps-and-index-visibility.md
+- wiki/audit/block-115-operations-figma-and-historical-doc-boundaries.md
+- wiki/audit/block-116-source-of-truth-doc-index-parity.md
+- wiki/audit/block-117-source-of-truth-project-overview-parity.md
+- wiki/audit/block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity.md
+- wiki/audit/block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries.md
+- wiki/audit/block-120-ui-audit-artifacts-historical-boundary-cleanup.md
+- wiki/audit/block-121-prototypes-link-parity-and-transition-state.md
+- wiki/audit/block-122-wiki-feature-map-visibility-and-related-link-gaps.md
+- wiki/audit/block-123-ui-review-and-plan-docs-historical-boundaries.md
+- wiki/audit/block-124-w1-w3-plan-docs-historical-boundaries.md
+- wiki/audit/block-125-ui-prototype-and-figma-workflow-boundaries.md
+- wiki/audit/block-126-design-system-roadmap-and-screen-inventory-live-parity.md
+- wiki/audit/block-127-dated-product-economy-and-architecture-doc-boundaries.md
+- wiki/audit/block-128-retro-log-historical-boundaries.md
+- wiki/audit/block-129-archive-legacy-doc-boundaries.md
+- wiki/audit/block-130-top-level-source-of-truth-and-orchestration-boundaries.md
+- wiki/audit/block-131-empty-doc-placeholders-and-deprecation-markers.md
+- wiki/audit/block-132-obsidian-base-artifacts.md
+- wiki/audit/block-133-live-doc-tbd-and-url-cleanup.md
+- wiki/audit/block-134-delete-placeholder-and-editor-artifact-files.md
+- wiki/audit/block-135-delete-archive-duplicate-docs.md
+- wiki/audit/block-136-delete-root-orphan-prototype-artifacts.md
+- wiki/audit/block-137-root-prototype-relocation-state-sync.md
+- wiki/audit/block-138-delete-deprecated-prototype-residue.md
+- wiki/audit/block-139-delete-superseded-combat-prototype-set.md
+- wiki/audit/block-140-delete-orphan-feature-prototype-residue.md
+- wiki/audit/block-141-prototype-reference-doc-sync.md
+- wiki/audit/block-142-delete-wiki-obsidian-editor-residue.md
+- wiki/audit/block-143-delete-final-special-offer-prototype-reference.md
+- wiki/audit/block-144-delete-victory-rewards-prototype-set.md
+- wiki/audit/block-145-delete-gold-mine-minigame-prototype-reference.md
+- wiki/audit/block-146-delete-legal-transition-prototype-copies.md
+- wiki/audit/block-147-delete-final-combat-history-prototypes.md
+- wiki/audit/block-148-root-dated-qa-and-ui-audit-relocation.md
+- wiki/audit/block-149-root-combat-history-doc-relocation.md
+- wiki/audit/block-150-root-gold-mine-doc-relocation.md
+- wiki/audit/block-151-root-release-audit-relocation.md
+- wiki/audit/block-152-root-bootstrap-and-ignore-parity.md _(untracked)_
+- wiki/audit/block-153-ios-talent-detail-sheet-slot-aware-picker-unification.md _(untracked)_
+- wiki/audit/block-154-backend-pvp-match-start-prisma-create-parity.md _(untracked)_
+- wiki/audit/block-155-backend-pvp-strike-complete-prisma-json-parity.md _(untracked)_
+- wiki/audit/block-156-stale-audit-tail-quests-and-interactive-pvp-sync.md _(untracked)_
+- wiki/audit/block-157-stale-audit-tail-contraband-and-social-challenges-sync.md _(untracked)_
+- wiki/audit/block-158-backend-item-stat-authority-rolled-stats-parity.md _(untracked)_
+- wiki/audit/block-159-ios-game-init-item-stat-preview-parity.md _(untracked)_
+- wiki/audit/block-160-ios-strike-reveal-partial-implementation-boundary.md _(untracked)_
+- wiki/audit/block-161-auth-reset-password-surface-parity.md _(untracked)_
+- wiki/audit/block-162-daily-login-reward-toast-tail-removal.md _(untracked)_
+- wiki/audit/block-163-hub-tutorial-quest-reward-modal-parity.md _(untracked)_
+- wiki/audit/block-164-ios-gold-mine-bonus-reward-modal-parity.md _(untracked)_
+- wiki/audit/block-165-ios-upgrade-stat-bonus-config-fallback-parity.md _(untracked)_
+- wiki/audit/block-166-ios-referral-apply-reward-modal-parity.md _(untracked)_
+- wiki/audit/block-167-ios-mail-claim-reward-modal-parity.md _(untracked)_
+- wiki/audit/block-168-backend-character-progression-derived-stats-transaction-parity.md _(untracked)_
+- wiki/audit/block-169-stale-audit-tail-item-stat-preview-sync.md _(untracked)_
+- wiki/audit/block-170-backend-appearance-wallet-response-boundary.md _(untracked)_
+- wiki/audit/block-171-project-git-helper-tracked-only-staging.md _(untracked)_
+- wiki/audit/block-172-audio-and-asset-doc-boundary-parity.md _(untracked)_
+- wiki/audit/block-173-admin-design-system-dead-preview-export-removal.md _(untracked)_
+- wiki/audit/block-174-stale-audit-tail-prototype-decision-sync.md _(untracked)_
+- wiki/audit/block-175-wiki-opponent-profile-and-onboarding-feature-pages.md _(untracked)_
+- wiki/audit/block-176-stale-audit-tail-audio-bootstrap-boundary-sync.md _(untracked)_
+- wiki/audit/block-177-stale-audit-tail-item-balance-cross-process-sync.md _(untracked)_
+- wiki/audit/block-178-stale-audit-tail-tutorial-migration-sync.md _(untracked)_
+- wiki/audit/block-179-instant-retro-local-state-de-tracking.md _(untracked)_
+- wiki/audit/block-180-backend-achievement-cosmetic-claim-runtime-parity.md _(untracked)_
+- wiki/audit/block-181-admin-achievement-cosmetic-authoring-parity.md _(untracked)_
+- wiki/audit/block-182-backend-achievement-list-definition-text-parity.md _(untracked)_
+- wiki/audit/block-183-achievement-doc-count-and-reward-summary-parity.md _(untracked)_
+- wiki/audit/block-184-achievement-product-doc-runtime-parity.md _(untracked)_
+- wiki/audit/block-185-stale-operations-tail-env-and-landing-sync.md _(untracked)_
+- wiki/audit/block-186-backend-guest-oauth-wallet-merge-parity.md _(untracked)_
+- wiki/audit/block-187-backend-forgot-password-canonical-host-fallback.md _(untracked)_
+- wiki/audit/block-188-auth-link-account-surface-parity.md _(untracked)_
+- wiki/audit/block-189-backend-link-account-duplicate-email-guard.md _(untracked)_
+- wiki/audit/block-190-backend-sync-user-duplicate-email-guard.md _(untracked)_
+- wiki/audit/block-191-backend-guest-login-device-race-recovery.md _(untracked)_
+- wiki/audit/block-192-backend-guest-login-signin-failure-cleanup.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md
@@ -5055,36 +5114,39 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/decisions/why-exponential-upgrades.md
 - wiki/decisions/why-k-factor-48.md
 - wiki/decisions/why-no-gem-to-gold.md
+- wiki/decisions/why-reward-modal-over-toast.md _(untracked)_
 - wiki/decisions/why-rogue-execute.md
 - wiki/entities/classes.md
 - wiki/entities/design-system.md
 - wiki/entities/screens.md
-- wiki/features/_template.md _(untracked)_
-- wiki/features/achievements.md _(untracked)_
-- wiki/features/auth.md _(untracked)_
-- wiki/features/battle-pass.md _(untracked)_
-- wiki/features/characters.md _(untracked)_
-- wiki/features/daily-login.md _(untracked)_
-- wiki/features/dungeon-rush.md _(untracked)_
-- wiki/features/dungeons.md _(untracked)_
-- wiki/features/events.md _(untracked)_
-- wiki/features/gold-mine.md _(untracked)_
-- wiki/features/interactive-combat.md _(untracked)_
-- wiki/features/inventory.md _(untracked)_
-- wiki/features/leaderboard.md _(untracked)_
-- wiki/features/mail.md _(untracked)_
-- wiki/features/minigames.md _(untracked)_
-- wiki/features/passive-tree.md _(untracked)_
-- wiki/features/prestige.md _(untracked)_
-- wiki/features/pvp-combat.md _(untracked)_
-- wiki/features/quests.md _(untracked)_
-- wiki/features/referral.md _(untracked)_
-- wiki/features/session-summary.md _(untracked)_
-- wiki/features/shop.md _(untracked)_
-- wiki/features/social.md _(untracked)_
-- wiki/features/stamina.md _(untracked)_
-- wiki/features/stash.md _(untracked)_
-- wiki/features/tutorial.md _(untracked)_
+- wiki/features/_template.md
+- wiki/features/achievements.md
+- wiki/features/auth.md
+- wiki/features/battle-pass.md
+- wiki/features/characters.md
+- wiki/features/daily-login.md
+- wiki/features/dungeon-rush.md
+- wiki/features/dungeons.md
+- wiki/features/events.md
+- wiki/features/gold-mine.md
+- wiki/features/interactive-combat.md
+- wiki/features/inventory.md
+- wiki/features/leaderboard.md
+- wiki/features/mail.md
+- wiki/features/minigames.md
+- wiki/features/onboarding.md _(untracked)_
+- wiki/features/opponent-profile.md _(untracked)_
+- wiki/features/passive-tree.md
+- wiki/features/prestige.md
+- wiki/features/pvp-combat.md
+- wiki/features/quests.md
+- wiki/features/referral.md
+- wiki/features/session-summary.md
+- wiki/features/shop.md
+- wiki/features/social.md
+- wiki/features/stamina.md
+- wiki/features/stash.md
+- wiki/features/tutorial.md
 - wiki/index.md
 - wiki/log.md
 - wiki/schema.md
@@ -5166,19 +5228,19 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity.md
 - wiki/audit/block-107-ios-dead-model-parse-bridge-cleanup.md
 - wiki/audit/block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal.md
-- wiki/audit/block-109-operations-deploy-docs-reality-sync.md _(untracked)_
-- wiki/audit/block-110-operations-git-workflow-and-ios-release-doc-parity.md _(untracked)_
-- wiki/audit/block-111-operations-database-migration-runbook-parity.md _(untracked)_
-- wiki/audit/block-112-ios-testflight-helper-identity-validation-parity.md _(untracked)_
-- wiki/audit/block-113-wiki-generation-tooling-and-generated-indexes.md _(untracked)_
-- wiki/audit/block-114-wiki-feature-maps-and-index-visibility.md _(untracked)_
-- wiki/audit/block-115-operations-figma-and-historical-doc-boundaries.md _(untracked)_
-- wiki/audit/block-116-source-of-truth-doc-index-parity.md _(untracked)_
-- wiki/audit/block-117-source-of-truth-project-overview-parity.md _(untracked)_
-- wiki/audit/block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity.md _(untracked)_
-- wiki/audit/block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries.md _(untracked)_
-- wiki/audit/block-120-ui-audit-artifacts-historical-boundary-cleanup.md _(untracked)_
-- wiki/audit/block-121-prototypes-link-parity-and-transition-state.md _(untracked)_
+- wiki/audit/block-109-operations-deploy-docs-reality-sync.md
+- wiki/audit/block-110-operations-git-workflow-and-ios-release-doc-parity.md
+- wiki/audit/block-111-operations-database-migration-runbook-parity.md
+- wiki/audit/block-112-ios-testflight-helper-identity-validation-parity.md
+- wiki/audit/block-113-wiki-generation-tooling-and-generated-indexes.md
+- wiki/audit/block-114-wiki-feature-maps-and-index-visibility.md
+- wiki/audit/block-115-operations-figma-and-historical-doc-boundaries.md
+- wiki/audit/block-116-source-of-truth-doc-index-parity.md
+- wiki/audit/block-117-source-of-truth-project-overview-parity.md
+- wiki/audit/block-118-source-of-truth-admin-capabilities-and-screen-inventory-parity.md
+- wiki/audit/block-119-design-system-source-of-truth-vs-audit-snapshot-boundaries.md
+- wiki/audit/block-120-ui-audit-artifacts-historical-boundary-cleanup.md
+- wiki/audit/block-121-prototypes-link-parity-and-transition-state.md
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md
@@ -5194,12 +5256,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/entities/classes.md
 - wiki/entities/design-system.md
 - wiki/entities/screens.md
-- wiki/features/_template.md _(untracked)_
-- wiki/features/gold-mine.md _(untracked)_
-- wiki/features/interactive-combat.md _(untracked)_
-- wiki/features/pvp-combat.md _(untracked)_
-- wiki/features/referral.md _(untracked)_
-- wiki/features/shop.md _(untracked)_
+- wiki/features/_template.md
+- wiki/features/gold-mine.md
+- wiki/features/interactive-combat.md
+- wiki/features/pvp-combat.md
+- wiki/features/referral.md
+- wiki/features/shop.md
 - wiki/index.md
 - wiki/log.md
 - wiki/schema.md
@@ -5216,3 +5278,4 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/systems/social.md
 - wiki/systems/stamina.md
 - wiki/systems/stance-system.md
+- backend/src/app/reset-password/page.tsx _(untracked)_

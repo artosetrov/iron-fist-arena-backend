@@ -55,6 +55,7 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 - `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift` — main screen, slot grid, collect buttons, embeds `MineSlotCard` / `LockedMineCard` / `miningOutputCard`
 - `Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift` — tap minigame overlay
+- `Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift` — reward ceremony modal for collect-all and slot-bonus payouts
 - `Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift` — card components for the detail screen
 - `Hexbound/Hexbound/Views/Minigames/MineResourceHeader.swift` — top-of-screen gold/gems bar
 - `Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift` — particle burst on successful tap
@@ -63,6 +64,13 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 ### ViewModels
 
 - `Hexbound/Hexbound/Views/Minigames/GoldMineViewModel.swift` — `@Observable` state: slots, accumulated gold, cooldown, minigame status
+
+### Reward surface
+
+- **Gold / gem payouts use the mine reward modal, not a toast.**
+  - `collect-all` deltas and slot-minigame bonus payouts both flow through `GoldMineViewModel.claimReward`
+  - `GoldMineDetailView` presents `MineClaimRewardView`
+  - structural toasts remain only for non-currency events like shaft prompts, boost failures, or slot unlock messaging
 
 ### Services
 

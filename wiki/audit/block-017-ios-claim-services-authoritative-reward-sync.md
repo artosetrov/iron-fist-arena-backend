@@ -13,7 +13,7 @@ sources:
   - Hexbound/Hexbound/Views/Quests/DailyQuestsViewModel.swift
   - Hexbound/Hexbound/Views/Hub/HubBannerCards.swift
   - Hexbound/Hexbound/Views/Components/ActiveQuestBanner.swift
-updated: 2026-04-15
+updated: 2026-04-17
 ---
 
 # Audit Block 017 — iOS Claim Services and Authoritative Reward Sync
@@ -55,7 +55,7 @@ This block closes the remaining refresh-based iOS claim flows left after [[block
 | Path | Zone / Role | Purpose / What It Does | Depends On / Used By | Main Rules / Business Logic | Problems / Fixes | Status |
 |------|-------------|------------------------|----------------------|-----------------------------|------------------|--------|
 | `backend/src/app/api/achievements/claim/route.ts` | Backend claim contract | Claims achievement rewards and returns reward deltas plus authoritative progression totals. | Used by `AchievementService`. Depends on auth, achievement catalog, shared achievement-claim helper, cache invalidation. | Claim must stay server-authoritative and invalidate combat caches on level-up. | Re-audited here; contract already matched the new client DTO needs. | OK |
-| `backend/src/app/api/quests/daily/route.ts` | Backend daily quests API | Returns daily quest list and handles quest reward claims. | Used by `QuestService`. Depends on Prisma, battle-pass XP, reward grant helper, cache invalidation. | Claim response must include deltas and authoritative totals; GET still formats quest rows for iOS. | Claim contract is good; GET/aux code still carries legacy `any` typing debt from earlier blocks. | Needs review |
+| `backend/src/app/api/quests/daily/route.ts` | Backend daily quests API | Returns daily quest list and handles quest reward claims. | Used by `QuestService`. Depends on Prisma, battle-pass XP, reward grant helper, cache invalidation. | Claim response must include deltas and authoritative totals; GET still formats quest rows for iOS. | Re-audited after later backend cleanup; quest pool/meta shaping is now explicitly typed and no legacy `any` debt remains in the live route. | OK |
 | `backend/src/app/api/quests/daily/bonus/route.ts` | Backend daily bonus claim API | Claims the bonus after all quests are finished and claimed. | Used by `QuestService.claimBonus()`. Depends on Prisma transaction, reward grants, cache invalidation. | Bonus must stay atomic and only claim once per day. | Re-audited here; contract already matched the client migration. | OK |
 | `Hexbound/Hexbound/App/AppState.swift` | Shared client progression sync | Owns `currentCharacter` and the shared authoritative reward-state updater introduced in block 016. | Used by achievement, quest, shop, mail, rush, and battle-pass consumers. | Local HUD/progression state should be patched from server truth before celebration UI. | No new code change in this block, but this helper became the single path for touched claim consumers. | OK |
 | `Hexbound/Hexbound/Services/AchievementService.swift` | iOS achievement claim service | Loads achievements and claims achievement rewards. | Used by `AchievementsViewModel`. Depends on `APIClient` and `AppState`. | Claim should return typed server truth, not force a full character refresh. | Replaced raw claim parsing + refresh with typed `AchievementClaimResult`. | Fixed |
@@ -69,7 +69,7 @@ This block closes the remaining refresh-based iOS claim flows left after [[block
 
 - `AchievementService.loadAchievements()` and `QuestService.loadQuests()` still rely on `getRaw(...)` + JSONSerialization decoding. That is tolerable for now, but these read paths are still weaker than the newer typed claim DTOs.
 - Reward ceremony construction is still duplicated across multiple view-models and views via repeated `ClaimRewardConfig` assembly.
-- `backend/src/app/api/quests/daily/route.ts` still contains legacy `any` shaping in quest-definition helpers and formatting code, which keeps that route in `Needs review` status even though the claim contract itself is good.
+- The original quest-route typing concern is now resolved: `backend/src/app/api/quests/daily/route.ts` no longer carries the legacy `any` shaping that was present earlier in the audit sequence.
 
 ## Files Without Clear Current Role
 
@@ -91,4 +91,3 @@ This block closes the remaining refresh-based iOS claim flows left after [[block
 - `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` completed with `** BUILD SUCCEEDED **`.
 - `git diff --check` passes after the client/service/comment cleanup.
 - Wiki link check passes after adding this block page.
-

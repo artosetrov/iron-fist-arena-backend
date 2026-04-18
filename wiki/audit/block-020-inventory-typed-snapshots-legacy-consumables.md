@@ -60,14 +60,14 @@ This block moved one step deeper into the item/inventory layer after [[block-019
 | `backend/src/app/api/inventory/unequip/route.ts` | Backend unequip mutation API | Unequips an item and returns the canonical inventory snapshot. | Used by `InventoryService.unequip()`. Depends on auth, Prisma, inventory snapshot helper. | Must converge optimistic state back to authoritative inventory without dropping consumables. | Re-audited here; no code change in this block, but its full-snapshot contract is now actually consumed by the client. | OK |
 | `backend/src/app/api/inventory/use/route.ts` | Backend legacy equipment-inventory consumable use API | Consumes old consumable items that still live in `equipment_inventory`. | Used by `InventoryService.useItem(...)` when `consumableType` is absent. Depends on auth, Prisma, stamina/hp helpers, quest progress. | Legacy path must still obey the same consumable-effect rules as the main consumables system. | Replaced `itemName`-only stamina logic with canonical `ConsumableType` resolution plus shared stamina/health helpers. | Fixed |
 | `backend/src/lib/game/inventory-response.ts` | Backend shared inventory snapshot helper | Builds the canonical `{ equipment, consumables, inventorySlots }` payload for GET/equip/unequip. | Used by inventory GET/equip/unequip routes. Depends on Prisma, item-balance helper, item constants. | This helper is the contract source of truth for inventory snapshots. | Re-audited here; client is now aligned with it instead of reinterpreting partial slices. | OK |
-| `Hexbound/Hexbound/Models/Item.swift` | iOS inventory/shop item model | Shared item model used across inventory, loot, hero, arena, and comparison UI. | Used broadly across item-facing views and services. | Must remain compatible with equipment inventory items and client-side consumable mapping. | Re-audited here. Still carries one unresolved risk: local `effectiveStats` assumes `+1` per upgrade level while backend uses configurable `getUpgradeStatBonus()`. | Needs review |
+| `Hexbound/Hexbound/Models/Item.swift` | iOS inventory/shop item model | Shared item model used across inventory, loot, hero, arena, and comparison UI. | Used broadly across item-facing views and services. | Must remain compatible with equipment inventory items and client-side consumable mapping. | Re-audited here. The old `+1` fallback warning was later closed by [[block-159-ios-game-init-item-stat-preview-parity]] and [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]], which aligned authoritative stat hydration and config-backed local fallback math. | Fixed |
 | `Hexbound/Hexbound/Services/InventoryService.swift` | iOS inventory service | Loads inventory and executes equip/unequip/sell/use/expand actions. | Used by `InventoryViewModel`, hero/inventory surfaces, and other cache-warming paths. Depends on `APIClient` and `AppState`. | Inventory reads and equip/unequip writes should consume the backend snapshot contract directly. | Added typed snapshot DTOs, removed raw flatten/serialize decode path, and switched equip/unequip to full authoritative snapshot decoding. | Fixed |
 | `Hexbound/Hexbound/Views/Inventory/InventoryViewModel.swift` | iOS inventory view model | Owns optimistic UI flows and inventory-grid state. | Used by hero/inventory screens. Depends on `InventoryService`, `ShopService`, `AppState`. | Optimistic actions should collapse back to authoritative server state cleanly and with minimal merge logic. | Removed the now-stale equipment-only merge workaround and now applies the full server snapshot after equip/unequip. | Fixed |
 
 ## Duplicate / Split Logic Found
 
 - Client-side consumable display metadata still exists in more than one place (`InventoryService`, `ShopItem`, `Item`, `ShopOffer`), which means display names, rarity, and image-key rules can still drift over time.
-- Inventory stat presentation still splits responsibility between backend-returned `effectiveStats` and client-side recomputation in `Item.effectiveStats`.
+- Inventory stat presentation still splits responsibility between backend-returned `effectiveStats` and client-side recomputation in `Item.effectiveStats`, but the old hard-coded upgrade-bonus drift was closed later by [[block-159-ios-game-init-item-stat-preview-parity]] and [[block-165-ios-upgrade-stat-bonus-config-fallback-parity]].
 
 ## Files Without Clear Current Role
 
@@ -76,7 +76,7 @@ This block moved one step deeper into the item/inventory layer after [[block-019
 ## Candidates For Refactor
 
 - Extract a shared iOS consumable catalog helper so inventory/shop/item-detail flows stop carrying parallel display-name / rarity / image-key maps.
-- Normalize `Item` stat presentation around authoritative backend `effectiveStats` or document why the client is still allowed to recompute it locally.
+- Normalize `Item` stat presentation around authoritative backend `effectiveStats` everywhere possible, or document where best-effort local preview is still intentionally allowed for partial/offline item contexts.
 
 ## Documentation Missing Or Stale
 

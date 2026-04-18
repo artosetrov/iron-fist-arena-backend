@@ -86,8 +86,10 @@ This block was worth doing because one of those “small warnings” in `mail-cl
   - `HeroWidgetPreviews` and `StanceDisplayPreviews` now have no live imports from the design-system page
   - this file mixes still-used previews with likely-dead exports, which makes the page harder to treat as a clean source of truth
 - **What was fixed in this block:**
-  - no blind deletion yet; the file is now explicitly marked in the audit as a deprecation candidate for the next file-by-file pass
-- **Status:** Needs review
+  - no blind deletion yet; the file was explicitly marked in the audit as a deprecation candidate for the next file-by-file pass
+- **Later follow-up:**
+  - `HeroWidgetPreviews` and `StanceDisplayPreviews` were later deleted in [[block-173-admin-design-system-dead-preview-export-removal]] after confirming they had no live imports and the design-system page already used the Figma-derived variants
+- **Status:** Fixed
 
 ### `admin/src/app/(dashboard)/items/_components/item-preview-card.tsx`
 

@@ -51,6 +51,11 @@ Players share a unique 8-character invite code; when an invitee signs up and hit
 - `Hexbound/Hexbound/Views/Settings/SettingsDetailView.swift` — hosts referral section
 - `Hexbound/Hexbound/Views/Settings/ReferralSectionView.swift` — copy code / enter code UI
 
+### Reward surface
+
+- invitee-side friend-code apply now presents the gold payout through the shared `ClaimRewardModalView` ceremony, not a toast
+- inline status text remains for local confirmation/error context, but the actual currency reward moment is modal-backed
+
 ### Tutorial
 
 - `Hexbound/Hexbound/Tutorial/TutorialManager.swift` — referral redeem is woven into tutorial progression events

@@ -8,7 +8,7 @@ updated: 2026-04-14
 
 # Achievements
 
-3 categories, 21 achievements. Auto-tracked — no manual claim required for progress.
+3 categories, 18 achievements. Auto-tracked — no manual claim required for progress.
 
 ## Categories
 
@@ -27,7 +27,13 @@ updated: 2026-04-14
 
 ## Rewards
 
-Gem rewards: 5–50 gems per achievement tier.
+Claimable rewards can be currency or cosmetics:
+
+- `gold`
+- `gems`
+- `xp`
+- `title`
+- `frame`
 
 ## Critical Rule
 
@@ -37,4 +43,4 @@ Gem rewards: 5–50 gems per achievement tier.
 
 - [[progression]]
 - [[pvp-rating]]
-- [[economy]] (gem rewards)
+- [[economy]] (achievement reward economy context)
