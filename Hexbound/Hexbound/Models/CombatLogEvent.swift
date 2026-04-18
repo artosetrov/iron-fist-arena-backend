@@ -77,6 +77,44 @@ enum CombatLogEvent: Identifiable, Sendable, Equatable {
         }
     }
 
+    // MARK: - Stat accessors (for post-battle summary aggregation)
+
+    /// Damage dealt by this event, or 0 for non-damaging events. Blocked
+    /// strikes read 0 by design — they count as attempted but not landed.
+    var damageDealt: Int {
+        switch self {
+        case .strike(_, _, _, _, let damage, _),
+             .crit(_, _, _, _, let damage, _):
+            return damage
+        case .blocked, .dodged, .missed, .talentFired:
+            return 0
+        }
+    }
+
+    /// `true` if this event represents an attempt to hit (landed or not).
+    /// Used for accuracy: crit/strike/blocked/dodged/missed count; talent
+    /// rows do not.
+    var isStrikeAttempt: Bool {
+        switch self {
+        case .strike, .crit, .blocked, .dodged, .missed: return true
+        case .talentFired:                               return false
+        }
+    }
+
+    /// `true` if the attempt actually dealt damage. Drives accuracy %.
+    var didLand: Bool {
+        switch self {
+        case .strike, .crit:                    return true
+        case .blocked, .dodged, .missed, .talentFired: return false
+        }
+    }
+
+    /// `true` if this is a crit strike. Drives best-round detection.
+    var isCritStrike: Bool {
+        if case .crit = self { return true }
+        return false
+    }
+
     // MARK: - Side accessor
 
     var side: Side {

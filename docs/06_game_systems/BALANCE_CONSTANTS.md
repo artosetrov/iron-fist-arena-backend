@@ -41,7 +41,7 @@
 | Regen Interval | 8 minutes | Every 8 min → +1 stamina |
 | Regen Duration | Infinite | Always regenerating |
 
-**Regen Timeline:** At 0 stamina, reach full 120 in 960 minutes (16 hours)
+**Regen Timeline:** At 0 stamina, reach full 180 in 1440 minutes (24 hours) — post Economy v3 batch 3 stamina cap bump.
 
 ### Stamina Costs by Activity
 
@@ -337,7 +337,7 @@ Premium currency sinks:
 
 Players earn free gems from:
 - Daily login (Day 7) = 25 gems/week
-- Achievements = 5–50 gems per achievement
+- Achievements = mixed reward catalog; gems come only from selected achievement milestones
 - Battle pass free track = 50+ gems per season
 
 ---

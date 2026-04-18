@@ -1,5 +1,5 @@
 # Database Schema Reference (Source of Truth)
-*Derived from Prisma schema. Updated: 2026-03-30*
+*Derived from Prisma schema. Updated: 2026-04-17 — 65 models, 19 enums, 830 fields.*
 
 ## Core User & Auth
 
@@ -124,6 +124,23 @@
 
 **Relations:** Character
 
+### StashItem
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| userId | String (UUID) | Owner (gear stash is user-scoped, not character-scoped) |
+| itemId | String (UUID) | Catalog reference |
+| upgradeLevel | Int | +0..+10 upgrade tier (preserved in stash) |
+| durability | Int | Current durability (default 100) |
+| maxDurability | Int | Max durability (default 100) |
+| rolledStats | JSON? | Rolled stat values at drop time |
+| storedAt | DateTime | When moved to stash |
+| createdAt / updatedAt | DateTime |
+
+**Indexes:** userId, itemId
+
+**Relations:** User, Item
+
 ---
 
 ## PvP & Combat
@@ -169,6 +186,22 @@
 | snapshot | JSON | Character state at creation |
 | expiresAt | DateTime | Ticket validity window |
 | createdAt | DateTime |
+
+### RevengeQueue
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| victimId | String (UUID) | Player who lost / was attacked |
+| attackerId | String (UUID) | Player who initiated the attack |
+| matchId | String (UUID) | Source PvpMatch |
+| isSeen | Boolean | Victim has viewed the revenge opportunity |
+| isUsed | Boolean | Revenge already claimed |
+| createdAt | DateTime |
+| expiresAt | DateTime | Revenge window (typically 24h) |
+
+**Indexes:** (victimId, isUsed, expiresAt), attackerId, expiresAt
+
+**Relations:** Character (as victim + attacker), PvpMatch, PvpBattleTicket[]
 
 ---
 
@@ -315,6 +348,21 @@
 
 **Relations:** Dungeon, Item
 
+### DungeonProgress
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Player |
+| dungeonId | String (UUID) | Dungeon identifier |
+| bossIndex | Int | Current boss cursor inside the dungeon (default 0) |
+| completed | Boolean | Whether the whole dungeon has been cleared |
+| createdAt / updatedAt | DateTime |
+
+**Unique constraints:** (characterId, dungeonId)
+**Indexes:** characterId, (characterId, completed)
+
+**Relations:** Character
+
 ---
 
 ## Skills
@@ -399,6 +447,21 @@
 
 **Relations:** Character, PassiveNode
 
+### CharacterActiveSlot
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Player |
+| nodeId | String (UUID)? | Talent node equipped in slot (null when slot holds a consumable) |
+| consumableType | ConsumableType? | Consumable equipped in slot (null when slot holds a talent) |
+| slotIndex | Int | 0, 1, 2 (3 active slots per character) |
+| equippedAt | DateTime |
+
+**Unique constraints:** (characterId, slotIndex)
+**Indexes:** characterId
+
+**Relations:** Character, PassiveNode
+
 ---
 
 ## Shop & Economy
@@ -444,6 +507,23 @@
 | createdAt | DateTime |
 
 **Relations:** ShopOffer, Character
+
+### ContrabandClaim
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Claimant |
+| contents | JSON | `[{type, id?, quantity}]` — payload granted |
+| price | Int | 0 = free, >0 = paid (gold/gems) |
+| currency | String | gold \| gems (default: gold) |
+| claimNumber | Int | Sequential per character (odd = free, even = paid) |
+| claimedAt | DateTime |
+
+**Indexes:** (characterId, claimedAt)
+
+**Relations:** Character
+
+Alternating free/paid contraband drops used by the "blackmarket" progression hook.
 
 ---
 
@@ -494,6 +574,41 @@
 
 **Relations:** Season
 
+### BattlePassClaim
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Claimant |
+| battlePassId | String (UUID) | BattlePass row |
+| rewardId | String (UUID) | BattlePassReward row |
+| claimedAt | DateTime |
+
+**Unique constraints:** (characterId, rewardId)
+
+**Relations:** Character, BattlePass, BattlePassReward
+
+### WeeklyChallengeProgress
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Player |
+| isoWeek | String | e.g. "2026-W15" |
+| slotIndex | Int | 0..4 (5 weekly slots per character) |
+| goalType | QuestType | pvp_wins / dungeons_complete / etc. |
+| goalTarget | Int | Target value |
+| progress | Int | Current progress (default 0) |
+| bpXpAward | Int | BP XP granted on completion |
+| claimed | Boolean | Reward already claimed |
+| completedAt | DateTime? |
+| createdAt | DateTime |
+
+**Unique constraints:** (characterId, isoWeek, slotIndex)
+**Indexes:** (characterId, isoWeek)
+
+**Relations:** Character
+
+W3.D5 rotating weekly BP challenges — deterministic ISO-week seeded pool selection.
+
 ---
 
 ## Daily Systems
@@ -541,6 +656,46 @@
 **Unique constraints:** (characterId, questId, resetAt period)
 
 **Relations:** Character, DailyQuest
+
+### QuestDefinition
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| questType | String | Unique quest type key (e.g. "pvp_wins") |
+| title | String |
+| description | String |
+| icon | String | Icon key (default "") |
+| minTarget | Int | Min target value for randomized generation |
+| maxTarget | Int | Max target value |
+| rewardGold | Int | Gold reward (default 0) |
+| rewardXp | Int | Character XP reward (default 0) |
+| rewardGems | Int | Gem reward (default 0) |
+| active | Boolean | Feature flag (default true) |
+| createdAt / updatedAt | DateTime |
+
+**Unique constraints:** questType
+
+Catalog definitions that drive daily quest generation (one row per `questType`).
+
+### TutorialQuest
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Player |
+| questId | String | "equip_gear" \| "win_3_pvp" \| "first_dungeon" \| ... |
+| progress | Int | Current count (default 0) |
+| target | Int | Target count |
+| isCompleted | Boolean |
+| completedAt | DateTime? |
+| rewardClaimed | Boolean |
+| createdAt | DateTime |
+
+**Unique constraints:** (characterId, questId)
+**Indexes:** characterId
+
+**Relations:** Character
+
+Per-character tutorial onboarding progression rows.
 
 ---
 
@@ -654,6 +809,39 @@
 
 **Relations:** Character
 
+### GuildChallenge
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| title | String |
+| description | String |
+| goalType | String | "pvp_wins" \| "gold_earned" \| "dungeons_cleared" |
+| goalTarget | Int | Server-wide / guild target (e.g. 500 total wins) |
+| currentProgress | Int | Aggregate progress (default 0) |
+| goldReward | Int | Reward on completion |
+| gemReward | Int | (default 0) |
+| startAt / endAt | DateTime |
+| completed | Boolean |
+| claimed | Boolean |
+| createdAt | DateTime |
+
+**Indexes:** (startAt, endAt)
+
+Global/guild-level LiveOps challenges with a shared pool goal.
+
+### ReferralRewardClaim
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| referrerCharacterId | String (UUID) | Referrer |
+| inviteeCharacterId | String (UUID) | Invitee whose qualification unlocked the reward |
+| qualifiedAt | DateTime |
+
+**Unique constraints:** (referrerCharacterId, inviteeCharacterId)
+**Indexes:** referrerCharacterId, inviteeCharacterId
+
+**Relations:** Character (as referrer + invitee)
+
 ---
 
 ## Achievements
@@ -756,6 +944,18 @@
 
 **Unique constraints:** key
 
+### ConfigSnapshot
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| name | String | Snapshot label (e.g. "pre-v3-balance-2026-04-13") |
+| description | String? |
+| configs | JSON | Full serialized GameConfig / FeatureFlag state |
+| createdBy | String | Admin user id |
+| createdAt | DateTime |
+
+Snapshots of live config state for rollback / audit.
+
 ---
 
 ## Analytics & Moderation
@@ -789,6 +989,23 @@
 | verdict | String | Balanced, OP, UP |
 | createdAt | DateTime |
 
+### PushLog
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| campaignId | String (UUID)? | PushCampaign reference (null for 1:1 sends) |
+| userId | String (UUID) | Recipient |
+| token | String | Device token used |
+| title | String |
+| body | String |
+| status | String | sent \| delivered \| failed |
+| error | String? | APNs/FCM error message |
+| createdAt | DateTime |
+
+**Indexes:** campaignId, (userId, createdAt DESC)
+
+Per-send audit trail for push delivery.
+
 ---
 
 ## In-App Purchases
@@ -807,6 +1024,28 @@
 | receipt | String | Encrypted Apple receipt |
 | verified | Boolean | Server-verified (default: false) |
 | createdAt | DateTime |
+
+### PremiumSubscription
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| userId | String (UUID) | Unique — one row per user |
+| productId | String | e.g. `premium_pass_monthly` |
+| originalTransactionId | String | Apple ORIGINAL tx id (stable across renewals) |
+| latestTransactionId | String | Most recent Apple tx id |
+| startedAt | DateTime |
+| expiresAt | DateTime | Includes Apple's 16-day billing retry window |
+| autoRenew | Boolean | default true |
+| status | String | active \| grace_period \| expired \| refunded |
+| latestReceipt | String? | Opaque receipt blob for re-verification |
+| createdAt / updatedAt | DateTime |
+
+**Unique constraints:** userId
+**Indexes:** originalTransactionId, expiresAt
+
+**Relations:** User (1:1)
+
+Premium Pass (30-day auto-renewable). `hasPremium()` reads `max(user.premiumUntil, premiumSubscription.expiresAt)` so legacy `premium_forever` owners and Pass holders coexist. See `docs/06_game_systems/PREMIUM_PASS_MIGRATION.md`.
 
 ---
 

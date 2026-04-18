@@ -30,15 +30,81 @@ struct RoundExchange: Sendable, Identifiable, Equatable {
     let enemyEvents: [CombatLogEvent]
     let talentFired: Bool
     let finishingBlow: Bool
+    let verdict: RoundVerdict
+    let playerAttackZone: InteractiveBodyZone
+    let playerDefendZone: InteractiveBodyZone
+    let opponentAttackZone: InteractiveBodyZone
+    let opponentDefendZone: InteractiveBodyZone
 
     // MARK: - Display timing
 
     /// Auto-dismiss delay for the Round Exchange card. Longer cards (talent
-    /// rows, finishing-blow rounds) linger so the player has time to read.
+    /// rows, finishing-blow rounds, peak verdicts) linger so the player has
+    /// time to read the subtitle and see the gold border pulse on OUTPLAYED.
     var autoDismissDelay: Duration {
-        if finishingBlow { return .milliseconds(3200) }
-        if talentFired   { return .milliseconds(2400) }
+        if finishingBlow  { return .milliseconds(3200) }
+        if talentFired    { return .milliseconds(2400) }
+        if verdict.isPeak { return .milliseconds(2500) }
         return .milliseconds(1800)
+    }
+
+    // MARK: - Aggregate stats
+
+    /// Pre-computed summary of a whole battle's log. Built once on the
+    /// `.summary` phase so `BattleSummaryView` can render a stats header
+    /// without recomputing on every body-rebuild.
+    struct BattleStats: Sendable, Equatable {
+        let damageDealt: Int
+        let damageTaken: Int
+        let hitAttempts: Int       // player strike attempts (landed or not)
+        let hitsLanded: Int        // of those, ones that dealt damage
+        let bestHitDamage: Int
+        let bestRoundNumber: Int?  // round with the highest single landed hit
+        let rounds: Int
+
+        var accuracyPercent: Int {
+            guard hitAttempts > 0 else { return 0 }
+            return Int((Double(hitsLanded) / Double(hitAttempts)) * 100.0)
+        }
+    }
+
+    // MARK: - Factory (stats)
+
+    /// Aggregate a full battle log into a single `BattleStats` snapshot.
+    /// Purely a reducer over the already-resolved exchanges — no server
+    /// calls, no damage math. Safe to call every frame if needed.
+    static func aggregate(log: [RoundExchange]) -> BattleStats {
+        var damageDealt = 0
+        var damageTaken = 0
+        var attempts = 0
+        var landed = 0
+        var bestDamage = 0
+        var bestRound: Int? = nil
+
+        for exchange in log {
+            for ev in exchange.allyEvents {
+                if ev.isStrikeAttempt { attempts += 1 }
+                if ev.didLand         { landed   += 1 }
+                damageDealt += ev.damageDealt
+                if ev.damageDealt > bestDamage {
+                    bestDamage = ev.damageDealt
+                    bestRound  = exchange.roundNumber
+                }
+            }
+            for ev in exchange.enemyEvents {
+                damageTaken += ev.damageDealt
+            }
+        }
+
+        return BattleStats(
+            damageDealt: damageDealt,
+            damageTaken: damageTaken,
+            hitAttempts: attempts,
+            hitsLanded: landed,
+            bestHitDamage: bestDamage,
+            bestRoundNumber: bestRound,
+            rounds: log.count
+        )
     }
 
     // MARK: - Factory
@@ -115,13 +181,23 @@ struct RoundExchange: Sendable, Identifiable, Equatable {
             ))
         }
 
+        let verdict = RoundVerdict.classify(
+            playerStrike: response.playerStrike,
+            opponentStrike: response.opponentStrike
+        )
+
         return RoundExchange(
             id: UUID(),
             roundNumber: roundNumber,
             allyEvents: ally,
             enemyEvents: enemy,
             talentFired: didFireTalent,
-            finishingBlow: response.matchFinished
+            finishingBlow: response.matchFinished,
+            verdict: verdict,
+            playerAttackZone: playerAttackZone,
+            playerDefendZone: playerDefendZone,
+            opponentAttackZone: response.oppZones.attack,
+            opponentDefendZone: response.oppZones.defend
         )
     }
 

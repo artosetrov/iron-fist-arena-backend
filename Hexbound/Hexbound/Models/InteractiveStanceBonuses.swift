@@ -78,4 +78,53 @@ enum InteractiveStanceBonuses {
         case .legs:  return "icon-legs"
         }
     }
+
+    // MARK: - Tooltip copy
+    //
+    // Plain-language zone tooltips shown on long-press. These are the first
+    // thing a new player reads to understand the high-risk/high-reward
+    // personality of each zone. Keep under ~120 chars so the tooltip fits
+    // in a two-line callout on iPhone SE width.
+
+    /// Long-press tooltip for an attack-zone tile in the picker.
+    static func attackTooltip(for zone: InteractiveBodyZone) -> String {
+        switch zone {
+        case .head:
+            return "High damage and crit chance. Easy to block if the enemy reads you."
+        case .chest:
+            return "Balanced damage. Reliable pick when you're unsure."
+        case .legs:
+            return "Low damage, hardest to counter. Safe poke."
+        }
+    }
+
+    /// Long-press tooltip for a defense-zone tile in the picker.
+    static func defendTooltip(for zone: InteractiveBodyZone) -> String {
+        switch zone {
+        case .head:
+            return "High dodge chance — you can fully avoid the hit."
+        case .chest:
+            return "Solid damage reduction. The safe defensive pick."
+        case .legs:
+            return "Mixed defense: some damage reduction plus a small dodge."
+        }
+    }
+
+    /// Long-press tooltip for the STANCE chip shown under a fighter card.
+    /// Summarizes the bonus in plain words without the numeric shorthand.
+    static func chipTooltip(kind: ChipKind, zone: InteractiveBodyZone?) -> String {
+        guard let zone else {
+            return kind == .attack
+                ? "You haven't seen where they strike yet. Land 1–2 hits to reveal it."
+                : "Defense is hidden until the next exchange. Keep pressuring."
+        }
+        switch kind {
+        case .attack: return attackTooltip(for: zone)
+        case .defend: return defendTooltip(for: zone)
+        }
+    }
+
+    /// Small wrapper so the tooltip API is not coupled to SwiftUI. Mirrors
+    /// `StanceBonusChip.Kind` without importing the view layer.
+    enum ChipKind { case attack, defend }
 }

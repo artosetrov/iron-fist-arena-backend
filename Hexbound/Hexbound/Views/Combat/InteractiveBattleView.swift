@@ -20,6 +20,16 @@
 
 import SwiftUI
 
+// MARK: - Outcome Role
+
+/// Applied to a fighter card during `.reveal` for peak verdicts only.
+/// Drives loser dim + winner gold shadow. `nil` = default look (middle
+/// outcomes and any phase other than a peak-verdict reveal).
+enum OutcomeRole: Sendable, Equatable {
+    case winner
+    case loser
+}
+
 // MARK: - Host Screen
 
 struct InteractiveBattleView: View {
@@ -49,6 +59,13 @@ struct InteractiveBattleView: View {
             // PNG image FX overlay — slash, crit text, shield, heal.
             CombatFXImageOverlay(fxManager: vm.fxImageManager)
                 .allowsHitTesting(false)
+
+            // Verdict flash — screen-level radial tint keyed to the current
+            // round's verdict. Fires once per resolved exchange.
+            CombatVerdictFlash(
+                verdict: vm.currentExchange?.verdict,
+                triggerId: vm.currentExchange?.id
+            )
         }
         // Resolve fighter-card anchors in screen coordinates and push them
         // to the VM so VFX/FX land on the right avatar. Attached to the root
@@ -93,7 +110,8 @@ struct InteractiveBattleView: View {
                     slideX: vm.playerSlideX,
                     flash: vm.playerFlash,
                     popups: vm.damagePopups.filter { !$0.onDefender },
-                    compact: vm.phase.isSummary
+                    compact: vm.phase.isSummary,
+                    outcomeRole: vm.playerOutcomeRole
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .player, bounds: $0)]
@@ -130,7 +148,8 @@ struct InteractiveBattleView: View {
                     slideX: vm.enemySlideX,
                     flash: vm.enemyFlash,
                     popups: vm.damagePopups.filter { $0.onDefender },
-                    compact: vm.phase.isSummary
+                    compact: vm.phase.isSummary,
+                    outcomeRole: vm.opponentOutcomeRole
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
@@ -227,9 +246,7 @@ struct InteractiveBattleView: View {
     private var predictPanel: some View {
         switch vm.phase {
         case .intro:
-            ProgressView()
-                .progressViewStyle(.circular)
-                .tint(DarkFantasyTheme.gold)
+            HexPulseLoader(.standard, message: "PREPARING DUEL")
                 .frame(maxWidth: .infinity, minHeight: 180)
         case .unavailable:
             unavailableBanner
@@ -238,9 +255,7 @@ struct InteractiveBattleView: View {
         case .finished(let winnerId):
             finishedBanner(winnerId: winnerId)
         case .completing:
-            ProgressView("Finalizing…")
-                .tint(DarkFantasyTheme.gold)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
+            HexPulseLoader(.standard, message: "FINALIZING")
                 .frame(maxWidth: .infinity, minHeight: 180)
         case .summary:
             // Finishing blow landed — replace the predict panel with the
@@ -351,6 +366,9 @@ private struct DuelFighterCard: View {
     /// Used by the `.summary` phase so the post-battle log gets the
     /// vertical room it needs without dropping the YOU/ENEMY identity.
     var compact: Bool = false
+    /// Peak-verdict framing (Phase 4). `nil` for middle outcomes and any
+    /// non-reveal phase — keeps the default look.
+    var outcomeRole: OutcomeRole? = nil
 
     private var borderColor: Color {
         side == .player ? DarkFantasyTheme.success : DarkFantasyTheme.danger
@@ -417,12 +435,40 @@ private struct DuelFighterCard: View {
                 pulseOnCritical: true
             )
 
+            // HP numeric readout uses the side-specific border color so a
+            // quick glance at the number alone already tells you whose HP
+            // you're reading. Low-HP tint overrides with `hpBlood` to warn
+            // regardless of side when either fighter is near death.
             Text("\(currentHp) / \(maxHp)")
                 .font(DarkFantasyTheme.badge)
-                .foregroundStyle(DarkFantasyTheme.hpBlood)
+                .foregroundStyle(hpTextColor)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.25), value: currentHp)
         }
+        .opacity(outcomeOpacity)
+        .shadow(color: outcomeShadowColor, radius: outcomeShadowRadius, y: 0)
+        .animation(.easeOut(duration: 0.4), value: outcomeRole)
+    }
+
+    private var outcomeOpacity: Double {
+        outcomeRole == .loser ? 0.72 : 1.0
+    }
+
+    /// HP text color. Side-tinted until HP drops low, then flips to
+    /// blood red so the "I'm about to die" signal reads the same for
+    /// both fighters.
+    private var hpTextColor: Color {
+        let ratio = maxHp > 0 ? Double(currentHp) / Double(maxHp) : 0
+        if ratio <= 0.25 { return DarkFantasyTheme.hpBlood }
+        return borderColor
+    }
+
+    private var outcomeShadowColor: Color {
+        outcomeRole == .winner ? DarkFantasyTheme.gold.opacity(0.4) : .clear
+    }
+
+    private var outcomeShadowRadius: CGFloat {
+        outcomeRole == .winner ? 16 : 0
     }
 
     private var profileSubtitle: String {
@@ -442,9 +488,7 @@ private struct DuelFighterCard: View {
                 )
                 .scaleEffect(x: side == .player ? 1 : -1, y: 1)
             } else {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .tint(DarkFantasyTheme.gold)
+                HexPulseLoader(.compact)
             }
         }
     }
@@ -487,15 +531,11 @@ struct InteractivePredictView: View {
             //    on screen, STRIKE morphs into the locked YOUR CHOICE
             //    badge and SKIP dims to avoid double-dismiss.
             HStack(spacing: LayoutConstants.spaceSM) {
-                Button(action: { vm.skipAndSubmit() }) {
-                    Text("SKIP")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonHeightLG)
-                }
-                .buttonStyle(SecondaryButtonStyle())
+                SkipButtonWithTooltip(
+                    disabled: vm.currentExchange != nil,
+                    action: { vm.skipAndSubmit() }
+                )
                 .frame(maxWidth: .infinity)
-                .disabled(vm.currentExchange != nil)
-                .opacity(vm.currentExchange != nil ? 0.4 : 1.0)
 
                 ZStack {
                     if vm.currentExchange == nil {
@@ -589,12 +629,89 @@ struct InteractivePredictView: View {
         let bonusText = isAttack
             ? InteractiveStanceBonuses.attackBonusText(for: zone)
             : InteractiveStanceBonuses.defendBonusText(for: zone)
-        return Button(action: action) {
+        return ZoneTileButton(
+            zone: zone,
+            isSelected: isSelected,
+            isAttack: isAttack,
+            bonusText: bonusText,
+            fallbackIcon: fallbackIconForZone(zone),
+            action: action
+        )
+    }
+
+    /// SF Symbol fallback used by `CachedAssetImage` if the zone asset
+    /// isn't available in the bundle yet (keeps the tile from flashing
+    /// a broken-image icon during a cold cache).
+    private func fallbackIconForZone(_ zone: InteractiveBodyZone) -> String {
+        switch zone {
+        case .head: return "brain.head.profile"
+        case .chest: return "heart.fill"
+        case .legs: return "figure.walk"
+        }
+    }
+}
+
+// MARK: - Skip Button with Tooltip
+//
+// Wraps the `SKIP` CTA with a long-press tooltip so players learn what it
+// actually does. Spec: tapping SKIP picks random zones and submits — NO
+// penalty, NO damage hit, NO stamina cost. It's a "I'm not sure, just
+// roll the dice" button. The tooltip makes that explicit so it stops
+// reading as a scary escape-hatch with hidden downsides.
+
+private struct SkipButtonWithTooltip: View {
+    let disabled: Bool
+    let action: () -> Void
+    @State private var showTooltip = false
+
+    var body: some View {
+        Button(action: action) {
+            Text("SKIP")
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonHeightLG)
+        }
+        .buttonStyle(SecondaryButtonStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1.0)
+        .onLongPressGesture(minimumDuration: 0.35) {
+            guard !disabled else { return }
+            HapticManager.selection()
+            showTooltip = true
+        }
+        .popover(isPresented: $showTooltip, arrowEdge: .top) {
+            CombatInfoTooltipContent(
+                title: "SKIP",
+                message: "Picks random attack and defense zones, then submits. No penalty — safe pick if you can't decide in time."
+            )
+            .presentationCompactAdaptation(.popover)
+        }
+        .accessibilityHint(Text("Long press for details"))
+    }
+}
+
+// MARK: - Zone Tile Button
+//
+// Extracted from `zoneTile(...)` so it can own a `@State` for the long-press
+// tooltip. SwiftUI view-builder methods can't own state; promoting the tile
+// into a struct unlocks the popover without refactoring the parent view.
+
+private struct ZoneTileButton: View {
+    let zone: InteractiveBodyZone
+    let isSelected: Bool
+    let isAttack: Bool
+    let bonusText: String
+    let fallbackIcon: String
+    let action: () -> Void
+
+    @State private var showTooltip = false
+
+    var body: some View {
+        Button(action: action) {
             VStack(spacing: LayoutConstants.space2XS) {
                 CachedAssetImage(
                     key: InteractiveStanceBonuses.assetName(for: zone),
                     url: nil,
-                    systemIcon: fallbackIconForZone(zone),
+                    systemIcon: fallbackIcon,
                     contentMode: .fit
                 )
                 .frame(width: 28, height: 28)
@@ -628,17 +745,29 @@ struct InteractivePredictView: View {
             .opacity(isSelected ? 1.0 : 0.85)
         }
         .buttonStyle(.plain)
+        .onLongPressGesture(minimumDuration: 0.35) {
+            HapticManager.selection()
+            showTooltip = true
+        }
+        .popover(isPresented: $showTooltip, arrowEdge: .top) {
+            CombatInfoTooltipContent(
+                title: tooltipTitle,
+                message: tooltipMessage
+            )
+            .presentationCompactAdaptation(.popover)
+        }
+        .accessibilityHint(Text("Long press for details"))
     }
 
-    /// SF Symbol fallback used by `CachedAssetImage` if the zone asset
-    /// isn't available in the bundle yet (keeps the tile from flashing
-    /// a broken-image icon during a cold cache).
-    private func fallbackIconForZone(_ zone: InteractiveBodyZone) -> String {
-        switch zone {
-        case .head: return "brain.head.profile"
-        case .chest: return "heart.fill"
-        case .legs: return "figure.walk"
-        }
+    private var tooltipTitle: String {
+        let channel = isAttack ? "ATTACK" : "DEFENSE"
+        return "\(channel) · \(zone.rawValue.uppercased())"
+    }
+
+    private var tooltipMessage: String {
+        isAttack
+            ? InteractiveStanceBonuses.attackTooltip(for: zone)
+            : InteractiveStanceBonuses.defendTooltip(for: zone)
     }
 }
 
@@ -668,8 +797,7 @@ struct InteractiveBattleRouteView: View {
             } else {
                 ZStack {
                     DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-                    ProgressView()
-                        .tint(DarkFantasyTheme.gold)
+                    HexPulseLoader(.large, message: "PREPARING DUEL")
                 }
             }
         }

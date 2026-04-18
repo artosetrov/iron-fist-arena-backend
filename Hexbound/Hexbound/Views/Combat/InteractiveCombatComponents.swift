@@ -301,6 +301,11 @@ struct StanceBonusChip: View {
     let kind: Kind
     let mode: Mode
 
+    // Long-press tooltip. Lives on the chip itself rather than the parent so
+    // every chip gets explanatory text for free — the `InteractiveStanceBonuses`
+    // copy is the single source of truth.
+    @State private var showTooltip = false
+
     var body: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             // Channel icon (ATK sword / DEF shield)
@@ -348,8 +353,44 @@ struct StanceBonusChip: View {
                 )
         )
         .opacity(isHidden ? 0.6 : 1.0)
+        .contentShape(Rectangle())
+        .onLongPressGesture(minimumDuration: 0.35) {
+            HapticManager.selection()
+            showTooltip = true
+        }
+        .popover(isPresented: $showTooltip, arrowEdge: .top) {
+            CombatInfoTooltipContent(
+                title: tooltipTitle,
+                message: tooltipMessage
+            )
+            .presentationCompactAdaptation(.popover)
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(accessibilityText))
+        .accessibilityHint(Text("Long press for details"))
+    }
+
+    private var tooltipTitle: String {
+        let channel = kind == .attack ? "ATTACK" : "DEFENSE"
+        let zoneName: String
+        switch mode {
+        case .confirmed(let z), .predicted(let z):
+            zoneName = z.rawValue.uppercased()
+        case .hidden:
+            zoneName = "UNKNOWN"
+        }
+        return "\(channel) · \(zoneName)"
+    }
+
+    private var tooltipMessage: String {
+        let zoneArg: InteractiveBodyZone?
+        switch mode {
+        case .confirmed(let z), .predicted(let z): zoneArg = z
+        case .hidden:                              zoneArg = nil
+        }
+        let chipKind: InteractiveStanceBonuses.ChipKind =
+            (kind == .attack) ? .attack : .defend
+        return InteractiveStanceBonuses.chipTooltip(kind: chipKind, zone: zoneArg)
     }
 
     // MARK: Derived
@@ -445,20 +486,73 @@ struct StanceBonusChip: View {
     }
 }
 
+// MARK: - Combat Info Tooltip Content
+//
+// Reusable tooltip body for long-press reveals across the combat screen:
+// zone chips, picker tiles, and any future skill/consumable slot. Stays
+// visual-system-pure (tokens only, no raw colors) so it reads the same
+// whether the popover attaches to a chip above or a tile below.
+
+/// Content rendered inside a `.popover` for combat info reveals. Short
+/// title on top (channel + zone), body paragraph underneath. Width is
+/// capped so the content reads as a sidebar blurb on iPhone, not a full
+/// sheet-style block.
+struct CombatInfoTooltipContent: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+            Text(title)
+                .font(DarkFantasyTheme.badge)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.gold)
+
+            Text(message)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(LayoutConstants.spaceMD)
+        .frame(maxWidth: 260, alignment: .leading)
+        .background(DarkFantasyTheme.bgElevated)
+    }
+}
+
 // MARK: - 6. Stance Bonus Chip Stack
 
 /// Convenience wrapper: the pair of ATK + DEF chips shown directly under a
 /// fighter card. Caller passes each channel's `Mode` so the view stays
 /// stateless and testable.
+///
+/// A small "STANCE" overline label sits above the pair so first-time players
+/// understand that "OFF +10%" / "DODGE +8%" numbers are zone bonuses, not
+/// raw character stats. The label dims when both chips are `.hidden` so it
+/// doesn't shout over empty content.
 struct StanceBonusChipStack: View {
     let attackMode: StanceBonusChip.Mode
     let defendMode: StanceBonusChip.Mode
 
     var body: some View {
         VStack(spacing: LayoutConstants.space2XS) {
+            Text("STANCE")
+                .font(DarkFantasyTheme.badge)
+                .tracking(2)
+                .foregroundStyle(labelColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, LayoutConstants.spaceXS)
+
             StanceBonusChip(kind: .attack, mode: attackMode)
             StanceBonusChip(kind: .defend, mode: defendMode)
         }
+    }
+
+    private var labelColor: Color {
+        // Both chips hidden (e.g. opponent mid-predict with no history) → dim
+        if case .hidden = attackMode, case .hidden = defendMode {
+            return DarkFantasyTheme.textTertiary.opacity(0.6)
+        }
+        return DarkFantasyTheme.textTertiary
     }
 }
 

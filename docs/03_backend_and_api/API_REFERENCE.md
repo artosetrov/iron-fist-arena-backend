@@ -12,8 +12,8 @@
 | POST | /auth/guest | No | Guest account |
 | POST | /auth/guest-login | No | Resume guest |
 | POST | /auth/upgrade-guest | Yes | Convert guest to real |
-| POST | /auth/link-account | Yes | Merge guest with social |
-| POST | /auth/forgot-password | No | Password reset |
+| POST | /auth/link-account | Yes | Legacy local profile-link sync compatibility route |
+| POST | /auth/forgot-password | No | Password reset email (redirects to `/reset-password`) |
 | POST | /auth/sync-user | Yes | Sync user data |
 
 ## Characters (`/api/characters/*`)
@@ -39,11 +39,72 @@
 |--------|------|------|---------|
 | POST | /pvp/find-match | Yes | Search opponents |
 | POST | /pvp/prepare | Yes | Generate battle ticket |
-| POST | /pvp/fight | Yes | Start battle |
+| POST | /pvp/fight | Yes | Start battle (classic, fully resolved server-side) |
 | POST | /pvp/resolve | Yes | Finalize battle (server verifies) |
 | POST | /pvp/opponents | Yes | Recent opponents list |
 | POST | /pvp/revenge/[id] | Yes | Revenge battle |
 | GET | /pvp/history | Yes | Match history |
+| POST | /pvp/match/start | Yes | Interactive Combat v1 — create live match + return initial snapshot |
+| POST | /pvp/strike | Yes | Interactive Combat v1 — resolve ONE round (player + opponent turn) |
+| POST | /pvp/match/complete | Yes | Interactive Combat v1 — finalize match, award rewards, return summary |
+
+### Interactive Combat v1 (feature-flagged: `INTERACTIVE_COMBAT_V1=true`)
+
+Interactive Combat splits a single PvP match into round-by-round exchanges. The server is authoritative for all HP state; the client only sends its own zone/active choices per round. If the feature flag is off, `/pvp/match/*` and `/pvp/strike` return 404.
+
+#### `POST /pvp/match/start`
+
+Creates a new live match row (`pvp_matches` with `status = in_progress`) and returns the starting snapshot. Called after `/pvp/prepare` ticketing.
+
+- **Body**: `{ opponent_id: string, ticket_id: string }`
+- **Response**: `{ match_id, attacker_hp, defender_hp, max_rounds, actives: InteractiveActiveSlotSnapshot[], opponent_actives: InteractiveActiveSlotSnapshot[] }`
+
+#### `POST /pvp/strike`
+
+Resolves ONE round: the player's attack against the opponent, then (if opponent survives) a counter-strike with server-picked zones derived from seeded RNG (Mulberry32). Both turns are persisted into `pvp_matches.interactive_choices`.
+
+- **Body**: `{ match_id: string, attacker_zone: 'head'|'chest'|'legs', defender_zone: 'head'|'chest'|'legs', active_slot_index?: 0|1|2 }`
+- **Response**:
+  ```json
+  {
+    "match_id": "uuid",
+    "strike_index": 3,
+    "player_strike": { /* Turn */ },
+    "opponent_strike": { /* Turn */ } | null,
+    "attacker_hp": 140,
+    "defender_hp": 0,
+    "opp_zones": { "attack": "chest", "defend": "legs" },
+    "consumable_type": null,
+    "active_fired": null,
+    "actives": [ /* InteractiveActiveSlotSnapshot[] */ ],
+    "match_finished": true,
+    "winner_id": "uuid"
+  }
+  ```
+- **Errors**: `OUT_OF_CONSUMABLE`, `MATCH_STATE_CHANGED` (surfaced in `detail`).
+- **Rate limit**: IP-based via `rateLimit('pvp:strike:' + ip, ...)`.
+- **Round cap**: `MAX_ROUNDS = 15` — match auto-finishes at round cap if neither player has fallen.
+
+#### `POST /pvp/match/complete`
+
+Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards, updates ratings (ELO), durability, quests, and returns the full summary + snapshot for the iOS `BattleSummaryView`.
+
+- **Body**: `{ match_id: string }`
+- **Response** (selected fields):
+  ```json
+  {
+    "winner_id": "uuid",
+    "player_strike": { /* aggregated */ },
+    "opp_strike": { /* aggregated */ } | null,
+    "turns": [ /* Turn[] */ ],
+    "total_turns": 7,
+    "post_combat_hp": { "player": 140, "enemy": 0 },
+    "rating_before": { "attacker": 1024, "defender": 998 },
+    "rating_after":  { "attacker": 1041, "defender": 981 },
+    "rewards": { /* gold, xp, items, etc. */ }
+  }
+  ```
+- **Contract note**: iOS reads final HP from `post_combat_hp`, NOT from per-actor `currentHp` fields on the match snapshot (those remain `null` post-Phase 3 and are only populated during classic `/pvp/fight` flow).
 
 ## Combat/Training
 
@@ -175,7 +236,7 @@
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | /achievements | Yes | All + progress |
-| POST | /achievements/claim/[key] | Yes | Claim reward |
+| POST | /achievements/claim | Yes | Claim reward by body payload (`{ character_id, achievement_key }`) |
 | POST | /achievements/[key]/claim | Yes | Claim by key |
 
 ## Leaderboards & State

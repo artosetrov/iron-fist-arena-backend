@@ -29,6 +29,9 @@ struct InteractiveRoundLogCard: View {
     // the exchange's configured delay and ticks every 100ms.
     @State private var secondsRemaining: Double = 0
     @State private var dotPulse = false
+    // Phase 4 — OUTPLAYED border tween (gold-dim → gold → gold-dim) fires
+    // once per peak reveal. Opacity only, no scale.
+    @State private var outplayedBorderBright = false
 
     // Upper bound on card height so a talent-heavy round doesn't dominate
     // the screen. Scroll kicks in above this.
@@ -36,6 +39,8 @@ struct InteractiveRoundLogCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            RoundVerdictHeader(verdict: exchange.verdict)
+            ClashStripRow(exchange: exchange)
             header
             logList
             footer
@@ -45,7 +50,28 @@ struct InteractiveRoundLogCard: View {
         .contentShape(Rectangle())
         .onTapGesture { dismiss() }
         .task(id: exchange.id) { await runCountdown() }
+        .task(id: exchange.id) { await runOutplayedBorderTween() }
+        .task(id: exchange.id) { fireVerdictHaptic() }
         .onAppear { dotPulse.toggle() }
+    }
+
+    // MARK: - Haptics
+
+    /// One haptic per resolved round, keyed off `exchange.id` via `.task`.
+    /// The intensity maps to the verdict so the player's hand distinguishes
+    /// a dominant round (OUTPLAYED) from a mutual trade (STRUCK) without
+    /// having to look at the card. Finishing blow gets a rankUp slam.
+    private func fireVerdictHaptic() {
+        if exchange.finishingBlow {
+            HapticManager.rankUp()
+            return
+        }
+        switch exchange.verdict {
+        case .outplayed: HapticManager.heavy()
+        case .struck:    HapticManager.medium()
+        case .outread:   HapticManager.warning()
+        case .held:      HapticManager.light()
+        }
     }
 
     // MARK: - Header
@@ -141,9 +167,16 @@ struct InteractiveRoundLogCard: View {
             .fill(DarkFantasyTheme.bgElevated)
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                    .stroke(DarkFantasyTheme.gold, lineWidth: 1)
+                    .stroke(borderStrokeColor, lineWidth: 1)
             )
             .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 24, y: 0)
+    }
+
+    private var borderStrokeColor: Color {
+        guard exchange.verdict == .outplayed else { return DarkFantasyTheme.gold }
+        return outplayedBorderBright
+            ? DarkFantasyTheme.gold
+            : DarkFantasyTheme.gold.opacity(0.45)
     }
 
     // MARK: - Countdown
@@ -170,8 +203,191 @@ struct InteractiveRoundLogCard: View {
         }
     }
 
+    /// One-shot gold-dim → gold → gold-dim border tween for the OUTPLAYED
+    /// peak verdict. Other verdicts leave the border static at full gold.
+    private func runOutplayedBorderTween() async {
+        guard exchange.verdict == .outplayed else {
+            outplayedBorderBright = false
+            return
+        }
+        outplayedBorderBright = false
+        withAnimation(.easeInOut(duration: 0.6)) { outplayedBorderBright = true }
+        try? await Task.sleep(for: .milliseconds(600))
+        withAnimation(.easeInOut(duration: 0.6)) { outplayedBorderBright = false }
+    }
+
     private func dismiss() {
         onDismiss()
+    }
+}
+
+// MARK: - Verdict Header
+
+private struct RoundVerdictHeader: View {
+    let verdict: RoundVerdict
+    @State private var pulseOn = false
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text(verdict.bannerText)
+                .font(DarkFantasyTheme.cardTitle)
+                .tracking(4)
+                .foregroundStyle(textColor)
+
+            Text(verdict.subtitle)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(background)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle)
+                .frame(height: 1)
+        }
+        .task {
+            if verdict == .outplayed { pulseOn = true }
+        }
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        switch verdict {
+        case .outplayed:
+            LinearGradient(
+                colors: [
+                    DarkFantasyTheme.gold.opacity(0.26),
+                    DarkFantasyTheme.gold.opacity(0.06)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .overlay(
+                Rectangle()
+                    .fill(DarkFantasyTheme.gold.opacity(pulseOn ? 0.16 : 0.04))
+                    .animation(
+                        .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
+                        value: pulseOn
+                    )
+            )
+        case .held, .struck:
+            DarkFantasyTheme.success.opacity(0.14)
+        case .outread:
+            DarkFantasyTheme.danger.opacity(0.16)
+        }
+    }
+
+    private var textColor: Color {
+        switch verdict {
+        case .outplayed:     return DarkFantasyTheme.gold
+        case .held, .struck: return DarkFantasyTheme.success
+        case .outread:       return DarkFantasyTheme.danger
+        }
+    }
+}
+
+// MARK: - Clash Strip
+
+private struct ClashStripRow: View {
+    let exchange: RoundExchange
+
+    var body: some View {
+        HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
+            side(
+                label: "YOU",
+                atkZone: exchange.playerAttackZone,
+                defZone: exchange.playerDefendZone,
+                youHit: exchange.verdict == .outplayed || exchange.verdict == .struck,
+                youHeld: exchange.verdict == .outplayed || exchange.verdict == .held
+            )
+
+            Text("VS")
+                .font(DarkFantasyTheme.badge)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+            side(
+                label: "OPP",
+                atkZone: exchange.opponentAttackZone,
+                defZone: exchange.opponentDefendZone,
+                youHit: !(exchange.verdict == .outplayed || exchange.verdict == .struck),
+                youHeld: !(exchange.verdict == .outplayed || exchange.verdict == .held)
+            )
+        }
+        .padding(.vertical, LayoutConstants.spaceXS)
+    }
+
+    private func side(
+        label: String,
+        atkZone: InteractiveBodyZone,
+        defZone: InteractiveBodyZone,
+        youHit: Bool,
+        youHeld: Bool
+    ) -> some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text(label)
+                .font(DarkFantasyTheme.badge)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+            HStack(spacing: LayoutConstants.space2XS) {
+                ZoneChip(kind: .attack, zone: atkZone, glowing: youHit)
+                ZoneChip(kind: .defense, zone: defZone, glowing: youHeld)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct ZoneChip: View {
+    enum Kind { case attack, defense }
+
+    let kind: Kind
+    let zone: InteractiveBodyZone
+    let glowing: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(kind == .attack ? "ATK" : "DEF")
+                .font(DarkFantasyTheme.badge)
+                .tracking(1)
+            Text(zone.rawValue.uppercased())
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .tracking(1.2)
+        }
+        .foregroundStyle(foregroundColor)
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgElevated)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(borderColor, lineWidth: 1)
+                )
+        )
+        .shadow(color: glowColor, radius: glowing ? 8 : 0, y: 0)
+    }
+
+    private var foregroundColor: Color {
+        switch kind {
+        case .attack:  return DarkFantasyTheme.danger
+        case .defense: return DarkFantasyTheme.gold
+        }
+    }
+    private var borderColor: Color {
+        switch kind {
+        case .attack:  return DarkFantasyTheme.danger.opacity(0.4)
+        case .defense: return DarkFantasyTheme.gold.opacity(0.4)
+        }
+    }
+    private var glowColor: Color {
+        guard glowing else { return .clear }
+        switch kind {
+        case .attack:  return DarkFantasyTheme.danger.opacity(0.5)
+        case .defense: return DarkFantasyTheme.success.opacity(0.5)
+        }
     }
 }
 
@@ -191,7 +407,12 @@ struct InteractiveRoundLogCard: View {
                      actorName: "Enemy", targetName: "You")
         ],
         talentFired: true,
-        finishingBlow: false
+        finishingBlow: false,
+        verdict: .outplayed,
+        playerAttackZone: .head,
+        playerDefendZone: .chest,
+        opponentAttackZone: .chest,
+        opponentDefendZone: .legs
     )
 
     return InteractiveRoundLogCard(exchange: sample) {}

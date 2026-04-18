@@ -99,10 +99,10 @@ Pattern combines **LoL First Win of the Day** (hard bonus window), **RAID: Shado
 #### Spending
 | Destination | Cost | Purpose |
 |-------------|------|---------|
-| Stamina Refill (1st of day) | 30 | Instant stamina restore |
-| Stamina Refill (2nd of day) | 45 | 1.5× — diminishing returns (W3.D4) |
-| Stamina Refill (3rd of day) | 75 | 2.5× — diminishing returns (W3.D4) |
-| Stamina Refill (4th of day) | 120 | 4× — final refill, then hard cap (W3.D4) |
+| Stamina Refill (1st of day) | 50 | Instant stamina restore |
+| Stamina Refill (2nd of day) | 80 | 1.6× — diminishing returns (Economy v3) |
+| Stamina Refill (3rd of day) | 140 | 2.8× — diminishing returns (Economy v3) |
+| Stamina Refill (4th of day) | 240 | 4.8× — final refill, then hard cap (Economy v3) |
 | Upgrade Protection Scroll | 50 | Prevents downgrade on failed +6 and above |
 | Battle Pass Premium | 500 | Premium cosmetic/reward track |
 | Gold Mine Slot Unlock | 50 | Additional mining slot |
@@ -112,7 +112,7 @@ Pattern combines **LoL First Win of the Day** (hard bonus window), **RAID: Shado
 ##### Stamina Refill Diminishing Returns (W3.D4)
 
 Refill prices escalate across the day and hard-cap at **4 refills per day**.
-Full daily cost is $30 + 45 + 75 + 120 = 270$ gems (vs. 120 under a flat 4 × 30 model).
+Full daily cost is $50 + 80 + 140 + 240 = 510$ gems (vs. 200 under a flat 4 × 50 model).
 
 Pattern mirrors Clash Royale chest slot refreshes and Genshin Fragile Resin caps:
 both make whales self-regulate without punishing free-to-play players, who rarely
