@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import crypto from 'crypto'
 
 /**
  * POST /api/auth/upgrade-guest
@@ -135,9 +136,23 @@ export async function POST(req: NextRequest) {
     if (!prismaUpdated) {
       // Revert Supabase back to guest state so accounts stay in sync
       console.error('upgrade-guest: reverting Supabase user to guest after Prisma failure')
-      await supabase.auth.admin.updateUserById(user.id, {
+      const revertPayload: {
+        user_metadata: { is_guest: boolean, username: undefined }
+        email?: string
+        password?: string
+        email_confirm?: true
+      } = {
         user_metadata: { is_guest: true, username: undefined },
-      }).catch((e: unknown) => console.error('upgrade-guest: supabase revert also failed:', e))
+      }
+
+      if (dbUser.email) {
+        revertPayload.email = dbUser.email
+        revertPayload.password = crypto.randomUUID()
+        revertPayload.email_confirm = true
+      }
+
+      await supabase.auth.admin.updateUserById(user.id, revertPayload)
+        .catch((e: unknown) => console.error('upgrade-guest: supabase revert also failed:', e))
       return NextResponse.json(
         { error: 'Failed to upgrade account. Please try again.' },
         { status: 500 }
