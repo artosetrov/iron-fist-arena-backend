@@ -204,10 +204,11 @@ struct ActiveQuestBanner: View {
 
             guard let result = result else {
                 // Reset loader on failure so the button returns to idle.
+                // QuestService already toasted the specific server reason —
+                // don't stack a second generic toast on top.
                 withAnimation(.easeOut(duration: 0.2)) {
                     claimProgress = 0
                 }
-                self.appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error)
                 return
             }
 

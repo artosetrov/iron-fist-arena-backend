@@ -129,13 +129,12 @@ final class DailyQuestsViewModel {
         let previousLevel = appState.currentCharacter?.level
 
         // ── Fire API first — no optimistic celebration ──
+        // QuestService already surfaces the specific server reason on failure
+        // (e.g. "Already claimed", "Quest not completed yet"); don't double-toast.
         let result = await service.claimQuest(questId: quest.id)
         claimingQuestId = nil
 
-        guard let result = result else {
-            appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
-            return
-        }
+        guard let result = result else { return }
 
         appState.applyAuthoritativeRewardState(
             gold: result.gold,

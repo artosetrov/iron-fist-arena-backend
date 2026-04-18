@@ -554,17 +554,10 @@ struct QuestRewardWidget: View {
             claimingId = nil
 
             guard let result = result else {
-                appState.showToast(
-                    "Failed to claim quest",
-                    subtitle: "Please try again",
-                    type: .error,
-                    actionLabel: "Retry",
-                    action: {
-                        if let q = appState.cachedTypedQuests?.first(where: { $0.id == questId && $0.canClaim }) {
-                            claimQuest(q)
-                        }
-                    },
-                )
+                // QuestService already toasted the specific server reason
+                // (e.g. "Already claimed", "Quest not completed yet"). The
+                // hub card's retry affordance is no longer surfaced here —
+                // the user can tap Claim again from the same card.
                 return
             }
 

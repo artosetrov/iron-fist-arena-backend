@@ -9,6 +9,13 @@ struct DungeonMapBuildingView: View {
     let isCompleted: Bool
     /// Whether this is the next dungeon the player should tackle (pulsing highlight)
     var isNext: Bool = false
+    /// When the lock gate is a character level (first dungeon), pass the
+    /// required level so the overlay shows "LV X". `nil` means the lock
+    /// is gated on a previous dungeon being cleared.
+    var requiredLevel: Int? = nil
+    /// Label of the previous dungeon whose completion unlocks this one.
+    /// When set, overlay shows "AFTER <LABEL>" instead of "LV X".
+    var previousDungeonLabel: String? = nil
     let onTap: (DungeonMapBuilding) -> Void
 
     @State private var isPressed = false
@@ -36,20 +43,33 @@ struct DungeonMapBuildingView: View {
             // Label above building
             dungeonLabel
 
-            // Building sprite
-            buildingImage
-                .frame(height: buildingHeight)
-                .shadow(
-                    color: isLocked
-                        ? Color.clear
-                        : isNext
-                            ? building.glowColor.opacity(glowPulse ? 0.7 : 0.3)
-                            : building.glowColor.opacity(isPressed ? 0.6 : 0),
-                    radius: isNext ? (glowPulse ? 20 : 10) : (isPressed ? 16 : 0)
-                )
-                .brightness(isPressed ? -0.06 : 0)
-                .opacity(isLocked ? 0.6 : 1.0)
-                .saturation(isLocked ? 0.3 : 1.0)
+            // Building sprite with lock overlay — mirrors `CityBuildingView`
+            // so closed dungeons read the same way as closed hub buildings:
+            // fully grayscaled + dimmed sprite, gold padlock disc, pill
+            // showing what's needed to unlock.
+            ZStack {
+                buildingImage
+                    .frame(height: buildingHeight)
+                    .shadow(
+                        color: isLocked
+                            ? Color.clear
+                            : isNext
+                                ? building.glowColor.opacity(glowPulse ? 0.7 : 0.3)
+                                : building.glowColor.opacity(isPressed ? 0.6 : 0),
+                        radius: isNext ? (glowPulse ? 20 : 10) : (isPressed ? 16 : 0)
+                    )
+                    .brightness(isLocked ? -0.25 : (isPressed ? -0.06 : 0))
+                    .opacity(isLocked ? 0.45 : 1.0)
+                    .saturation(isLocked ? 0.0 : 1.0)
+
+                if isLocked {
+                    BuildingLockOverlay(
+                        requiredLevel: requiredLevel,
+                        spriteHeight: buildingHeight,
+                        unlockHint: previousDungeonLabel.map { "AFTER \($0)" }
+                    )
+                }
+            }
         }
         .position(x: posX, y: posY)
         .onTapGesture {
@@ -134,22 +154,6 @@ struct DungeonMapBuildingView: View {
                     }
                 }
                 .frame(width: buildingHeight * 0.7, height: buildingHeight)
-            }
-
-            // Lock overlay for locked dungeons
-            if isLocked {
-                VStack(spacing: LayoutConstants.space2XS) {
-                    Image("icon-padlock")
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 32, height: 32)
-                        .saturation(0.3)
-                        .opacity(0.75)
-                    Text("Lvl \(building.minLevel)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
             }
         }
     }

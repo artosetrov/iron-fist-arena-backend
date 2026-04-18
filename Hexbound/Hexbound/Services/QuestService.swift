@@ -97,6 +97,11 @@ final class QuestService {
     /// failure. The response now includes both reward deltas and post-claim
     /// authoritative totals, so callers can update `AppState.currentCharacter`
     /// immediately without an extra character refresh round-trip.
+    ///
+    /// On failure the service shows the specific server-provided reason
+    /// ("Reward already claimed", "Quest not completed yet", …) so the user
+    /// sees WHY it failed. Callers MUST NOT also show a generic error toast
+    /// on nil — that was previously duplicating the message.
     func claimQuest(questId: String) async -> QuestClaimResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
@@ -104,10 +109,18 @@ final class QuestService {
                 APIEndpoints.questsDaily,
                 body: ["character_id": charId, "quest_id": questId, "action": "claim"]
             )
-            guard result.success else { return nil }
+            guard result.success else {
+                appState.showToast("Quest claim failed", subtitle: "Unknown server response", type: .error)
+                return nil
+            }
             return result
+        } catch let apiError as APIError {
+            // 401 is handled globally by APIClient — don't double-toast it.
+            if apiError.isUnauthorized { return nil }
+            appState.showToast("Quest claim failed", subtitle: apiError.userMessage, type: .error)
+            return nil
         } catch {
-            appState.showToast("Failed to claim quest", subtitle: "Quest may not be completed yet", type: .error)
+            appState.showToast("Quest claim failed", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }
