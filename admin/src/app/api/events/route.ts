@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
+
+function forbidden() {
+  return NextResponse.json({ error: 'Insufficient permissions — admin or developer role required' }, { status: 403 })
+}
 
 // GET — list all events (paginated, newest first)
 export async function GET(req: NextRequest) {
@@ -40,6 +44,7 @@ export async function POST(req: NextRequest) {
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!canModifyConfig(admin.role)) return forbidden()
 
     const body = await req.json()
     const { eventKey, title, description, eventType, config, startAt, endAt, isActive } = body
@@ -98,6 +103,7 @@ export async function PATCH(req: NextRequest) {
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!canModifyConfig(admin.role)) return forbidden()
 
     const body = await req.json()
     const { id, ...updates } = body
@@ -129,6 +135,7 @@ export async function DELETE(req: NextRequest) {
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!canModifyConfig(admin.role)) return forbidden()
 
     const id = req.nextUrl.searchParams.get('id')
     if (!id) {

@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { proxyBackendAdminRoute } from '@/lib/backend-api'
+
+function forbidden() {
+  return Response.json({ error: 'Insufficient permissions — admin or developer role required' }, { status: 403 })
+}
 
 export async function GET(req: NextRequest) {
   const admin = await getAdminUser()
@@ -12,6 +16,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canModifyConfig(admin.role)) return forbidden()
 
   return proxyBackendAdminRoute(req, '/api/admin/skills')
 }
@@ -19,6 +24,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canModifyConfig(admin.role)) return forbidden()
 
   return proxyBackendAdminRoute(req, '/api/admin/skills')
 }
@@ -26,6 +32,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canModifyConfig(admin.role)) return forbidden()
 
   return proxyBackendAdminRoute(req, '/api/admin/skills')
 }

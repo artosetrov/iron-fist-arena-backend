@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 
 const DUNGEON_MAP_LAYOUT_KEY = 'dungeon_map_layout'
 
@@ -22,6 +22,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canModifyConfig(admin.role)) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin or developer role required' }, { status: 403 })
+  }
 
   try {
     const body = await req.json()

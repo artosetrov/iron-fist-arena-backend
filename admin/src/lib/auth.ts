@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { prisma } from './prisma'
 import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
 
 export type AdminRole = 'admin' | 'moderator' | 'developer'
 
@@ -55,4 +56,36 @@ export function canManagePlayers(role: AdminRole) {
 
 export function canManageUsers(role: AdminRole) {
   return role === 'admin'
+}
+
+/**
+ * API route guard: returns null when caller may modify game config
+ * (admin or developer role), otherwise returns a NextResponse to send.
+ * Moderators get 403 — they can view but not mutate balance/content.
+ *
+ * Usage: `const denial = await requireConfigModifier(); if (denial) return denial;`
+ */
+export async function requireConfigModifier() {
+  const admin = await getAdminUser()
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canModifyConfig(admin.role)) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin or developer role required' }, { status: 403 })
+  }
+  return null
+}
+
+/**
+ * API route guard: returns null when caller is strictly `admin` role,
+ * otherwise returns a NextResponse to send. Use for IAP management, role
+ * mutation, and other operations with no legitimate non-admin use case.
+ *
+ * Usage: `const denial = await requireStrictAdmin(); if (denial) return denial;`
+ */
+export async function requireStrictAdmin() {
+  const admin = await getAdminUser()
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (admin.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin role required' }, { status: 403 })
+  }
+  return null
 }
