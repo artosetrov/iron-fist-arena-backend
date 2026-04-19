@@ -136,15 +136,19 @@ export default async function MatchesPage() {
                               <span className="font-medium">{match.player1.characterName}</span>
                             )}
                             <span className="text-muted-foreground">vs</span>
-                            {match.player2.user?.id ? (
-                              <Link
-                                href={`/players/${match.player2.user.id}`}
-                                className="font-medium text-primary hover:underline"
-                              >
-                                {match.player2.characterName}
-                              </Link>
+                            {match.player2 ? (
+                              match.player2.user?.id ? (
+                                <Link
+                                  href={`/players/${match.player2.user.id}`}
+                                  className="font-medium text-primary hover:underline"
+                                >
+                                  {match.player2.characterName}
+                                </Link>
+                              ) : (
+                                <span className="font-medium">{match.player2.characterName}</span>
+                              )
                             ) : (
-                              <span className="font-medium">{match.player2.characterName}</span>
+                              <span className="font-medium text-muted-foreground">—</span>
                             )}
                           </div>
                         </td>
