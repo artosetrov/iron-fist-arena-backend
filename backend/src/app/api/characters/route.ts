@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
@@ -21,6 +22,157 @@ function calculateMaxHp(vit: number, end: number): number {
   return 80 + vit * 5 + end * 3
 }
 
+type CharacterListRow = {
+  id: string
+  userId: string
+  characterName: string
+  class: string
+  origin: string
+  gender: string | null
+  avatar: string | null
+  level: number
+  currentXp: number
+  prestigeLevel: number
+  statPointsAvailable: number
+  passivePointsAvailable: number
+  str: number
+  agi: number
+  vit: number
+  end: number
+  int: number
+  wis: number
+  luk: number
+  cha: number
+  maxHp: number
+  currentHp: number
+  armor: number
+  magicResist: number
+  combatStance: Prisma.JsonValue | null
+  currentStamina: number
+  maxStamina: number
+  lastStaminaUpdate: Date | null
+  lastHpUpdate: Date | null
+  pvpRating: number
+  pvpWins: number
+  pvpLosses: number
+  pvpWinStreak: number
+  pvpLossStreak: number
+  firstWinToday: boolean
+  freePvpToday: number
+  inventorySlots: number
+  createdAt: Date
+  gearScore: number
+}
+
+async function fetchCharacterRows(userId: string): Promise<CharacterListRow[]> {
+  try {
+    return await prisma.character.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        userId: true,
+        characterName: true,
+        class: true,
+        origin: true,
+        gender: true,
+        avatar: true,
+        level: true,
+        currentXp: true,
+        prestigeLevel: true,
+        statPointsAvailable: true,
+        passivePointsAvailable: true,
+        str: true,
+        agi: true,
+        vit: true,
+        end: true,
+        int: true,
+        wis: true,
+        luk: true,
+        cha: true,
+        maxHp: true,
+        currentHp: true,
+        armor: true,
+        magicResist: true,
+        combatStance: true,
+        currentStamina: true,
+        maxStamina: true,
+        lastStaminaUpdate: true,
+        lastHpUpdate: true,
+        pvpRating: true,
+        pvpWins: true,
+        pvpLosses: true,
+        pvpWinStreak: true,
+        pvpLossStreak: true,
+        firstWinToday: true,
+        freePvpToday: true,
+        inventorySlots: true,
+        createdAt: true,
+        gearScore: true,
+      },
+    }) as CharacterListRow[]
+  } catch (error) {
+    console.warn('list characters prisma read warning, retrying with raw SQL:', error)
+  }
+
+  return prisma.$queryRaw<CharacterListRow[]>`
+    SELECT
+      c.id,
+      c.user_id AS "userId",
+      c.character_name AS "characterName",
+      c.class::text AS "class",
+      c.origin::text AS "origin",
+      c.gender::text AS "gender",
+      c.avatar,
+      c.level,
+      c.current_xp AS "currentXp",
+      c.prestige_level AS "prestigeLevel",
+      c.stat_points_available AS "statPointsAvailable",
+      c.passive_points_available AS "passivePointsAvailable",
+      c.str,
+      c.agi,
+      c.vit,
+      c."end" AS "end",
+      c."int" AS "int",
+      c.wis,
+      c.luk,
+      c.cha,
+      c.max_hp AS "maxHp",
+      c.current_hp AS "currentHp",
+      c.armor,
+      c.magic_resist AS "magicResist",
+      c.combat_stance AS "combatStance",
+      c.current_stamina AS "currentStamina",
+      c.max_stamina AS "maxStamina",
+      c.last_stamina_update AS "lastStaminaUpdate",
+      c.last_hp_update AS "lastHpUpdate",
+      c.pvp_rating AS "pvpRating",
+      c.pvp_wins AS "pvpWins",
+      c.pvp_losses AS "pvpLosses",
+      c.pvp_win_streak AS "pvpWinStreak",
+      c.pvp_loss_streak AS "pvpLossStreak",
+      c.first_win_today AS "firstWinToday",
+      c.free_pvp_today AS "freePvpToday",
+      c.inventory_slots AS "inventorySlots",
+      c.created_at AS "createdAt",
+      c.gear_score AS "gearScore"
+    FROM characters c
+    WHERE c.user_id = ${userId}
+    ORDER BY c.created_at DESC
+  `
+}
+
+function normalizeCharacterRow(row: CharacterListRow): CharacterListRow {
+  return {
+    ...row,
+    class: Object.values(CharacterClass).includes(row.class as CharacterClass) ? row.class : CharacterClass.warrior,
+    origin: Object.values(CharacterOrigin).includes(row.origin as CharacterOrigin) ? row.origin : CharacterOrigin.human,
+    gender: row.gender && Object.values(CharacterGender).includes(row.gender as CharacterGender)
+      ? row.gender
+      : CharacterGender.male,
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,10 +180,7 @@ export async function GET(req: NextRequest) {
   try {
     // Character list is required. Account wallet is only compatibility sugar
     // for older iOS DTOs, so do not fail the whole screen if it cannot load.
-    const characters = await prisma.character.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-    })
+    const characters = (await fetchCharacterRows(user.id)).map(normalizeCharacterRow)
 
     let accountGold = 0
     let accountGems = 0

@@ -13,6 +13,7 @@ const {
       findMany: vi.fn(),
       update: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     user: {
       findUnique: vi.fn(),
     },
@@ -59,6 +60,7 @@ describe('GET /api/characters', () => {
     mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
     prismaMock.character.findMany.mockResolvedValue([baseCharacter])
     prismaMock.character.update.mockResolvedValue({})
+    prismaMock.$queryRaw.mockResolvedValue([baseCharacter])
     prismaMock.user.findUnique.mockResolvedValue({ gold: 123, gems: 7 })
     mockCalculateCurrentHp.mockResolvedValue({ hp: 45, updated: true })
     mockCalculateCurrentStamina.mockResolvedValue({ stamina: 8, updated: true })
@@ -95,6 +97,25 @@ describe('GET /api/characters', () => {
           id: 'char-1',
           gold: 0,
           gems: 0,
+        }),
+      ],
+    })
+  })
+
+  it('falls back to raw SQL when Prisma model reads fail before enrichment', async () => {
+    prismaMock.character.findMany.mockRejectedValueOnce(new Error('enum parse failed'))
+
+    const response = await GET(makeNextRequest('http://localhost/api/characters'))
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1)
+    await expect(response.json()).resolves.toMatchObject({
+      characters: [
+        expect.objectContaining({
+          id: 'char-1',
+          characterName: 'Hero',
+          gold: 123,
+          gems: 7,
         }),
       ],
     })
