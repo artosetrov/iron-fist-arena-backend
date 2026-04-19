@@ -38,18 +38,16 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ### Players (Search & Management)
 **Purpose:** Find, view, and manage individual players
 **Features:**
-- Search by username, email, userId
-- Filter by level range, class, role (player/admin/banned)
-- View player card: profile, stats, inventory, achievements
+- Search by username or email
+- View player list with gems, role, status, character count, and joined date
+- Open the dedicated player detail page from the list
 - Actions:
-  - Ban user (reason field, soft delete)
+  - Ban user (reason field)
   - Unban user
-  - Grant gold/gems (bulk add to wallet)
-  - Grant items (select from catalog, assign to inventory)
-  - Reset inventory (clear all gear, keep cosmetics)
-  - View detailed statistics: wins/losses, dungeons cleared, time played
-  - View battle history (last 20 PvP matches)
-  - Email player (admin broadcast)
+  - From player detail: grant gold to the selected character
+  - From player detail: grant gems to the account
+  - From player detail: reset inventory for the selected character
+  - From player detail: inspect characters, equipment, match history, and purchase history
 
 **Pagination:** 20 players per page
 
@@ -81,20 +79,18 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Sell value
 - Restrictions (class whitelist)
 - Rollable stats (which can roll higher)
+- Description
+- Image upload / image URL / image key
+- Upgrade config (max level, scaling type, per-level stat growth)
 
 **Edit:**
 - Change all above fields
-- Track change history
-- Preview item in 3D (if available)
+- Preview item in the live card-style modal
 
 **Delete:**
-- Soft delete (keep in DB, hide from shop)
-- Warn if in-circulation (held by X players)
+- Direct delete from the admin item route
 
-**Batch Actions:**
-- Export items (CSV)
-- Import items (CSV)
-- Duplicate item
+**Current repo note:** the live item editor does **not** currently expose CSV import/export, duplicate-item workflow, change-history tracking, in-circulation warnings, or 3D preview.
 
 ---
 
@@ -175,15 +171,20 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ---
 
 ### Appearances/Cosmetics (CRUD)
-**Purpose:** Manage character skins and cosmetics
+**Purpose:** Manage character appearance skins
 **Fields:**
-- catalogId
-- cosmeticName
-- cosmeticType (appearance skin, effect, emote, title)
+- skinKey
+- skinName
+- origin
+- gender
 - Rarity
+- Gold price
 - Gem price
-- Icon/image reference
-- Preview (show on 3D model)
+- imageUrl / imageKey
+- default skin toggle
+- sort order
+
+**Current repo note:** the live screen manages 2D appearance-skin cards with upload/edit/delete flows. It does **not** currently expose a 3D model preview or a broader cosmetics catalog for effects, emotes, or titles.
 
 ---
 
@@ -308,12 +309,18 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ### Loot Tables (Edit Drop Rates)
 **Purpose:** Control reward distribution
 **Loot Table Editor:**
-- Select activity (PvP match, dungeon floor, minigame)
-- View/edit drop weights by rarity
-- Preview drop rates (e.g., "5% legendary")
-- Adjust gold/gem amounts
-- Add new items to pool
-- Remove items from pool
+- Adjust drop chance by source:
+  - PvP
+  - Training
+  - Dungeon (easy / normal / hard)
+  - Boss fights
+- Adjust rarity distribution weights:
+  - common
+  - uncommon
+  - rare
+  - epic
+  - legendary
+- Validate that rarity totals still sum to 100%
 
 **Rarity Distribution:**
 - Common: X%
@@ -324,52 +331,58 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 **Save Changes:**
 - Apply immediately
-- Schedule future change (e.g., "increase legendary rate tomorrow")
+- Seed defaults if the config keys are missing
+
+**Current repo note:** the live loot screen is a config-weight editor, not a full loot-pool manager. It does **not** currently add/remove specific items from activity pools, edit gold/gem reward amounts, or schedule future loot changes from this page.
 
 ---
 
 ### Shop Offers (CRUD)
 **Purpose:** Manage store bundles and flash sales
 **Create Offer:**
-- catalogId
-- offerName, description
-- Items in bundle (multi-select from item catalog + quantities)
-- Gold price
-- Gem price (optional)
-- Is bundle? (cosmetic grouping)
-- Is flash sale? (limited-time)
-- Start/end dates
-- Max purchases per player (optional)
+- key
+- title, description
+- offer type (`bundle`, `daily_deal`, `flash_sale`, `starter_pack`, `level_up`)
+- bundle contents (gold / gems / xp / consumable / item + quantity)
+- original price
+- sale price
+- currency
+- discount %
+- max purchases
+- min/max level window
+- sort order
+- image key
+- tags
+- active toggle
+- start/end dates
 
 **Manage:**
-- Schedule sale (start/end)
-- Pause sale temporarily
-- View sales metrics (revenue, units sold)
-- A/B test pricing (run two variants, compare)
+- Create / edit / delete offers
+- Activate / deactivate offers
+- Seed default offers
+- View aggregate purchases and revenue totals
+
+**Current repo note:** the live shop-offers surface does **not** currently ship A/B pricing experiments or a separate pause/schedule state machine beyond active toggle plus start/end windows.
 
 ---
 
-### Upgrade & Repair Pricing
-**Purpose:** Balance equipment progression costs
-**Upgrade Costs:**
-- Level 1 → 2: X gold
-- Level 2 → 3: Y gold (scales)
-- ...
-- Level 9 → 10: Z gold (max)
+### Upgrade & Repair Controls
+**Purpose:** Tune upkeep and upgrade progression costs
 
-**Success Rate:**
-- Level 1-3: 100% success
-- Level 4-6: 90% success (risk of fail)
-- Level 7-10: 50% success (high risk)
+**Live controls today:**
+- Repair parameters on the main Balance page:
+  - `repair.base_cost`
+  - `repair.per_level`
+- Upgrade success chances on the main Balance page:
+  - `upgrade_chances` array for +1 through +10
+- Item-balance config editor controls for item-upgrade economy:
+  - `upgrade_stat_bonus_per_level`
+  - `upgrade_cost_base`
+  - `upgrade_cost_exponent`
+  - `upgrade_failure_downgrade_threshold`
+  - `upgrade_protection_gem_cost`
 
-**Repair Costs:**
-- Per equipment: X% of item value per durability point
-- Example: 1000-gold sword, full repair = 100 gold
-
-**Edit:**
-- Adjust all costs
-- Simulate player impact ("cost increase 20% → X fewer upgrades/day")
-- Rollback to previous
+**Current repo note:** these are live config/editor controls, not a dedicated player-impact forecaster. The current admin UI does **not** expose a built-in “X fewer upgrades/day” simulator on this screen, and rollback lives in the separate snapshots flow rather than a local per-page undo stack.
 
 ---
 
@@ -429,70 +442,63 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 **UI Actions:**
 - Edit parameter
-- See description and range validation
-- Preview impact (calc: "if stamina +20%, Y fewer matches/day")
-- Save all changes (creates snapshot)
-- Rollback to previous snapshot
-- Schedule change (auto-apply at future time)
+- See description and range validation where the page defines them
+- Save per-key on the generic Config page
+- Save per-section / per-tab on the main Balance page
+- Seed default configs
+- Use Snapshots page for rollback / restore
+
+**Current repo note:** the live config surfaces do **not** currently expose automatic future scheduling or built-in impact calculators on these pages.
 
 ---
 
 ### Item Balance Simulator
 **Purpose:** Test item stats before live
 **Features:**
-- Create simulation profile (e.g., "Nerf Sword v2")
-- Adjust item base stats (up/down %)
-- Run matchup simulations (Item A vs. Item B, 100 fights each)
-- Generate report:
-  - Win rates per matchup
-  - Outlier detection (item too strong/weak)
-  - Recommendation (balanced, OP, UP)
+- Overview dashboard with:
+  - total items
+  - config count
+  - profile count
+  - recent simulation history
+- Config editor for power / rarity / upgrades / economy / validation knobs
+- Item profiles editor for stat weights per item type
+- Validation run for flagged / overpowered / underpowered items
+- Simulation tools for:
+  - combat sim
+  - class matchups
+  - item impact
 
-**Advanced:**
-- Simulate full loadout (multiple items equipped)
-- Class-specific sims (warrior with sword vs. mage with staff)
-- Meta analysis (most-used builds, win rates)
-- A/B test (run two profiles, compare results)
+**Current repo note:** the live item-balance suite does **not** currently expose named experiment profiles like “Nerf Sword v2”, meta-usage analytics, or A/B comparison workflows between two saved simulation profiles.
 
 ---
 
-### Analytics Dashboard
-**Purpose:** Game-wide performance metrics
+### Economy Review Surface
+**Purpose:** Live aggregate economy and monetization review
 **Views:**
 
-#### Retention
-- 1-day retention (%)
-- 7-day retention (%)
-- 30-day retention (%)
-- Churn rate (%)
-- Trending (up/down)
+#### Summary cards
+- Gold in circulation
+- Gems in circulation
+- Verified IAP transaction totals
+- Offer sales totals
 
-#### Engagement
-- Avg session length
-- Sessions per DAU
-- Most-played features (% time in PvP, dungeons, etc.)
-- Feature adoption (% players who tried X)
+#### Wealth review
+- Wealth distribution buckets (gold)
+- Gini coefficient
+- Character / user population counts
 
-#### Monetization
-- ARPPU (avg revenue per paying user)
-- Gem purchase rate (% who bought)
-- First purchase conversion
-- Lifetime value (LTV) by cohort
-- Revenue breakdown (shop, IAP, battle pass)
+#### Segmentation
+- Economy by class
+- Gold by level
+- Top gold holders
+- Top gem holders
 
-#### Economy Health
-- Total gold/gems (sanity check)
-- Velocity (trades per day)
-- Price inflation (gold cost of items over time)
-- Top holder concentration (% held by top 1%)
+#### Monetization review
+- IAP by product
+- Recent verified transactions
+- Offer purchase analytics
 
-#### Combat Balance
-- Win rates by class (% should be ≈25% each)
-- Pick rates by class
-- Skill usage (most/least used)
-- Item usage (which items are equipped)
-
-**Export:** All reports → CSV/JSON for external analysis
+**Current repo note:** the live admin surface here is a review dashboard, not a full analytics suite. Retention, churn, sessions, LTV/cohort analysis, combat telemetry, and export tooling are not separate live dashboard views in the current repo.
 
 ---
 
@@ -503,57 +509,46 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 **Create Mail:**
 - Choose recipient(s):
   - Broadcast (all players)
-  - Segment (level range, class, last-login within X days)
-  - Targeted (specific player IDs)
+  - Segment (min level, max level, class)
+  - Targeted (single character ID)
 - Subject
-- Body (markdown support)
+- Body
 - Attachments:
   - Gold (amount)
   - Gems (amount)
-  - Items (select from catalog, quantity)
-  - Consumables (stack count)
-  - Cosmetics (award skin)
-
-**Schedule:**
-- Send immediately
-- Schedule for future (timezone-aware)
-- Send to online players only
-- Repeat daily/weekly
+  - XP (amount)
+- Optional expiration timestamp
 
 **Track:**
-- View sent count, delivered, claimed
-- Resend if failed
-- Monitor attachment claims (track redemption)
+- View total messages, recipients, read rate, and claimed rate
+- Inspect per-message recipient counts, reads, and claims
+- Delete sent mail messages from the admin list
+
+**Current repo note:** the live mail screen sends immediately. It does **not** currently expose timezone-aware scheduling, resend flows, online-only targeting, repeating campaigns, or item/consumable/cosmetic attachments.
 
 ---
 
 ### Push Notifications (Campaigns)
 **Purpose:** Re-engage lapsed players, announce events
 **Create Campaign:**
-- Campaign name
-- Target audience:
-  - All players
-  - New players (joined < 7 days)
-  - VIP players (spent > $X)
-  - At-risk players (7+ days inactive)
-  - Class-specific (all warriors, etc.)
-- Title (short)
-- Body (short text)
-- Deep link (e.g., /dungeons for dungeon button)
-- Icon/image (optional)
-
-**Schedule:**
-- Send immediately
-- Send at local time (respects timezones)
-- A/B test (randomize 50/50 different messages)
-- Recurring (daily check-in reminder)
+- Campaign title
+- Body text
+- Target type:
+  - Broadcast
+  - Segment
+  - User IDs
+- Segment filters:
+  - Min level
+  - Max level
+  - Class
+- Optional deep link route
 
 **Analytics:**
 - Sent count
-- Delivered count
-- Open rate (%)
-- Click-through rate (%)
-- Cohort comparison (A vs. B performance)
+- Failed count
+- Active token count
+
+**Current repo note:** the live push surface is a basic campaign sender. The current dashboard does **not** expose timezone scheduling, recurring campaigns, A/B messaging, rich media, delivered/open/click analytics, or cohort targeting like VIP / inactive / region / beta-tester segments.
 
 ---
 
@@ -564,22 +559,35 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Type:
   - Boolean (on/off)
   - Percentage (0–100% of players)
-  - Segment (specific cohorts: beta testers, etc.)
+  - Segment (targeted boolean rollout)
   - JSON (complex config)
 - Value
 - Description
+- Environment:
+  - all
+  - production
+  - staging
+  - development
+- Optional targeting:
+  - Min level
+  - Max level
+  - Class
+  - Explicit user IDs
+- Tags
 
 **Manage:**
 - Enable/disable toggle
 - Adjust percentage (1% → 10% → 100%)
-- Segment by cohort (beta testers, platform, region)
-- Monitor impact (user reports, crash logs)
+- Edit environment / tags / targeting
 - Rollback (turn off instantly)
+- Seed default flags
 
 **Examples:**
 - "enable_new_dungeon": boolean (on/off)
 - "new_ui_rollout": percentage (0–100%)
 - "max_stamina_override": JSON (e.g., {value: 100, class: "warrior"})
+
+**Current repo note:** the live targeting surface is narrower than a full experimentation platform. The current dashboard does **not** expose cohort builders like beta testers / platform / region, automated impact monitoring, or crash-log-linked rollout analytics.
 
 ---
 
@@ -753,6 +761,6 @@ Current repo note: there is no standalone analytics dashboard route under `admin
 
 ## Notes
 
-- **Security:** All config changes create audit log. High-risk actions (ban, rollback) require confirmation. IP whitelist optional.
+- **Security:** confirmation and audit behavior varies by route/action. High-risk flows like bans, deletes, and rollback-style operations commonly require confirmation, but this document should not be read as a formal security-control matrix.
 - **Performance:** Pagination on all lists. Debounced search. Lazy-load economy graphs where present. Cache feature flags client-side.
-- **UX:** Undo available on most destructive actions. Tooltips on all config params. Inline validation. Bulk actions for CSV import/export.
+- **UX:** Inline validation exists on many live forms. Some config-heavy screens include helper text/tooltips. Undo and CSV import/export are **not** general admin capabilities across the current dashboard.

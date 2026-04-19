@@ -414,6 +414,9 @@ Valid zones: `head`, `chest`, `legs`
 | `MAX_PASSIVE_POINTS` | `50` |
 | `RESPEC_GEM_COST` | `50` |
 | `RESPEC_GOLD_COST` | `5000` |
+| `BASE_ACTIVE_SLOTS` | `3` |
+| `MAX_ACTIVE_SLOTS` | `4` |
+| `PREMIUM_ACTIVE_SLOT_GEM_COST` | `100` |
 
 ## Gem costs
 

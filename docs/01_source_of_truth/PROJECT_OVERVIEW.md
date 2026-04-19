@@ -386,7 +386,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Gold balance adjustments (bulk grants)
 - Shop offer rotation (create/schedule)
 - Revenue charts (Recharts integration)
-- Daily Gem Card config
+- Daily Gem Card visibility via the live IAP catalog (product config remains code/config-driven)
 
 ### Achievements
 - CRUD achievement definitions

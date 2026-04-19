@@ -32,6 +32,7 @@
 - [[why-victory-star-conditions]] — Victory stars show labelled conditions (earned + missed), derived client-side in dungeon and PvP
 - [[why-boss-reveal-ceremony]] — Root-level boss reveal overlay; once-per-boss in Dungeons, every run in Dungeon Rush
 - [[rebalance-w3d3]] — 2026-04-10 economy rebalance: CHA cap, streak cap, price increases
+- [[why-interactive-combat-unification]] — 2026-04-19 multi-session migration routing PvP/bot/dungeon_boss through Interactive; dungeon_rush + old-combat retirement deferred
 
 ## Entities
 
@@ -68,6 +69,7 @@
 - [[stash]] — end-to-end feature map for account-scoped shared storage, deposit/withdraw, and slot-cap enforcement
 - [[tutorial]] — end-to-end feature map for scripted steps, first-fight flow, tutorial quests, and skip path
 - [[minigames]] — end-to-end feature map for the Tavern hub, Shell Game, Fortune Wheel, and the shared `MinigameSession` table
+- [[combat-unification-remaining]] — in-flight combat unification scoreboard: what already ships on prod (PvP/bot/dungeon_boss) and what still blocks old-combat retirement (dungeon_rush, challenge replay, feature flag)
 
 ## Audit
 
@@ -289,7 +291,13 @@
 - [[block-214-delete-orphan-admin-review-routes]] — deleted orphan backend admin review routes for `stats`, `economy`, and `iap`, while retaining the live `iap-products` catalog route and syncing docs/generated route maps to the narrower admin-owned review flow
 - [[block-215-shop-feature-map-iap-products-admin-surface-parity]] — the shop feature map now names the dedicated `IAP Products` admin page and its proxy/backend chain instead of hiding it behind a generic admin-tuning note
 - [[block-216-admin-monetization-wording-vs-live-iap-products-surface]] — admin monetization docs now describe `IAP Products` as a read-only catalog review surface instead of implying live SKU management in the dashboard
+- [[block-217-admin-economy-review-vs-fantasy-analytics-dashboard]] — `ADMIN_CAPABILITIES.md` now describes the real economy review dashboard instead of a full retention/LTV/telemetry analytics suite, and `PROJECT_OVERVIEW.md` no longer implies a dedicated live Daily Gem Card config surface
+- [[block-218-admin-push-surface-vs-live-campaign-sender]] — the admin push docs now describe the actual broadcast/segment/user campaign sender instead of a richer lifecycle-marketing suite with A/B tests, recurring sends, and open/click analytics
+- [[block-219-admin-feature-flags-targeting-surface-parity]] — the feature-flags docs now match the live environment + level/class/userId targeting model instead of implying a richer beta-tester/platform/region cohort builder
+- [[block-220-admin-balance-and-offers-surface-parity]] — the balance/loot/offers/config/item-balance sections now describe the actual live admin tools instead of broader scheduling, forecasting, A/B pricing, or experiment-profile surfaces that the dashboard does not ship
+- [[block-221-admin-items-crud-surface-parity]] — the items docs now match the live form/upload/preview/delete surface instead of promising CSV tooling, change history, soft-delete warnings, or 3D preview
+- [[block-222-admin-player-appearance-mail-and-footer-surface-parity]] — the remaining players/appearances/mail/footer sections now describe the actual live admin surfaces instead of promising soft delete, 3D preview, scheduled mail, or generic undo/CSV tooling
 
 ---
 
-*280 in-scope wiki markdown files | 279 wiki pages (13 systems, 14 decisions, 3 entities, 216 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*
+*286 in-scope wiki markdown files | 285 wiki pages (13 systems, 14 decisions, 3 entities, 222 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*

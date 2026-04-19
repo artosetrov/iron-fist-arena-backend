@@ -236,6 +236,12 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 214 | [[block-214-delete-orphan-admin-review-routes]] — deleted orphan backend admin review routes for `stats`, `economy`, and `iap`, while retaining the live `iap-products` catalog route and syncing docs/generated route maps to the narrower admin-owned review flow | Fixed |
 | 215 | [[block-215-shop-feature-map-iap-products-admin-surface-parity]] — the shop feature map now names the dedicated `IAP Products` admin page and its proxy/backend chain instead of hiding it behind a generic admin-tuning note | Fixed |
 | 216 | [[block-216-admin-monetization-wording-vs-live-iap-products-surface]] — admin monetization docs now describe `IAP Products` as a read-only catalog review surface instead of implying live SKU management in the dashboard | Fixed |
+| 217 | [[block-217-admin-economy-review-vs-fantasy-analytics-dashboard]] — `ADMIN_CAPABILITIES.md` now describes the real economy review dashboard instead of a full retention/LTV/telemetry analytics suite, and `PROJECT_OVERVIEW.md` no longer implies a dedicated live Daily Gem Card config surface | Fixed |
+| 218 | [[block-218-admin-push-surface-vs-live-campaign-sender]] — the admin push docs now describe the actual broadcast/segment/user campaign sender instead of a richer lifecycle-marketing suite with A/B tests, recurring sends, and open/click analytics | Fixed |
+| 219 | [[block-219-admin-feature-flags-targeting-surface-parity]] — the feature-flags docs now match the live environment + level/class/userId targeting model instead of implying a richer beta-tester/platform/region cohort builder | Fixed |
+| 220 | [[block-220-admin-balance-and-offers-surface-parity]] — the balance/loot/offers/config/item-balance sections now describe the actual live admin tools instead of broader scheduling, forecasting, A/B pricing, or experiment-profile surfaces that the dashboard does not ship | Fixed |
+| 221 | [[block-221-admin-items-crud-surface-parity]] — the items docs now match the live form/upload/preview/delete surface instead of promising CSV tooling, change history, soft-delete warnings, or 3D preview | Fixed |
+| 222 | [[block-222-admin-player-appearance-mail-and-footer-surface-parity]] — the remaining players/appearances/mail/footer sections now describe the actual live admin surfaces instead of promising soft delete, 3D preview, scheduled mail, or generic undo/CSV tooling | Fixed |
 
 ## Status Legend
 

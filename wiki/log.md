@@ -1,5 +1,15 @@
 # Hexbound Wiki — Log
 
+## [2026-04-19] feature | Interactive Combat unification — PvP + bot + dungeon_boss
+
+Migrated PvP, NPC bot, and dungeon boss fights through the single `/pvp/match/{start,strike,complete}` lifecycle so one `AppRoute.interactiveBattle` screen drives three modes. Dungeon Rush and the Guild Hall challenge replay stay on classic combat until a dedicated follow-up session.
+- **Schema:** `backend/prisma/migrations/20260418_interactive_combat_unified_opponent/migration.sql` — `pvp_matches.player2_id` becomes nullable; new nullable columns `opponent_type` (default `'pvp'`), `opponent_snapshot`, `dungeon_run_id`, `boss_key`, `bot_key`; new index `(opponent_type, status)`. Reconciled 17 pre-existing drift migrations via `prisma migrate resolve --applied` before `migrate deploy`.
+- **Backend:** `/pvp/match/start` infers `opponent_type` from the `npc_*` prefix when the field is omitted (backward compat); synthesizes bot stats via `generateBotCombatStats`; loads dungeon bosses from `DungeonRun.state.enemies[0]` + an inline `dungeonEnemyToCharacterStats`; skips the PvP stamina gate for `dungeon_boss`. `/pvp/strike` reads opponent stats from `opponent_snapshot` when non-PvP. `/pvp/match/complete` forks rewards: PvP keeps ELO + revenge + defender update; `bot` uses ±K-factor (`+30%` win / `−10%` loss) and skips defender/revenge/pvp achievements; `dungeon_boss` uses floor gold/XP with Training XP DR, advances `DungeonRun.currentFloor` or deletes on completion, upserts `DungeonProgress`, routes daily quest to `dungeons_complete`, loot key `dungeon_<difficulty>` or `boss`.
+- **iOS:** `AppRoute.interactiveBattle(opponentType:dungeonRunId:)` + `InteractiveOpponentType.{pvp,bot,dungeonBoss}`. `ArenaViewModel` auto-routes `npc_*` opponents with `.bot`; `DungeonRoomViewModel.fight()` routes through Interactive when `interactiveCombatEnabled == true`. Pre-wired VFX/SFX hooks: `InteractiveStrikeTurn.statusApplied`, `VFXEffectType.fire{Hit,Crit}`, `CombatFXAssetMap` `"fire"` case, `InteractiveBattleViewModel.speedMultiplier` (1x/2x).
+- **Deferred:** `dungeon_rush` (separate state machine — artifacts, HP%, artifact choice UI), Guild Hall challenge replay (pre-resolved combat, not round-by-round), `CombatDetailView`/`CombatViewModel`/`AppRoute.combat` retirement, `INTERACTIVE_COMBAT_V1` flag removal. All blockers documented in `wiki/features/combat-unification-remaining.md`.
+- **Decision:** new `wiki/decisions/why-interactive-combat-unification.md`.
+- **Code touched:** `backend/prisma/schema.prisma` + `admin/prisma/schema.prisma`, `backend/src/app/api/pvp/match/{start,complete}/route.ts`, `backend/src/app/api/pvp/strike/route.ts`, `Hexbound/Hexbound/App/AppRouter.swift`, `Hexbound/Hexbound/Models/InteractiveCombatModels.swift`, `Hexbound/Hexbound/Views/Combat/{InteractiveBattleView,InteractiveBattleViewModel,VFX/CombatVFXEffect,VFX/CombatVFXManager,VFX/CombatFXAssetMap}.swift`, `Hexbound/Hexbound/Persistence/SFXCatalog.swift`, `Hexbound/Hexbound/Views/Arena/ArenaViewModel.swift`, `Hexbound/Hexbound/Views/Dungeon/DungeonRoomViewModel.swift`.
+
 ## [2026-04-19] feature | TALENTS screen redesign — prototype parity + premium 4th slot
 
 Re-skinned the TALENTS tab to match the new HTML prototype and opened a gem-gated 4th active-skill slot:
@@ -2057,3 +2067,66 @@ Closed the next monetization truth-sync block:
 - **Fixes:** rewrote monetization wording so docs now describe `IAP Products` as a read-only catalog review surface, not a live dashboard SKU-management tool
 - **Inventory refresh:** updated current counts to `5074` in-scope files and `280 in-scope wiki markdown files / 279 wiki pages`
 - **Verification:** live page/client/backend comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 217 admin economy review vs fantasy analytics dashboard
+
+Closed the next admin monetization truth-sync block:
+- **Created:** `[[block-217-admin-economy-review-vs-fantasy-analytics-dashboard]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `admin/src/app/(dashboard)/economy/page.tsx`, `admin/src/app/(dashboard)/economy/economy-client.tsx`, `admin/src/actions/economy.ts`
+- **Fixes:** replaced the fantasy analytics-dashboard wording with the actual live economy review surface, and rewrote the Daily Gem Card wording so it no longer implies a dedicated live config page
+- **Inventory refresh:** updated current counts to `5075` in-scope files and `281 in-scope wiki markdown files / 280 wiki pages`
+- **Verification:** live economy page/client/actions comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 218 admin push surface vs live campaign sender
+
+Closed the next admin comms truth-sync block:
+- **Created:** `[[block-218-admin-push-surface-vs-live-campaign-sender]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/push/page.tsx`, `admin/src/app/(dashboard)/push/push-client.tsx`, `admin/src/actions/push.ts`, `admin/src/lib/push-campaigns.ts`
+- **Fixes:** rewrote the push section so it now describes the actual broadcast/segment/user campaign sender with class/level filters and sent/failed/token counters instead of promising richer cohort targeting, recurring sends, A/B tests, or open/click analytics
+- **Inventory refresh:** updated current counts to `5076` in-scope files and `282 in-scope wiki markdown files / 281 wiki pages`
+- **Verification:** live push page/client/actions/lib comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 219 admin feature-flags targeting surface parity
+
+Closed the next rollout-controls truth-sync block:
+- **Created:** `[[block-219-admin-feature-flags-targeting-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/lib/feature-flags.ts`, `admin/src/actions/feature-flags.ts`, `admin/src/app/(dashboard)/flags/flags-client.tsx`
+- **Fixes:** rewrote the feature-flags section so it now matches the live environment + level/class/userId targeting model, documents tags and seed-default-flags, and removes the implication that the dashboard already ships richer beta-tester/platform/region cohort builders or rollout analytics
+- **Inventory refresh:** updated current counts to `5077` in-scope files and `283 in-scope wiki markdown files / 282 wiki pages`
+- **Verification:** live flags client/actions/lib comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 220 admin balance and offers surface parity
+
+Closed the next admin balancing truth-sync block:
+- **Created:** `[[block-220-admin-balance-and-offers-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/loot/loot-client.tsx`, `admin/src/app/(dashboard)/offers/offers-client.tsx`, `admin/src/app/(dashboard)/balance/balance-client.tsx`, `admin/src/app/(dashboard)/config/config-client.tsx`, `admin/src/app/(dashboard)/item-balance/page.tsx`, `admin/src/app/(dashboard)/item-balance/dashboard-client.tsx`, `admin/src/app/(dashboard)/item-balance/simulation/simulation-client.tsx`, `admin/src/app/(dashboard)/item-balance/config/config-editor-client.tsx`
+- **Fixes:** rewrote the loot/offers/upgrade-config/config-manager/item-balance sections so they now describe the actual live admin tools and removed stale claims about scheduled changes, player-impact forecasting, A/B pricing, or saved experiment-profile surfaces that the current dashboard does not ship
+- **Inventory refresh:** updated current counts to `5078` in-scope files and `284 in-scope wiki markdown files / 283 wiki pages`
+- **Verification:** live loot/offers/balance/config/item-balance comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 221 admin items CRUD surface parity
+
+Closed the next content-ops truth-sync block:
+- **Created:** `[[block-221-admin-items-crud-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/items/items-client.tsx`, `admin/src/app/(dashboard)/items/_components/item-editor-client.tsx`, `admin/src/app/(dashboard)/items/_components/item-preview-modal.tsx`, `admin/src/app/api/items/route.ts`
+- **Fixes:** rewrote the items section so it now matches the live form/upload/preview/delete surface and removed stale claims about CSV tooling, soft-delete warnings, change history, duplicate-item flows, and 3D preview
+- **Inventory refresh:** updated current counts to `5079` in-scope files and `285 in-scope wiki markdown files / 284 wiki pages`
+- **Verification:** live items list/editor/modal/route comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 222 admin player appearance mail and footer surface parity
+
+Closed the next stale capability block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-222-admin-player-appearance-mail-and-footer-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/players/players-client.tsx`, `admin/src/app/(dashboard)/players/[id]/player-client.tsx`, `admin/src/app/(dashboard)/appearances/appearances-client.tsx`, `admin/src/app/(dashboard)/mail/mail-client.tsx`, `admin/src/actions/mail.ts`
+- **Fixes:** rewrote the players, appearances, mail, and footer notes so they now describe the actual live admin surfaces and removed stale claims about soft delete, 3D preview, scheduled/repeating mail, richer attachments, generic undo, and CSV bulk tooling
+- **Inventory refresh:** updated current counts to `5080` in-scope files and `286 in-scope wiki markdown files / 285 wiki pages`
+- **Verification:** live players/appearance/mail comparison plus `git diff --check`
+
+## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
+
+Mid-session `xcodebuild ... build` failed with linker `Undefined symbols: Hexbound.BossInfo.init(id:…isRealBoss:tagline:) + default argument 8` from `DungeonService.o`, and a separate pass reported `TalentsTabView.swift:100` cascade — `"no dynamic member 'unlockPremiumSlot' using key path from root type 'PassiveTreeViewModel'"` + `"referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Bindable<PassiveTreeViewModel>'"` + `"cannot call value of non-function type 'Binding<Subject>'"`. Both methods/members were present in source — `BossInfo` had the expected memberwise init with `tagline: String? = nil`, and `PassiveTreeViewModel.unlockPremiumSlot()` existed at line 405 with backend route + service + model already wired. A clean-then-build (`xcodebuild ... clean build`) passed with zero code changes.
+
+- **Takeaway:** when `xcodebuild` reports `Undefined symbols` for a memberwise init (usually just after a struct's field list changed), OR a `@Bindable`/`@Observable` VM method triggers the three-error "no dynamic member → Bindable wrapper → Binding<Subject>" cascade on code that clearly exists, **clean the module before editing the source**. Do not delete methods, retype call sites, or add `@_silgen_name` shims — the source is fine, DerivedData is the problem.
+- **Recovery:** `cd Hexbound && xcodebuild -project Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' -configuration Debug clean build`. If the error recurs immediately after the clean build, only then is it a real source bug.
+- **Why the cascade looks scary:** Swift's type-checker falls back to `@dynamicMemberLookup` via `Bindable`'s subscript when it can't resolve a direct method on the observable — so the actual root cause ("the .o file linked against an older struct layout") shows up as a type-inference failure three layers removed. Easy to misread as a real API mismatch.
+- **Reference on the day:** first observed during the 90-file in-flight refactor that eventually became `5f28635` (interactive combat polish + boss reveal ceremony + analytics split + admin scaffolding + wiki audit 202-213). No code fix was merged for it — `clean build` alone was the fix.

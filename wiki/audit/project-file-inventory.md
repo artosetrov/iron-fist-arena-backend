@@ -11,8 +11,8 @@ updated: 2026-04-19
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
 - Tracked files: 5049
-- Untracked project-owned files: 25
-- In-scope files listed here: 5074
+- Untracked project-owned files: 31
+- In-scope files listed here: 5080
 
 ## Excluded Generated / Vendor Areas
 
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 17
 - sounds: 33
 - User: 1059
-- wiki: 278
+- wiki: 283
 
 ## File List By Block
 
@@ -5134,6 +5134,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-214-delete-orphan-admin-review-routes.md _(untracked)_
 - wiki/audit/block-215-shop-feature-map-iap-products-admin-surface-parity.md _(untracked)_
 - wiki/audit/block-216-admin-monetization-wording-vs-live-iap-products-surface.md _(untracked)_
+- wiki/audit/block-217-admin-economy-review-vs-fantasy-analytics-dashboard.md _(untracked)_
+- wiki/audit/block-218-admin-push-surface-vs-live-campaign-sender.md _(untracked)_
+- wiki/audit/block-219-admin-feature-flags-targeting-surface-parity.md _(untracked)_
+- wiki/audit/block-220-admin-balance-and-offers-surface-parity.md _(untracked)_
+- wiki/audit/block-221-admin-items-crud-surface-parity.md _(untracked)_
+- wiki/audit/block-222-admin-player-appearance-mail-and-footer-surface-parity.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

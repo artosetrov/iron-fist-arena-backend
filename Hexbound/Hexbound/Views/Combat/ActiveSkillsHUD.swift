@@ -200,11 +200,11 @@ struct ActiveFireStyle {
 
     static func forAction(_ action: TalentSlotAction) -> ActiveFireStyle {
         switch action {
-        case .burstDamage: return .init(label: "BURST",   icon: "bolt.fill",             color: DarkFantasyTheme.danger)
-        case .healSelf:    return .init(label: "HEAL",    icon: "cross.case.fill",       color: DarkFantasyTheme.success)
-        case .shieldSelf:  return .init(label: "SHIELD",  icon: "shield.lefthalf.filled", color: DarkFantasyTheme.info)
-        case .stunEnemy:   return .init(label: "STUN",    icon: "bolt.slash.fill",       color: DarkFantasyTheme.gold)
-        case .execute:     return .init(label: "EXECUTE", icon: "scope",                 color: DarkFantasyTheme.danger)
+        case .burstDamage: return .init(label: "STRIKE",   icon: "bolt.fill",              color: DarkFantasyTheme.danger)
+        case .healSelf:    return .init(label: "RECOVERY", icon: "cross.case.fill",        color: DarkFantasyTheme.success)
+        case .shieldSelf:  return .init(label: "GUARD",    icon: "shield.lefthalf.filled", color: DarkFantasyTheme.info)
+        case .stunEnemy:   return .init(label: "CONTROL",  icon: "bolt.slash.fill",        color: DarkFantasyTheme.gold)
+        case .execute:     return .init(label: "FINISHER", icon: "scope",                  color: DarkFantasyTheme.danger)
         }
     }
 }

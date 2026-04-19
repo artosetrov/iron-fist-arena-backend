@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Active Categories — UX Prototype</title>
+<style>
+  :root {
+    --bg: #07060A;
+    --bg2: #0E0B08;
+    --panel: #1A140E;
+    --panel-2: #221A12;
+    --border: #3A2E20;
+    --border-strong: #4E3E2C;
+    --gold: #C9A253;
+    --gold-dim: #7A6434;
+    --ink: #EDE3CE;
+    --ink-dim: #A89A7D;
+    --ink-mute: #6B6249;
+    --danger: #C64A3A;
+    --danger-dim: #5A1E15;
+    --success: #6FA85A;
+    --success-dim: #345522;
+    --info: #5A8FC6;
+    --info-dim: #1E3A5A;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, 'Cinzel', Georgia, serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 20px 120px;
+  }
+  h1 {
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 4px;
+    font-weight: 500;
+  }
+  .sub {
+    font-size: 12px;
+    color: var(--ink-mute);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 36px 0 16px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  /* ======== CATEGORY PILL ======== */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-family: -apple-system, Helvetica, sans-serif;
+    border: 1px solid currentColor;
+    background: rgba(0,0,0,0.4);
+  }
+  .pill.strike   { color: var(--danger); }
+  .pill.finisher { color: var(--danger); }
+  .pill.control  { color: var(--gold); }
+  .pill.guard    { color: var(--info); }
+  .pill.recovery { color: var(--success); }
+  .pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ======== LEGEND ======== */
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .legend-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 12px;
+    min-height: 110px;
+  }
+  .legend-card .pill { margin-bottom: 10px; }
+  .legend-card .promise {
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.45;
+    font-family: -apple-system, Georgia, serif;
+  }
+  .legend-card .timing {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 8px;
+  }
+
+  /* ======== CATALOG CARDS ======== */
+  .catalog {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .ability-card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 16px 16px;
+    position: relative;
+  }
+  .ability-card .top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .ability-card .icon-slot {
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--gold);
+    font-size: 20px;
+  }
+  .ability-card .meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .ability-card .name {
+    font-size: 15px;
+    color: var(--ink);
+    margin: 6px 0 0;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .ability-card .node-key {
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .ability-card .desc {
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    font-family: -apple-system, Georgia, serif;
+    margin: 10px 0 12px;
+  }
+  .ability-card .stats {
+    display: flex;
+    gap: 16px;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .ability-card .stat b {
+    color: var(--ink);
+    font-weight: 600;
+    font-family: -apple-system, Helvetica, sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  /* ======== COMBAT HUD ======== */
+  .hud-demo {
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,162,83,0.06), transparent 60%), var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 20px 22px;
+    margin-top: 10px;
+  }
+  .hud-demo .caption {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 16px;
+  }
+  .hud-row {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+  }
+  .hud-slot {
+    width: 56px; height: 56px;
+    border-radius: 6px;
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    color: var(--gold);
+    font-size: 22px;
+  }
+  .hud-slot.armed { border-color: var(--gold); border-width: 2px; box-shadow: 0 0 12px rgba(201,162,83,0.35); }
+  .hud-slot.cd {
+    color: var(--ink-mute);
+  }
+  .hud-slot.cd::after {
+    content: attr(data-cd);
+    position: absolute;
+    inset: 0;
+    background: rgba(7,6,10,0.55);
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: -apple-system, Helvetica, sans-serif;
+    border-radius: 6px;
+  }
+  .hud-slot .corner-pip {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .hud-slot .corner-pip.strike   { background: var(--danger); }
+  .hud-slot .corner-pip.control  { background: var(--gold); }
+  .hud-slot .corner-pip.guard    { background: var(--info); }
+  .hud-slot .corner-pip.recovery { background: var(--success); }
+  .hud-slot .corner-pip.finisher { background: var(--danger); border: 1px solid var(--gold); }
+
+  .hud-labels {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+  }
+  .hud-labels span {
+    width: 56px;
+    text-align: center;
+  }
+
+  /* Tooltip on hover */
+  .hud-slot:hover .tooltip {
+    display: block;
+  }
+  .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 10px 12px;
+    min-width: 200px;
+    text-align: left;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .tooltip .pill { margin-bottom: 6px; }
+  .tooltip .t-name {
+    font-size: 13px;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .tooltip .t-desc {
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height: 1.45;
+    font-family: -apple-system, Georgia, serif;
+  }
+  .tooltip .t-stats {
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+
+  /* ======== FIRE BANNERS ======== */
+  .banners {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .banner-col {
+    text-align: center;
+  }
+  .banner-col .col-title {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+  }
+  .fire-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(26,20,14,0.92);
+    border-radius: 6px;
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    font-weight: 600;
+    font-family: -apple-system, Helvetica, sans-serif;
+    border: 1px solid;
+  }
+  .fire-banner.strike   { color: var(--danger);  border-color: rgba(198,74,58,0.7);  box-shadow: 0 0 14px rgba(198,74,58,0.25); }
+  .fire-banner.finisher { color: var(--danger);  border-color: rgba(198,74,58,0.7);  box-shadow: 0 0 14px rgba(198,74,58,0.25); }
+  .fire-banner.control  { color: var(--gold);    border-color: rgba(201,162,83,0.7); box-shadow: 0 0 14px rgba(201,162,83,0.25); }
+  .fire-banner.guard    { color: var(--info);    border-color: rgba(90,143,198,0.7); box-shadow: 0 0 14px rgba(90,143,198,0.25); }
+  .fire-banner.recovery { color: var(--success); border-color: rgba(111,168,90,0.7); box-shadow: 0 0 14px rgba(111,168,90,0.25); }
+  .banner-before {
+    margin-top: 14px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+  }
+
+  /* Two-column side-by-side for banner comparison */
+  .banner-compare {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    align-items: center;
+    padding: 18px 0 6px;
+  }
+  .banner-compare .arrow {
+    font-size: 18px;
+    color: var(--ink-mute);
+  }
+
+  /* Footer note */
+  .note {
+    margin-top: 40px;
+    padding: 16px;
+    background: var(--panel);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    font-family: -apple-system, Georgia, serif;
+  }
+  .note b { color: var(--ink); }
+  code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11.5px;
+    background: rgba(0,0,0,0.4);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--gold-dim);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Active Abilities — UX Categories</h1>
+  <div class="sub">Prototype · v1 · 2026-04-19 · awaits approval</div>
+
+  <!-- ==================== LEGEND ==================== -->
+  <h2>01 · Category Legend</h2>
+  <div class="legend">
+    <div class="legend-card">
+      <span class="pill strike"><span class="dot"></span>Strike</span>
+      <div class="promise">Your next strike deals extra damage.</div>
+      <div class="timing">Direct · <code>burst_damage</code></div>
+    </div>
+    <div class="legend-card">
+      <span class="pill finisher"><span class="dot"></span>Finisher</span>
+      <div class="promise">If enemy HP is low, your next strike hits much harder.</div>
+      <div class="timing">Direct · <code>execute</code></div>
+    </div>
+    <div class="legend-card">
+      <span class="pill control"><span class="dot"></span>Control</span>
+      <div class="promise">Interrupt the enemy — they skip a turn.</div>
+      <div class="timing">Direct · <code>stun_enemy</code></div>
+    </div>
+    <div class="legend-card">
+      <span class="pill guard"><span class="dot"></span>Guard</span>
+      <div class="promise">Absorb part of the next hit you take.</div>
+      <div class="timing">Preparation · <code>shield_self</code></div>
+    </div>
+    <div class="legend-card">
+      <span class="pill recovery"><span class="dot"></span>Recovery</span>
+      <div class="promise">Restore HP right now.</div>
+      <div class="timing">Direct · <code>heal_self</code></div>
+    </div>
+  </div>
+
+  <!-- ==================== CATALOG CARDS ==================== -->
+  <h2>02 · Catalog / Details Card — one example per category</h2>
+  <div class="catalog">
+
+    <div class="ability-card">
+      <div class="top">
+        <div class="icon-slot">⚡</div>
+        <div class="meta">
+          <span class="pill strike"><span class="dot"></span>Strike</span>
+          <div class="name">Fury Swing</div>
+          <div class="node-key">warrior_3_fury · placeholder name</div>
+        </div>
+      </div>
+      <div class="desc">Your next strike deals <b>+35% damage</b>.</div>
+      <div class="stats">
+        <div class="stat">CD <b>3</b></div>
+        <div class="stat">Class <b>Warrior</b></div>
+        <div class="stat">Tier <b>3</b></div>
+      </div>
+    </div>
+
+    <div class="ability-card">
+      <div class="top">
+        <div class="icon-slot">🎯</div>
+        <div class="meta">
+          <span class="pill finisher"><span class="dot"></span>Finisher</span>
+          <div class="name">Coup de Grâce</div>
+          <div class="node-key">rogue_5_ult · placeholder name</div>
+        </div>
+      </div>
+      <div class="desc">If enemy HP is below <b>30%</b>, your next strike deals <b>+30% damage</b>.</div>
+      <div class="stats">
+        <div class="stat">CD <b>5</b></div>
+        <div class="stat">Class <b>Rogue</b></div>
+        <div class="stat">Tier <b>5</b></div>
+      </div>
+    </div>
+
+    <div class="ability-card">
+      <div class="top">
+        <div class="icon-slot">✦</div>
+        <div class="meta">
+          <span class="pill control"><span class="dot"></span>Control</span>
+          <div class="name">Arcane Silence</div>
+          <div class="node-key">mage_5_ult · placeholder name</div>
+        </div>
+      </div>
+      <div class="desc">The enemy <b>skips their next turn</b>.</div>
+      <div class="stats">
+        <div class="stat">CD <b>6</b></div>
+        <div class="stat">Class <b>Mage</b></div>
+        <div class="stat">Tier <b>5</b></div>
+      </div>
+    </div>
+
+    <div class="ability-card">
+      <div class="top">
+        <div class="icon-slot">⛨</div>
+        <div class="meta">
+          <span class="pill guard"><span class="dot"></span>Guard</span>
+          <div class="name">Bulwark</div>
+          <div class="node-key">tank_5_ult · placeholder name</div>
+        </div>
+      </div>
+      <div class="desc">Absorb up to <b>30% of your max HP</b> from the next incoming hit.</div>
+      <div class="stats">
+        <div class="stat">CD <b>5</b></div>
+        <div class="stat">Class <b>Tank</b></div>
+        <div class="stat">Tier <b>5</b></div>
+      </div>
+    </div>
+
+    <div class="ability-card">
+      <div class="top">
+        <div class="icon-slot">✚</div>
+        <div class="meta">
+          <span class="pill recovery"><span class="dot"></span>Recovery</span>
+          <div class="name">Second Wind</div>
+          <div class="node-key">tank_3_fortress · placeholder name</div>
+        </div>
+      </div>
+      <div class="desc">Restore <b>20% of your max HP</b>.</div>
+      <div class="stats">
+        <div class="stat">CD <b>4</b></div>
+        <div class="stat">Class <b>Tank</b></div>
+        <div class="stat">Tier <b>3</b></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== HUD ==================== -->
+  <h2>03 · Combat HUD — slot buttons (category hint via corner pip)</h2>
+  <div class="hud-demo">
+    <div class="caption">Three loadout slots · hover a slot to see the tooltip</div>
+    <div class="hud-row">
+      <div class="hud-slot">
+        ⚡
+        <div class="corner-pip strike"></div>
+        <div class="tooltip">
+          <span class="pill strike"><span class="dot"></span>Strike</span>
+          <div class="t-name">Fury Swing</div>
+          <div class="t-desc">Your next strike deals +35% damage.</div>
+          <div class="t-stats">Ready · CD 3</div>
+        </div>
+      </div>
+      <div class="hud-slot armed">
+        ⛨
+        <div class="corner-pip guard"></div>
+        <div class="tooltip">
+          <span class="pill guard"><span class="dot"></span>Guard</span>
+          <div class="t-name">Bulwark</div>
+          <div class="t-desc">Absorb up to 30% of your max HP from the next hit.</div>
+          <div class="t-stats">Armed · CD 5</div>
+        </div>
+      </div>
+      <div class="hud-slot cd" data-cd="4">
+        ✦
+        <div class="corner-pip control"></div>
+        <div class="tooltip">
+          <span class="pill control"><span class="dot"></span>Control</span>
+          <div class="t-name">Arcane Silence</div>
+          <div class="t-desc">The enemy skips their next turn.</div>
+          <div class="t-stats">Cooldown · 4 rounds left</div>
+        </div>
+      </div>
+    </div>
+    <div class="hud-labels">
+      <span>Ready</span>
+      <span>Armed</span>
+      <span>Cooldown</span>
+    </div>
+  </div>
+
+  <!-- ==================== FIRE BANNER ==================== -->
+  <h2>04 · Fire Banner — before / after</h2>
+
+  <div class="banner-compare">
+    <div class="banner-col">
+      <div class="col-title">Today</div>
+      <div class="fire-banner strike">⚡ BURST!</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="banner-col">
+      <div class="col-title">Proposed</div>
+      <div class="fire-banner strike">⚡ STRIKE!</div>
+    </div>
+  </div>
+
+  <div class="banners" style="margin-top:14px;">
+    <div class="banner-col">
+      <div class="col-title">Strike</div>
+      <div class="fire-banner strike">⚡ STRIKE!</div>
+    </div>
+    <div class="banner-col">
+      <div class="col-title">Finisher</div>
+      <div class="fire-banner finisher">🎯 FINISHER!</div>
+    </div>
+    <div class="banner-col">
+      <div class="col-title">Control</div>
+      <div class="fire-banner control">✦ CONTROL!</div>
+    </div>
+    <div class="banner-col">
+      <div class="col-title">Guard</div>
+      <div class="fire-banner guard">⛨ GUARD!</div>
+    </div>
+    <div class="banner-col">
+      <div class="col-title">Recovery</div>
+      <div class="fire-banner recovery">✚ RECOVERY!</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Notes for review.</b>
+    (1) All names are <b>placeholders</b> — final copy comes from a Narrative pass, not this prototype.
+    (2) No server change, no enum rename, no balance delta — categories are a client-side presentation layer derived from <code>TalentSlotAction</code>.
+    (3) Emoji icons here are stand-ins for the existing SF Symbols in <code>ActiveFireStyle</code> (<code>bolt.fill</code>, <code>scope</code>, <code>bolt.slash.fill</code>, <code>shield.lefthalf.filled</code>, <code>cross.case.fill</code>).
+    (4) HUD corner pip is optional — see <code>ACTIVE_CATEGORIES_V1.md</code> "Open questions".
+  </div>
+
+</div>
+</body>
+</html>
