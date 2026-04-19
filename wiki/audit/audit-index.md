@@ -245,6 +245,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 223 | [[block-223-admin-arena-dungeons-assets-surface-parity]] — the arena/matches, dungeons, and assets docs now match the real review/editor/browser surfaces instead of promising fraud ops, forecast tooling, template saves, or richer asset-pipeline features | Fixed |
 | 224 | [[block-224-admin-gameplay-systems-surface-parity]] — the skills/passives/quests/events/seasons docs now match the real CRUD/editor surfaces instead of promising simulators, drag-tree tooling, seasonal planners, participation analytics, or battle-pass control flows that those screens do not ship | Fixed |
 | 225 | [[block-225-admin-consumables-achievements-and-snapshots-surface-parity]] — the consumables/achievements/snapshots docs now match the real catalog/config, definition/stats, and create/rollback/delete surfaces instead of promising standalone CRUD, richer template builders, or snapshot diff tooling | Fixed |
+| 226 | [[block-226-admin-dashboard-and-economy-overview-surface-parity]] — the dashboard/economy overview docs now match the real KPI/alerts/charts/review surfaces instead of promising broader real-time ops, inline leaderboard, faucet-sink, or exploit-alert features that those pages do not ship | Fixed |
 
 ## Status Legend
 

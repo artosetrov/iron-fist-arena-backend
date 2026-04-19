@@ -11,8 +11,8 @@ updated: 2026-04-19
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
 - Tracked files: 5049
-- Untracked project-owned files: 34
-- In-scope files listed here: 5083
+- Untracked project-owned files: 35
+- In-scope files listed here: 5084
 
 ## Excluded Generated / Vendor Areas
 
@@ -5143,6 +5143,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-223-admin-arena-dungeons-assets-surface-parity.md _(untracked)_
 - wiki/audit/block-224-admin-gameplay-systems-surface-parity.md _(untracked)_
 - wiki/audit/block-225-admin-consumables-achievements-and-snapshots-surface-parity.md _(untracked)_
+- wiki/audit/block-226-admin-dashboard-and-economy-overview-surface-parity.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

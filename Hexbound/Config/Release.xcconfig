@@ -1,0 +1,4 @@
+#include "Shared.xcconfig"
+
+HEXBOUND_APP_ENV = production
+HEXBOUND_API_BASE_URL = $(HEXBOUND_PRODUCTION_API_BASE_URL)

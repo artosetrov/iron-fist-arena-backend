@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Talents — Horizontal Tree Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-abyss: #08080C;
+    --bg-primary: #0D0D12;
+    --bg-secondary: #1A1A2E;
+    --bg-tertiary: #16213E;
+    --bg-elevated: #1E2240;
+
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --gold-glow: rgba(243, 156, 18, 0.4);
+
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+
+    --border-subtle: #2A2A3E;
+    --border-medium: #3A3A50;
+    --border-ornament: #B8860B;
+
+    --class-warrior: #E68C33;
+    --class-rogue: #4DD958;
+    --class-mage: #6680FF;
+    --class-tank: #9999B2;
+
+    --danger: #E63946;
+    --purple: #9B59B6;
+    --success: #2ECC71;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #15151A;
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 32px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* ═════════════════════════════════════════
+     PHONE FRAME — iPhone 14 Pro (393 × 852)
+     ═════════════════════════════════════════ */
+  .phone-wrapper { display: flex; flex-direction: column; gap: 16px; }
+
+  .phone-label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .phone {
+    width: 393px;
+    height: 852px;
+    border-radius: 54px;
+    background: #000;
+    padding: 12px;
+    box-shadow:
+      0 0 0 2px #2a2a32,
+      0 0 60px rgba(212, 165, 55, 0.08);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 44px;
+    background: var(--bg-primary);
+    overflow: hidden;
+    position: relative;
+  }
+  .notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 32px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  /* ═════════════════════════════════════════
+     STATUS BAR (iOS)
+     ═════════════════════════════════════════ */
+  .status-bar {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 28px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 50;
+  }
+
+  /* ═════════════════════════════════════════
+     FLOATING HEADER — HERO + TABS + SP + SKILLS
+     ═════════════════════════════════════════ */
+  .top-hud {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding: 0 16px;
+  }
+
+  .hero-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 16px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    display: grid; place-items: center;
+    color: var(--gold);
+    font-size: 18px;
+  }
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--gold-bright);
+  }
+
+  /* Tab bar */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 2px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .tab {
+    padding: 10px 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-tertiary);
+    border-radius: 8px;
+  }
+  .tab.active {
+    color: var(--gold-bright);
+    background: rgba(212, 165, 55, 0.08);
+    border-bottom: 2px solid var(--gold);
+  }
+  /* Ornamental diamonds */
+  .tabs::before, .tabs::after {
+    content: '◆';
+    position: absolute;
+    color: var(--gold);
+    font-size: 8px;
+    top: -5px;
+  }
+  .tabs::before { left: -5px; }
+  .tabs::after { right: -5px; }
+
+  /* Compact SP + Actives panel */
+  .compact-panel {
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.92) 0%, rgba(13, 13, 18, 0.88) 100%);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .sp-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .sp-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+  }
+  .sp-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .sp-count .max { font-size: 11px; color: var(--text-tertiary); }
+
+  .actives-strip {
+    display: flex;
+    gap: 6px;
+  }
+  .active-slot {
+    width: 42px;
+    height: 42px;
+    border-radius: 9px;
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-medium);
+    display: grid; place-items: center;
+    position: relative;
+    font-size: 20px;
+  }
+  .active-slot.filled {
+    border-color: var(--gold);
+    background: rgba(212, 165, 55, 0.10);
+    color: var(--gold);
+  }
+  .active-slot.empty {
+    border-style: dashed;
+    border-color: var(--border-medium);
+    color: var(--text-tertiary);
+    font-size: 22px;
+    font-weight: 300;
+  }
+  .active-slot.premium {
+    border-color: var(--purple);
+    color: var(--purple);
+    background: rgba(155, 89, 182, 0.10);
+  }
+  .active-slot .slot-num {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-tertiary);
+  }
+  .active-slot.filled .slot-num { color: var(--gold); }
+  .active-slot.premium .slot-num { color: var(--purple); }
+  .active-slot.premium .gem-cost {
+    position: absolute;
+    bottom: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--purple);
+  }
+
+  /* ═════════════════════════════════════════
+     TREE CANVAS — horizontal 21:9 scroll
+     ═════════════════════════════════════════ */
+  .tree-canvas-wrapper {
+    position: absolute;
+    top: 232px;
+    left: 0;
+    right: 0;
+    bottom: 48px;
+    overflow: hidden;
+  }
+  .tree-scroll {
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tree-scroll::-webkit-scrollbar { display: none; }
+
+  .tree-canvas {
+    position: relative;
+    /* 21:9 aspect — width ~ 2.33 × height */
+    height: 100%;
+    width: 1400px; /* 21:9 × canvas height of ~600 = 1400 */
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 50%, rgba(230, 140, 51, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(155, 89, 182, 0.08) 0%, transparent 70%),
+      linear-gradient(180deg, #0A0E1A 0%, #0D0D12 50%, #0A0E1A 100%);
+  }
+
+  /* Decorative background — suggest mountain pass for Warrior */
+  .tree-bg-decor {
+    position: absolute;
+    inset: 0;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .mountain {
+    position: absolute;
+    bottom: 0;
+    width: 400px;
+    height: 220px;
+    background: linear-gradient(180deg, transparent 0%, rgba(58, 58, 80, 0.6) 40%, rgba(30, 30, 50, 0.8) 100%);
+    clip-path: polygon(0% 100%, 20% 30%, 40% 55%, 60% 15%, 80% 45%, 100% 100%);
+  }
+  .mountain.m1 { left: 0; }
+  .mountain.m2 { left: 350px; width: 500px; height: 280px; opacity: 0.7; }
+  .mountain.m3 { left: 800px; width: 450px; height: 240px; opacity: 0.8; }
+  .mountain.m4 { left: 1150px; width: 300px; height: 200px; }
+
+  /* Fog wisps */
+  .fog {
+    position: absolute;
+    height: 80px;
+    background: radial-gradient(ellipse, rgba(180, 180, 200, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .fog.f1 { left: 150px; top: 300px; width: 400px; }
+  .fog.f2 { left: 700px; top: 380px; width: 500px; }
+  .fog.f3 { left: 1100px; top: 280px; width: 350px; }
+
+  /* Path indicator — a subtle road winding through */
+  .bg-road {
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212, 165, 55, 0.06) 20%,
+      rgba(212, 165, 55, 0.12) 50%,
+      rgba(212, 165, 55, 0.06) 80%,
+      transparent 100%);
+    transform: translateY(-1px);
+  }
+
+  /* SVG connection layer */
+  .connections {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Nodes */
+  .node {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-medium);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    color: var(--text-tertiary);
+  }
+  .node.unlocked {
+    background: rgba(212, 165, 55, 0.12);
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    box-shadow: 0 0 16px rgba(212, 165, 55, 0.35);
+  }
+  .node.unlockable {
+    background: var(--bg-secondary);
+    border-color: var(--border-ornament);
+    color: var(--gold);
+  }
+  .node.locked {
+    opacity: 0.55;
+  }
+  .node.keystone {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    border-width: 2px;
+  }
+  .node.ultimate {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border-width: 2px;
+    background: rgba(155, 89, 182, 0.12);
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 20px rgba(155, 89, 182, 0.3);
+  }
+  .node.ultimate.locked { opacity: 0.4; box-shadow: none; }
+
+  .node .rank-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg-abyss);
+    border: 1.5px solid var(--gold);
+    display: grid; place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .node.locked .rank-badge { display: none; }
+  .node .rank-badge.maxed {
+    background: var(--gold);
+    color: var(--bg-abyss);
+  }
+
+  /* ═════════════════════════════════════════
+     MINIMAP INDICATOR at bottom
+     ═════════════════════════════════════════ */
+  .minimap {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    z-index: 30;
+  }
+  .mini-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+  }
+  .mini-track {
+    position: relative;
+    flex: 1;
+    height: 3px;
+    background: var(--border-subtle);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .mini-fill {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    width: 28%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+    border-radius: 2px;
+  }
+  .mini-dots {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+  }
+  .mini-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--text-tertiary);
+  }
+  .mini-dot.reached {
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+
+  /* ═════════════════════════════════════════
+     NODE DETAIL MODAL (bottom sheet)
+     ═════════════════════════════════════════ */
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 80;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    background: linear-gradient(180deg, #1A1A2E 0%, #0D0D12 100%);
+    border-top: 1px solid var(--gold);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 32px;
+    z-index: 90;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out;
+    box-shadow: 0 -20px 40px rgba(0,0,0,0.4);
+  }
+  .modal-sheet.open { transform: translateY(0); }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    background: var(--border-medium);
+    margin: 0 auto 16px;
+  }
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .modal-icon {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    background: rgba(212, 165, 55, 0.12);
+    border: 2px solid var(--gold);
+    display: grid; place-items: center;
+    font-size: 26px;
+    color: var(--gold-bright);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .modal-icon .rank-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg-abyss);
+    border: 1.5px solid var(--gold);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-title-block { flex: 1; min-width: 0; }
+  .modal-tier {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  .modal-name {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .modal-rank-text {
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    display: grid; place-items: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .modal-section {
+    padding: 12px 14px;
+    background: rgba(8, 8, 12, 0.5);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 10px;
+  }
+  .modal-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+  }
+  .rank-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .rank-row.current {
+    background: rgba(212, 165, 55, 0.10);
+    border-left: 2px solid var(--gold);
+    color: var(--gold-bright);
+    font-weight: 600;
+  }
+  .rank-row.next { color: var(--text-secondary); }
+  .rank-row.locked-rank { color: var(--text-tertiary); opacity: 0.7; }
+  .rank-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+
+  .modal-flavor {
+    font-family: 'Cinzel', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding: 0 4px;
+    margin-bottom: 16px;
+    border-left: 2px solid var(--border-ornament);
+    padding-left: 10px;
+  }
+
+  .modal-action {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(180deg, #E8C05A 0%, #D4A537 50%, #A88228 100%);
+    color: #1A1A2E;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .modal-action.disabled {
+    background: var(--bg-elevated);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+  }
+  .modal-action.maxed {
+    background: transparent;
+    border: 2px solid var(--gold);
+    color: var(--gold);
+  }
+
+  /* ═════════════════════════════════════════
+     DESIGN NOTES PANEL
+     ═════════════════════════════════════════ */
+  .notes {
+    width: 360px;
+    background: #1a1a22;
+    border: 1px solid #2a2a32;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #c8c8d0;
+  }
+  .notes h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--gold-bright);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .notes .sub { font-size: 11px; color: var(--text-tertiary); margin-bottom: 16px; }
+  .notes h2 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+    margin: 18px 0 8px;
+  }
+  .notes p { margin-bottom: 8px; }
+  .notes ul { margin: 0 0 10px 16px; padding: 0; }
+  .notes li { margin-bottom: 5px; font-size: 12px; }
+  .notes code {
+    background: #0e0e14;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold-bright);
+  }
+  .notes .question {
+    background: rgba(230, 57, 70, 0.08);
+    border-left: 3px solid var(--danger);
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin: 4px 0;
+    font-size: 12px;
+  }
+  .notes .hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* Hint below phone */
+  .phone-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-align: center;
+    max-width: 393px;
+    line-height: 1.5;
+  }
+  .phone-hint .kbd {
+    background: #2a2a32;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold-bright);
+    font-size: 10px;
+  }
+
+  /* Arrow scroll cue */
+  .scroll-cue {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 60px;
+    background: linear-gradient(-90deg, rgba(13, 13, 18, 0.9), transparent);
+    z-index: 35;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    color: var(--gold);
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ PHONE ═══════════════ -->
+<div class="phone-wrapper">
+  <div class="phone-label">TALENTS — HORIZONTAL TREE v1</div>
+  <div class="phone">
+    <div class="phone-screen">
+      <div class="notch"></div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>2:44</span>
+        <span>⏾ 5G ▮▮▮</span>
+      </div>
+
+      <!-- Floating top HUD -->
+      <div class="top-hud">
+        <div class="hero-row">
+          <div class="icon-btn">◁</div>
+          <div class="hero-title">HERO</div>
+          <div class="icon-btn">⚙</div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab">INVENTORY</div>
+          <div class="tab">STATUS</div>
+          <div class="tab active">TALENTS</div>
+        </div>
+
+        <div class="compact-panel">
+          <div class="sp-block">
+            <div class="sp-label">SKILL PTS</div>
+            <div class="sp-count">7<span class="max">/59</span></div>
+          </div>
+          <div class="actives-strip">
+            <div class="active-slot filled" title="Bloodthirst">
+              <span class="slot-num">01</span>⚡
+            </div>
+            <div class="active-slot empty">
+              <span class="slot-num">02</span>+
+            </div>
+            <div class="active-slot filled" title="Heroic Recovery">
+              <span class="slot-num">03</span>🧪
+            </div>
+            <div class="active-slot premium">
+              <span class="slot-num">04</span>◆
+              <span class="gem-cost">100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tree canvas -->
+      <div class="tree-canvas-wrapper">
+        <div class="tree-scroll" id="treeScroll">
+          <div class="tree-canvas" id="treeCanvas">
+            <!-- Background decor -->
+            <div class="tree-bg-decor">
+              <div class="mountain m1"></div>
+              <div class="mountain m2"></div>
+              <div class="mountain m3"></div>
+              <div class="mountain m4"></div>
+              <div class="fog f1"></div>
+              <div class="fog f2"></div>
+              <div class="fog f3"></div>
+              <div class="bg-road"></div>
+            </div>
+
+            <!-- SVG connections will be injected by JS -->
+            <svg class="connections" id="connections" viewBox="0 0 1400 600" preserveAspectRatio="none"></svg>
+
+            <!-- Nodes injected by JS -->
+            <div id="nodes"></div>
+          </div>
+        </div>
+        <div class="scroll-cue">▶</div>
+      </div>
+
+      <!-- Minimap -->
+      <div class="minimap">
+        <span class="mini-label">WEST</span>
+        <div class="mini-track">
+          <div class="mini-fill" id="miniFill"></div>
+          <div class="mini-dots">
+            <span class="mini-dot reached"></span>
+            <span class="mini-dot"></span>
+            <span class="mini-dot"></span>
+            <span class="mini-dot"></span>
+            <span class="mini-dot"></span>
+          </div>
+        </div>
+        <span class="mini-label">EAST</span>
+      </div>
+
+      <!-- Modal -->
+      <div class="modal-backdrop" id="modalBackdrop"></div>
+      <div class="modal-sheet" id="modalSheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-icon" id="mIcon">
+            ✨
+            <div class="rank-badge" id="mRankBadge">1</div>
+          </div>
+          <div class="modal-title-block">
+            <div class="modal-tier" id="mTier">TIER 1 · FOUNDATION</div>
+            <div class="modal-name" id="mName">Wards</div>
+            <div class="modal-rank-text" id="mRankText">Rank 1 / 3</div>
+          </div>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-label">EFFECT PROGRESSION</div>
+          <div class="rank-row current" id="rr1">
+            <span class="rank-label">R1</span>
+            <span>+5 Magic Resist · 1 SP</span>
+          </div>
+          <div class="rank-row next" id="rr2">
+            <span class="rank-label">R2</span>
+            <span>+10 Magic Resist · 2 SP</span>
+          </div>
+          <div class="rank-row locked-rank" id="rr3">
+            <span class="rank-label">R3</span>
+            <span>+15 Magic Resist · 3 SP</span>
+          </div>
+        </div>
+
+        <div class="modal-flavor" id="mFlavor">
+          "Ancient runes etched into the skin deflect arcane blows before they can bloom."
+        </div>
+
+        <button class="modal-action" id="mAction">
+          ⬆ UPGRADE TO RANK 2 · 2 SP
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="phone-hint">
+    Drag the tree horizontally to scroll from <span class="kbd">Foundation (West)</span>
+    → <span class="kbd">Specialization</span> → <span class="kbd">Mastery (East)</span>.
+    Tap any node for details.
+  </div>
+</div>
+
+<!-- ═══════════════ NOTES PANEL ═══════════════ -->
+<div class="notes">
+  <h1>Talents — Horizontal Tree</h1>
+  <div class="sub">Warrior class shown · prototype v1 · 2026-04-19</div>
+
+  <h2>LAYOUT</h2>
+  <ul>
+    <li>21:9 canvas (<code>1400×600</code>) scrolls horizontally inside phone screen.</li>
+    <li>Floating sticky HUD on top (tabs + SP + 4 active slots) — Hub-style chrome.</li>
+    <li>Background theme per class: Warrior = mountain pass, Mage = arcane library, Rogue = shadows, Tank = fortress wall.</li>
+    <li>Bottom minimap shows scroll position across 3 tiers.</li>
+    <li>No scroll on vertical axis — nothing goes off screen vertically.</li>
+  </ul>
+
+  <h2>NODE MATH (20 nodes)</h2>
+  <ul>
+    <li><b>Foundation (6 common)</b> — Vitality, Iron Skin, Wards, Crit Eye, Cooldown, Lifesteal.</li>
+    <li><b>Specialization (9 class-specific)</b> — 3 lanes × 3 nodes (Offense / Balanced / Defense).</li>
+    <li><b>Keystones (3)</b> — build-defining effects at end of each lane.</li>
+    <li><b>Ultimates (2)</b> — class-signature abilities, require 2 keystones unlocked.</li>
+  </ul>
+
+  <h2>SP ECONOMY</h2>
+  <p>Ranks cost <code>1 / 2 / 3 SP</code> (6 SP to max a node). 20 nodes × 6 SP = <code>120 SP</code> to fully max — unachievable, forces choice.</p>
+  <ul>
+    <li>Level 2–50: <code>+1 SP</code> per level = 49 SP</li>
+    <li>Milestones (10, 20, 30, 40, 50): <code>+2 SP</code> each = 10 SP</li>
+    <li>Prestige bonus: <code>+5 SP</code> per prestige, permanent</li>
+    <li>L50 P0 = <code>59 SP</code>, L50 P5 = <code>84 SP</code></li>
+  </ul>
+  <p class="hint">Milestone moments give "ladder climb" feel — not just a flat per-level trickle.</p>
+
+  <h2>CLASS BUDGET</h2>
+  <p>4 classes × 20 nodes = <b>80 node designs</b>.<br>
+  Common nodes reused across classes visually = 6 shared designs + 56 unique = <b>62 total designs</b>.</p>
+
+  <h2>REUSE</h2>
+  <p>Existing <code>PassiveNode</code> schema supports: <code>classRestriction</code>, <code>positionX/Y</code>, tiers, connections, ranks via <code>cost</code> increment. <b>No migration needed</b> — just seed new data.</p>
+
+  <h2>OPEN QUESTIONS</h2>
+  <div class="question">1. SP formula: 1/lvl + milestones (+2×5) + prestige (+5)? <b>Your pick?</b></div>
+  <div class="question">2. Rank cost ramp 1→2→3 SP, or flat 1 SP/rank?</div>
+  <div class="question">3. 4 class backgrounds (4 arts) or 1 shared background with class tint?</div>
+  <div class="question">4. Keep existing <code>SKILL_TREE_DESIGN.md</code> 40-node plan for Phase 2 expansion?</div>
+  <div class="question">5. Weekly free respec for PvP balance patches?</div>
+
+  <h2>NEXT</h2>
+  <p>If direction OK → I fire <code>ascent</code> + <code>vault</code> + <code>flow</code> + <code>canvas</code> agents for full design doc + 4 class tree specs. Only after that → code.</p>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════
+  // NODE DATA — 20 nodes positioned on 21:9 canvas
+  // ═══════════════════════════════════════════
+  const nodes = [
+    // FOUNDATION (tier 1, common) — LEFT CLUSTER
+    { id: 'vitality', x: 120, y: 300, icon: '❤', name: 'Vitality', tier: 'TIER 1 · FOUNDATION',
+      state: 'unlocked', rank: 2, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+5% Max HP' },
+        { sp: 2, desc: '+10% Max HP' },
+        { sp: 3, desc: '+15% Max HP' }
+      ],
+      flavor: 'The first lesson of war — endure.' },
+
+    { id: 'iron-skin', x: 260, y: 180, icon: '🛡', name: 'Iron Skin', tier: 'TIER 1 · FOUNDATION',
+      state: 'unlocked', rank: 1, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+8 Armor' },
+        { sp: 2, desc: '+16 Armor' },
+        { sp: 3, desc: '+24 Armor' }
+      ],
+      flavor: 'Steel learned from a thousand blows.' },
+
+    { id: 'wards', x: 260, y: 420, icon: '✨', name: 'Wards', tier: 'TIER 1 · FOUNDATION',
+      state: 'unlocked', rank: 1, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+5 Magic Resist' },
+        { sp: 2, desc: '+10 Magic Resist' },
+        { sp: 3, desc: '+15 Magic Resist' }
+      ],
+      flavor: 'Ancient runes etched into the skin deflect arcane blows.' },
+
+    { id: 'crit-eye', x: 400, y: 180, icon: '🎯', name: 'Critical Eye', tier: 'TIER 1 · FOUNDATION',
+      state: 'unlockable', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+2% Crit Chance' },
+        { sp: 2, desc: '+4% Crit Chance' },
+        { sp: 3, desc: '+6% Crit Chance' }
+      ],
+      flavor: 'See the flaw in every stance.' },
+
+    { id: 'cooldown', x: 400, y: 420, icon: '⏳', name: 'Swift Resolve', tier: 'TIER 1 · FOUNDATION',
+      state: 'unlockable', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+3% Cooldown Reduction' },
+        { sp: 2, desc: '+6% Cooldown Reduction' },
+        { sp: 3, desc: '+10% Cooldown Reduction' }
+      ],
+      flavor: 'Reflex sharper than blade.' },
+
+    { id: 'lifesteal', x: 540, y: 300, icon: '🩸', name: 'Lifesteal', tier: 'TIER 1 · FOUNDATION',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+2% Lifesteal' },
+        { sp: 2, desc: '+4% Lifesteal' },
+        { sp: 3, desc: '+6% Lifesteal' }
+      ],
+      flavor: 'Drink from every strike.' },
+
+    // SPECIALIZATION (tier 2, warrior) — MIDDLE CLUSTER, 3 LANES
+    // OFFENSE lane (top)
+    { id: 'heavy-strike', x: 720, y: 160, icon: '⚔', name: 'Heavy Strike', tier: 'TIER 2 · BERSERKER',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+8% Physical Damage' },
+        { sp: 2, desc: '+16% Physical Damage' },
+        { sp: 3, desc: '+24% Physical Damage' }
+      ],
+      flavor: 'Swing hard, breathe after.' },
+
+    { id: 'rage', x: 880, y: 160, icon: '🔥', name: 'Rage', tier: 'TIER 2 · BERSERKER',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+10% Damage when HP below 40%' },
+        { sp: 2, desc: '+20% Damage when HP below 40%' },
+        { sp: 3, desc: '+30% Damage when HP below 40%' }
+      ],
+      flavor: 'Pain is just another signal.' },
+
+    { id: 'bloodthirst', x: 1040, y: 160, icon: '⚡', name: 'Bloodthirst', tier: 'TIER 2 · BERSERKER · ACTIVE',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: 'Active: +8% Lifesteal for 2 turns · CD 4' },
+        { sp: 2, desc: 'Active: +12% Lifesteal for 2 turns · CD 4' },
+        { sp: 3, desc: 'Active: +16% Lifesteal for 2 turns · CD 3' }
+      ],
+      flavor: 'The wound that heals the wielder.' },
+
+    // BALANCED lane (middle)
+    { id: 'battle-cry', x: 720, y: 300, icon: '📯', name: 'Battle Cry', tier: 'TIER 2 · CRUSADER · ACTIVE',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: 'Active: +15% Damage 3 turns · CD 5' },
+        { sp: 2, desc: 'Active: +22% Damage 3 turns · CD 5' },
+        { sp: 3, desc: 'Active: +30% Damage 3 turns · CD 4' }
+      ],
+      flavor: 'A voice that wakes the weary sword.' },
+
+    { id: 'iron-will', x: 880, y: 300, icon: '⛨', name: 'Iron Will', tier: 'TIER 2 · CRUSADER',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+20% Stun Resistance' },
+        { sp: 2, desc: '+35% Stun Resistance' },
+        { sp: 3, desc: '+50% Stun Resistance' }
+      ],
+      flavor: 'The mind outlasts the blow.' },
+
+    { id: 'counter', x: 1040, y: 300, icon: '↺', name: 'Counter Stance', tier: 'TIER 2 · CRUSADER',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: 'Reflect 10% damage on block' },
+        { sp: 2, desc: 'Reflect 20% damage on block' },
+        { sp: 3, desc: 'Reflect 30% damage on block' }
+      ],
+      flavor: 'Every shield is also a weapon.' },
+
+    // DEFENSE lane (bottom)
+    { id: 'recovery', x: 720, y: 440, icon: '🧪', name: 'Heroic Recovery', tier: 'TIER 2 · EXECUTIONER · ACTIVE',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: 'Active: Heal 15% max HP · once per fight' },
+        { sp: 2, desc: 'Active: Heal 22% max HP · once per fight' },
+        { sp: 3, desc: 'Active: Heal 30% max HP · once per fight' }
+      ],
+      flavor: 'The second wind of legends.' },
+
+    { id: 'execute', x: 880, y: 440, icon: '💀', name: 'Execute Mark', tier: 'TIER 2 · EXECUTIONER',
+      state: 'locked', rank: 0, maxRank: 3,
+      effect: [
+        { sp: 1, desc: '+15% damage vs targets below 40% HP' },
+        { sp: 2, desc: '+30% damage vs targets below 40% HP' },
+        { sp: 3, desc: '+45% damage vs targets below 40% HP' }
+      ],
+      flavor: 'Finish what others started.' },
+
+    { id: 'last-breath', x: 1040, y: 440, icon: '✟', name: 'Last Breath', tier: 'TIER 2 · EXECUTIONER',
+      state: 'locked', rank: 0, maxRank: 2,
+      effect: [
+        { sp: 2, desc: 'Survive killing blow at 1 HP, 60s CD (once per fight)' },
+        { sp: 4, desc: 'Survive killing blow at 15% HP, 60s CD (once per fight)' }
+      ],
+      flavor: 'The grave will wait.' },
+
+    // KEYSTONES (tier 3) — RIGHT CLUSTER
+    { id: 'frenzy-k', x: 1200, y: 160, icon: '☠', name: 'Frenzy', tier: 'TIER 3 · KEYSTONE',
+      state: 'locked', rank: 0, maxRank: 1, isKeystone: true,
+      effect: [
+        { sp: 3, desc: 'Every crit refreshes all active cooldowns' }
+      ],
+      flavor: 'Blood begets blood.' },
+
+    { id: 'bulwark-k', x: 1200, y: 300, icon: '🏰', name: 'Bulwark', tier: 'TIER 3 · KEYSTONE',
+      state: 'locked', rank: 0, maxRank: 1, isKeystone: true,
+      effect: [
+        { sp: 3, desc: '30% Damage Reduction while HP above 50%' }
+      ],
+      flavor: 'The mountain does not flinch.' },
+
+    { id: 'headsman-k', x: 1200, y: 440, icon: '⚰', name: 'Headsman', tier: 'TIER 3 · KEYSTONE',
+      state: 'locked', rank: 0, maxRank: 1, isKeystone: true,
+      effect: [
+        { sp: 3, desc: 'Auto-crit on targets below 30% HP' }
+      ],
+      flavor: 'A single breath between them and the end.' },
+
+    // ULTIMATES (tier 4) — FAR RIGHT
+    { id: 'unleash', x: 1330, y: 220, icon: '⚡', name: 'Unleash the Beast', tier: 'TIER 4 · ULTIMATE',
+      state: 'locked', rank: 0, maxRank: 1, isUltimate: true,
+      effect: [
+        { sp: 5, desc: 'Ultimate: All attacks auto-crit for 3 turns' }
+      ],
+      flavor: 'The chain breaks. The beast remembers.' },
+
+    { id: 'resolve', x: 1330, y: 380, icon: '✠', name: "Champion's Resolve", tier: 'TIER 4 · ULTIMATE',
+      state: 'locked', rank: 0, maxRank: 1, isUltimate: true,
+      effect: [
+        { sp: 5, desc: 'Ultimate: Immune to damage for 2 turns' }
+      ],
+      flavor: 'Stand. That is all the world asks.' },
+  ];
+
+  // CONNECTIONS — pairs of node ids
+  const connections = [
+    ['vitality', 'iron-skin'],
+    ['vitality', 'wards'],
+    ['iron-skin', 'crit-eye'],
+    ['wards', 'cooldown'],
+    ['crit-eye', 'lifesteal'],
+    ['cooldown', 'lifesteal'],
+    ['lifesteal', 'heavy-strike'],
+    ['lifesteal', 'battle-cry'],
+    ['lifesteal', 'recovery'],
+    ['heavy-strike', 'rage'],
+    ['rage', 'bloodthirst'],
+    ['battle-cry', 'iron-will'],
+    ['iron-will', 'counter'],
+    ['recovery', 'execute'],
+    ['execute', 'last-breath'],
+    ['bloodthirst', 'frenzy-k'],
+    ['counter', 'bulwark-k'],
+    ['last-breath', 'headsman-k'],
+    // cross-lane weak
+    ['rage', 'iron-will'],
+    ['iron-will', 'execute'],
+    // keystones → ultimates
+    ['frenzy-k', 'unleash'],
+    ['bulwark-k', 'unleash'],
+    ['bulwark-k', 'resolve'],
+    ['headsman-k', 'resolve'],
+  ];
+
+  // ═══════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════
+  const nodesDiv = document.getElementById('nodes');
+  const connSvg = document.getElementById('connections');
+
+  // render connections first (behind nodes)
+  connections.forEach(([fromId, toId]) => {
+    const a = nodes.find(n => n.id === fromId);
+    const b = nodes.find(n => n.id === toId);
+    if (!a || !b) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', a.x);
+    line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x);
+    line.setAttribute('y2', b.y);
+    const bothUnlocked = a.state === 'unlocked' && b.state === 'unlocked';
+    const anyUnlocked = a.state === 'unlocked' || b.state === 'unlocked';
+    line.setAttribute('stroke', bothUnlocked ? '#D4A537' : (anyUnlocked ? '#8B6914' : '#2A2A3E'));
+    line.setAttribute('stroke-width', bothUnlocked ? '2.5' : '1.5');
+    if (!bothUnlocked) line.setAttribute('stroke-dasharray', '6 4');
+    if (bothUnlocked) line.setAttribute('filter', 'drop-shadow(0 0 4px rgba(212,165,55,0.5))');
+    connSvg.appendChild(line);
+  });
+
+  // render nodes
+  nodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'node ' + n.state;
+    if (n.isKeystone) el.classList.add('keystone');
+    if (n.isUltimate) el.classList.add('ultimate');
+    el.style.left = (n.x / 1400 * 100) + '%';
+    el.style.top = (n.y / 600 * 100) + '%';
+    el.innerHTML = n.icon + (n.rank > 0
+      ? `<div class="rank-badge ${n.rank === n.maxRank ? 'maxed' : ''}">${n.rank}</div>`
+      : '');
+    el.onclick = () => openModal(n);
+    nodesDiv.appendChild(el);
+  });
+
+  // ═══════════════════════════════════════════
+  // MODAL
+  // ═══════════════════════════════════════════
+  const backdrop = document.getElementById('modalBackdrop');
+  const sheet = document.getElementById('modalSheet');
+
+  function openModal(n) {
+    document.getElementById('mTier').textContent = n.tier;
+    document.getElementById('mName').textContent = n.name;
+    document.getElementById('mIcon').childNodes[0].nodeValue = n.icon;
+    document.getElementById('mRankText').textContent = n.rank === n.maxRank && n.rank > 0
+      ? `MAXED (Rank ${n.rank} / ${n.maxRank})`
+      : `Rank ${n.rank} / ${n.maxRank}`;
+
+    const rb = document.getElementById('mRankBadge');
+    rb.textContent = n.rank || '—';
+    rb.style.display = n.rank > 0 ? 'grid' : 'none';
+
+    // ranks
+    const rows = ['rr1', 'rr2', 'rr3'].map(id => document.getElementById(id));
+    rows.forEach((row, i) => {
+      const eff = n.effect[i];
+      if (!eff) {
+        row.style.display = 'none';
+        return;
+      }
+      row.style.display = 'grid';
+      row.querySelector('.rank-label').textContent = 'R' + (i + 1);
+      row.querySelector('span:last-child').textContent = `${eff.desc} · ${eff.sp} SP`;
+      row.className = 'rank-row';
+      if (i + 1 === n.rank) row.classList.add('current');
+      else if (i + 1 === n.rank + 1) row.classList.add('next');
+      else if (i + 1 > n.rank + 1) row.classList.add('locked-rank');
+      else row.classList.add('current'); // past ranks → looks same as current for visual flow
+    });
+
+    document.getElementById('mFlavor').textContent = `"${n.flavor}"`;
+
+    // action button
+    const btn = document.getElementById('mAction');
+    btn.classList.remove('disabled', 'maxed');
+    if (n.rank === n.maxRank && n.rank > 0) {
+      btn.textContent = '✓ MAXED';
+      btn.classList.add('maxed');
+    } else if (n.state === 'locked') {
+      btn.textContent = '🔒 LOCKED · COMPLETE PREREQUISITES';
+      btn.classList.add('disabled');
+    } else if (n.rank === 0) {
+      const cost = n.effect[0].sp;
+      btn.textContent = `◆ UNLOCK · ${cost} SP`;
+    } else {
+      const nextCost = n.effect[n.rank].sp;
+      btn.textContent = `⬆ UPGRADE TO RANK ${n.rank + 1} · ${nextCost} SP`;
+    }
+
+    backdrop.classList.add('open');
+    sheet.classList.add('open');
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open');
+    sheet.classList.remove('open');
+  }
+  backdrop.addEventListener('click', closeModal);
+
+  // ═══════════════════════════════════════════
+  // SCROLL → minimap sync
+  // ═══════════════════════════════════════════
+  const scrollEl = document.getElementById('treeScroll');
+  const miniFill = document.getElementById('miniFill');
+  function updateMini() {
+    const max = scrollEl.scrollWidth - scrollEl.clientWidth;
+    const pct = max > 0 ? scrollEl.scrollLeft / max : 0;
+    miniFill.style.width = Math.max(20, pct * 100 + 20) + '%';
+    // reached dots
+    const dots = document.querySelectorAll('.mini-dot');
+    dots.forEach((d, i) => {
+      d.classList.toggle('reached', pct >= i / (dots.length - 1));
+    });
+  }
+  scrollEl.addEventListener('scroll', updateMini);
+  updateMini();
+
+  // open "Wards" modal on load for visual
+  setTimeout(() => {
+    openModal(nodes.find(n => n.id === 'wards'));
+  }, 200);
+</script>
+
+</body>
+</html>

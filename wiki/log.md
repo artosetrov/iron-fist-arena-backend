@@ -2149,6 +2149,15 @@ Closed the next stale capability block inside `ADMIN_CAPABILITIES.md`:
 - **Inventory refresh:** updated current counts to `5083` in-scope files and `289 in-scope wiki markdown files / 288 wiki pages`
 - **Verification:** live consumables/achievements/snapshots comparison plus `git diff --check`
 
+## [2026-04-19] audit | Block 226 admin dashboard and economy overview surface parity
+
+Closed the next stale overview block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-226-admin-dashboard-and-economy-overview-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/dashboard-client.tsx`, `admin/src/actions/dashboard.ts`, `admin/src/app/(dashboard)/economy/economy-client.tsx`
+- **Fixes:** rewrote the dashboard and economy-overview sections so they now describe the real KPI/alerts/charts/review surfaces and removed stale claims about active-match KPIs, inline leaderboard, 30-day circulation charts, faucet/sink time series, and automated exploit alerts on those pages
+- **Inventory refresh:** updated current counts to `5084` in-scope files and `290 in-scope wiki markdown files / 289 wiki pages`
+- **Verification:** live dashboard/economy comparison plus `git diff --check`
+
 ## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
 
 Mid-session `xcodebuild ... build` failed with linker `Undefined symbols: Hexbound.BossInfo.init(id:…isRealBoss:tagline:) + default argument 8` from `DungeonService.o`, and a separate pass reported `TalentsTabView.swift:100` cascade — `"no dynamic member 'unlockPremiumSlot' using key path from root type 'PassiveTreeViewModel'"` + `"referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Bindable<PassiveTreeViewModel>'"` + `"cannot call value of non-function type 'Binding<Subject>'"`. Both methods/members were present in source — `BossInfo` had the expected memberwise init with `tagline: String? = nil`, and `PassiveTreeViewModel.unlockPremiumSlot()` existed at line 405 with backend route + service + model already wired. A clean-then-build (`xcodebuild ... clean build`) passed with zero code changes.

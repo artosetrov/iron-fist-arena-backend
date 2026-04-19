@@ -300,7 +300,8 @@
 - [[block-223-admin-arena-dungeons-assets-surface-parity]] — the arena/matches, dungeons, and assets docs now match the real review/editor/browser surfaces instead of promising fraud ops, forecast tooling, template saves, or richer asset-pipeline features
 - [[block-224-admin-gameplay-systems-surface-parity]] — the skills/passives/quests/events/seasons docs now match the real CRUD/editor surfaces instead of promising simulators, drag-tree tooling, seasonal planners, participation analytics, or battle-pass control flows that those screens do not ship
 - [[block-225-admin-consumables-achievements-and-snapshots-surface-parity]] — the consumables/achievements/snapshots docs now match the real catalog/config, definition/stats, and create/rollback/delete surfaces instead of promising standalone CRUD, richer template builders, or snapshot diff tooling
+- [[block-226-admin-dashboard-and-economy-overview-surface-parity]] — the dashboard/economy overview docs now match the real KPI/alerts/charts/review surfaces instead of promising broader real-time ops, inline leaderboard, faucet-sink, or exploit-alert features that those pages do not ship
 
 ---
 
-*289 in-scope wiki markdown files | 288 wiki pages (13 systems, 14 decisions, 3 entities, 225 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*
+*290 in-scope wiki markdown files | 289 wiki pages (13 systems, 14 decisions, 3 entities, 226 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*

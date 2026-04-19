@@ -118,6 +118,32 @@ export function aggregatePassiveBonuses(nodes: PassiveNodeData[]): PassiveBonuse
   return bonuses
 }
 
+// --- Rank Cost Derivation (Talents v2, 2026-04-19) ---
+
+/**
+ * Derive per-rank SP costs from a node's total cost.
+ *
+ * Talents v2 convention (see docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §2):
+ *   - Foundation + Specialization nodes (3 ranks): total cost 6 → [1, 2, 3]
+ *   - Keystone nodes (single rank): total cost 3 → [3]
+ *   - Ultimate nodes (single rank): total cost 5 → [5]
+ *
+ * Any node outside these buckets is treated as single-rank and charges the full cost.
+ * This keeps legacy single-rank nodes working without a data migration — they unlock
+ * once at currentRank=1, paying `cost` SP.
+ */
+export function getRankCosts(totalCost: number): number[] {
+  if (totalCost === 6) return [1, 2, 3]
+  return [totalCost]
+}
+
+/**
+ * Max rank derived from total cost — mirrors `getRankCosts`.
+ */
+export function getMaxRank(totalCost: number): number {
+  return getRankCosts(totalCost).length
+}
+
 // --- Tree Validation ---
 
 /**

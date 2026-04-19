@@ -390,6 +390,7 @@ model Character {
   activeSlotCount   Int       @default(3) @map("active_slot_count")
   inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
+  lastFreeRespecAt  DateTime? @map("last_free_respec_at")
 
   // Gold Mine — Active expedition shaft (Variant D mini-game)
   activeShaftKey    String?   @map("active_shaft_key")
@@ -1315,6 +1316,10 @@ model CharacterPassive {
   characterId String   @map("character_id")
   nodeId      String   @map("node_id")
   unlockedAt  DateTime @default(now()) @map("unlocked_at")
+  // Talents v2 (2026-04-19): per-character rank within a multi-rank node.
+  // Default 1 = legacy single-rank behavior. Valid range [0..3] enforced at DB
+  // level via character_passives_current_rank_range_chk. See SKILL_TREE_DESIGN_V2.md §9.
+  currentRank Int      @default(1) @map("current_rank")
 
   character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
   node        PassiveNode @relation(fields: [nodeId], references: [id])

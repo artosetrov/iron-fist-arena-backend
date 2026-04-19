@@ -1,0 +1,5 @@
+# Copy to Appfile.local and fill in real Apple release credentials.
+
+apple_id("ios-release@yourstudio.com")
+team_id("YOURTEAMID")
+itc_team_id("YOURITCTEAMID")

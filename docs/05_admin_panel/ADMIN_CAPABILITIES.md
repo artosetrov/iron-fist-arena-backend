@@ -10,28 +10,30 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ## 1. Overview & Dashboard
 
 ### Dashboard (Home)
-**Purpose:** KPI overview and live alerts
+**Purpose:** KPI overview, alert summary, and quick navigation
 **Key Metrics:**
-- Daily Active Users (DAU) — 24-hour player count
-- New Users — Registrations last 24h
+- Active Today
+- New Users
 - Total Users — All-time accounts
-- Active PvP Matches — Current fights
+- PvP Today
 - Gold Circulation — Avg gold per player
 - Gem Circulation — Avg gems per player
-- Top 10 Leaderboard — Displayed inline
 
 **Auto-Alerts:**
-- Retention drop > 20% from 7-day average
-- Win rate imbalance (class > 55% or < 45%)
-- Economy inflation (gems issued > hard cap)
-- Dungeon too hard (completion rate < 10%)
-- Performance degradation (API latency > 2s)
+- Class win-rate imbalance from recent PvP data
+- DAU drop versus yesterday
+- PvP volume drop versus yesterday
 
-**Real-time Graphs:**
-- DAU 7-day trend
-- PvP match volume
-- Top classes by picks
-- Economy health (gold/gem sink vs. faucet)
+**Sections:**
+- KPI grid
+- Alerts list (only when alerts exist)
+- Economy charts
+- PvP & Balance charts
+- Player acquisition/activity charts
+- System Health badges
+- Quick links to core admin areas
+
+**Current repo note:** the live dashboard is a generated snapshot view with alert cards and chart sections. It does **not** currently expose an inline top-10 leaderboard, an “active PvP matches” KPI, or a real-time websocket-driven ops console.
 
 ---
 
@@ -339,29 +341,28 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ## 4. Economy Management
 
 ### Economy Overview
-**Purpose:** Monitor health and inflation
-**Metrics:**
-- Total gold in circulation
-- Total gems issued (free + purchased)
-- Avg gold per player
-- Avg gems per player
-- Top 10 gold holders
-- Top 10 gem holders
-- Gini coefficient (wealth inequality: 0–1)
-- Daily gold faucet (quests, dungeons, pvp, etc.)
-- Daily gold sink (shop, upgrades, repairs, respec)
-- Net flow (faucet – sink)
+**Purpose:** Review aggregate economy and monetization health
+**Views:**
+- Summary cards:
+  - gold in circulation
+  - gems in circulation
+  - verified IAP totals
+  - offer sales totals
+- Wealth review:
+  - wealth distribution buckets
+  - gini coefficient
+  - character / user population
+- Segmentation:
+  - economy by class
+  - gold by level
+  - top gold holders
+  - top gem holders
+- Monetization review:
+  - IAP by product
+  - recent transactions
+  - offer purchase analytics
 
-**Charts:**
-- 30-day gold circulation
-- 30-day gem circulation
-- Gold faucet vs. sink (stacked area)
-- Economy health indicator (red/yellow/green)
-
-**Alerts:**
-- Net negative flow (more sinks than sources)
-- Gem cap exceeded (hard limit)
-- Top holder has > 50% of all gold (exploit?)
+**Current repo note:** the live economy page is a review dashboard, not a forecasting/alerting engine. It does **not** currently expose 30-day circulation charts, faucet-vs-sink time series, or automatic exploit alerts on this page.
 
 ---
 
@@ -557,7 +558,7 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Recent verified transactions
 - Offer purchase analytics
 
-**Current repo note:** the live admin surface here is a review dashboard, not a full analytics suite. Retention, churn, sessions, LTV/cohort analysis, combat telemetry, and export tooling are not separate live dashboard views in the current repo.
+**Current repo note:** this is the dedicated `/economy` review dashboard. It is not a full analytics suite; retention, churn, sessions, LTV/cohort analysis, combat telemetry, and export tooling are not separate live dashboard views in the current repo.
 
 ---
 

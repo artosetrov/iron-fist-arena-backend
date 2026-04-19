@@ -6,8 +6,12 @@
 #
 # Asset sync: optionally runs sync-assets.sh before each commit when
 # HEXBOUND_AUTO_SYNC_ASSETS=1 is set in the shell environment.
-# Staging mode: tracked changes only by default (`git add -u`). To include
-# untracked files, set HEXBOUND_GIT_HELPER_STAGE_ALL=1 in the shell environment.
+# Staging mode: tracked + untracked changes by default (`git add -A`).
+# This matches how Claude writes new files in the sandbox — otherwise every
+# new directory (e.g. Hexbound/Hexbound/Views/Combat/V2/) silently gets
+# left out of the commit and breaks the Xcode build that pbxproj already
+# references. To revert to tracked-only staging, set
+# HEXBOUND_GIT_HELPER_STAGE_ALL=0 in the shell environment.
 # =============================================================================
 
 set -euo pipefail
@@ -17,7 +21,7 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 TRIGGER="$REPO_DIR/.git-trigger"
 SYNC_SCRIPT="$REPO_DIR/scripts/sync-assets.sh"
 AUTO_SYNC_ASSETS="${HEXBOUND_AUTO_SYNC_ASSETS:-0}"
-STAGE_ALL="${HEXBOUND_GIT_HELPER_STAGE_ALL:-0}"
+STAGE_ALL="${HEXBOUND_GIT_HELPER_STAGE_ALL:-1}"
 
 clear_stale_lock() {
   local lock_file="$1"
@@ -36,9 +40,9 @@ clear_stale_lock() {
 
 echo "🔮 Git watcher started. Watching for $TRIGGER..."
 if [ "$STAGE_ALL" = "1" ]; then
-  echo "📦 Staging mode: tracked + untracked changes (git add -A)"
+  echo "📦 Staging mode: tracked + untracked changes (git add -A) [default]"
 else
-  echo "📦 Staging mode: tracked changes only (git add -u)"
+  echo "📦 Staging mode: tracked changes only (git add -u) [HEXBOUND_GIT_HELPER_STAGE_ALL=0]"
 fi
 
 while true; do
