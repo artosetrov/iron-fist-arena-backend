@@ -226,38 +226,71 @@ extension BattleResultCardView {
     // MARK: - Victory Stars
 
     @ViewBuilder
-    func victoryStarsView(earned: Int, total: Int) -> some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            ForEach(0..<total, id: \.self) { index in
-                let isEarned = index < earned
-                let isRevealed = index < revealedStars
-
-                ZStack {
-                    // Glow behind earned star
-                    if isEarned && isRevealed {
-                        Circle()
-                            .fill(DarkFantasyTheme.goldBright.opacity(0.25))
-                            .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                            .blur(radius: 8)
-                    }
-
-                    Image(systemName: isEarned ? "star.fill" : "star")
-                        .font(DarkFantasyTheme.title)
-                        .bold()
-                        .foregroundStyle(
-                            isEarned
-                                ? DarkFantasyTheme.goldBright
-                                : DarkFantasyTheme.borderMedium.opacity(0.4)
-                        )
-                        .shadow(
-                            color: isEarned ? DarkFantasyTheme.gold.opacity(0.6) : .clear,
-                            radius: 8
-                        )
-                        .opacity(isRevealed ? 1 : 0.3)
-                        .offset(y: isRevealed && isEarned ? 0 : 8)
-                }
+    func victoryStarsView(conditions: [StarCondition]) -> some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
+            ForEach(Array(conditions.enumerated()), id: \.offset) { index, cond in
+                victoryStarSlot(condition: cond, index: index)
             }
         }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+    }
+
+    @ViewBuilder
+    func victoryStarSlot(condition: StarCondition, index: Int) -> some View {
+        let isRevealed = index < revealedStars
+        let isEarned = condition.earned
+
+        VStack(spacing: LayoutConstants.spaceXS) {
+            ZStack {
+                // Soft glow behind earned star — fades in with the reveal
+                if isEarned {
+                    Circle()
+                        .fill(DarkFantasyTheme.goldBright.opacity(0.30))
+                        .frame(width: LayoutConstants.icon2XL + 12, height: LayoutConstants.icon2XL + 12)
+                        .blur(radius: 14)
+                        .opacity(isRevealed ? 1 : 0)
+                }
+
+                Image(systemName: isEarned ? "star.fill" : "star")
+                    .font(DarkFantasyTheme.title)
+                    .bold()
+                    .foregroundStyle(
+                        isEarned
+                            ? DarkFantasyTheme.goldBright
+                            : DarkFantasyTheme.borderMedium.opacity(0.45)
+                    )
+                    .shadow(
+                        color: isEarned ? DarkFantasyTheme.gold.opacity(0.7) : .clear,
+                        radius: isRevealed ? 12 : 0
+                    )
+                    .rotationEffect(.degrees(isRevealed ? 0 : (isEarned ? -60 : 0)))
+                    .offset(y: isRevealed ? 0 : (isEarned ? -24 : -4))
+                    .opacity(isRevealed ? 1 : 0)
+            }
+            .frame(height: LayoutConstants.icon2XL + 4)
+            .glowPulse(
+                color: DarkFantasyTheme.goldBright,
+                intensity: 0.5,
+                isActive: isRevealed && isEarned
+            )
+
+            Text(condition.label.uppercased())
+                .font(DarkFantasyTheme.caption)
+                .tracking(0.8)
+                .foregroundStyle(
+                    isRevealed && isEarned
+                        ? DarkFantasyTheme.textSecondary
+                        : DarkFantasyTheme.textTertiary.opacity(0.55)
+                )
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity)
+                .opacity(isRevealed ? 1 : 0)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: LayoutConstants.icon2XL + 40, alignment: .top)
     }
 
     // MARK: - Loot Section

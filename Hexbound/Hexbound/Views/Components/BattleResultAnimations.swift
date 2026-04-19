@@ -42,14 +42,19 @@ extension BattleResultCardView {
         }
 
         // ── 0.5s — Victory stars stagger reveal ──
-        if let starRating = config.starRating, config.isVictory {
-            for i in 0..<starRating {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * 0.25) {
-                    withAnimation(MotionConstants.springBouncy) {
+        // Reveal all slots (earned + missed) so players see what they missed.
+        // Earned slots trigger a medium haptic + gold glow; missed slots just fade in.
+        if let conditions = config.starConditions, config.isVictory, !conditions.isEmpty {
+            for i in 0..<conditions.count {
+                let cond = conditions[i]
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * 0.28) {
+                    withAnimation(.spring(response: 0.55, dampingFraction: 0.55)) {
                         revealedStars = i + 1
                     }
-                    if i < starRating {
+                    if cond.earned {
                         HapticManager.medium()
+                    } else {
+                        HapticManager.light()
                     }
                 }
             }
@@ -63,8 +68,9 @@ extension BattleResultCardView {
         }
 
         // ── 0.8s+ — Rewards header + staggered per-item reveal + counters tick up ──
-        // (delayed further if stars are showing)
-        let starsDelay: Double = (config.starRating != nil && config.isVictory) ? Double(config.starRating ?? 0) * 0.25 : 0
+        // (delayed further if stars are showing — all slots reveal, earned or not)
+        let starSlotCount: Int = (config.isVictory ? (config.starConditions?.count ?? 0) : 0)
+        let starsDelay: Double = Double(starSlotCount) * 0.28
         let rewardsTime = 0.8 + starsDelay
         DispatchQueue.main.asyncAfter(deadline: .now() + rewardsTime) {
             withAnimation(.easeOut(duration: MotionConstants.fast)) {

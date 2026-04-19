@@ -167,9 +167,9 @@ struct BattleResultCardView: View {
             titleView
                 .padding(.top, LayoutConstants.spaceLG)
 
-            // Victory Stars (dungeon: 1-3 stars based on performance)
-            if let starRating = config.starRating, config.isVictory {
-                victoryStarsView(earned: starRating, total: 3)
+            // Victory Stars — labelled slots (earned + missed conditions visible)
+            if let conditions = config.starConditions, config.isVictory, !conditions.isEmpty {
+                victoryStarsView(conditions: conditions)
             }
 
             // Subtitle (near-miss motivation or general)

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Victory — Iron Fist Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0d14;
+    --bg-surface: #141922;
+    --bg-elevated: #1b2230;
+    --bg-inset: #0f131b;
+
+    --border-faint: rgba(255, 255, 255, 0.06);
+    --border-soft: rgba(255, 255, 255, 0.10);
+
+    --text-primary: #f2ece0;
+    --text-secondary: #a8a195;
+    --text-muted: #6b6760;
+
+    --gold: #e8b24a;
+    --gold-soft: #f4cc78;
+    --gold-dim: #8a6a26;
+
+    --xp-blue: #5ea8e8;
+    --xp-blue-soft: #8cc0f0;
+    --xp-blue-dim: #2a5a8a;
+
+    --rarity-common: #9aa0a8;
+    --rarity-uncommon: #6ac37a;
+
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Fraunces', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg-deep);
+  }
+
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-deep);
+    border-radius: 44px;
+    border: 1px solid var(--border-soft);
+    box-shadow:
+      0 0 0 8px #0a0a0a,
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      inset 0 0 40px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Warm, subtle victory atmosphere — no aggressive sunburst */
+  .atmosphere {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 15%, rgba(232, 178, 74, 0.22), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 50% 30%, rgba(232, 178, 74, 0.10), transparent 70%);
+  }
+  /* Faint god-rays — much more subtle than the original */
+  .atmosphere::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140%;
+    height: 60%;
+    background: conic-gradient(
+      from 180deg at 50% 100%,
+      transparent 0deg,
+      rgba(232, 178, 74, 0.04) 30deg,
+      transparent 60deg,
+      rgba(232, 178, 74, 0.05) 90deg,
+      transparent 120deg,
+      rgba(232, 178, 74, 0.04) 150deg,
+      transparent 180deg,
+      rgba(232, 178, 74, 0.05) 210deg,
+      transparent 240deg,
+      rgba(232, 178, 74, 0.04) 270deg,
+      transparent 300deg,
+      rgba(232, 178, 74, 0.05) 330deg,
+      transparent 360deg
+    );
+    opacity: 0.6;
+    animation: rays 20s linear infinite;
+  }
+  @keyframes rays {
+    to { transform: translateX(-50%) rotate(360deg); }
+  }
+
+  /* Particle dots */
+  .particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 4px var(--gold);
+    opacity: 0;
+    animation: float 4s ease-in-out infinite;
+  }
+  .particle:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+  .particle:nth-child(2) { top: 35%; left: 80%; animation-delay: 0.8s; }
+  .particle:nth-child(3) { top: 15%; left: 65%; animation-delay: 1.6s; }
+  .particle:nth-child(4) { top: 45%; left: 15%; animation-delay: 2.4s; }
+  .particle:nth-child(5) { top: 25%; left: 45%; animation-delay: 3.2s; }
+  @keyframes float {
+    0%, 100% { opacity: 0; transform: translateY(10px); }
+    50% { opacity: 0.8; transform: translateY(-15px); }
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 28px 8px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; opacity: 0.9; font-size: 13px; }
+
+  /* Top nav */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .nav button {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .nav button svg { width: 16px; height: 16px; }
+  .nav .location {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* Main content */
+  .content {
+    flex: 1;
+    padding: 16px 20px 12px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* Victory banner — hero moment */
+  .victory-banner {
+    text-align: center;
+    padding: 8px 0 18px;
+    animation: rise 0.6s ease-out both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .victory-banner h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 44px;
+    letter-spacing: 0.08em;
+    background: linear-gradient(180deg, var(--gold-soft) 0%, var(--gold) 60%, var(--gold-dim) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(232, 178, 74, 0.3);
+    margin-bottom: 8px;
+  }
+  .victory-banner .enemy {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .victory-banner .enemy strong {
+    color: var(--text-primary);
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  /* Stars with hints */
+  .stars {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 14px 0 8px;
+    animation: rise 0.6s ease-out 0.15s both;
+  }
+  .star-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 84px;
+  }
+  .star-ico {
+    width: 36px; height: 36px;
+    display: grid;
+    place-items: center;
+  }
+  .star-ico svg { width: 36px; height: 36px; }
+  .star-slot.filled .star-ico {
+    color: var(--gold);
+    filter: drop-shadow(0 0 8px rgba(232, 178, 74, 0.5));
+  }
+  .star-slot.empty .star-ico {
+    color: var(--border-soft);
+    opacity: 0.8;
+  }
+  .star-hint {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 90px;
+  }
+  .star-slot.filled .star-hint { color: var(--text-secondary); }
+
+  /* Rewards row */
+  .rewards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+    animation: rise 0.6s ease-out 0.3s both;
+  }
+  .reward {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-faint);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .reward::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .reward.gold::before { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  .reward.xp::before { background: var(--xp-blue); box-shadow: 0 0 8px var(--xp-blue); }
+
+  .reward-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .reward.gold .reward-icon {
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold-dim));
+    box-shadow: 0 0 12px rgba(232, 178, 74, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+  }
+  .reward.xp .reward-icon {
+    background: radial-gradient(circle at 30% 30%, var(--xp-blue-soft), var(--xp-blue-dim));
+    box-shadow: 0 0 12px rgba(94, 168, 232, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+  }
+  .reward-icon svg { width: 18px; height: 18px; color: rgba(0, 0, 0, 0.5); }
+
+  .reward-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+  .reward-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .reward-value {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+  }
+  .reward.gold .reward-value { color: var(--gold-soft); }
+  .reward.xp .reward-value { color: var(--xp-blue-soft); }
+  .reward-value::before { content: '+'; opacity: 0.7; }
+
+  /* Loot — compact horizontal strip */
+  .loot {
+    margin: 4px 0 16px;
+    animation: rise 0.6s ease-out 0.45s both;
+  }
+  .loot-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px 8px;
+  }
+  .loot-head .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .loot-head .count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .loot-items {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+  }
+  .loot-item {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-faint);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .loot-item:hover { transform: translateY(-1px); border-color: var(--border-soft); }
+  .loot-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px; height: 100%;
+    background: var(--rarity-common);
+  }
+  .loot-thumb {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: var(--bg-inset);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-size: 20px;
+  }
+  .loot-info { min-width: 0; line-height: 1.2; }
+  .loot-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .loot-rarity {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--rarity-common);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Progress bars — stacked, clear distinction via color and label */
+  .progress-section {
+    margin-bottom: 14px;
+    animation: rise 0.6s ease-out 0.6s both;
+  }
+  .progress-block {
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-faint);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .progress-block:last-child { margin-bottom: 0; }
+
+  .progress-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 7px;
+  }
+  .progress-head .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .progress-head .value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .progress-head .value .delta {
+    font-size: 10px;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .progress-block.xp .label { color: var(--xp-blue); }
+  .progress-block.xp .value { color: var(--text-primary); }
+  .progress-block.xp .value .muted { color: var(--text-muted); }
+  .progress-block.xp .delta {
+    color: var(--xp-blue-soft);
+    background: rgba(94, 168, 232, 0.12);
+  }
+  .progress-block.dungeon .label { color: var(--gold); }
+  .progress-block.dungeon .value { color: var(--text-primary); }
+  .progress-block.dungeon .value .muted { color: var(--text-muted); }
+
+  .bar {
+    height: 6px;
+    background: var(--bg-inset);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    position: relative;
+    animation: fill-grow 1s cubic-bezier(0.3, 0.8, 0.3, 1) 0.8s both;
+  }
+  @keyframes fill-grow {
+    from { width: 0 !important; }
+  }
+  .bar-fill.xp {
+    background: linear-gradient(90deg, var(--xp-blue-dim), var(--xp-blue));
+    box-shadow: 0 0 8px rgba(94, 168, 232, 0.5);
+  }
+  .bar-fill.gold {
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    box-shadow: 0 0 8px rgba(232, 178, 74, 0.4);
+  }
+  /* pulsing leading edge */
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5));
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* Actions */
+  .actions {
+    padding: 12px 16px 20px;
+    position: relative;
+    z-index: 1;
+    animation: rise 0.6s ease-out 0.75s both;
+  }
+  .primary-cta {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    background: linear-gradient(180deg, var(--gold-soft) 0%, var(--gold) 50%, var(--gold-dim) 100%);
+    color: #1a0f00;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow:
+      0 0 0 1px var(--gold-dim),
+      0 6px 16px rgba(232, 178, 74, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s;
+    margin-bottom: 8px;
+  }
+  .primary-cta:active { transform: translateY(1px); }
+  .leave-link {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .leave-link:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <div class="atmosphere"></div>
+  <div class="particles">
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
+  </div>
+
+  <div class="status-bar">
+    <span>10:36</span>
+    <span class="right">
+      <svg viewBox="0 0 18 12" width="18" height="12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5" opacity="0.4"/></svg>
+      <svg viewBox="0 0 16 12" width="16" height="12" fill="currentColor"><path d="M8 2a9 9 0 0 1 6.3 2.6l-1.4 1.4A7 7 0 0 0 8 4a7 7 0 0 0-4.9 2L1.7 4.6A9 9 0 0 1 8 2zm0 4a5 5 0 0 1 3.5 1.4L10 8.9A3 3 0 0 0 8 8a3 3 0 0 0-2 .9L4.5 7.4A5 5 0 0 1 8 6zm0 4a1.5 1.5 0 0 1 1.1.4L8 11.5 6.9 10.4A1.5 1.5 0 0 1 8 10z"/></svg>
+      <svg viewBox="0 0 28 12" width="28" height="12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="24" height="11" rx="3"/><rect x="2" y="2" width="12" height="8" rx="1.5" fill="currentColor"/><rect x="25.5" y="4" width="2" height="4" fill="currentColor"/></svg>
+    </span>
+  </div>
+
+  <div class="nav">
+    <button aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <span class="location">Training Camp</span>
+    <button aria-label="Info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- Victory hero -->
+    <div class="victory-banner">
+      <h1>VICTORY</h1>
+      <div class="enemy"><strong>Straw Dummy</strong> defeated</div>
+    </div>
+
+    <!-- Stars with earned/missed hints -->
+    <div class="stars">
+      <div class="star-slot filled">
+        <div class="star-ico">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.8 6.5 7.2 1-5 4.9 1.2 7-6.2-3.3L5.8 21.4l1.2-7-5-4.9 7.2-1z"/></svg>
+        </div>
+        <span class="star-hint">Win the fight</span>
+      </div>
+      <div class="star-slot filled">
+        <div class="star-ico">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.8 6.5 7.2 1-5 4.9 1.2 7-6.2-3.3L5.8 21.4l1.2-7-5-4.9 7.2-1z"/></svg>
+        </div>
+        <span class="star-hint">No potions used</span>
+      </div>
+      <div class="star-slot empty">
+        <div class="star-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="m12 2 2.8 6.5 7.2 1-5 4.9 1.2 7-6.2-3.3L5.8 21.4l1.2-7-5-4.9 7.2-1z"/></svg>
+        </div>
+        <span class="star-hint">Finish under 30s</span>
+      </div>
+    </div>
+
+    <!-- Rewards -->
+    <div class="rewards">
+      <div class="reward gold">
+        <div class="reward-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/><text x="12" y="16" font-family="serif" font-weight="700" font-size="10" text-anchor="middle" fill="#8a6a26">G</text></svg>
+        </div>
+        <div class="reward-text">
+          <span class="reward-label">Gold</span>
+          <span class="reward-value">58</span>
+        </div>
+      </div>
+      <div class="reward xp">
+        <div class="reward-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.8 6.5 7.2 1-5 4.9 1.2 7-6.2-3.3L5.8 21.4l1.2-7-5-4.9 7.2-1z"/></svg>
+        </div>
+        <div class="reward-text">
+          <span class="reward-label">Experience</span>
+          <span class="reward-value">30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loot as compact strip -->
+    <div class="loot">
+      <div class="loot-head">
+        <span class="label">Loot</span>
+        <span class="count">1 item</span>
+      </div>
+      <div class="loot-items">
+        <div class="loot-item">
+          <div class="loot-thumb">🪄</div>
+          <div class="loot-info">
+            <div class="loot-name">Wooden Staff</div>
+            <div class="loot-rarity">Common</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress: XP + Dungeon, stacked, distinct -->
+    <div class="progress-section">
+      <div class="progress-block xp">
+        <div class="progress-head">
+          <span class="label">Level 2 · XP</span>
+          <span class="value">258<span class="muted">/480</span><span class="delta">+30</span></span>
+        </div>
+        <div class="bar"><div class="bar-fill xp" style="width: 54%"></div></div>
+      </div>
+      <div class="progress-block dungeon">
+        <div class="progress-head">
+          <span class="label">Training Camp</span>
+          <span class="value">1<span class="muted">/10 bosses</span></span>
+        </div>
+        <div class="bar"><div class="bar-fill gold" style="width: 10%"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="actions">
+    <button class="primary-cta">Next Boss</button>
+    <button class="leave-link">Leave dungeon</button>
+  </div>
+
+</div>
+
+</body>
+</html>

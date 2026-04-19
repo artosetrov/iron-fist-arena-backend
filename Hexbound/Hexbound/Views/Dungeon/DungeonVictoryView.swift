@@ -92,10 +92,16 @@ struct DungeonVictoryView: View {
             })
         }
 
-        // Star rating based on HP remaining (server should send this in future)
-        // For now: 3★ if >75% HP, 2★ if >25%, 1★ otherwise
+        // Star conditions derived client-side from battle outcome.
+        // First star is always earned on victory, the other two reward staying
+        // healthy — keeps the screen legible when the server hasn't started
+        // sending a per-condition breakdown yet.
         let hpFraction = vm.hpFractionAfterBattle ?? 1.0
-        let stars: Int = hpFraction > 0.75 ? 3 : hpFraction > 0.25 ? 2 : 1
+        let starConditions: [StarCondition] = [
+            StarCondition(label: "Claim victory", earned: true),
+            StarCondition(label: "Stay above 50% HP", earned: hpFraction > 0.5),
+            StarCondition(label: "Flawless (75%+ HP)", earned: hpFraction > 0.75)
+        ]
 
         // Hero XP counter: use the VM's pre-fight snapshot directly (captured
         // before the API call) instead of back-computing from optimistic state,
@@ -109,7 +115,7 @@ struct DungeonVictoryView: View {
             title: "VICTORY",
             subtitle: subtitle,
             illustrationImage: nil, // uses SF Symbol fallback (shield.checkered)
-            starRating: stars,
+            starConditions: starConditions,
             goldReward: vm.victoryGold > 0 ? vm.victoryGold : nil,
             xpReward: xpReward > 0 ? xpReward : nil,
             ratingChange: nil,

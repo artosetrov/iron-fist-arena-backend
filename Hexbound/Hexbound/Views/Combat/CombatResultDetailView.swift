@@ -258,6 +258,31 @@ struct CombatResultDetailView: View {
         let charLevel = displayLevel
         let xpNeededValue = xpNeededForLevel(charLevel)
 
+        // Star conditions — client-side derive on victory only.
+        // 1. Claim victory (always earned on the win path)
+        // 2. Dominant win — kept >50% HP (from combatLog damage taken)
+        // 3. Critical strike landed — any crit dealt by the player
+        let starConditions: [StarCondition]? = {
+            guard isWin, let data = combatData else { return nil }
+            let playerId = data.player.id
+            let playerMaxHp = max(1, data.player.maxHp)
+            let damageTaken = data.combatLog
+                .filter { $0.attackerId != playerId && !$0.isMiss && !$0.isDodge }
+                .reduce(0) { $0 + $1.damage }
+            let playerHeals = data.combatLog
+                .filter { $0.attackerId == playerId }
+                .compactMap { $0.heal }
+                .reduce(0, +)
+            let hpRemaining = max(0, playerMaxHp - damageTaken + playerHeals)
+            let hpFraction = Double(hpRemaining) / Double(playerMaxHp)
+            let landedCrit = data.combatLog.contains { $0.attackerId == playerId && $0.isCrit }
+            return [
+                StarCondition(label: "Claim victory", earned: true),
+                StarCondition(label: "Stay above 50% HP", earned: hpFraction > 0.5),
+                StarCondition(label: "Land a critical hit", earned: landedCrit)
+            ]
+        }()
+
         // Build combat log entries (PvP / Arena only — dungeon rewards hide it)
         let combatLogEntries: [CombatLogSummaryEntry] = {
             guard let data = combatData, source == "arena" || source == "pvp" || source == "challenge" else {
@@ -286,6 +311,7 @@ struct CombatResultDetailView: View {
             title: isWin ? "VICTORY!" : "DEFEAT",
             subtitle: nearMissSubtitle,
             illustrationImage: nil,
+            starConditions: starConditions,
             goldReward: res.goldReward,
             xpReward: res.xpReward,
             ratingChange: res.ratingChange,

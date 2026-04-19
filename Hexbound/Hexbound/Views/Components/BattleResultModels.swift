@@ -2,6 +2,14 @@ import SwiftUI
 
 // MARK: - Configuration Types
 
+/// One star slot in the Victory screen. Always three per run for visual rhythm.
+/// The player sees the label whether earned or not — missed conditions act as
+/// replayability hooks ("next time try to…").
+struct StarCondition {
+    let label: String
+    let earned: Bool
+}
+
 struct BattleResultConfig {
     // Core
     let isVictory: Bool
@@ -9,8 +17,10 @@ struct BattleResultConfig {
     let subtitle: String?
     let illustrationImage: String? // kept for DungeonVictoryView compatibility
 
-    // Victory Stars (0-3, nil = don't show stars)
-    var starRating: Int? = nil
+    // Victory Stars — per-condition slots with labels.
+    // Nil / empty = don't show stars. `earned == false` renders a faint outline
+    // slot with the unreached label, so the player sees what they missed.
+    var starConditions: [StarCondition]? = nil
 
     // Rewards
     let goldReward: Int?
