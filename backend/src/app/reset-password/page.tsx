@@ -1,13 +1,20 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: false } }
-)
+// Lazy singleton — created on first client-side access so `next build`
+// prerender never evaluates `createClient` without env vars set.
+let cachedSupabase: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (cachedSupabase) return cachedSupabase
+  cachedSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: false } }
+  )
+  return cachedSupabase
+}
 
 type Phase = 'verifying' | 'invalid' | 'ready' | 'done'
 
@@ -25,13 +32,13 @@ export default function ResetPasswordPage() {
         const url = new URL(window.location.href)
         const code = url.searchParams.get('code')
         if (code) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          const { error: exchangeError } = await getSupabase().auth.exchangeCodeForSession(code)
           if (exchangeError) {
             if (!cancelled) setPhase('invalid')
             return
           }
         }
-        const { data } = await supabase.auth.getSession()
+        const { data } = await getSupabase().auth.getSession()
         if (cancelled) return
         setPhase(data.session ? 'ready' : 'invalid')
       } catch {
@@ -55,13 +62,13 @@ export default function ResetPasswordPage() {
       return
     }
     setSubmitting(true)
-    const { error: updateError } = await supabase.auth.updateUser({ password })
+    const { error: updateError } = await getSupabase().auth.updateUser({ password })
     setSubmitting(false)
     if (updateError) {
       setError(updateError.message)
       return
     }
-    await supabase.auth.signOut()
+    await getSupabase().auth.signOut()
     setPhase('done')
   }
 
