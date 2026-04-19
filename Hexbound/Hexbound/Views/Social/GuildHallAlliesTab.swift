@@ -373,7 +373,10 @@ extension GuildHallDetailView {
                 appState.mainPath.append(AppRoute.leaderboard)
             } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "trophy.fill")
+                    Image("icon-leaderboard")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     Text("Go to Leaderboard")
                 }
                 .frame(maxWidth: .infinity)

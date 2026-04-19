@@ -93,8 +93,10 @@ struct CharacterPortraitRankInfo: View {
 
     private var ratingPill: some View {
         HStack(spacing: LayoutConstants.space2XS) {
-            Image(systemName: "trophy.fill")
-                .font(DarkFantasyTheme.caption.weight(.semibold))
+            Image("icon-pvp-rating")
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                 .foregroundStyle(DarkFantasyTheme.gold)
             Text("\(rating)")
                 .font(DarkFantasyTheme.caption)
