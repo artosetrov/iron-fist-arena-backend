@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { getMaxRank } from '@/lib/game/passives'
 
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -48,6 +49,8 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // Talents v2: include current_rank + max_rank so the client can render
+    // ring progress and rank-up CTAs without recomputing locally.
     const unlocked_nodes = passives.map((p) => ({
       id: p.id,
       node_id: p.nodeId,
@@ -64,6 +67,8 @@ export async function GET(req: NextRequest) {
       active_action_type: p.node.activeActionType,
       active_cooldown: p.node.activeCooldown,
       active_magnitude: p.node.activeMagnitude,
+      current_rank: p.currentRank,
+      max_rank: getMaxRank(p.node.cost),
       unlocked_at: p.unlockedAt,
     }))
 

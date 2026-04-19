@@ -236,11 +236,15 @@ export async function getPassivesConfig() {
     'passives.points_per_level': PASSIVES.POINTS_PER_LEVEL,
     'passives.max_passive_points': PASSIVES.MAX_PASSIVE_POINTS,
     'passives.respec_gem_cost': PASSIVES.RESPEC_GEM_COST,
+    'passives.free_respec_per_week': PASSIVES.FREE_RESPEC_PER_WEEK,
+    'passives.free_respec_window_days': PASSIVES.FREE_RESPEC_WINDOW_DAYS,
   })
   return {
     POINTS_PER_LEVEL: configs['passives.points_per_level'] as number,
     MAX_PASSIVE_POINTS: configs['passives.max_passive_points'] as number,
     RESPEC_GEM_COST: configs['passives.respec_gem_cost'] as number,
+    FREE_RESPEC_PER_WEEK: configs['passives.free_respec_per_week'] as number,
+    FREE_RESPEC_WINDOW_DAYS: configs['passives.free_respec_window_days'] as number,
   }
 }
 

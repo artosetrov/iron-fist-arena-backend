@@ -542,6 +542,11 @@ export const PASSIVES = {
   BASE_ACTIVE_SLOTS: 3,   // Slot count granted by default.
   MAX_ACTIVE_SLOTS: 4,    // Hard cap after the premium unlock.
   PREMIUM_ACTIVE_SLOT_GEM_COST: 100, // One-time gem cost to unlock the 4th slot.
+  // Talents v2 (2026-04-19): one free respec per rolling 7-day window. See
+  // docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §9. Window is measured from
+  // Character.lastFreeRespecAt; null or >= 7 days old ⇒ free path.
+  FREE_RESPEC_PER_WEEK: 1,
+  FREE_RESPEC_WINDOW_DAYS: 7,
 } as const;
 
 // --- Gem costs (Economy v3, 2026-04-13) ---

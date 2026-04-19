@@ -147,6 +147,7 @@ export async function recalculateFullDerivedStats(
       },
       characterPassives: {
         select: {
+          currentRank: true,
           node: {
             select: { bonusType: true, bonusStat: true, bonusValue: true },
           },
@@ -171,12 +172,16 @@ export async function recalculateFullDerivedStats(
     }))
   )
 
+  // Talents v2 (2026-04-19): PassiveNode.bonusValue is the PER-RANK magnitude.
+  // For a 3-rank [1,2,3]-SP node, rank=2 applies 2× the base value; keystones
+  // and ultimates stay at rank=1 so they're unchanged. Legacy single-rank rows
+  // default to currentRank=1 per migration, so behavior is preserved.
   const passiveBonuses = character.characterPassives.length > 0
     ? aggregatePassiveBonuses(
         character.characterPassives.map((cp) => ({
           bonusType: cp.node.bonusType,
           bonusStat: cp.node.bonusStat,
-          bonusValue: cp.node.bonusValue,
+          bonusValue: cp.node.bonusValue * Math.max(1, cp.currentRank),
         }))
       )
     : emptyPassiveBonuses()

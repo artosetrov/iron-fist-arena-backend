@@ -53,6 +53,7 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
       },
       characterPassives: {
         select: {
+          currentRank: true,
           node: {
             select: { bonusType: true, bonusStat: true, bonusValue: true },
           },
@@ -96,12 +97,15 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
     }))
 
   // Aggregate passive bonuses
+  // Talents v2 (2026-04-19): bonusValue is the PER-RANK magnitude — multiply by
+  // currentRank so rank 2/3 actually affect combat. Keystones/ultimates stay at
+  // rank=1 so they're unchanged; legacy single-rank rows default to rank=1.
   const passiveBonuses: PassiveBonuses = character.characterPassives.length > 0
     ? aggregatePassiveBonuses(
         character.characterPassives.map((cp) => ({
           bonusType: cp.node.bonusType,
           bonusStat: cp.node.bonusStat,
-          bonusValue: cp.node.bonusValue,
+          bonusValue: cp.node.bonusValue * Math.max(1, cp.currentRank),
         }))
       )
     : emptyPassiveBonuses()

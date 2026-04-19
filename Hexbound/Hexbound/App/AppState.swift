@@ -92,7 +92,13 @@ final class AppState {
     // One-tap rollback: flip to `false`; the legacy view resumes immediately
     // with no other code changes. Backend Phase enum is unchanged — the V2
     // layer only derives a `CombatUXState` from the existing phase machine.
-    var combatUXV2: Bool = false
+    //
+    // Persisted in UserDefaults so the admin's choice survives app restarts.
+    // Key: `combatUXV2`. Default read returns `false` if never set.
+    static let combatUXV2Key = "combatUXV2"
+    var combatUXV2: Bool = UserDefaults.standard.bool(forKey: AppState.combatUXV2Key) {
+        didSet { UserDefaults.standard.set(combatUXV2, forKey: AppState.combatUXV2Key) }
+    }
 
     // MARK: - Cache
     var cachedInventory: [Item]?

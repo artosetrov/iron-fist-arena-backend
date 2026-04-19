@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { getRankCosts } from '@/lib/game/passives'
 
 const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
 
@@ -10,14 +11,18 @@ interface CachedTree {
   connections: unknown[]
 }
 
-// GET — Get the full passive skill tree (all nodes + connections)
+// GET — Get the full passive skill tree (all nodes + connections).
+//
+// Talents v2 (2026-04-19): each node ships a `rank_costs` array derived from
+// its total `cost`. Clients must consume this array rather than re-deriving it
+// locally so the server remains the source of truth for rank economy.
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // v2 — added isActivatable + active_* fields (Interactive Combat v1)
-    const cacheKey = 'passives:tree:v2'
+    // v3 — Talents v2: added rank_costs + max_rank per node
+    const cacheKey = 'passives:tree:v3'
     let tree = await cacheGet<CachedTree>(cacheKey)
 
     if (!tree) {
@@ -39,7 +44,12 @@ export async function GET(req: NextRequest) {
         }),
       ])
 
-      tree = { nodes, connections }
+      const withRankCosts = nodes.map((n) => {
+        const schedule = getRankCosts(n.cost)
+        return { ...n, rank_costs: schedule, max_rank: schedule.length }
+      })
+
+      tree = { nodes: withRankCosts, connections }
       await cacheSet(cacheKey, tree, CACHE_TTL)
     }
 
