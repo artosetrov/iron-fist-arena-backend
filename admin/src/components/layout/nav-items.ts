@@ -4,7 +4,7 @@ import {
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
   FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,
-  Map, MessageSquare, Paintbrush,
+  Map, MessageSquare, Paintbrush, Package, Target, UserPlus,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -48,6 +48,10 @@ export const navItems: NavItem[] = [
   { label: 'Config Snapshots', href: '/snapshots', icon: Archive },
   { label: 'Appearances', href: '/appearances', icon: Palette },
   { label: 'Assets', href: '/assets', icon: ImageIcon },
+  { label: 'IAP Products', href: '/iap-products', icon: Package },
+  { label: 'Matchmaking', href: '/matchmaking', icon: Target },
+  { label: 'Minigame Sessions', href: '/minigame-sessions', icon: Dice3 },
+  { label: 'Referrals', href: '/referrals', icon: UserPlus },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
@@ -59,7 +63,9 @@ export const navGroups: NavGroup[] = [
       { label: 'Dashboard', href: '/', icon: LayoutDashboard },
       { label: 'Players', href: '/players', icon: Users },
       { label: 'Arena', href: '/matches', icon: Swords },
+      { label: 'Matchmaking', href: '/matchmaking', icon: Target },
       { label: 'Social', href: '/social', icon: MessageSquare },
+      { label: 'Referrals', href: '/referrals', icon: UserPlus },
     ],
   },
   {
@@ -88,10 +94,12 @@ export const navGroups: NavGroup[] = [
     label: 'Economy',
     items: [
       { label: 'Economy', href: '/economy', icon: Coins },
+      { label: 'IAP Products', href: '/iap-products', icon: Package },
       { label: 'Loot Tables', href: '/loot', icon: Dice3 },
       { label: 'Shop Offers', href: '/offers', icon: ShoppingBag },
       { label: 'Battle Pass', href: '/battle-pass', icon: Award },
       { label: 'Daily Login', href: '/daily-login', icon: Gift },
+      { label: 'Minigame Sessions', href: '/minigame-sessions', icon: Dice3 },
     ],
   },
   {
