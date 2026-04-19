@@ -268,7 +268,10 @@ private struct ShaftPickerRow: View {
                     Image(systemName: "chevron.right")
                         .foregroundStyle(DarkFantasyTheme.gold)
                 } else {
-                    Image(systemName: "lock.fill")
+                    Image("icon-padlock")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                 }
             }

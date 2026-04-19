@@ -484,9 +484,11 @@ struct MonthlyGemCardOffer: View {
             // Breakdown
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "gift.fill")
+                    Image("hud-gift")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(DarkFantasyTheme.body)
                     Text("50 gems instantly upon purchase")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)

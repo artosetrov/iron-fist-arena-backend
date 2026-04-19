@@ -143,8 +143,10 @@ struct CharacterProfileView: View {
         switch friendshipState {
         case .requestSent:
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "envelope.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                Image("hud-inbox")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("Request Sent")
                     .font(DarkFantasyTheme.body.bold())
             }
@@ -163,8 +165,10 @@ struct CharacterProfileView: View {
 
         case .requestReceived:
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "envelope.badge.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                Image("hud-inbox")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("Wants to be an ally")
                     .font(DarkFantasyTheme.body.bold())
             }
@@ -225,7 +229,10 @@ struct CharacterProfileView: View {
                 // Message always present
                 Button(action: navigateToMessage) {
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(systemName: "bubble.left.fill")
+                        Image("hud-inbox")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("Message")
                     }
                     .frame(maxWidth: .infinity)

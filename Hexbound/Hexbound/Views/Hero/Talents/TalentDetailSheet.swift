@@ -292,7 +292,7 @@ struct TalentDetailSheet: View {
 
     private var lockedPill: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            Image(systemName: "lock.fill")
+            Image("icon-padlock")
                 .resizable()
                 .scaledToFit()
                 .foregroundStyle(DarkFantasyTheme.textDisabled)

@@ -666,8 +666,10 @@ struct LockedMineCard: View {
                 DarkFantasyTheme.bgScrim
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
 
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.uiLabel)
+                Image("icon-padlock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.6))
             }
             .frame(width: LayoutConstants.mineThumbnailSize, height: LayoutConstants.mineThumbnailSize)

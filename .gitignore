@@ -36,3 +36,8 @@ hexbound-landing/
 
 # Archived prototypes
 archive/
+
+# Graphify runtime cache (regenerates via `graphify update`)
+graphify-out/cache/
+graphify-out/cost.json
+graphify-out/manifest.json

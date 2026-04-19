@@ -16,8 +16,10 @@ struct BossDetailSheet: View {
     var isNavigationMode: Bool = true
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     @State private var selectedLootForModal: LootPreview? = nil
     @State private var showLootModal = false
+    @State private var hasTriggeredReveal = false
 
     private var stateColor: Color {
         switch state {
@@ -131,6 +133,34 @@ struct BossDetailSheet: View {
                 }
             }
         }
+        .onAppear { maybeTriggerReveal() }
+    }
+
+    // MARK: - Boss Reveal (once-per-boss ceremony)
+
+    /// Fires the root-level `BossRevealOverlayView` the first time the
+    /// player opens a real boss in `.current` state. Gated by
+    /// UserDefaults so subsequent visits skip the ceremony.
+    private func maybeTriggerReveal() {
+        guard !hasTriggeredReveal else { return }
+        guard boss.isRealBoss else { return }
+        guard state == .current else { return }
+
+        let key = "bossRevealSeen_\(boss.name)_\(boss.id)"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        hasTriggeredReveal = true
+
+        // Small delay so the sheet/nav push animation settles before
+        // the overlay fades in — avoids a double transition.
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+            let data = BossRevealData.fromDungeonBoss(
+                boss,
+                onChallenge: { appState.dismissBossReveal() },
+                onSkip: { appState.dismissBossReveal() }
+            )
+            appState.presentBossReveal(data)
+        }
     }
 
     // MARK: - Boss Portrait Header
@@ -243,8 +273,10 @@ struct BossDetailSheet: View {
 
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                Image("icon-padlock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("LOCKED")
             }
             .font(DarkFantasyTheme.body.bold())
@@ -382,8 +414,10 @@ struct BossDetailSheet: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "gift.fill")
-                        .font(DarkFantasyTheme.body)
+                    Image("hud-gift")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     Text("POSSIBLE LOOT")
                         .font(DarkFantasyTheme.body)
                         .tracking(1)

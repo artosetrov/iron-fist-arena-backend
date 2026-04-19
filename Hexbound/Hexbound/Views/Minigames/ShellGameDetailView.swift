@@ -382,8 +382,10 @@ struct ShellGameDetailView: View {
                     dismissModal(vm)
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "dice.fill")
-                            .font(DarkFantasyTheme.cardTitle.bold())
+                        Image("ui-dice")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                         Text("PLAY AGAIN")
                     }
                     .font(DarkFantasyTheme.cardTitle)

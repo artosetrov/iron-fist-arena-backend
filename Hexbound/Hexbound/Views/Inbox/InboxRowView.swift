@@ -673,8 +673,10 @@ struct InboxRowView: View {
             if !message.isClaimed, let attachments = message.attachments, !attachments.isEmpty {
                 Button(action: claimAttachments) {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "gift.fill")
-                            .font(DarkFantasyTheme.body)
+                        Image("hud-gift")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("Claim Rewards")
                             .font(DarkFantasyTheme.buttonLabelCompact)
                     }
@@ -709,8 +711,10 @@ struct InboxRowView: View {
                     )
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "scroll.fill")
-                            .font(DarkFantasyTheme.body)
+                        Image("hud-inbox")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("Message")
                             .font(DarkFantasyTheme.buttonLabelCompact)
                     }
@@ -755,8 +759,10 @@ struct InboxRowView: View {
                 .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold)
         default:
-            Image(systemName: "gift.fill")
-                .font(DarkFantasyTheme.body.weight(.semibold))
+            Image("hud-gift")
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 .foregroundStyle(DarkFantasyTheme.gold)
         }
     }

@@ -180,8 +180,10 @@ struct DungeonBossCard: View {
 
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                Image("icon-padlock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("LOCKED")
             }
             .font(DarkFantasyTheme.body.bold())

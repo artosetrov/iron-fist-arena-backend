@@ -39,8 +39,10 @@ struct TutorialStepCard: View {
 
             // Reward
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "gift.fill")
-                    .font(DarkFantasyTheme.body)
+                Image("hud-gift")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text(objective.rewardText)
                     .font(DarkFantasyTheme.buttonLabel)
             }
@@ -155,8 +157,10 @@ struct TutorialStepCard: View {
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.success)
             } else if state == .locked {
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.body)
+                Image("icon-padlock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     .foregroundStyle(DarkFantasyTheme.textDisabled)
             }
         }

@@ -312,8 +312,10 @@ struct DungeonSelectDetailView: View {
                             .frame(height: 140)
                             .overlay {
                                 VStack(spacing: LayoutConstants.spaceSM) {
-                                    Image(systemName: "lock.fill")
-                                        .font(DarkFantasyTheme.title)
+                                    Image("icon-padlock")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
                                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                                     if case .locked(let req) = state {
                                         Text(req)
