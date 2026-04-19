@@ -26,53 +26,85 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // User record is ensured at auth/login time — no need to upsert on every GET
-    const [characters, userAccount] = await Promise.all([
-      prisma.character.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.user.findUnique({
+    // Character list is required. Account wallet is only compatibility sugar
+    // for older iOS DTOs, so do not fail the whole screen if it cannot load.
+    const characters = await prisma.character.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    let accountGold = 0
+    let accountGems = 0
+    try {
+      const userAccount = await prisma.user.findUnique({
         where: { id: user.id },
         select: { gold: true, gems: true },
-      }),
-    ])
-    const accountGold = userAccount?.gold ?? 0
-    const accountGems = userAccount?.gems ?? 0
+      })
+      accountGold = userAccount?.gold ?? 0
+      accountGems = userAccount?.gems ?? 0
+    } catch (error) {
+      console.warn('list characters wallet warning:', error)
+    }
 
     // Apply HP + stamina regen so the list shows accurate values
     // (prevents stale "0 HP" display on character selection after a loss)
     const now = new Date()
-    const enriched = await Promise.all(
+    const enrichedResults = await Promise.allSettled(
       characters.map(async (char) => {
-        const [hpResult, staminaResult] = await Promise.all([
-          calculateCurrentHp(char.currentHp, char.maxHp, char.lastHpUpdate ?? now),
-          calculateCurrentStamina(char.currentStamina, char.maxStamina, char.lastStaminaUpdate ?? now),
-        ])
-
-        // Persist regen updates to DB if changed
+        let currentHp = char.currentHp
+        let currentStamina = char.currentStamina
         const updates: Record<string, unknown> = {}
-        if (hpResult.updated) {
-          updates.currentHp = hpResult.hp
-          updates.lastHpUpdate = now
+
+        try {
+          const [hpResult, staminaResult] = await Promise.all([
+            calculateCurrentHp(char.currentHp, char.maxHp, char.lastHpUpdate ?? now),
+            calculateCurrentStamina(char.currentStamina, char.maxStamina, char.lastStaminaUpdate ?? now),
+          ])
+
+          currentHp = hpResult.hp
+          currentStamina = staminaResult.stamina
+
+          if (hpResult.updated) {
+            updates.currentHp = hpResult.hp
+            updates.lastHpUpdate = now
+          }
+          if (staminaResult.updated) {
+            updates.currentStamina = staminaResult.stamina
+            updates.lastStaminaUpdate = now
+          }
+        } catch (error) {
+          console.warn(`list characters regen warning for ${char.id}:`, error)
         }
-        if (staminaResult.updated) {
-          updates.currentStamina = staminaResult.stamina
-          updates.lastStaminaUpdate = now
-        }
+
         if (Object.keys(updates).length > 0) {
-          await prisma.character.update({ where: { id: char.id }, data: updates })
+          try {
+            await prisma.character.update({ where: { id: char.id }, data: updates })
+          } catch (error) {
+            console.warn(`list characters regen persist warning for ${char.id}:`, error)
+          }
         }
 
         return {
           ...char,
-          currentHp: hpResult.hp,
-          currentStamina: staminaResult.stamina,
+          currentHp,
+          currentStamina,
           gold: accountGold,
           gems: accountGems,
         }
-      })
+      }),
     )
+
+    const enriched = enrichedResults.map((result, index) => {
+      if (result.status === 'fulfilled') return result.value
+
+      const char = characters[index]
+      console.warn(`list characters enrich fallback for ${char.id}:`, result.reason)
+      return {
+        ...char,
+        gold: accountGold,
+        gems: accountGems,
+      }
+    })
 
     return NextResponse.json({ characters: enriched })
   } catch (error) {
