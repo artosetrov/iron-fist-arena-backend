@@ -2122,6 +2122,33 @@ Closed the next stale capability block inside `ADMIN_CAPABILITIES.md`:
 - **Inventory refresh:** updated current counts to `5080` in-scope files and `286 in-scope wiki markdown files / 285 wiki pages`
 - **Verification:** live players/appearance/mail comparison plus `git diff --check`
 
+## [2026-04-19] audit | Block 223 admin arena dungeons assets surface parity
+
+Closed the next stale capability block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-223-admin-arena-dungeons-assets-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/matches/page.tsx`, `admin/src/app/(dashboard)/dungeons/dungeons-client.tsx`, `admin/src/app/(dashboard)/dungeons/[id]/dungeon-editor.tsx`, `admin/src/app/(dashboard)/assets/assets-client.tsx`
+- **Fixes:** rewrote the arena/matches, dungeons, and assets sections so they now describe the real review/editor/browser surfaces and removed stale claims about fraud invalidation, filters, forecasting, template saves, sprite generation, usage tracking, and guarded delete rules
+- **Inventory refresh:** updated current counts to `5081` in-scope files and `287 in-scope wiki markdown files / 286 wiki pages`
+- **Verification:** live matches/dungeons/assets comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 224 admin gameplay systems surface parity
+
+Closed the next stale gameplay-systems block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-224-admin-gameplay-systems-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/skills/skills-client.tsx`, `admin/src/app/(dashboard)/passives/passives-client.tsx`, `admin/src/app/(dashboard)/quests/quests-client.tsx`, `admin/src/app/(dashboard)/events/events-client.tsx`, `admin/src/app/(dashboard)/seasons/seasons-client.tsx`
+- **Fixes:** rewrote the skills, passives, quests, events, and seasons sections so they now describe the real CRUD/editor surfaces and removed stale claims about combat simulators, drag-tree tooling, seasonal planners, participation analytics, and battle-pass control flows that those screens do not ship
+- **Inventory refresh:** updated current counts to `5082` in-scope files and `288 in-scope wiki markdown files / 287 wiki pages`
+- **Verification:** live skills/passives/quests/events/seasons comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 225 admin consumables achievements and snapshots surface parity
+
+Closed the next stale capability block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-225-admin-consumables-achievements-and-snapshots-surface-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/consumables/consumables-client.tsx`, `admin/src/app/(dashboard)/achievements/achievements-client.tsx`, `admin/src/app/(dashboard)/snapshots/snapshots-client.tsx`, `admin/src/actions/snapshots.ts`
+- **Fixes:** rewrote the consumables, achievements, and snapshots sections so they now describe the real catalog/config, definition/stats, and create/rollback/delete surfaces and removed stale claims about standalone consumable CRUD, broader template builders, and snapshot diff tooling
+- **Inventory refresh:** updated current counts to `5083` in-scope files and `289 in-scope wiki markdown files / 288 wiki pages`
+- **Verification:** live consumables/achievements/snapshots comparison plus `git diff --check`
+
 ## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
 
 Mid-session `xcodebuild ... build` failed with linker `Undefined symbols: Hexbound.BossInfo.init(id:…isRealBoss:tagline:) + default argument 8` from `DungeonService.o`, and a separate pass reported `TalentsTabView.swift:100` cascade — `"no dynamic member 'unlockPremiumSlot' using key path from root type 'PassiveTreeViewModel'"` + `"referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Bindable<PassiveTreeViewModel>'"` + `"cannot call value of non-function type 'Binding<Subject>'"`. Both methods/members were present in source — `BossInfo` had the expected memberwise init with `tagline: String? = nil`, and `PassiveTreeViewModel.unlockPremiumSlot()` existed at line 405 with backend route + service + model already wired. A clean-then-build (`xcodebuild ... clean build`) passed with zero code changes.

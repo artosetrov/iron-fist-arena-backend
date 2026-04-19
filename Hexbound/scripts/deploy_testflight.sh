@@ -8,6 +8,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+LOCAL_APPFILE="$PROJECT_DIR/fastlane/Appfile.local"
 
 cd "$PROJECT_DIR"
 
@@ -25,18 +26,23 @@ if ! command -v fastlane &> /dev/null; then
     fi
 fi
 
-# 2. Проверить что Appfile настроен
+# 2. Проверить iOS runtime config
+echo ""
+echo "🔎 Проверяю iOS release config..."
+python3 scripts/check_release_config.py
+
+# 3. Проверить что Fastlane identity настроен
 has_fastlane_apple_id=false
 if [ -n "${FASTLANE_APPLE_ID:-}" ]; then
     has_fastlane_apple_id=true
-elif ! grep -q "YOUR_APPLE_ID" fastlane/Appfile; then
+elif [ -f "$LOCAL_APPFILE" ] && grep -Eq '^[[:space:]]*apple_id\(' "$LOCAL_APPFILE"; then
     has_fastlane_apple_id=true
 fi
 
 has_fastlane_team=false
 if [ -n "${FASTLANE_TEAM_ID:-}" ] || [ -n "${FASTLANE_ITC_TEAM_ID:-}" ]; then
     has_fastlane_team=true
-elif grep -Eq '^[[:space:]]*(team_id|itc_team_id)\(' fastlane/Appfile; then
+elif [ -f "$LOCAL_APPFILE" ] && grep -Eq '^[[:space:]]*(team_id|itc_team_id)\(' "$LOCAL_APPFILE"; then
     has_fastlane_team=true
 fi
 
@@ -45,9 +51,9 @@ if [ "$has_fastlane_apple_id" != "true" ] || [ "$has_fastlane_team" != "true" ];
     echo "❌ Сначала настрой Fastlane identity:"
     echo "   Нужен Apple ID и Team ID / App Store Connect Team ID"
     echo ""
-    echo "   Вариант A: заполнить fastlane/Appfile"
-    echo "   1. Замени YOUR_APPLE_ID@example.com на свой Apple ID"
-    echo "   2. Раскомментируй и заполни team_id (и при необходимости itc_team_id)"
+    echo "   Вариант A: создать fastlane/Appfile.local"
+    echo "   1. Скопируй fastlane/Appfile.local.example → fastlane/Appfile.local"
+    echo "   2. Заполни apple_id / team_id / itc_team_id"
     echo ""
     echo "   Вариант B: передать env vars"
     echo "   FASTLANE_APPLE_ID=..."
@@ -57,7 +63,7 @@ if [ "$has_fastlane_apple_id" != "true" ] || [ "$has_fastlane_team" != "true" ];
     exit 1
 fi
 
-# 3. Проверить что приложение создано в App Store Connect
+# 4. Проверить что приложение создано в App Store Connect
 echo ""
 echo "📋 Чеклист перед загрузкой:"
 echo "   ✓ Apple Developer Program оплачен?"
@@ -70,7 +76,7 @@ if [ "$confirm" != "y" ]; then
     exit 0
 fi
 
-# 4. Запустить Fastlane
+# 5. Запустить Fastlane
 echo ""
 echo "🚀 Запускаю сборку и загрузку..."
 echo ""

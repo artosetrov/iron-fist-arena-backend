@@ -31,3 +31,5 @@ fastlane/test_output
 # Env
 .env
 .env.*
+Config/Local.secrets.xcconfig
+fastlane/Appfile.local

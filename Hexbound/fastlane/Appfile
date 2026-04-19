@@ -4,14 +4,12 @@
 # App Identifier (must match Xcode bundle ID)
 app_identifier("com.hexbound.app")
 
-# Apple Developer Portal — your Apple ID email
-# ⚠️ REQUIRED: replace with your real Apple ID
-apple_id(ENV["FASTLANE_APPLE_ID"] || "YOUR_APPLE_ID@example.com")
+local_appfile = File.join(__dir__, "Appfile.local")
+eval(File.read(local_appfile), binding, local_appfile) if File.exist?(local_appfile)
 
-# Developer Team ID (developer.apple.com → Membership → Team ID)
-# ⚠️ REQUIRED: uncomment and set your Team ID
-# team_id(ENV["FASTLANE_TEAM_ID"] || "XXXXXXXXXX")
+# CI / secure local overrides should come from environment variables and win over Appfile.local.
+apple_id(ENV["FASTLANE_APPLE_ID"]) if ENV["FASTLANE_APPLE_ID"]
+team_id(ENV["FASTLANE_TEAM_ID"]) if ENV["FASTLANE_TEAM_ID"]
+itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"]) if ENV["FASTLANE_ITC_TEAM_ID"]
 
-# App Store Connect Team ID (may differ from Developer Team ID)
-# ⚠️ REQUIRED if you have multiple teams
-# itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"] || "XXXXXXXXXX")
+# `Appfile.local.example` shows the expected local format.

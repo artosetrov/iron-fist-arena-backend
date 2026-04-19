@@ -1,6 +1,35 @@
+def require_release_identity!
+  apple_id_value = CredentialsManager::AppfileConfig.try_fetch_value(:apple_id)
+  team_id_value = CredentialsManager::AppfileConfig.try_fetch_value(:team_id)
+  itc_team_id_value = CredentialsManager::AppfileConfig.try_fetch_value(:itc_team_id)
+
+  missing = []
+  missing << "apple_id" if apple_id_value.to_s.strip.empty?
+  if team_id_value.to_s.strip.empty? && itc_team_id_value.to_s.strip.empty?
+    missing << "team_id or itc_team_id"
+  end
+
+  return if missing.empty?
+
+  UI.user_error!(
+    "Fastlane release identity is incomplete: #{missing.join(', ')}. " \
+    "Use FASTLANE_* env vars or fastlane/Appfile.local."
+  )
+end
+
+def run_ios_release_preflight!
+  sh("python3 scripts/check_release_config.py")
+end
+
 default_platform(:ios)
 
 platform :ios do
+  before_all do |lane, _options|
+    next unless [:beta, :build].include?(lane)
+
+    run_ios_release_preflight!
+    require_release_identity!
+  end
 
   # ──────────────────────────────────────────────
   # ЗАГРУЗИТЬ НА TESTFLIGHT

@@ -1,6 +1,6 @@
 # Hexbound — iOS Release Guide
 
-*Source of truth: this file + `Hexbound/fastlane/` + `Hexbound/Hexbound/App/AppConstants.swift`. Updated: 2026-04-16*
+*Source of truth: this file + `Hexbound/fastlane/` + `Hexbound/Config/` + `Hexbound/Hexbound/App/AppConstants.swift`. Updated: 2026-04-19*
 
 ---
 
@@ -9,28 +9,42 @@
 1. **Apple Developer Account** with App Store Connect access
 2. **Xcode 15+** with iOS 17 SDK
 3. **Fastlane** installed: `brew install fastlane`
-4. **Fastlane identity configured**: `Hexbound/fastlane/Appfile` must be filled or equivalent env vars must be supplied
+4. **Fastlane identity configured**: use `FASTLANE_*` env vars or local ignored file `Hexbound/fastlane/Appfile.local`
 5. **Signing**: valid provisioning profile "Hexbound AppStore" for `com.hexbound.app`
 
 Current repo reality:
 
 - `Fastfile` lanes exist and are usable as the release skeleton
-- `Appfile` still contains placeholder Apple identity / team values in repo
-- treat Fastlane release as **setup-required**, not turnkey
+- release identity is intentionally kept out of the tracked `Appfile`
+- team/local overrides belong in ignored local files or CI env vars
+- treat Fastlane release as **validated setup-required**, not ad hoc manual editing
 
 ## Environment Config
 
-API endpoints are configured in `Hexbound/Hexbound/App/AppConstants.swift`:
+Runtime config is injected at build time:
 
-- **DEBUG builds**: use staging URL (currently same as production)
-- **RELEASE builds**: use production URL (`api.hexboundapp.com`)
-- **Override**: set `HEXBOUND_ENV=staging` in Xcode scheme environment variables
+- `Hexbound/Config/Shared.xcconfig`
+- `Hexbound/Config/Debug.xcconfig`
+- `Hexbound/Config/Release.xcconfig`
+- `Hexbound/Config/Local.secrets.xcconfig` (ignored, local-only)
 
 Important clarification:
 
-- the app does have `production` vs `staging` environment selection logic
-- but the current staging host still points to the same production API URL
-- so `HEXBOUND_ENV=staging` changes the app environment mode, not the backend host yet
+- Swift no longer owns backend/auth/google IDs directly
+- `AppConstants.swift` now reads values from `Info.plist`, which is fed by the xcconfig layer
+- local machines should copy `Local.secrets.example.xcconfig` → `Local.secrets.xcconfig`
+- today the local staging host may still equal production until dedicated staging infra exists; the preflight now warns about that explicitly
+
+## Release Preflight
+
+Before `fastlane build` or `fastlane beta`:
+
+```bash
+cd Hexbound
+python3 scripts/check_release_config.py
+```
+
+The same preflight now runs automatically from Fastlane and from `scripts/deploy_testflight.sh`.
 
 ## Release Flow
 
@@ -61,7 +75,10 @@ This runs:
 3. Upload to App Store Connect / TestFlight
 4. Print success with version + build number
 
-This step still depends on real Apple credentials/team configuration being present at runtime.
+This step depends on:
+
+- real Apple credentials/team configuration being present at runtime
+- valid iOS runtime config in `Config/Local.secrets.xcconfig`
 
 ### 3. Test in TestFlight
 
@@ -100,16 +117,20 @@ For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodep
 
 | File | Purpose |
 |------|---------|
-| `Hexbound/fastlane/Fastfile` | Lane definitions (beta, build, bump_*) |
-| `Hexbound/fastlane/Appfile` | Apple identity/team configuration and bundle identifier |
+| `Hexbound/fastlane/Fastfile` | Lane definitions + release preflight |
+| `Hexbound/fastlane/Appfile` | Bundle identifier + env/local identity loading |
+| `Hexbound/fastlane/Appfile.local` | Ignored local release credentials |
+| `Hexbound/Config/*.xcconfig` | Build-time runtime config by environment |
 
 ## Setup Checklist (First Time)
 
-- [ ] Set Apple ID in `Appfile` (or `FASTLANE_APPLE_ID` env var)
-- [ ] Set Team ID in `Appfile` (or `FASTLANE_TEAM_ID` env var)
+- [ ] Copy `Hexbound/Config/Local.secrets.example.xcconfig` → `Hexbound/Config/Local.secrets.xcconfig`
+- [ ] Fill in API / Supabase / Google values
+- [ ] Copy `Hexbound/fastlane/Appfile.local.example` → `Hexbound/fastlane/Appfile.local` or provide `FASTLANE_*` env vars
 - [ ] Create App ID `com.hexbound.app` in Apple Developer Portal
 - [ ] Create provisioning profile "Hexbound AppStore"
 - [ ] Create app in App Store Connect (see `docs/10_operations/TESTFLIGHT_GUIDE.md` for details)
+- [ ] Run `python3 scripts/check_release_config.py`
 - [ ] Run `fastlane build` to verify everything works
 
 ## Common Mistakes
@@ -118,9 +139,9 @@ For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodep
 |---------|-----|
 | "No signing certificate" | Open Xcode → Signing & Capabilities → enable Automatic Signing |
 | "Provisioning profile not found" | Create "Hexbound AppStore" profile in developer.apple.com |
-| Appfile still has placeholder | Set real Apple ID / team values or provide `FASTLANE_*` env vars |
+| Missing local Appfile identity | Create `fastlane/Appfile.local` or provide `FASTLANE_*` env vars |
 | Build number conflict | Fastlane auto-increments, but if stuck: manually set in Xcode |
-| Thought staging uses a separate backend | Today `staging` still resolves to the production API host in `AppConstants.swift` |
+| Thought Swift hardcoded the backend config | Config now comes from `Config/*.xcconfig` + `Info.plist`, not from Swift source |
 
 ## Rollback
 

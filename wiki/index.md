@@ -297,7 +297,10 @@
 - [[block-220-admin-balance-and-offers-surface-parity]] — the balance/loot/offers/config/item-balance sections now describe the actual live admin tools instead of broader scheduling, forecasting, A/B pricing, or experiment-profile surfaces that the dashboard does not ship
 - [[block-221-admin-items-crud-surface-parity]] — the items docs now match the live form/upload/preview/delete surface instead of promising CSV tooling, change history, soft-delete warnings, or 3D preview
 - [[block-222-admin-player-appearance-mail-and-footer-surface-parity]] — the remaining players/appearances/mail/footer sections now describe the actual live admin surfaces instead of promising soft delete, 3D preview, scheduled mail, or generic undo/CSV tooling
+- [[block-223-admin-arena-dungeons-assets-surface-parity]] — the arena/matches, dungeons, and assets docs now match the real review/editor/browser surfaces instead of promising fraud ops, forecast tooling, template saves, or richer asset-pipeline features
+- [[block-224-admin-gameplay-systems-surface-parity]] — the skills/passives/quests/events/seasons docs now match the real CRUD/editor surfaces instead of promising simulators, drag-tree tooling, seasonal planners, participation analytics, or battle-pass control flows that those screens do not ship
+- [[block-225-admin-consumables-achievements-and-snapshots-surface-parity]] — the consumables/achievements/snapshots docs now match the real catalog/config, definition/stats, and create/rollback/delete surfaces instead of promising standalone CRUD, richer template builders, or snapshot diff tooling
 
 ---
 
-*286 in-scope wiki markdown files | 285 wiki pages (13 systems, 14 decisions, 3 entities, 222 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*
+*289 in-scope wiki markdown files | 288 wiki pages (13 systems, 14 decisions, 3 entities, 225 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*

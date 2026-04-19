@@ -842,12 +842,28 @@ struct InteractiveBattleRouteView: View {
     var body: some View {
         Group {
             if let vm {
-                InteractiveBattleView(
-                    vm: vm,
-                    onFinished: { phase in
-                        handleTerminal(phase, vm: vm)
-                    }
-                )
+                // Feature-flagged host swap. `combatUXV2` defaults to
+                // false, so production keeps running the legacy V1 view
+                // until an admin flips the flag. Both hosts take the same
+                // VM and emit the same terminal callback — swapping is
+                // zero-risk from the route wrapper's perspective.
+                // See docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md §1 for
+                // rollout + rollback procedure.
+                if appState.combatUXV2 {
+                    InteractiveBattleV2View(
+                        vm: vm,
+                        onFinished: { phase in
+                            handleTerminal(phase, vm: vm)
+                        }
+                    )
+                } else {
+                    InteractiveBattleView(
+                        vm: vm,
+                        onFinished: { phase in
+                            handleTerminal(phase, vm: vm)
+                        }
+                    )
+                }
             } else {
                 ZStack {
                     DarkFantasyTheme.bgPrimary.ignoresSafeArea()

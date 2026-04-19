@@ -53,14 +53,22 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
-### Arena (PvP Match Browser)
-**Purpose:** Live monitor and inspect PvP matches
+### Arena Matches (History)
+**Purpose:** Review recent PvP matches across all players
 **Features:**
-- Real-time match list (last 100)
-- Filter by: class, rating range, duration, result
-- Click to expand: full battle log, champion builds, moves executed
-- Detect anomalies: impossible win (rating delta > 500), duplicate IP, instant win (<5s)
-- Action: Invalidate match (refund both players if fraud detected)
+- Summary cards:
+  - total matches
+  - matches today
+  - revenge matches
+- Recent matches table (last 100)
+- Player names with links back to player pages where a local user id exists
+- Match type and revenge badges
+- Winner/result badge
+- Rating deltas for both players
+- Gold / XP rewards
+- Turn count and played-at timestamp
+
+**Current repo note:** the live page is a read-only history/review surface. It does **not** currently expose fraud detection, advanced filters, battle-log expansion, or a match invalidation / refund workflow.
 
 ---
 
@@ -94,79 +102,122 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
-### Consumables (CRUD)
-**Purpose:** Manage potions, buffs, scrolls
-**Fields:**
+### Consumables (Catalog + Live Config)
+**Purpose:** Review consumable catalog entries and tune live consumable config values
+**Catalog View:**
+- Consumable items from the main item catalog
 - catalogId
-- consumableName
-- consumableType (health potion, stamina restore, buff attack 1h, etc.)
-- Effect (JSON: {stat: "strength", duration: 3600, value: 10})
-- Shop price (gold or gems)
-- Stack limit
-- Icon/sprite reference
+- rarity
+- effect string
+- buy / sell prices
+
+**Live Config Controls:**
+- stamina potion prices
+- stamina restore amounts
+- health potion prices
+- HP restore percentages
+- save all overrides to live `GameConfig`
+
+**Current repo note:** the live consumables page is **not** a standalone consumable CRUD editor. Item creation/editing still happens through the main Items section.
 
 ---
 
 ### Skills (CRUD)
 **Purpose:** Design character abilities
 **Fields:**
-- catalogId
+- skillKey
 - skillName
-- skillClass (class-specific)
+- classRestriction
 - Description
+- damageBase
+- damageType
+- targetType
 - cooldown (seconds)
 - manaCost
-- Scaling (JSON: {strength: 1.2, dex: 0.8})
+- damageScaling (JSON)
+- effectJson (JSON)
 - Unlock level
-- Icon reference
+- maxRank
+- rankScaling
+- icon
+- sortOrder
+- active toggle
 
-**Special Actions:**
-- Testable in combat simulator (AI vs. skill)
-- Rank progression (how costs change 1→5)
+**Current repo note:** the live skills page is a CRUD/filtering surface. It does **not** currently expose an embedded combat simulator or a separate rank-progression analysis workflow.
 
 ---
 
-### Passives (CRUD + Tree Editor)
-**Purpose:** Manage passive tree nodes and connections
-**Visual Editor:**
-- Drag nodes in 2D space
-- Draw connections between nodes
-- Preview final tree layout
-- Simulate pathing (highlight routes)
+### Passives (CRUD + Connections)
+**Purpose:** Manage passive nodes and their connections
 
 **Node Fields:**
-- catalogId, nodeName
-- Stats granted (JSON)
-- Point cost to unlock
+- nodeKey, nodeName
+- description
+- bonusType
+- bonusStat
+- bonusValue
+- tier
+- point cost to unlock
 - Class restriction (optional)
 - Position (X, Y)
+- icon
+- start-node toggle
+- active toggle
 
 **Connections:**
-- Drag to connect nodes
-- Validate pathing (no loops)
-- Save tree layout
+- Create connection by selecting From / To nodes
+- Delete saved connections
+- Maintain manual position data on nodes
+
+**Current repo note:** the live passives page does **not** currently expose a drag-and-drop tree canvas, visual path preview, or path-simulation tooling.
 
 ---
 
-### Dungeons (Visual Builder)
-**Purpose:** Create multi-floor dungeon runs
-**Dungeon Setup:**
-- dungeonName, minimum level, difficulty
-- Floors (how many levels)
-- Boss health per floor
-- Loot table (drops by rarity)
+### Dungeons (List + Editor)
+**Purpose:** Create, edit, and delete dungeon definitions
+**List Surface:**
+- Search by dungeon name or slug
+- Create new dungeon
+- Open existing dungeon editor
+- Delete dungeon
+- Review summary columns:
+  - level requirement
+  - difficulty
+  - dungeon type
+  - boss count / last boss name
+  - active/disabled status
 
-**Floor Builder (per floor):**
-- Enemy wave count
-- Enemy type (dropdown: goblin, orc, skeleton, etc.)
-- Boss type (dropdown: dragon, lich, etc.)
-- Reward preview
+**Editor Surface:**
+- General fields:
+  - name / slug
+  - description / lore
+  - level requirement
+  - difficulty
+  - dungeon type
+  - energy cost
+  - active toggle
+  - sort order
+  - gold reward
+  - XP reward
+- Image fields:
+  - dungeon image
+  - background image
+  - image prompt
+  - image style
+- Boss editor:
+  - boss stats
+  - description / lore
+  - floor number / sort order
+  - boss abilities
+- Wave editor:
+  - wave number
+  - enemy type / level / count
+- Drop editor:
+  - item
+  - drop chance
+  - min/max quantity
 
-**Difficulty Tuning:**
-- Estimated completion rate (%)
-- Recommended stats
-- Est. time to clear
-- Save as template
+**Current repo note:** the live dungeon tooling does **not** currently expose completion-rate forecasting, recommended-stat estimates, clear-time modeling, or template saving.
 
 ---
 
@@ -191,89 +242,97 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ### Assets (Upload & Manage)
 **Purpose:** Image, animation, and icon library
 **Features:**
-- Upload PNG/SVG/MP4/WebP
-- Auto-generate sprites (if multi-frame)
-- Tag/search library
-- Usage tracking (how many items use this asset)
-- Delete only if unused
+- Choose storage bucket and optional path
+- Browse files in that location
+- Drag-and-drop or click-to-upload files
+- Image-grid preview for image assets
+- Resolve public asset URL and copy it
+- Delete files directly from the browser
+
+**Current repo note:** the live asset browser does **not** currently expose automatic sprite generation, tag/search metadata, usage tracking, or “delete only if unused” enforcement.
 
 ---
 
 ## 3. Gameplay Systems
 
 ### Quests (CRUD)
-**Purpose:** Daily and seasonal quest templates
+**Purpose:** Quest definition management
 **Create Quest:**
-- catalogId
+- questType
 - questName
-- questType (PVP_WINS, DUNGEON_CLEARS, SKILL_USES, LEVEL_UP, EQUIP_ITEMS)
 - Description
-- Target value (e.g., "Win 3 PvP matches")
+- icon
+- minTarget
+- maxTarget
 - Gold reward
-- Gem reward (optional)
-- Display order
-- Active date range
+- XP reward
+- Gem reward
 
 **Edit:**
-- Adjust rewards if needed
-- Reorder quests
-- Disable without deleting
+- Update quest definition values
+- Toggle active / inactive
+- Seed default quest definitions
+
+**Current repo note:** the live quest admin surface manages quest-definition records. It does **not** currently expose active date ranges, display-order editing, or a separate seasonal quest planner.
 
 ---
 
 ### Achievements (CRUD)
 **Purpose:** Long-term unlock goals
 **Fields:**
-- catalogId
+- achievementKey
 - achievementName
 - Description
-- Reward (gold/gems/cosmetic)
-- Unlock condition (complex JSON: {type: "pvp_wins", value: 100})
+- category
+- target
+- rewardType
+- rewardAmount
+- optional rewardId for cosmetic rewards
+- icon
+- sortOrder
+- active toggle
 
-**Batch Create:**
-- Template set (e.g., "Dungeon Master" — clear all dungeons, 5-tier progression)
+**Manage:**
+- Create / edit / delete achievement definitions
+- Activate / deactivate definitions
+- Seed default achievement set
+- Review completion stats / rates in the stats tab
+
+**Current repo note:** the live achievements page manages achievement definitions plus summary stats. It does **not** currently expose a free-form batch-template builder beyond the built-in seed action.
 
 ---
 
 ### Events (CRUD)
 **Purpose:** Time-limited gameplay events
 **Create Event:**
+- eventKey
 - eventName
 - Description
 - Start date / end date
-- Type (BONUS_REWARDS, SPECIAL_DUNGEON, PVP_TOURNAMENT)
-- Bonus config (e.g., +50% gold during event)
-- Associated dungeon/quest/achievement
-- Broadcast message
+- Type (`boss_rush`, `gold_rush`, `class_spotlight`, `tournament`)
+- Config JSON
 
 **Manage:**
-- Schedule new event
-- End event early
-- Extend deadline
-- View player participation
+- Create / edit / delete events
+- Toggle active / inactive
+- Review upcoming / active / expired state from the event cards
+
+**Current repo note:** the live events screen does **not** currently expose association pickers for dungeon/quest/achievement targets, broadcast-message authoring, or participant analytics.
 
 ---
 
-### Seasons (CRUD + Battle Pass)
-**Purpose:** Battle Pass and seasonal progression
+### Seasons (CRUD)
+**Purpose:** Manage competitive season windows
 **Create Season:**
-- catalogId (e.g., "s1_dawn")
-- seasonName, description
+- seasonNumber
+- theme
 - Start date / end date
-- seasonNumber (S1, S2, etc.)
-
-**Battle Pass Configuration:**
-- Levels (1-100)
-- Free track rewards per level
-- Premium track rewards per level
-- XP to level up
-- Free pass gem cost (if purchasable)
 
 **Manage:**
-- View all battle pass progress
-- Adjust rewards mid-season
-- Grant pass to specific player
-- Track pass sales
+- Create / edit / delete seasons
+- Review status (Upcoming / Active / Ended)
+
+**Current repo note:** the live seasons page is separate from battle-pass reward authoring. It does **not** currently expose season-level battle-pass reward editing, pass grants, or pass-sales analytics from this screen.
 
 ---
 
@@ -598,13 +657,14 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Name snapshot (e.g., "Balance Patch v2.1")
 - Add notes (what changed)
 - View snapshot history (all past snapshots with dates)
-- Compare two snapshots (diff view)
 - Rollback to snapshot (apply old config, all players affected)
+- Delete snapshot
 
 **Automation:**
-- Auto-snapshot before each config update
 - Manual snapshot on demand
-- Keep last 20 snapshots
+- Rollback creates an automatic backup snapshot before restore
+
+**Current repo note:** the live snapshots page does **not** currently expose snapshot diff comparison or a general global auto-snapshot-before-every-config-change guarantee from that page. The page lists the newest snapshots and supports manual create / rollback / delete.
 
 ---
 

@@ -80,6 +80,20 @@ final class AppState {
     var interactiveCombatLocallyDisabled = false
     var pendingClassicFightOpponentId: String?
 
+    // MARK: - Interactive Combat v2 Feature Flag
+    //
+    // Gates the 3-state combat UX refactor (CHOOSE / RESOLVE / END).
+    // Default: `false` — renders the legacy `InteractiveBattleView`.
+    // When `true`, `InteractiveBattleRouteView` mounts `InteractiveBattleV2View`.
+    //
+    // Flipped from QA menu (admin) or forced on via launch flag in debug.
+    // Remote-config eligible — see docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md §1.
+    //
+    // One-tap rollback: flip to `false`; the legacy view resumes immediately
+    // with no other code changes. Backend Phase enum is unchanged — the V2
+    // layer only derives a `CombatUXState` from the existing phase machine.
+    var combatUXV2: Bool = false
+
     // MARK: - Cache
     var cachedInventory: [Item]?
     var cachedTypedQuests: [Quest]?

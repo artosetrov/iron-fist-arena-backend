@@ -1,6 +1,6 @@
 # Hexbound — Deploy Guide
 
-*Source of truth: this file + Vercel dashboard + live repo config (`.github/workflows/ci.yml`, `backend/next.config.ts`, `admin/vercel.json`). Updated: 2026-04-16*
+*Source of truth: this file + Vercel dashboard + live repo config (`.github/workflows/ci.yml`, `backend/next.config.ts`, `admin/vercel.json`, `Hexbound/Config/`). Updated: 2026-04-19*
 
 ---
 
@@ -105,6 +105,12 @@ cd backend && npm run db:migrate:deploy
 ## iOS Deploy
 
 See `docs/10_operations/RELEASE_IOS.md` for full guide.
+
+Operational note:
+
+- iOS runtime config now lives in `Hexbound/Config/*.xcconfig`
+- real local values belong in ignored `Hexbound/Config/Local.secrets.xcconfig`
+- Fastlane release credentials belong in ignored `Hexbound/fastlane/Appfile.local` or CI env vars
 
 ## Rollback
 

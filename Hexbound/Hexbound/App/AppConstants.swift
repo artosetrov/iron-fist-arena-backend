@@ -2,46 +2,60 @@ import Foundation
 
 enum AppConstants {
 
+    private enum ConfigKey {
+        static let environment = "HexboundEnvironment"
+        static let apiBaseURL = "HexboundAPIBaseURL"
+        static let supabaseProjectURL = "HexboundSupabaseProjectURL"
+        static let supabaseAnonKey = "HexboundSupabaseAnonKey"
+        static let googleClientID = "HexboundGoogleClientID"
+        static let googleReversedClientID = "HexboundGoogleReversedClientID"
+    }
+
     // MARK: - Environment
-    // Switch via Xcode scheme: Edit Scheme → Run → Arguments → Environment Variables
-    // Set HEXBOUND_ENV = "staging" for staging, or leave unset for production
+    // Runtime environment now comes from build-time xcconfig + Info.plist.
+    // Debug and Release can be wired to different backends without changing Swift code.
 
     enum Environment: String {
         case production
         case staging
 
         static var current: Environment {
-            if let env = ProcessInfo.processInfo.environment["HEXBOUND_ENV"],
-               let parsed = Environment(rawValue: env) {
-                return parsed
+            let configuredValue = AppConstants.requiredConfigValue(for: ConfigKey.environment)
+            guard let parsed = Environment(rawValue: configuredValue) else {
+                fatalError("Invalid HexboundEnvironment value: \(configuredValue)")
             }
-            #if DEBUG
-            return .staging
-            #else
-            return .production
-            #endif
+            return parsed
         }
     }
 
     // MARK: - Backend API
     static var apiBaseURL: URL {
-        switch Environment.current {
-        case .production:
-            return URL(string: "https://api.hexboundapp.com")! // swiftlint:disable:this force_unwrapping — hardcoded valid URL
-        case .staging:
-            // TODO: Replace with actual staging URL when available
-            return URL(string: "https://api.hexboundapp.com")! // swiftlint:disable:this force_unwrapping — hardcoded valid URL
+        let configuredValue = requiredConfigValue(for: ConfigKey.apiBaseURL)
+        guard let url = URL(string: configuredValue) else {
+            fatalError("Invalid HexboundAPIBaseURL: \(configuredValue)")
         }
+        return url
     }
 
     // MARK: - Supabase
-    static let supabaseProjectURL = "https://gqnyozmqbhgzprsftdzp.supabase.co"
-    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxbnlvem1xYmhnenByc2Z0ZHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0NjYzMTQsImV4cCI6MjA1ODA0MjMxNH0.71bRYJv1VAtgsk1jRTINqC-YVZJR0KBIB7MESbdYKHM"
+    static let supabaseProjectURL = requiredConfigValue(for: ConfigKey.supabaseProjectURL)
+    static let supabaseAnonKey = requiredConfigValue(for: ConfigKey.supabaseAnonKey)
     static let supabaseAuthURL = "\(supabaseProjectURL)/auth/v1"
-    static let supabaseRealtimeURL = "wss://gqnyozmqbhgzprsftdzp.supabase.co/realtime/v1/websocket"
+    static let supabaseRealtimeURL: String = {
+        guard var components = URLComponents(string: supabaseProjectURL) else {
+            fatalError("Invalid HexboundSupabaseProjectURL: \(supabaseProjectURL)")
+        }
+        components.scheme = components.scheme == "https" ? "wss" : "ws"
+        components.path = "/realtime/v1/websocket"
+        guard let value = components.string else {
+            fatalError("Failed to build Supabase realtime URL")
+        }
+        return value
+    }()
 
     // MARK: - Google Sign-In
-    static let googleClientID = "443362223078-f8bse9a7lddqb2ajoqo18tbqlbigekv0.apps.googleusercontent.com"
+    static let googleClientID = requiredConfigValue(for: ConfigKey.googleClientID)
+    static let googleReversedClientID = requiredConfigValue(for: ConfigKey.googleReversedClientID)
 
     // MARK: - Networking
     static let requestTimeout: TimeInterval = 30
@@ -86,4 +100,17 @@ enum AppConstants {
     static let freePvpPerDay = 3
     // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4
     static let pvpStaminaCost = 10
+
+    private static func requiredConfigValue(for key: String) -> String {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            fatalError("Missing Info.plist value for \(key)")
+        }
+
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty || value.hasPrefix("__MISSING_") {
+            fatalError("Unconfigured Info.plist value for \(key)")
+        }
+
+        return value
+    }
 }

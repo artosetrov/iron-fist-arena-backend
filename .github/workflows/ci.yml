@@ -6,7 +6,14 @@ on:
     paths:
       - 'backend/**'
       - 'admin/**'
+      - 'Hexbound/Config/**'
+      - 'Hexbound/fastlane/**'
+      - 'Hexbound/scripts/**'
+      - 'Hexbound/Hexbound/App/AppConstants.swift'
+      - 'Hexbound/Hexbound/Info.plist'
+      - 'Hexbound/Hexbound.xcodeproj/project.pbxproj'
       - 'scripts/**'
+      - 'docs/10_operations/RELEASE_IOS.md'
       - '.github/workflows/ci.yml'
       - 'docs/06_game_systems/**'
   pull_request:
@@ -14,7 +21,14 @@ on:
     paths:
       - 'backend/**'
       - 'admin/**'
+      - 'Hexbound/Config/**'
+      - 'Hexbound/fastlane/**'
+      - 'Hexbound/scripts/**'
+      - 'Hexbound/Hexbound/App/AppConstants.swift'
+      - 'Hexbound/Hexbound/Info.plist'
+      - 'Hexbound/Hexbound.xcodeproj/project.pbxproj'
       - 'scripts/**'
+      - 'docs/10_operations/RELEASE_IOS.md'
       - '.github/workflows/ci.yml'
       - 'docs/06_game_systems/**'
 
@@ -68,3 +82,14 @@ jobs:
         run: diff backend/prisma/schema.prisma admin/prisma/schema.prisma || (echo "Prisma schemas out of sync!" && exit 1)
       - name: Check Prisma migration drift
         run: python3 scripts/check_schema_drift.py
+
+  ios-release-config:
+    name: iOS Release Config Preflight
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Hexbound
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check iOS runtime/release config
+        run: python3 scripts/check_release_config.py --allow-missing-local-values
