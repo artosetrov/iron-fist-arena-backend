@@ -81,19 +81,30 @@ while true; do
     else
       git commit -m "$MSG"
       git push origin "$CURRENT_BRANCH"
-
-      # Push admin subtree if admin/ changed
-      if git diff-tree --no-commit-id --name-only -r HEAD | grep -q "^admin/"; then
-        echo "📜 Admin changed — pushing subtree..."
-        if git remote get-url admin-deploy >/dev/null 2>&1; then
-          git subtree push --prefix=admin admin-deploy main
-        else
-          echo "Admin remote 'admin-deploy' not configured — skipping subtree push."
-        fi
-      fi
-
-      echo "✅ Done!"
+      echo "✅ Commit pushed to origin."
     fi
+
+    # Reconcile admin subtree with admin-deploy/main on EVERY trigger.
+    # This catches up after a prior failed subtree push, even when the current
+    # trigger had no admin/** changes. Idempotent: no-op if already in sync.
+    if git remote get-url admin-deploy >/dev/null 2>&1; then
+      if git fetch admin-deploy main -q 2>/dev/null; then
+        LOCAL_ADMIN_TREE="$(git rev-parse HEAD:admin 2>/dev/null || true)"
+        REMOTE_ADMIN_TREE="$(git rev-parse admin-deploy/main^{tree} 2>/dev/null || true)"
+        if [ -n "$LOCAL_ADMIN_TREE" ] && [ -n "$REMOTE_ADMIN_TREE" ] \
+            && [ "$LOCAL_ADMIN_TREE" != "$REMOTE_ADMIN_TREE" ]; then
+          echo "📜 Admin subtree drifted — pushing catchup to admin-deploy/main..."
+          if git subtree push --prefix=admin admin-deploy main; then
+            echo "✅ Admin subtree catchup done."
+          else
+            echo "❌ Admin subtree push failed — admin prod may be stale."
+          fi
+        fi
+      else
+        echo "⚠️  Could not fetch admin-deploy/main — skipping subtree drift check."
+      fi
+    fi
+
     echo "---"
     echo "🔮 Watching again..."
   fi
