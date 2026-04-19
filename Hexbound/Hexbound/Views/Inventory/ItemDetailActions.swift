@@ -1,6 +1,16 @@
 import SwiftUI
 
 extension ItemDetailSheet {
+    // MARK: - Action Buttons — Orchestrator
+    //
+    // Contextual rules:
+    //   • viewMode           → Close only
+    //   • shopMode           → Buy (+ qty stepper for stackable consumables)
+    //   • showUpgradeConfirm → Cancel / Upgrade panel
+    //   • consumable         → Use (+ Sell)
+    //   • isEquipped         → Unequip (+ Upgrade)
+    //   • unequipped equippable → Equip (+ Stash / Upgrade / Sell)
+
     @ViewBuilder
     var actionButtons: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
@@ -11,81 +21,12 @@ extension ItemDetailSheet {
                 shopBuySection(shop)
             } else if showUpgradeConfirm {
                 upgradeConfirmPanel
+            } else if item.itemType == .consumable {
+                consumableActionRow
+            } else if isEquipped {
+                equippedActionRow
             } else {
-                if item.itemType == .consumable {
-                    Button("USE") { HapticManager.medium(); onUse() }
-                        .buttonStyle(.primary)
-                } else if isEquipped {
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Button("UNEQUIP") {
-                            HapticManager.light()
-                            SFXManager.shared.play(.uiUnequip)
-                            onUnequip()
-                        }
-                        .buttonStyle(.secondary)
-                        if canUpgrade {
-                            Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
-                                .buttonStyle(.primary)
-                        }
-                    }
-                } else {
-                    // BUG-63: reason line shown ABOVE the button row when the
-                    // item can't currently be equipped (level too low, wrong
-                    // class, or broken). Mirrors the shop's "Requires Level X"
-                    // warning so players know WHY the button is greyed out.
-                    if let reason = equipBlockedReason {
-                        Text(reason)
-                            .font(DarkFantasyTheme.body.bold())
-                            .foregroundStyle(DarkFantasyTheme.danger)
-                            .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
-                            .accessibilityLabel("Cannot equip: \(reason)")
-                    }
-
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        if !isBroken {
-                            Button("EQUIP") {
-                                HapticManager.medium()
-                                SFXManager.shared.play(equipSFX)
-                                onEquip()
-                            }
-                            .buttonStyle(.secondary)
-                            // BUG-63: SwiftUI `.disabled()` greys the button
-                            // via the standard disabled environment — matches
-                            // the shop's "can't buy" state for visual parity.
-                            .disabled(!canEquipNow)
-                        }
-                        // Sell with confirmation for rare+ items
-                        Button("SELL") {
-                            HapticManager.light()
-                            if item.rarity.tier >= 2 {
-                                showSellConfirm = true
-                            } else {
-                                SFXManager.shared.play(.uiSell)
-                                onSell()
-                            }
-                        }
-                        .buttonStyle(.secondary)
-
-                        // Deposit to stash (only for unequipped items)
-                        if let onDeposit, item.isEquipped != true {
-                            Button {
-                                HapticManager.light()
-                                onDeposit()
-                            } label: {
-                                HStack(spacing: LayoutConstants.spaceXS) {
-                                    Image(systemName: "shippingbox.and.arrow.backward.fill")
-                                    Text("STASH")
-                                }
-                            }
-                            .buttonStyle(.secondary)
-                        }
-                    }
-                    if canUpgrade {
-                        Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
-                            .buttonStyle(.secondary)
-                    }
-                }
+                unequippedActionRow
             }
         }
         .confirmationDialog(
@@ -103,17 +44,226 @@ extension ItemDetailSheet {
         }
     }
 
-    /// Bug #20: hard cap for a single purchase. Even if the player has 100k
-    /// gold, one tap shouldn't let them buy 500 potions.
+    // MARK: - Row: Consumable (Use + Sell)
+
+    @ViewBuilder
+    var consumableActionRow: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Button("USE") {
+                HapticManager.medium()
+                onUse()
+            }
+            .buttonStyle(.primary)
+
+            if (item.sellPrice ?? 0) > 0 {
+                secondaryActionButton(
+                    label: "SELL",
+                    icon: nil,
+                    trailingPrice: item.sellPrice ?? 0
+                ) {
+                    HapticManager.light()
+                    if item.rarity.tier >= 2 {
+                        showSellConfirm = true
+                    } else {
+                        SFXManager.shared.play(.uiSell)
+                        onSell()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Row: Equipped (Unequip + Upgrade)
+
+    @ViewBuilder
+    var equippedActionRow: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Button("UNEQUIP") {
+                HapticManager.light()
+                SFXManager.shared.play(.uiUnequip)
+                onUnequip()
+            }
+            .buttonStyle(.primary)
+
+            if canUpgrade {
+                secondaryActionButton(
+                    label: "UPGRADE",
+                    icon: "chart.line.uptrend.xyaxis",
+                    trailingPrice: nil
+                ) {
+                    HapticManager.medium()
+                    showUpgradeConfirm = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Row: Unequipped Equippable (Equip + Stash/Upgrade/Sell)
+
+    @ViewBuilder
+    var unequippedActionRow: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // BUG-63: reason line above the CTA when equip is blocked.
+            if let reason = equipBlockedReason {
+                equipBlockedPill(reason: reason)
+            }
+
+            Button {
+                HapticManager.medium()
+                SFXManager.shared.play(equipSFX)
+                onEquip()
+            } label: {
+                Text("EQUIP")
+            }
+            .buttonStyle(.primary)
+            .disabled(!canEquipNow)
+            .opacity(canEquipNow ? 1 : 0.5)
+
+            secondaryButtonsGrid
+        }
+    }
+
+    @ViewBuilder
+    var secondaryButtonsGrid: some View {
+        let slots = secondaryButtonSlots
+        if !slots.isEmpty {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                ForEach(Array(slots.enumerated()), id: \.offset) { _, slot in
+                    secondaryActionButton(
+                        label: slot.label,
+                        icon: slot.icon,
+                        trailingPrice: slot.price,
+                        action: slot.action
+                    )
+                }
+            }
+        }
+    }
+
+    /// Build the list of secondary slots (Stash / Upgrade / Sell) in the
+    /// order Stash → Upgrade → Sell when all present. Slots hide themselves
+    /// when their prerequisite closure/condition is missing.
+    private var secondaryButtonSlots: [SecondarySlot] {
+        var slots: [SecondarySlot] = []
+        if let onDeposit, item.isEquipped != true {
+            slots.append(SecondarySlot(
+                label: "STASH",
+                icon: "shippingbox.and.arrow.backward.fill",
+                price: nil,
+                action: {
+                    HapticManager.light()
+                    onDeposit()
+                }
+            ))
+        }
+        if canUpgrade {
+            slots.append(SecondarySlot(
+                label: "UPGRADE",
+                icon: "chart.line.uptrend.xyaxis",
+                price: nil,
+                action: {
+                    HapticManager.medium()
+                    showUpgradeConfirm = true
+                }
+            ))
+        }
+        if (item.sellPrice ?? 0) > 0 {
+            let price = item.sellPrice ?? 0
+            slots.append(SecondarySlot(
+                label: "SELL",
+                icon: nil,
+                price: price,
+                action: {
+                    HapticManager.light()
+                    if item.rarity.tier >= 2 {
+                        showSellConfirm = true
+                    } else {
+                        SFXManager.shared.play(.uiSell)
+                        onSell()
+                    }
+                }
+            ))
+        }
+        return slots
+    }
+
+    struct SecondarySlot {
+        let label: String
+        let icon: String?
+        let price: Int?
+        let action: () -> Void
+    }
+
+    // MARK: - Secondary Action Button (compact)
+
+    /// Compact button that fits into a 3-up grid. Icon on left, label center,
+    /// optional gold price on right. Uses `.secondary` button style chrome.
+    @ViewBuilder
+    func secondaryActionButton(
+        label: String,
+        icon: String?,
+        trailingPrice: Int?,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            action()
+        } label: {
+            HStack(spacing: LayoutConstants.space2XS) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
+                        .opacity(0.75)
+                }
+                Text(label)
+                if let price = trailingPrice {
+                    Text("\(price)")
+                        .font(DarkFantasyTheme.caption.weight(.bold))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .monospacedDigit()
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.secondary)
+    }
+
+    @ViewBuilder
+    func equipBlockedPill(reason: String) -> some View {
+        Text(reason)
+            .font(DarkFantasyTheme.body.bold())
+            .foregroundStyle(DarkFantasyTheme.danger)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.danger.opacity(DarkFantasyTheme.opacityLight))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(DarkFantasyTheme.danger.opacity(0.3), lineWidth: 1)
+            )
+            .accessibilityLabel("Cannot equip: \(reason)")
+    }
+
+    // MARK: - Shop Buy Section
+    //
+    // Mockup-compliant: single column stack:
+    //   [Qty stepper]   (only for stackable consumables)
+    //   [TOTAL row]
+    //   [Balance after] (when stepper shown)
+    //   [Warnings]
+    //   [BUY button]
+
+    /// Bug #20: hard cap per-purchase quantity.
     private static let maxPurchaseQuantity: Int = 99
 
-    /// Bug #20: compute the maximum quantity the player can afford in a single
-    /// purchase of this consumable. Gem purchases always return 1 (single-buy).
+    /// Bug #20: compute the maximum quantity the player can afford.
     func maxAffordableQuantity(_ shop: ShopContext) -> Int {
         guard shop.isConsumable, !shop.isGemPurchase, shop.price > 0 else { return 1 }
         let affordable = shop.playerGold / shop.price
-        let clamped = max(1, min(affordable, Self.maxPurchaseQuantity))
-        return clamped
+        return max(1, min(affordable, Self.maxPurchaseQuantity))
     }
 
     @ViewBuilder
@@ -122,35 +272,26 @@ extension ItemDetailSheet {
         let maxQty = maxAffordableQuantity(shop)
         let effectiveQty = showStepper ? min(purchaseQuantity, max(1, maxQty)) : 1
         let totalPrice = shop.price * effectiveQty
+        let balanceAfter = max(0, shop.playerGold - totalPrice)
 
         VStack(spacing: LayoutConstants.spaceSM) {
-            // Quantity stepper (Bug #20) — only for stackable consumables
             if showStepper {
-                quantityStepper(shop: shop, maxQty: maxQty)
+                quantityBlock(shop: shop, maxQty: maxQty)
             }
 
-            // Price display — dynamically multiplied by quantity
-            CurrencyDisplay(
-                gold: shop.isGemPurchase ? 0 : totalPrice,
-                gems: shop.isGemPurchase ? totalPrice : nil,
-                size: .compact,
-                currencyType: shop.isGemPurchase ? .gems : .gold,
-                animated: false
-            )
+            totalRow(totalPrice: totalPrice, isGemPurchase: shop.isGemPurchase)
 
-            // Warnings
+            if showStepper {
+                balanceAfterRow(balanceAfter: balanceAfter)
+            }
+
             if !shop.meetsLevel {
-                Text("Requires Level \(shop.requiredLevel) (You: Level \(playerLevel))")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.danger)
+                shopWarning("Requires Level \(shop.requiredLevel) (You: Level \(playerLevel))")
             }
             if !shop.canAfford {
-                Text(shop.isGemPurchase ? "Not enough gems" : "Not enough gold")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.danger)
+                shopWarning(shop.isGemPurchase ? "Not enough gems" : "Not enough gold")
             }
 
-            // BUY button — asset icons, no emoji
             Button {
                 shop.onBuy(effectiveQty)
             } label: {
@@ -158,39 +299,81 @@ extension ItemDetailSheet {
                     HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        if showStepper && effectiveQty > 1 {
-                            Text("BUY \(effectiveQty)×")
-                        } else {
-                            Text("BUY")
-                        }
-                        CurrencyDisplay(
-                            gold: shop.isGemPurchase ? 0 : totalPrice,
-                            gems: shop.isGemPurchase ? totalPrice : nil,
-                            size: .mini,
-                            currencyType: shop.isGemPurchase ? .gems : .gold,
-                            animated: false,
-                            textColorOverride: DarkFantasyTheme.textOnGold
-                        )
-                    }
+                    Text("BUY")
                 }
             }
             .buttonStyle(.primary)
             .disabled(!shop.canAfford || !shop.meetsLevel || shop.isBuying)
             .opacity(shop.canAfford && shop.meetsLevel ? 1.0 : 0.5)
         }
-        .onAppear {
-            // Reset quantity whenever the sheet opens for a new consumable.
-            purchaseQuantity = 1
-        }
+        .onAppear { purchaseQuantity = 1 }
     }
 
-    /// Bug #20: compact quantity stepper for stackable consumables.
-    /// Layout: [−]  Qty × label  [+]  with quick x5/x10 preset chips.
     @ViewBuilder
-    func quantityStepper(shop: ShopContext, maxQty: Int) -> some View {
+    func shopWarning(_ text: String) -> some View {
+        Text(text)
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(DarkFantasyTheme.danger)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    @ViewBuilder
+    func totalRow(totalPrice: Int, isGemPurchase: Bool) -> some View {
+        HStack {
+            Text("TOTAL")
+                .font(DarkFantasyTheme.caption.weight(.semibold))
+                .tracking(1.2)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+            Spacer()
+            CurrencyDisplay(
+                gold: isGemPurchase ? 0 : totalPrice,
+                gems: isGemPurchase ? totalPrice : nil,
+                size: .compact,
+                currencyType: isGemPurchase ? .gems : .gold,
+                animated: false
+            )
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS)
+    }
+
+    @ViewBuilder
+    func balanceAfterRow(balanceAfter: Int) -> some View {
+        HStack(spacing: LayoutConstants.space2XS) {
+            Spacer()
+            Text("Balance after:")
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+            CurrencyDisplay(
+                gold: balanceAfter,
+                size: .mini,
+                currencyType: .gold,
+                animated: false
+            )
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS)
+    }
+
+    @ViewBuilder
+    func quantityBlock(shop: ShopContext, maxQty: Int) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            HStack(spacing: LayoutConstants.spaceMD) {
+            HStack {
+                Text("QUANTITY")
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .tracking(1.2)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Spacer()
+                HStack(spacing: LayoutConstants.space2XS) {
+                    Text("max")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("\(maxQty)")
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.spaceXS)
+
+            HStack(spacing: 0) {
                 Button {
                     if purchaseQuantity > 1 {
                         HapticManager.light()
@@ -198,32 +381,22 @@ extension ItemDetailSheet {
                     }
                 } label: {
                     Image(systemName: "minus")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .fill(DarkFantasyTheme.bgTertiary)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-                        )
+                        .font(DarkFantasyTheme.buttonLabel)
+                        .foregroundStyle(purchaseQuantity > 1
+                            ? DarkFantasyTheme.textPrimary
+                            : DarkFantasyTheme.textDisabled)
+                        .frame(width: LayoutConstants.buttonHeightMD,
+                               height: LayoutConstants.buttonHeightMD)
                 }
+                .buttonStyle(.scalePress)
                 .disabled(purchaseQuantity <= 1)
-                .opacity(purchaseQuantity <= 1 ? 0.4 : 1.0)
                 .accessibilityLabel("Decrease quantity")
 
-                VStack(spacing: 0) {
-                    Text("×\(min(purchaseQuantity, max(1, maxQty)))")
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                    Text("max \(maxQty)")
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
-                .frame(minWidth: 72)
-                .accessibilityLabel("Quantity: \(min(purchaseQuantity, maxQty)), maximum \(maxQty)")
+                Text("×\(min(purchaseQuantity, max(1, maxQty)))")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Quantity: \(min(purchaseQuantity, maxQty)), maximum \(maxQty)")
 
                 Button {
                     if purchaseQuantity < maxQty {
@@ -232,24 +405,43 @@ extension ItemDetailSheet {
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .fill(DarkFantasyTheme.bgTertiary)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-                        )
+                        .font(DarkFantasyTheme.buttonLabel)
+                        .foregroundStyle(purchaseQuantity < maxQty
+                            ? DarkFantasyTheme.textPrimary
+                            : DarkFantasyTheme.textDisabled)
+                        .frame(width: LayoutConstants.buttonHeightMD,
+                               height: LayoutConstants.buttonHeightMD)
                 }
+                .buttonStyle(.scalePress)
                 .disabled(purchaseQuantity >= maxQty)
-                .opacity(purchaseQuantity >= maxQty ? 0.4 : 1.0)
                 .accessibilityLabel("Increase quantity")
             }
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(
+                cornerRadius: LayoutConstants.panelRadius,
+                topHighlight: 0.06,
+                bottomShadow: 0.10
+            )
+            .innerBorder(
+                cornerRadius: LayoutConstants.panelRadius - 2,
+                inset: 2,
+                color: DarkFantasyTheme.borderMedium.opacity(0.15)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.4), length: 10, thickness: 1)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
 
-            // Quick preset chips — only useful when player can afford them
             HStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(quantityPresets(maxQty: maxQty), id: \.self) { preset in
                     quantityPresetChip(preset, maxQty: maxQty)
@@ -258,39 +450,30 @@ extension ItemDetailSheet {
         }
     }
 
-    /// Bug #20: compute unique, sorted preset quantities capped at maxQty.
     func quantityPresets(maxQty: Int) -> [Int] {
-        let base = [1, 5, 10]
+        let base = [1, 3, 5]
         var presets = base.filter { $0 <= maxQty }
-        if maxQty > 10 && !presets.contains(maxQty) {
+        if maxQty > (base.last ?? 0) && !presets.contains(maxQty) {
             presets.append(maxQty)
         }
-        // Dedup + sort
         return Array(Set(presets)).sorted()
     }
 
     @ViewBuilder
     func quantityPresetChip(_ value: Int, maxQty: Int) -> some View {
         let isSelected = purchaseQuantity == value
-        let label = (value == maxQty && value > 10) ? "MAX" : "×\(value)"
+        let isMax = value == maxQty && value > 5
+        let label = isMax ? "MAX" : "×\(value)"
+        let chipColor: Color = isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary
+
         Button {
             HapticManager.light()
             purchaseQuantity = min(value, maxQty)
         } label: {
             Text(label)
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.space2XS)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(DarkFantasyTheme.gold.opacity(isSelected ? 0.0 : 0.3), lineWidth: 1)
-                )
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.compactOutline(color: chipColor, fillOpacity: isSelected ? 0.18 : 0.04))
         .accessibilityLabel("Set quantity to \(value)")
     }
 
@@ -400,70 +583,4 @@ extension ItemDetailSheet {
             )
         }
     }
-
-    // MARK: - Shared Helpers
-
-    func sectionHeader(icon: String, title: String) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: icon)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text(title)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(1.2)
-        }
-    }
-
-    var sectionDivider: some View {
-        EtchedGroove()
-            .padding(.horizontal, LayoutConstants.cardPadding)
-    }
-
-    func badgePill(_ text: String, style: BadgeStyle) -> some View {
-        let textColor: Color = {
-            switch style {
-            case .rarity: return rarityColor
-            case .twoHanded: return DarkFantasyTheme.stamina
-            case .secondary: return DarkFantasyTheme.textSecondary
-            }
-        }()
-        let fillColor: Color = {
-            switch style {
-            case .rarity: return rarityColor.opacity(0.15)
-            case .twoHanded: return DarkFantasyTheme.stamina.opacity(0.12)
-            case .secondary: return DarkFantasyTheme.bgTertiary
-            }
-        }()
-        let strokeColor: Color = {
-            switch style {
-            case .rarity: return rarityColor.opacity(0.4)
-            case .twoHanded: return DarkFantasyTheme.stamina.opacity(0.35)
-            case .secondary: return DarkFantasyTheme.borderSubtle
-            }
-        }()
-
-        return HStack(spacing: LayoutConstants.space2XS) {
-            if style == .twoHanded {
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(textColor)
-            }
-            Text(text)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(textColor)
-        }
-        .padding(.horizontal, LayoutConstants.spaceXS)
-        .padding(.vertical, LayoutConstants.space2XS)
-        .background(
-            Capsule()
-                .fill(fillColor)
-        )
-        .overlay(
-            Capsule()
-                .stroke(strokeColor, lineWidth: 1)
-        )
-    }
-
-    enum BadgeStyle { case secondary, rarity, twoHanded }
 }

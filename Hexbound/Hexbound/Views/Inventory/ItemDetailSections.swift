@@ -1,524 +1,507 @@
 import SwiftUI
 
 extension ItemDetailSheet {
-    // MARK: - Section 1: Header
+    // MARK: - Compact Header (72px icon + title + rarity + meta + class/level)
 
     @ViewBuilder
     var headerSection: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
-            // Item icon — no background, larger
-            ItemImageView(
-                imageKey: item.resolvedImageKey,
-                imageUrl: item.imageUrl,
-                systemIcon: item.consumableIcon,
-                systemIconColor: item.consumableIconColor,
-                placeholderIcon: item.itemType.icon
-            )
-            .frame(width: 104, height: 104)
-            .accessibilityLabel("Item icon for \(item.displayName)")
-            .accessibilityElement(children: .ignore)
+            headerIcon
 
-            // Item info
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                Text(item.displayName)
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(rarityColor)
-                    .lineLimit(2)
-                    .accessibilityLabel("Item name")
-
-                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                    badgePill(item.itemType.displayName, style: .secondary)
-                    if item.isTwoHanded == true {
-                        badgePill("Two-Handed", style: .twoHanded)
-                    }
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        badgePill(item.rarity.displayName, style: .rarity)
-                        HStack(spacing: 1) {
-                            ForEach(0..<(item.rarity.tier + 1), id: \.self) { _ in
-                                Image(systemName: "star.fill")
-                                    .font(DarkFantasyTheme.caption)
-                                    .foregroundStyle(rarityColor)
-                            }
-                        }
-                        .accessibilityLabel("\(item.rarity.tier + 1) stars")
-                    }
-                }
-                .accessibilityLabel("\(item.itemType.displayName)\(item.isTwoHanded == true ? " two-handed" : "") \(item.rarity.displayName) rarity")
-                .accessibilityElement(children: .combine)
-
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    // BUG-63: level text glows red + bold when player level
-                    // is below item's required level. Accompanied by the
-                    // disabled EQUIP button below.
-                    Text("Level \(item.itemLevel)")
-                        .font(levelMet ? DarkFantasyTheme.body : DarkFantasyTheme.body.bold())
-                        .foregroundStyle(levelMet ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.danger)
-                        .shadow(
-                            color: levelMet ? Color.clear : DarkFantasyTheme.danger.opacity(0.6),
-                            radius: levelMet ? 0 : 4
-                        )
-                        .accessibilityLabel(levelMet
-                            ? "Item level: \(item.itemLevel)"
-                            : "Requires level \(item.itemLevel), you are level \(playerLevel)")
-
-                    if let qty = item.quantity, qty > 1 {
-                        Text("×\(qty)")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .accessibilityLabel("Quantity: \(qty)")
-                    }
-                }
-
-                // BUG-63: class restriction also turns danger-red + bold when
-                // the player's class doesn't match. Kept gold-dim in the
-                // "restriction exists but matches" case so players still see
-                // what class the item is tagged for.
-                if let restriction = item.classRestriction,
-                   restriction != "none", !restriction.isEmpty {
-                    Text("\(restriction.capitalized) only")
-                        .font(classMet ? DarkFantasyTheme.body : DarkFantasyTheme.body.bold())
-                        .foregroundStyle(classMet ? DarkFantasyTheme.goldDim : DarkFantasyTheme.danger)
-                        .shadow(
-                            color: classMet ? Color.clear : DarkFantasyTheme.danger.opacity(0.6),
-                            radius: classMet ? 0 : 4
-                        )
-                        .accessibilityLabel(classMet
-                            ? "Restricted to \(restriction)"
-                            : "Wrong class: this item is \(restriction) only")
-                }
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                rarityLabelRow
+                titleText
+                metaLine
+                classLevelLine
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityHeaderLabel)
+    }
 
-            Spacer(minLength: 0)
+    // MARK: Header — Icon (72×72 with rarity glow)
 
-            // Close (X) button
-            Button { onClose() } label: {
-                Image(systemName: "xmark")
+    @ViewBuilder
+    var headerIcon: some View {
+        ItemImageView(
+            imageKey: item.resolvedImageKey,
+            imageUrl: item.imageUrl,
+            systemIcon: item.consumableIcon,
+            systemIconColor: item.consumableIconColor,
+            placeholderIcon: item.itemType.icon
+        )
+        .frame(width: 72, height: 72)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(rarityColor.opacity(0.5), lineWidth: 1)
+        )
+        .overlay {
+            if hasDurability && durabilityFraction < 1.0 {
+                DurabilityRingOverlay(
+                    fraction: durabilityFraction,
+                    cornerRadius: LayoutConstants.radiusMD
+                )
             }
-            .buttonStyle(.closeButton)
-            .accessibilityLabel("Close item detail")
+        }
+        .shadow(color: rarityColor.opacity(0.25), radius: 8)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 4, y: 2)
+        .compositingGroup()
+        .accessibilityHidden(true)
+    }
+
+    // MARK: Header — Rarity label row ("● UNCOMMON")
+
+    @ViewBuilder
+    var rarityLabelRow: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Circle()
+                .fill(rarityColor)
+                .frame(width: 7, height: 7)
+                .shadow(color: rarityColor.opacity(0.8), radius: 4)
+            Text(item.rarity.displayName)
+                .font(DarkFantasyTheme.caption.weight(.bold))
+                .tracking(1.8)
+                .foregroundStyle(rarityColor)
         }
     }
 
-    // MARK: - Section 2: Stats (2-column grid)
+    // MARK: Header — Title
 
-    struct StatEntry: Identifiable {
-        let id: Int
-        let key1: String
-        let value1: Int
-        let key2: String?
-        let value2: Int?
+    @ViewBuilder
+    var titleText: some View {
+        Text(item.displayName)
+            .font(DarkFantasyTheme.cardTitle)
+            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
-    var statPairs: [StatEntry] {
-        let sorted = item.effectiveStats.sorted(by: { $0.key < $1.key })
-        var result: [StatEntry] = []
+    // MARK: Header — Meta line ("Weapon · Two-Handed")
+
+    var metaLineString: String {
+        let typeLabel = item.itemType.displayName
+        // Hand info only applies to weapons. For non-weapons the suffix is
+        // not meaningful (rings, armor, relics).
+        guard item.itemType == .weapon else { return typeLabel }
+        let hand = item.isTwoHanded == true ? "Two-Handed" : "One-Handed"
+        return "\(typeLabel) · \(hand)"
+    }
+
+    @ViewBuilder
+    var metaLine: some View {
+        Text(metaLineString)
+            .font(DarkFantasyTheme.body)
+            .italic()
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+    }
+
+    // MARK: Header — Class / Level line
+
+    /// Combined class + level line. Colored red when eligibility fails
+    /// (mirrors BUG-63 server-side checks so players see WHY equip is greyed out).
+    @ViewBuilder
+    var classLevelLine: some View {
+        let parts = classLevelParts()
+        HStack(spacing: 0) {
+            Text(parts.text)
+                .font(parts.isBlocked ? DarkFantasyTheme.body.bold() : DarkFantasyTheme.body.weight(.medium))
+                .foregroundStyle(parts.isBlocked ? DarkFantasyTheme.danger : DarkFantasyTheme.goldDim)
+                .shadow(
+                    color: parts.isBlocked ? DarkFantasyTheme.danger.opacity(0.5) : Color.clear,
+                    radius: parts.isBlocked ? 4 : 0
+                )
+
+            if let qty = item.quantity, qty > 1 {
+                Text("  ×\(qty)")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    /// Build the class/level string and determine whether to render it in danger color.
+    func classLevelParts() -> (text: String, isBlocked: Bool) {
+        let restriction = (item.classRestriction ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let hasRestriction = !restriction.isEmpty && restriction != "none"
+        let classPart = hasRestriction ? restriction.capitalized : nil
+        let levelPart = "Lvl \(item.itemLevel)"
+        let text = classPart.map { "\($0) · \(levelPart)" } ?? levelPart
+        let blocked = shouldCheckEquipEligibility && (!levelMet || !classMet)
+        return (text, blocked)
+    }
+
+    var accessibilityHeaderLabel: String {
+        let rarity = item.rarity.displayName.lowercased()
+        let type = item.itemType.displayName.lowercased()
+        let hand = item.itemType == .weapon ? (item.isTwoHanded == true ? "two-handed" : "one-handed") : ""
+        let qtyFragment = (item.quantity.map { $0 > 1 ? "quantity \($0)" : nil } ?? nil) ?? ""
+        let restriction = item.classRestriction ?? ""
+        let classFragment = (restriction.isEmpty || restriction == "none") ? "" : "\(restriction) only"
+        return [
+            item.displayName,
+            rarity,
+            type,
+            hand,
+            "level \(item.itemLevel)",
+            classFragment,
+            qtyFragment,
+        ]
+        .filter { !$0.isEmpty }
+        .joined(separator: ", ")
+    }
+
+    // MARK: - Effects Pill Row (special effect + unique passive)
+
+    @ViewBuilder
+    var effectsPillRow: some View {
+        // Bug #12: consumable specialEffect is stale in DB — description is canonical.
+        let hasSpecial = (item.itemType != .consumable)
+            && (item.specialEffect.map { !$0.isEmpty } ?? false)
+        let hasPassive = item.uniquePassive.map { !$0.isEmpty } ?? false
+
+        if hasSpecial || hasPassive {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                if hasSpecial, let special = item.specialEffect {
+                    effectPill(
+                        icon: "sparkles",
+                        text: special,
+                        color: DarkFantasyTheme.goldBright
+                    )
+                }
+                if hasPassive, let passive = item.uniquePassive {
+                    effectPill(
+                        icon: "bolt.fill",
+                        text: passive,
+                        color: DarkFantasyTheme.cyan
+                    )
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    func effectPill(icon: String, text: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceXS) {
+            Image(systemName: icon)
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(color)
+                .frame(width: LayoutConstants.iconSM)
+            Text(text)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(color)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(color.opacity(DarkFantasyTheme.opacityLight))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMild), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Flavor Section (description + optional set)
+
+    @ViewBuilder
+    var flavorSection: some View {
+        let desc = (item.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let setName = (item.setName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !desc.isEmpty || !setName.isEmpty {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                if !desc.isEmpty {
+                    Text(desc)
+                        .font(DarkFantasyTheme.body)
+                        .italic()
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if !setName.isEmpty {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Image(systemName: "link")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.success)
+                        Text("Set: \(setName)")
+                            .font(DarkFantasyTheme.caption.weight(.semibold))
+                            .tracking(0.8)
+                            .foregroundStyle(DarkFantasyTheme.success)
+                    }
+                    .accessibilityLabel("Part of \(setName) set")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    // MARK: - Stats Chip Row (inline + flow)
+
+    @ViewBuilder
+    var statChipRow: some View {
+        let stats = item.effectiveStats.sorted(by: { $0.key < $1.key })
+        if !stats.isEmpty {
+            let bonus = item.upgradeBonusPerStat
+            let upgradeLevel = item.upgradeLevel ?? 0
+            if stats.count <= 3 {
+                HStack(alignment: .top, spacing: LayoutConstants.spaceLG) {
+                    ForEach(stats, id: \.key) { key, value in
+                        statChip(key: key, value: value, bonus: bonus, upgradeLevel: upgradeLevel)
+                    }
+                    if stats.count < 3 { Spacer(minLength: 0) }
+                }
+            } else {
+                // 4+ stats — fall back to 2-column grid
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                    ForEach(statChipPairs(stats), id: \.id) { pair in
+                        HStack(alignment: .top, spacing: LayoutConstants.spaceLG) {
+                            statChip(key: pair.k1, value: pair.v1, bonus: bonus, upgradeLevel: upgradeLevel)
+                            if let k2 = pair.k2, let v2 = pair.v2 {
+                                statChip(key: k2, value: v2, bonus: bonus, upgradeLevel: upgradeLevel)
+                            } else {
+                                Spacer().frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private struct StatChipPair: Identifiable {
+        let id: Int
+        let k1: String
+        let v1: Int
+        let k2: String?
+        let v2: Int?
+    }
+
+    private func statChipPairs(_ stats: [(key: String, value: Int)]) -> [StatChipPair] {
+        var result: [StatChipPair] = []
         var i = 0
-        while i < sorted.count {
-            let k2: String? = (i + 1 < sorted.count) ? sorted[i + 1].key : nil
-            let v2: Int? = (i + 1 < sorted.count) ? sorted[i + 1].value : nil
-            result.append(StatEntry(id: i, key1: sorted[i].key, value1: sorted[i].value, key2: k2, value2: v2))
+        while i < stats.count {
+            let k2 = i + 1 < stats.count ? stats[i + 1].key : nil
+            let v2 = i + 1 < stats.count ? stats[i + 1].value : nil
+            result.append(StatChipPair(id: i, k1: stats[i].key, v1: stats[i].value, k2: k2, v2: v2))
             i += 2
         }
         return result
     }
 
     @ViewBuilder
-    var statsSection: some View {
-        let pairs = statPairs
-        let bonus = item.upgradeBonusPerStat
-        if !pairs.isEmpty {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "shield.fill", title: "STATS")
-
-                ForEach(pairs) { pair in
-                    HStack(spacing: LayoutConstants.spaceMD) {
-                        statCell(key: pair.key1, value: pair.value1, bonus: bonus)
-                        if let k2 = pair.key2, let v2 = pair.value2 {
-                            statCell(key: k2, value: v2, bonus: bonus)
-                        } else {
-                            Spacer().frame(maxWidth: .infinity)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-
-            sectionDivider
-        }
-    }
-
-    func statCell(key: String, value: Int, bonus: Int) -> some View {
-        HStack {
-            Text(Item.statLabels[key] ?? key.capitalized)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-            Spacer()
-            HStack(spacing: LayoutConstants.space2XS) {
-                Text("+\(value)")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.statColor(for: key))
-                if bonus > 0 {
-                    Text("(\(bonus))")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.goldDim)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Section 2.5: Durability
-
-    @ViewBuilder
-    var durabilitySection: some View {
-        if hasDurability {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "wrench.fill", title: isBroken ? "DURABILITY — BROKEN" : "DURABILITY")
-
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .fill(DarkFantasyTheme.bgTertiary)
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .fill(durabilityGradient)
-                                .frame(width: geo.size.width * durabilityFraction)
-                                .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusSM))
-                        }
-                    }
-                    .frame(height: LayoutConstants.spaceMS)
-                    .accessibilityLabel("Durability progress")
-                    .accessibilityValue("\(item.durability ?? 0) of \(item.maxDurability ?? 0)")
-
-                    Text("\(item.durability ?? 0)/\(item.maxDurability ?? 0)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(durabilityColor)
-                        .monospacedDigit()
-                        .accessibilityLabel("Durability: \(item.durability ?? 0) of \(item.maxDurability ?? 0)")
-                        .accessibilityElement(children: .ignore)
-                }
-
-                if isBroken {
-                    Text("This item is broken and cannot be equipped. Repair it first.")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.danger)
-                }
-
-                // Repair button — inline, hugs content width
-                if isDamaged && shopMode == nil && !viewMode {
-                    if isBroken {
-                        Button {
-                            HapticManager.medium()
-                            onRepair()
-                        } label: {
-                            repairButtonLabel
-                        }
-                        .buttonStyle(.primary)
-                        .fixedSize()
-                    } else {
-                        Button {
-                            HapticManager.medium()
-                            onRepair()
-                        } label: {
-                            repairButtonLabel
-                        }
-                        .buttonStyle(.secondary)
-                        .fixedSize()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-
-            sectionDivider
-        }
-    }
-
-    var repairButtonLabel: some View {
+    func statChip(key: String, value: Int, bonus: Int, upgradeLevel: Int) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(DarkFantasyTheme.body)
-            Text("REPAIR")
-            Text("·")
-            CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
-        }
-    }
-
-    // MARK: - Section 3: Comparison
-
-    @ViewBuilder
-    var comparisonSection: some View {
-        let itemStats = item.effectiveStats
-        let comparedStats = comparedItem?.effectiveStats ?? [:]
-        let showComparison = comparedItem != nil || shopMode != nil
-        let allKeys = Set(itemStats.keys).union(Set(comparedStats.keys))
-        let deltas = allKeys.compactMap { key -> (String, Int)? in
-            let val = itemStats[key] ?? 0
-            let comp = comparedStats[key] ?? 0
-            let delta = val - comp
-            return delta != 0 ? (key, delta) : nil
-        }.sorted(by: { $0.0 < $1.0 })
-
-        if showComparison && !deltas.isEmpty {
-            let title = comparedItem != nil ? "VS. EQUIPPED" : "STAT BONUS"
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "arrow.left.arrow.right", title: title)
-
-                ForEach(deltas, id: \.0) { key, delta in
-                    comparisonStatCell(key: key, delta: delta)
+            statChipIcon(key: key)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(Item.statLabels[key] ?? key.capitalized)
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .tracking(1.0)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .lineLimit(1)
+                HStack(spacing: 2) {
+                    Text("+\(value)")
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(upgradeLevel > 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold)
+                        .monospacedDigit()
+                    if upgradeLevel > 0 && bonus > 0 {
+                        Text("(+\(bonus * upgradeLevel))")
+                            .font(DarkFantasyTheme.caption.weight(.semibold))
+                            .foregroundStyle(DarkFantasyTheme.goldDim)
+                            .monospacedDigit()
+                    }
                 }
             }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(statChipA11y(key: key, value: value, bonus: bonus, upgradeLevel: upgradeLevel))
+    }
 
-            sectionDivider
+    @ViewBuilder
+    func statChipIcon(key: String) -> some View {
+        let box = RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+        if let statType = StatType.allCases.first(where: { $0.apiKey == key }) {
+            Image(statType.iconAsset)
+                .resizable()
+                .scaledToFit()
+                .padding(4)
+                .frame(width: 28, height: 28)
+                .background(box.fill(DarkFantasyTheme.bgTertiary))
+                .overlay(box.stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
+        } else {
+            Image(systemName: derivedStatSFSymbol(for: key))
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(width: 28, height: 28)
+                .background(box.fill(DarkFantasyTheme.bgTertiary))
+                .overlay(box.stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
         }
     }
 
-    /// Stat comparison cell matching LeaderboardPlayerDetailSheet style:
-    /// icon + stat name + delta badge pill + current item value
-    func comparisonStatCell(key: String, delta: Int) -> some View {
-        let statType = StatType.allCases.first(where: { $0.apiKey == key })
-        let deltaColor = delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
-        let arrow = delta > 0 ? "▲" : "▼"
-        let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
-        let statName = Item.statLabels[key] ?? key.capitalized
-        let itemValue = item.effectiveStats[key] ?? 0
-
-        return HStack(spacing: LayoutConstants.spaceXS) {
-            if let statType {
-                Image(statType.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 22, height: 22)
-            }
-
-            Text(statName)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.statColor(for: key))
-                .lineLimit(1)
-
-            Spacer(minLength: 4)
-
-            Text(label)
-                .font(DarkFantasyTheme.body.bold())
-                .foregroundStyle(deltaColor)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(deltaColor.opacity(0.15))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(deltaColor.opacity(0.4), lineWidth: 1)
-                        )
-                )
-
-            Text("+\(itemValue)")
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .frame(minWidth: 36, alignment: .trailing)
+    private func derivedStatSFSymbol(for key: String) -> String {
+        switch key {
+        case "damageMin", "damageMax": return "bolt.fill"
+        case "critChance": return "scope"
+        case "attackSpeed": return "speedometer"
+        case "defense": return "shield.fill"
+        case "hpBonus": return "heart.fill"
+        case "manaBonus": return "drop.fill"
+        default: return "circle.fill"
         }
-        .padding(LayoutConstants.spaceSM + 2)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
-                cornerRadius: LayoutConstants.panelRadius
-            )
+    }
+
+    private func statChipA11y(key: String, value: Int, bonus: Int, upgradeLevel: Int) -> String {
+        let name = Item.statLabels[key] ?? key.capitalized
+        if upgradeLevel > 0 && bonus > 0 {
+            return "\(name) plus \(value), upgrade bonus plus \(bonus * upgradeLevel)"
+        }
+        return "\(name) plus \(value)"
+    }
+
+    // MARK: - Twin Meters (Durability | Upgrade)
+
+    @ViewBuilder
+    var twinMeters: some View {
+        let showDurability = hasDurability
+        let showUpgrade = item.itemType != .consumable
+        if showDurability || showUpgrade {
+            HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+                if showDurability { durabilityMeter }
+                if showUpgrade { upgradeMeter }
+            }
+        }
+    }
+
+    @ViewBuilder
+    var durabilityMeter: some View {
+        let dur = item.durability ?? 0
+        let maxDur = item.maxDurability ?? 0
+        let fraction = maxDur > 0 ? Double(dur) / Double(maxDur) : 0
+        let showRepair = isDamaged && shopMode == nil && !viewMode
+        meterPanel(
+            label: isBroken ? "BROKEN" : "DURABILITY",
+            labelColor: isBroken ? DarkFantasyTheme.danger : DarkFantasyTheme.textTertiary,
+            valueText: "\(dur)/\(maxDur)",
+            valueColor: durabilityColor,
+            fraction: fraction,
+            barGradient: durabilityGradient,
+            barFillColor: durabilityColor,
+            trailing: showRepair ? AnyView(repairInlineButton) : AnyView(EmptyView())
         )
-        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(
-            cornerRadius: LayoutConstants.panelRadius - 2,
-            inset: 2,
-            color: DarkFantasyTheme.borderMedium.opacity(0.15)
+        .accessibilityLabel("Durability \(dur) of \(maxDur)\(isBroken ? ", broken" : "")")
+    }
+
+    @ViewBuilder
+    var upgradeMeter: some View {
+        let level = item.upgradeLevel ?? 0
+        let maxLevel = 10
+        let fraction = min(1, Double(level) / Double(maxLevel))
+        meterPanel(
+            label: "UPGRADE",
+            labelColor: DarkFantasyTheme.textTertiary,
+            valueText: "+\(level)/+\(maxLevel)",
+            valueColor: DarkFantasyTheme.goldBright,
+            fraction: fraction,
+            barGradient: LinearGradient(
+                colors: [DarkFantasyTheme.gold, DarkFantasyTheme.goldBright],
+                startPoint: .leading, endPoint: .trailing
+            ),
+            barFillColor: DarkFantasyTheme.gold,
+            trailing: AnyView(EmptyView())
+        )
+        .accessibilityLabel("Upgrade level plus \(level), maximum plus \(maxLevel)")
+    }
+
+    @ViewBuilder
+    private func meterPanel(
+        label: String,
+        labelColor: Color,
+        valueText: String,
+        valueColor: Color,
+        fraction: Double,
+        barGradient: LinearGradient,
+        barFillColor: Color,
+        trailing: AnyView
+    ) -> some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+            HStack(alignment: .center, spacing: LayoutConstants.space2XS) {
+                Text(label)
+                    .font(DarkFantasyTheme.caption.weight(.bold))
+                    .tracking(1.2)
+                    .foregroundStyle(labelColor)
+                Spacer(minLength: LayoutConstants.space2XS)
+                Text(valueText)
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .foregroundStyle(valueColor)
+                    .monospacedDigit()
+                trailing
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(DarkFantasyTheme.bgAbyss)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(barGradient)
+                        .frame(width: geo.size.width * max(0, min(1, fraction)))
+                        .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
+                        .shadow(color: barFillColor.opacity(0.4), radius: 4)
+                }
+            }
+            .frame(height: 6)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS + 2)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgTertiary.opacity(0.6))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
-        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 
-    // MARK: - Section 4: Effects
-
+    /// Small wrench icon inline with the durability value. Tap → onRepair.
+    /// Hidden in shop/view modes; visible when item is damaged.
     @ViewBuilder
-    var effectsSection: some View {
-        // Bug #12: specialEffect for consumables is stale in DB (pre-rebalance
-        // copies like "+50 stamina" while description already says "60"), and
-        // the description line already communicates the effect. Hide the
-        // specialEffect row for consumables to avoid contradiction.
-        let hasSpecial = (item.itemType != .consumable)
-            && (item.specialEffect.map { !$0.isEmpty } ?? false)
-        let hasPassive = item.uniquePassive.map { !$0.isEmpty } ?? false
-        let isTwoHanded = item.isTwoHanded == true
-
-        if hasSpecial || hasPassive || isTwoHanded {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                if isTwoHanded {
-                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.stamina)
-                        Text("Two-Handed — occupies weapon + off-hand slot")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.stamina)
-                    }
-                    .accessibilityLabel("Two-handed weapon: occupies both weapon and off-hand slots")
-                }
-                if let special = item.specialEffect, !special.isEmpty {
-                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "sparkles")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                        Text(special)
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                    }
-                }
-                if let passive = item.uniquePassive, !passive.isEmpty {
-                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "bolt.fill")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.cyan)
-                        Text(passive)
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.cyan)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-
-            sectionDivider
+    var repairInlineButton: some View {
+        Button {
+            HapticManager.medium()
+            SFXManager.shared.play(.uiTap)
+            onRepair()
+        } label: {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(DarkFantasyTheme.caption.weight(.bold))
+                .foregroundStyle(isBroken ? DarkFantasyTheme.danger : DarkFantasyTheme.gold)
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                .padding(4)
+                .background(
+                    Circle()
+                        .fill((isBroken ? DarkFantasyTheme.danger : DarkFantasyTheme.gold).opacity(0.15))
+                )
+                .overlay(
+                    Circle()
+                        .stroke((isBroken ? DarkFantasyTheme.danger : DarkFantasyTheme.gold).opacity(0.4), lineWidth: 1)
+                )
         }
+        .accessibilityLabel("Repair — costs \(repairCost) gold")
     }
 
-    // MARK: - Section 5: Economy
+    // MARK: - Shared Helpers
 
-    @ViewBuilder
-    var economySection: some View {
-        let buy = item.buyPrice ?? 0
-        let sell = item.sellPrice ?? 0
-        if buy > 0 || sell > 0 {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "coins.circle.fill", title: "ECONOMY")
-
-                // Sell price — primary (this is what matters when you own the item)
-                if sell > 0 {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("Sell:")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        CurrencyDisplay(
-                            gold: sell,
-                            size: .compact,
-                            currencyType: .gold,
-                            animated: false
-                        )
-                    }
-                }
-
-                // Buy price — secondary/dimmed (already purchased)
-                if buy > 0 {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("Buy:")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        CurrencyDisplay(
-                            gold: buy,
-                            size: .mini,
-                            currencyType: .gold,
-                            animated: false
-                        )
-                        .opacity(0.6)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-
-            sectionDivider
-        }
+    /// Subtle etched hairline between narrative (title/flavor) and
+    /// mechanical (stats/meters) sections. The parent VStack already applies
+    /// horizontal padding, so this renders edge-to-edge within that container.
+    var sectionDivider: some View {
+        EtchedGroove()
     }
-
-    // MARK: - Section 6: Upgrade Info
-
-    @ViewBuilder
-    var upgradeInfoSection: some View {
-        if canUpgrade {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "chart.line.uptrend.xyaxis", title: "UPGRADE")
-
-                HStack {
-                    Text("Max")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    Text("+10")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.upgradeBlue)
-                    Text("(linear)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-                    if currentUpgradeLevel > 0 {
-                        Spacer()
-                        Text("Current: +\(currentUpgradeLevel)")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-
-            sectionDivider
-        }
-    }
-
-    // MARK: - Section 7: Description
-
-    @ViewBuilder
-    var descriptionSection: some View {
-        let hasDesc = (item.description ?? "").isEmpty == false
-        let hasSet = (item.setName ?? "").isEmpty == false
-        if hasDesc || hasSet {
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                if let desc = item.description, !desc.isEmpty {
-                    Text(desc)
-                        .font(DarkFantasyTheme.body)
-                        .italic()
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
-                if let setName = item.setName, !setName.isEmpty {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image("icon-gems")
-                            .resizable()
-                            .frame(width: 10, height: 10)
-                            .foregroundStyle(DarkFantasyTheme.success)
-                        Text("Set: \(setName)")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.success)
-                    }
-                }
-                // BUG-39 (QA 2026-04-10): debug catalog-key line removed.
-                // Previously showed "debug: loot_<uuid>" under item description —
-                // unprofessional in simulator/TestFlight builds and leaked the
-                // internal data model. Use LLDB `po item.catalogId` if you need it.
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceMD)
-        }
-    }
-
-    // MARK: - Action Buttons
-
 }

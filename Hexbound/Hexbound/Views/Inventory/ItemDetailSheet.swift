@@ -167,40 +167,40 @@ struct ItemDetailSheet: View {
                 .onTapGesture { onClose() }
 
             VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // SECTION 1 — Header
-                        headerSection
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(LayoutConstants.cardPadding)
+                // Top bar — close button only (mockup parity)
+                HStack {
+                    Spacer()
+                    Button { onClose() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .buttonStyle(.closeButton)
+                    .accessibilityLabel("Close item detail")
+                }
+                .padding(.horizontal, LayoutConstants.cardPadding)
+                .padding(.top, LayoutConstants.spaceMD)
 
+                ScrollView {
+                    VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
+                        // Compact header — 72px icon + title + rarity + meta + class/level
+                        headerSection
+
+                        // Effect pills (only when specialEffect or uniquePassive is set)
+                        effectsPillRow
+
+                        // Flavor text + optional set name
+                        flavorSection
+
+                        // Hairline divider between narrative and mechanical sections
                         sectionDivider
 
-                        // SECTION 2 — Stats
-                        statsSection
+                        // Inline stat chips
+                        statChipRow
 
-                        // SECTION 2.5 — Durability
-                        durabilitySection
-
-                        // SECTION 3 — Comparison
-                        comparisonSection
-
-                        // SECTION 4 — Effects
-                        effectsSection
-
-                        // SECTION 5 — Economy (hide in shop mode and view mode)
-                        if shopMode == nil && !viewMode {
-                            economySection
-                        }
-
-                        // SECTION 6 — Upgrade (hide in shop mode and view mode)
-                        if shopMode == nil && !viewMode {
-                            upgradeInfoSection
-                        }
-
-                        // SECTION 7 — Description
-                        descriptionSection
+                        // Twin meters: Durability | Upgrade (flexible)
+                        twinMeters
                     }
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .padding(.vertical, LayoutConstants.spaceSM)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .scrollIndicators(.hidden)

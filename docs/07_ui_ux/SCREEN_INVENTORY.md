@@ -71,7 +71,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Inventory | `InventoryViewModel.swift` | equipment, consumables tabs; loading, empty, search | Item management |
-| Item Detail | `ItemDetailSheet.swift` | default | Item stats, equip/sell actions |
+| Item Detail | `ItemDetailSheet.swift` | inventory, shop, stash-withdraw, opponent-view; broken durability | Compact card (72px icon, inline rarity label, meta, class/level gate) + effect pills + flavor + stat chips + twin meters (Durability \| Upgrade) + contextual primary CTA + 3-up secondary row |
 
 ## Shop
 
