@@ -8,7 +8,7 @@ on:
       - 'admin/**'
       - 'scripts/**'
       - '.github/workflows/ci.yml'
-      - 'docs/04_BALANCE/**'
+      - 'docs/06_game_systems/**'
   pull_request:
     branches: [main]
     paths:
@@ -16,7 +16,7 @@ on:
       - 'admin/**'
       - 'scripts/**'
       - '.github/workflows/ci.yml'
-      - 'docs/04_BALANCE/**'
+      - 'docs/06_game_systems/**'
 
 jobs:
   backend-build:
