@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Talents — Iron Fist Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0d14;
+    --bg-surface: #141922;
+    --bg-elevated: #1b2230;
+    --bg-inset: #0f131b;
+
+    --border-faint: rgba(255, 255, 255, 0.06);
+    --border-soft: rgba(255, 255, 255, 0.10);
+
+    --text-primary: #f2ece0;
+    --text-secondary: #a8a195;
+    --text-muted: #6b6760;
+
+    --gold: #e8b24a;
+    --gold-soft: #f4cc78;
+    --gold-dim: #8a6a26;
+
+    --xp-blue: #5ea8e8;
+
+    --rarity-common: #9aa0a8;
+    --rarity-uncommon: #6ac37a;
+    --rarity-rare: #5ea8e8;
+    --rarity-epic: #b57cd6;
+
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Fraunces', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top, rgba(232, 178, 74, 0.04), transparent 60%),
+      var(--bg-deep);
+  }
+
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-deep);
+    border-radius: 44px;
+    border: 1px solid var(--border-soft);
+    box-shadow:
+      0 0 0 8px #0a0a0a,
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      inset 0 0 40px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 28px 8px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; opacity: 0.9; font-size: 13px; }
+
+  /* Top nav */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px 12px;
+    flex-shrink: 0;
+  }
+  .nav button {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .nav button svg { width: 16px; height: 16px; }
+  .nav h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.22em;
+    color: var(--gold);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 0 16px;
+    margin-bottom: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .tab.active { color: var(--gold); }
+  .tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%; right: 20%;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+  .tab.active::after { transform: scaleX(1); }
+  .tab-badge {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--gold);
+    color: #1a0f00;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Main content */
+  .content {
+    flex: 1;
+    padding: 0 16px 12px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .content::-webkit-scrollbar { display: none; }
+
+  /* Summary card: SP + Active Skills */
+  .summary {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-faint);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-faint);
+  }
+  .summary-row:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+  .summary-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .summary-label .label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .summary-label .value {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--gold-soft);
+  }
+  .summary-label .value.dim { color: var(--text-secondary); }
+
+  .sp-counter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-faint);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .sp-counter svg { width: 12px; height: 12px; color: var(--gold); }
+  .sp-counter .sep { opacity: 0.5; }
+
+  /* Active skill slots — SQUARE tiles matching item language */
+  /* 3 base slots + 1 premium slot unlocked with gems */
+  .slots {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .slot {
+    aspect-ratio: 1;
+    background: var(--bg-inset);
+    border: 1.5px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .slot:hover { border-color: var(--gold-dim); color: var(--text-secondary); }
+  .slot svg { width: 16px; height: 16px; }
+  .slot .slot-num {
+    position: absolute;
+    top: 4px; left: 6px;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Premium 4th slot — locked behind gems */
+  .slot.premium {
+    border-style: solid;
+    border-color: rgba(181, 124, 214, 0.25);
+    background:
+      linear-gradient(180deg, rgba(181, 124, 214, 0.06), rgba(181, 124, 214, 0.02));
+    color: var(--rarity-epic);
+    overflow: hidden;
+  }
+  .slot.premium::before {
+    /* faint gem sparkle background */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(181, 124, 214, 0.15), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(181, 124, 214, 0.1), transparent 50%);
+    pointer-events: none;
+  }
+  .slot.premium:hover {
+    border-color: var(--rarity-epic);
+    background: linear-gradient(180deg, rgba(181, 124, 214, 0.12), rgba(181, 124, 214, 0.04));
+  }
+  .slot.premium .gem-icon {
+    width: 14px; height: 14px;
+    background: linear-gradient(135deg, #d4a0f0, #9a5cc8 60%, #5a2a8a);
+    transform: rotate(45deg);
+    box-shadow:
+      0 0 8px rgba(181, 124, 214, 0.5),
+      inset 0 0 4px rgba(255, 255, 255, 0.3);
+    margin-bottom: 4px;
+  }
+  .slot.premium .gem-cost {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--rarity-epic);
+    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 1;
+  }
+  .slot.premium .slot-num { color: var(--rarity-epic); opacity: 0.8; }
+
+  /* Talent tree canvas */
+  .tree-canvas {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(232, 178, 74, 0.04), transparent 50%),
+      var(--bg-surface);
+    border: 1px solid var(--border-faint);
+    border-radius: 14px;
+    padding: 24px 16px 20px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .tree-canvas::before {
+    /* subtle noise */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 23px, rgba(255,255,255,0.015) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgba(255,255,255,0.015) 23px 24px);
+    pointer-events: none;
+  }
+
+  /* SVG connections layer */
+  .tree-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .tree-line {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .tree-line.active {
+    stroke: var(--gold);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 4px rgba(232, 178, 74, 0.4));
+  }
+  .tree-line.unlockable {
+    stroke: rgba(232, 178, 74, 0.35);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    animation: dash 1.5s linear infinite;
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -16; }
+  }
+
+  /* Nodes layer */
+  .tree-nodes {
+    position: relative;
+    height: 360px;
+    z-index: 1;
+  }
+
+  /* SQUARE skill tile — same visual DNA as item cards */
+  .node {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-inset);
+    border: 1.5px solid var(--border-faint);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    transform: translate(-50%, -50%);
+  }
+  .node svg { width: 18px; height: 18px; }
+  .node:hover { transform: translate(-50%, -50%) scale(1.08); }
+
+  /* Node states */
+  .node.locked {
+    opacity: 0.5;
+  }
+  .node.unlockable {
+    border-color: var(--gold-dim);
+    color: var(--text-secondary);
+    box-shadow:
+      0 0 0 1px rgba(232, 178, 74, 0.15),
+      0 0 12px rgba(232, 178, 74, 0.2);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(232, 178, 74, 0.15), 0 0 12px rgba(232, 178, 74, 0.2); }
+    50%      { box-shadow: 0 0 0 1px rgba(232, 178, 74, 0.35), 0 0 20px rgba(232, 178, 74, 0.4); }
+  }
+  .node.unlocked {
+    background: linear-gradient(180deg, rgba(232, 178, 74, 0.15), rgba(232, 178, 74, 0.05));
+    border-color: var(--gold);
+    color: var(--gold-soft);
+    box-shadow:
+      0 0 0 1px rgba(232, 178, 74, 0.3),
+      0 4px 12px rgba(232, 178, 74, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .node.unlocked::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+    border-radius: 8px 0 0 8px;
+  }
+  .node.keystone {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    border: 2px solid var(--gold-soft);
+    color: #1a0f00;
+    box-shadow:
+      0 0 0 1px var(--gold-soft),
+      0 0 24px rgba(232, 178, 74, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .node.keystone svg { width: 22px; height: 22px; }
+  .node.keystone::before { display: none; }
+
+  /* Rank indicator — top-right corner */
+  .rank {
+    position: absolute;
+    top: -5px; right: -5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--gold);
+    color: #1a0f00;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--bg-surface);
+  }
+
+  /* Corner ornaments on tree-canvas */
+  .corner {
+    position: absolute;
+    width: 12px; height: 12px;
+    border: 1.5px solid var(--gold-dim);
+    opacity: 0.4;
+  }
+  .corner.tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+  .corner.tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+  .corner.br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+  /* Reset talents row */
+  .reset-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(194, 90, 74, 0.04);
+    border: 1px solid rgba(194, 90, 74, 0.12);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .reset-row:hover { background: rgba(194, 90, 74, 0.08); }
+  .reset-row .left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #c25a4a;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .reset-row svg { width: 12px; height: 12px; }
+  .reset-row .cost {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .reset-row .cost .gem {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: linear-gradient(135deg, #b57cd6, #7a4aa8);
+    transform: rotate(45deg);
+    margin-right: 4px;
+    vertical-align: 0;
+  }
+
+  /* Actions row at bottom */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 10px;
+    padding: 12px 16px 20px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, transparent, var(--bg-deep) 40%);
+  }
+  .btn-secondary {
+    padding: 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .primary-cta {
+    padding: 14px;
+    border: none;
+    background: linear-gradient(180deg, var(--gold-soft) 0%, var(--gold) 50%, var(--gold-dim) 100%);
+    color: #1a0f00;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow:
+      0 0 0 1px var(--gold-dim),
+      0 6px 16px rgba(232, 178, 74, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s;
+  }
+  .primary-cta:active { transform: translateY(1px); }
+  .primary-cta .sp-cost {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .primary-cta:disabled {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Bottom sheet — for node details & loadout */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 8, 12, 0.72);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 10;
+  }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--bg-surface);
+    border-top: 1px solid rgba(232, 178, 74, 0.2);
+    border-radius: 20px 20px 0 0;
+    padding: 14px 16px 24px;
+    box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.4);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
+    z-index: 11;
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    margin: 0 auto 14px;
+  }
+  .sheet-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 28px; height: 28px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-soft);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .sheet-close svg { width: 12px; height: 12px; }
+
+  /* Node detail sheet */
+  .node-detail-head {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 0 4px 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-faint);
+  }
+  .node-detail-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(180deg, rgba(232, 178, 74, 0.15), rgba(232, 178, 74, 0.05));
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--gold-soft);
+    position: relative;
+  }
+  .node-detail-icon::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+    border-radius: 10px 0 0 10px;
+  }
+  .node-detail-icon svg { width: 24px; height: 24px; }
+
+  .node-detail-title .tier {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    display: block;
+  }
+  .node-detail-title h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 19px;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+  .node-detail-title .type {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+
+  .node-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .stat-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-faint);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .stat-line .plus {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--gold-soft);
+  }
+  .stat-line svg {
+    width: 14px; height: 14px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .node-desc {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    padding: 0 4px 14px;
+  }
+
+  /* Loadout sheet */
+  .loadout-head { padding: 0 4px 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-faint); }
+  .loadout-head .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .loadout-head .sub {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .loadout-slots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .loadout-slot {
+    aspect-ratio: 1;
+    background: var(--bg-inset);
+    border: 1.5px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .loadout-slot.active {
+    border-style: solid;
+    border-color: var(--gold);
+    background: rgba(232, 178, 74, 0.04);
+  }
+  .loadout-slot svg { width: 18px; height: 18px; }
+  .loadout-slot .slot-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .sub-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-faint);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 12px;
+  }
+  .sub-tab {
+    padding: 9px 0;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sub-tab.active {
+    background: var(--bg-elevated);
+    color: var(--gold);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .gold-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-faint);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .gold-bar .balance {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold-soft);
+  }
+  .gold-bar .coin {
+    width: 14px; height: 14px;
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold-dim));
+    border-radius: 50%;
+    border: 1px solid var(--gold-dim);
+  }
+  .gold-bar .hint {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Potion rows */
+  .potion-list { display: flex; flex-direction: column; gap: 6px; }
+  .potion-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-faint);
+    border-radius: 10px;
+  }
+  .potion-thumb {
+    width: 40px; height: 40px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-faint);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .potion-thumb::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .potion-thumb.small::before { background: var(--rarity-common); }
+  .potion-thumb.medium::before { background: var(--rarity-uncommon); }
+  .potion-thumb.large::before { background: var(--rarity-rare); }
+  .potion-thumb .bottle {
+    width: 18px; height: 24px;
+    border-radius: 2px 2px 50% 50% / 2px 2px 25% 25%;
+    position: relative;
+  }
+  .potion-thumb.small .bottle { background: linear-gradient(180deg, #c25a4a, #8a3a2a); }
+  .potion-thumb.medium .bottle { background: linear-gradient(180deg, #6ac37a, #3a8048); }
+  .potion-thumb.large .bottle { background: linear-gradient(180deg, #5ea8e8, #2a6aa8); }
+
+  .potion-info { min-width: 0; line-height: 1.25; }
+  .potion-info .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .potion-info .name .owned {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .potion-info .effect {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .potion-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--gold-dim);
+    background: transparent;
+    color: var(--gold);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .potion-btn.filled {
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color: #1a0f00;
+    border: none;
+  }
+  .potion-btn .price {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .loadout-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status-bar">
+    <span>10:12</span>
+    <span class="right">
+      <svg viewBox="0 0 18 12" width="18" height="12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5" opacity="0.4"/></svg>
+      <svg viewBox="0 0 16 12" width="16" height="12" fill="currentColor"><path d="M8 2a9 9 0 0 1 6.3 2.6l-1.4 1.4A7 7 0 0 0 8 4a7 7 0 0 0-4.9 2L1.7 4.6A9 9 0 0 1 8 2zm0 4a5 5 0 0 1 3.5 1.4L10 8.9A3 3 0 0 0 8 8a3 3 0 0 0-2 .9L4.5 7.4A5 5 0 0 1 8 6zm0 4a1.5 1.5 0 0 1 1.1.4L8 11.5 6.9 10.4A1.5 1.5 0 0 1 8 10z"/></svg>
+      <svg viewBox="0 0 28 12" width="28" height="12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="24" height="11" rx="3"/><rect x="2" y="2" width="12" height="8" rx="1.5" fill="currentColor"/><rect x="25.5" y="4" width="2" height="4" fill="currentColor"/></svg>
+    </span>
+  </div>
+
+  <div class="nav">
+    <button aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <h1>HERO</h1>
+    <button aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab" data-tab="inventory">Inventory</button>
+    <button class="tab" data-tab="status">Status</button>
+    <button class="tab active" data-tab="talents">
+      Talents
+      <span class="tab-badge">2</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="tab-talents">
+
+    <!-- Summary: SP + Active Skills -->
+    <div class="summary">
+      <div class="summary-row">
+        <div class="summary-label">
+          <span class="label">Skill Points</span>
+          <span class="value">2 available</span>
+        </div>
+        <div class="sp-counter">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 1.5 4 4 1.5-4 1.5L12 13l-1.5-4-4-1.5 4-1.5zM19 14l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1zM5 14l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/></svg>
+          <span>1</span><span class="sep">/</span><span>50</span>
+          <span class="sep">·</span>
+          <span>earned</span>
+        </div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label" style="flex:1">
+          <span class="label">Active Skills · <span style="color: var(--text-secondary); letter-spacing: 0;">0 / 3 equipped</span></span>
+          <div class="slots" style="margin-top: 8px;">
+            <button class="slot" id="open-loadout">
+              <span class="slot-num">01</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="slot">
+              <span class="slot-num">02</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="slot">
+              <span class="slot-num">03</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="slot premium" aria-label="Unlock 4th slot with gems">
+              <span class="slot-num">04</span>
+              <span class="gem-icon"></span>
+              <span class="gem-cost">100</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Talent tree -->
+    <div class="tree-canvas">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+
+      <svg class="tree-svg" viewBox="0 0 356 360" preserveAspectRatio="none">
+        <!-- lines between nodes. Coords match .node style position below. -->
+        <!-- Keystone at center -->
+        <!-- Active branches (gold) -->
+        <path class="tree-line active" d="M 178 180 L 88 100"/>
+        <path class="tree-line active" d="M 178 180 L 178 88"/>
+        <path class="tree-line active" d="M 178 180 L 268 100"/>
+        <path class="tree-line active" d="M 178 180 L 88 260"/>
+        <path class="tree-line active" d="M 178 180 L 178 272"/>
+        <path class="tree-line active" d="M 178 180 L 268 260"/>
+
+        <!-- Unlockable dashed connections -->
+        <path class="tree-line unlockable" d="M 88 100 L 30 60"/>
+        <path class="tree-line unlockable" d="M 268 100 L 326 60"/>
+        <path class="tree-line unlockable" d="M 88 260 L 30 320"/>
+        <path class="tree-line unlockable" d="M 268 260 L 326 320"/>
+
+        <!-- Locked lines -->
+        <path class="tree-line" d="M 178 88 L 178 30"/>
+        <path class="tree-line" d="M 178 272 L 178 330"/>
+      </svg>
+
+      <div class="tree-nodes">
+        <!-- Keystone (center, unlocked) -->
+        <div class="node keystone" style="left: 50%; top: 50%;" data-name="Tank's Bulwark" data-tier="0" data-type="Keystone · Passive">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3 7v6c0 5 3.8 9.2 9 10 5.2-.8 9-5 9-10V7z"/></svg>
+        </div>
+
+        <!-- Tier 1: unlocked branches -->
+        <div class="node unlocked" style="left: 25%; top: 28%;" data-name="Iron Skin" data-type="Passive">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 3.8 9.2 9 10 5.2-.8 9-5 9-10V7z"/></svg>
+        </div>
+        <div class="node unlocked" style="left: 50%; top: 24%;" data-name="Thunder Strike" data-type="Active">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+        </div>
+        <div class="node unlocked" style="left: 75%; top: 28%;" data-name="Arcane Focus" data-type="Passive">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2 6 6 2-6 2-2 6-2-6-6-2 6-2zM19 14l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg>
+        </div>
+
+        <div class="node unlocked" style="left: 25%; top: 72%;" data-name="Quick Step" data-type="Passive">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 6-6M4 12l6 6M4 12h12"/></svg>
+        </div>
+        <div class="node unlocked" style="left: 50%; top: 76%;" data-name="Second Wind" data-type="Active">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9.5C.5 7 4 3 8 3c2 0 3 1 4 2.5C13 4 14 3 16 3c4 0 7.5 4 5.5 8.5C19 16.5 12 21 12 21z"/></svg>
+        </div>
+        <div class="node unlocked" style="left: 75%; top: 72%;" data-name="Swift Strike" data-type="Passive">
+          <span class="rank">1</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        </div>
+
+        <!-- Tier 2: unlockable -->
+        <div class="node unlockable" style="left: 8%; top: 17%;" data-name="Titan Skin" data-type="Passive" data-unlockable="1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 3.8 9.2 9 10 5.2-.8 9-5 9-10V7z"/><path d="M8 12h8M12 8v8"/></svg>
+        </div>
+        <div class="node unlockable" style="left: 92%; top: 17%;" data-name="Mana Surge" data-type="Active" data-unlockable="1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>
+        </div>
+
+        <!-- Tier 2: locked -->
+        <div class="node locked" style="left: 8%; top: 89%;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </div>
+        <div class="node locked" style="left: 92%; top: 89%;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </div>
+
+        <div class="node locked" style="left: 50%; top: 8%;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </div>
+        <div class="node locked" style="left: 50%; top: 92%;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset talents -->
+    <div class="reset-row">
+      <span class="left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9M3 4v5h5"/></svg>
+        Reset talents
+      </span>
+      <span class="cost"><span class="gem"></span>50 gems</span>
+    </div>
+  </div>
+
+  <!-- Bottom actions (stage & confirm for pending selections) -->
+  <div class="actions">
+    <button class="btn-secondary" id="btn-reset">Reset</button>
+    <button class="primary-cta" id="btn-confirm">
+      Confirm <span class="sp-cost">2 SP</span>
+    </button>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Node detail sheet -->
+  <div class="sheet" id="sheet-node">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" data-close>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+
+    <div class="node-detail-head">
+      <div class="node-detail-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3 7v6c0 5 3.8 9.2 9 10 5.2-.8 9-5 9-10V7z"/></svg>
+      </div>
+      <div class="node-detail-title">
+        <span class="tier">Tier 0 · Keystone</span>
+        <h2 id="node-title">Tank's Bulwark</h2>
+        <div class="type" id="node-type">Passive · Defensive</div>
+      </div>
+    </div>
+
+    <div class="node-stats">
+      <div class="stat-line">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3 7v6c0 5 3.8 9.2 9 10 5.2-.8 9-5 9-10V7z"/></svg>
+        <span class="plus">+5</span>
+        <span>Endurance</span>
+      </div>
+      <div class="stat-line">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        <span class="plus">+10%</span>
+        <span>Block chance while stationary</span>
+      </div>
+    </div>
+
+    <p class="node-desc">
+      A warrior who plants their feet is worth three in motion. Ancient drill sergeants knew this, and so does every golem since.
+    </p>
+
+    <button class="primary-cta" style="width: 100%; padding: 15px;">
+      Stage <span class="sp-cost">1 SP</span>
+    </button>
+  </div>
+
+  <!-- Loadout sheet -->
+  <div class="sheet" id="sheet-loadout" style="max-height: 80%; overflow-y: auto;">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" data-close>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+
+    <div class="loadout-head">
+      <div class="label">Active Skills Loadout</div>
+      <div class="sub">Equip up to 3 — one slot can hold a potion</div>
+    </div>
+
+    <div class="loadout-slots">
+      <div class="loadout-slot active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="slot-label">SLOT 1</span>
+      </div>
+      <div class="loadout-slot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="slot-label">SLOT 2</span>
+      </div>
+      <div class="loadout-slot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="slot-label">SLOT 3</span>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab">Talents</button>
+      <button class="sub-tab active">Potions</button>
+    </div>
+
+    <div class="gold-bar">
+      <span class="balance"><span class="coin"></span>6,876</span>
+      <span class="hint">Max 1 potion per loadout</span>
+    </div>
+
+    <div class="potion-list">
+      <div class="potion-row">
+        <div class="potion-thumb small"><div class="bottle"></div></div>
+        <div class="potion-info">
+          <div class="name">Small Health Potion</div>
+          <div class="effect">Restores 25% of max HP</div>
+        </div>
+        <button class="potion-btn filled">Buy <span class="price">50g</span></button>
+      </div>
+      <div class="potion-row">
+        <div class="potion-thumb medium"><div class="bottle"></div></div>
+        <div class="potion-info">
+          <div class="name">Medium Health Potion</div>
+          <div class="effect">Restores 50% of max HP</div>
+        </div>
+        <button class="potion-btn filled">Buy <span class="price">150g</span></button>
+      </div>
+      <div class="potion-row">
+        <div class="potion-thumb large"><div class="bottle"></div></div>
+        <div class="potion-info">
+          <div class="name">Large Health Potion <span class="owned">owned ×1</span></div>
+          <div class="effect">Fully restores HP</div>
+        </div>
+        <button class="potion-btn">Equip</button>
+      </div>
+    </div>
+
+    <div class="loadout-actions">
+      <button class="btn-secondary">Reset</button>
+      <button class="primary-cta">Save loadout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const sheetNode = document.getElementById('sheet-node');
+  const sheetLoadout = document.getElementById('sheet-loadout');
+
+  function openSheet(sheet) {
+    overlay.classList.add('open');
+    sheet.classList.add('open');
+  }
+  function closeAll() {
+    overlay.classList.remove('open');
+    sheetNode.classList.remove('open');
+    sheetLoadout.classList.remove('open');
+  }
+
+  // Node click -> detail sheet
+  document.querySelectorAll('.node').forEach(n => {
+    n.addEventListener('click', () => {
+      const name = n.dataset.name;
+      const type = n.dataset.type;
+      if (name) document.getElementById('node-title').textContent = name;
+      if (type) document.getElementById('node-type').textContent = type;
+      openSheet(sheetNode);
+    });
+  });
+
+  // Loadout slot click -> loadout sheet
+  document.getElementById('open-loadout').addEventListener('click', () => openSheet(sheetLoadout));
+
+  // Close
+  overlay.addEventListener('click', closeAll);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAll));
+
+  // Sub-tabs
+  document.querySelectorAll('.sub-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.sub-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  // Top tabs — just visual toggle for demo
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

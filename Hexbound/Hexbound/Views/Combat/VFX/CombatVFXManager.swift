@@ -189,6 +189,10 @@ final class CombatVFXManager {
         case .magicalCrit:   return DamageHitEffects.magical(origin: origin, isCrit: true)
         case .poisonHit:     return DamageHitEffects.poison(origin: origin, isCrit: false)
         case .poisonCrit:    return DamageHitEffects.poison(origin: origin, isCrit: true)
+        // Fire has no dedicated particle factory yet — route to magical until
+        // DamageHitEffects.fire(…) lands. Asset map still picks fx-fire-* images.
+        case .fireHit:       return DamageHitEffects.magical(origin: origin, isCrit: false)
+        case .fireCrit:      return DamageHitEffects.magical(origin: origin, isCrit: true)
         case .trueHit:       return DamageHitEffects.trueDamage(origin: origin, isCrit: false)
         case .trueCrit:      return DamageHitEffects.trueDamage(origin: origin, isCrit: true)
         case .dodge:         return DodgeMissBlockEffects.dodge(origin: origin)

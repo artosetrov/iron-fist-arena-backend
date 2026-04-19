@@ -14,8 +14,20 @@ import Foundation
 /// UI-layer events where the server doesn't see the action directly — e.g.
 /// signup flow (before the user creates a character) and IAP purchase started
 /// (before StoreKit verification).
+///
+/// Current boundary: this service is still a dormant scaffold. The typed event
+/// mirror exists, but there are no live call-sites wired into production UI
+/// flows yet. Backend analytics and tutorial structured logs remain the active
+/// instrumentation paths today.
+enum AnalyticsAuthProvider: String, Sendable {
+    case email
+    case guest
+    case google
+    case apple
+}
+
 enum AnalyticsEvent {
-    case signup(userId: String, authProvider: String, hasUsername: Bool)
+    case signup(userId: String, authProvider: AnalyticsAuthProvider, hasUsername: Bool)
     case firstPvP(userId: String, characterId: String, won: Bool, totalTurns: Int, ratingAfter: Int)
     case iapPurchase(userId: String, productId: String, transactionId: String, gemsAwarded: Int, goldAwarded: Int)
     case bpClaim(userId: String, characterId: String, seasonId: String, level: Int, isPremium: Bool)
@@ -38,7 +50,7 @@ enum AnalyticsEvent {
     var properties: [String: Any] {
         switch self {
         case let .signup(userId, authProvider, hasUsername):
-            return ["userId": userId, "authProvider": authProvider, "hasUsername": hasUsername]
+            return ["userId": userId, "authProvider": authProvider.rawValue, "hasUsername": hasUsername]
         case let .firstPvP(userId, characterId, won, totalTurns, ratingAfter):
             return [
                 "userId": userId, "characterId": characterId, "won": won,

@@ -15,6 +15,12 @@ struct BossInfo: Identifiable, Hashable {
     /// Only the floor-10 culmination (Arena Warden) should wear the BOSS label.
     /// Defaults to true so every other dungeon keeps existing behaviour.
     var isRealBoss: Bool = true
+    /// Authored one-sentence hook shown on the root-level boss reveal overlay.
+    /// Backend column `dungeon_bosses.tagline` (nullable). When absent, the
+    /// reveal overlay falls back to the first sentence of `description`.
+    /// Keep short (≤110 chars); `BossDetailSheet` uses `description`/`lore`
+    /// for longer text.
+    var tagline: String? = nil
 
     /// Extended lore text for boss detail sheet.
     /// Uses server description if long enough, otherwise generates client-side lore.

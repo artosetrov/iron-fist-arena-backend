@@ -8,7 +8,7 @@
 //  POST /api/passives/active-slots/batch.
 //
 //  Flow:
-//    - Opened from ActiveSlotsBar (empty slot "+" tap) via
+//    - Opened from TalentsSummaryCard (empty slot "+" tap) via
 //      PassiveTreeViewModel.openActiveSkillPicker(focusedSlotIndex:).
 //    - Header strip shows the draft 3-slot loadout. Tap a slot to focus it
 //      for replacement; tap the focused slot again to clear it.

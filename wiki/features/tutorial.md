@@ -89,7 +89,7 @@ New players go through a scripted tutorial: NPC hints → equip an item → scri
 - **Skip bundle.** `/api/tutorial/skip` grants a starter bundle + flags `tutorialSkipped = true`. Gate this rewards path on server; client should not be able to skip and still unlock tutorial quests.
 - **Tutorial quests separate.** `TutorialQuest` ≠ `DailyQuest` — separate table, separate endpoints. Do NOT conflate with [[quests]].
 - **Referral bind window.** Referral code can be entered during tutorial (`/api/tutorial/referral`). After tutorial completes, the window closes — see [[referral]] for the full rule.
-- **Analytics parity.** Every step emits a funnel event (`tutorial-analytics.ts`). Adding a new step = add matching event, otherwise funnel breaks silently.
+- **Analytics split.** Tutorial funnel logging lives in `backend/src/lib/game/tutorial-analytics.ts` and currently emits 8 structured JSON events; this is separate from the 7-event provider-agnostic core contract in `backend/src/lib/analytics.ts`.
 - **Reset path.** `tutorialCompleted` + `tutorialStep` reset is admin-only. In-game replay of tutorial is NOT supported.
 
 ## Tests / fixtures

@@ -2,8 +2,9 @@
 //  TalentsTabView.swift
 //  Hexbound
 //
-//  Third tab on HeroDetailView. Hosts the passive-tree canvas, SP banner,
-//  and respec action. Purely additive — does not modify existing Inventory or Status tabs.
+//  Third tab on HeroDetailView. Hosts the passive-tree canvas, SP summary,
+//  active-skill loadout, and respec action. Fits the prototype Talents screen:
+//  SummaryCard (SP + slots) → tree canvas → reset row → sticky Reset/Confirm.
 //
 
 import SwiftUI
@@ -11,15 +12,22 @@ import SwiftUI
 struct TalentsTabView: View {
     @Bindable var vm: PassiveTreeViewModel
 
-    // Respec cost is surfaced server-side; we echo the canonical value here for UI clarity.
+    /// Respec cost mirrors backend balance constant `PASSIVES.RESPEC_GEM_COST`.
     private let respecGemCost: Int = 50
+    /// Gems to unlock the 4th active slot. Mirrors backend
+    /// `PASSIVES.PREMIUM_ACTIVE_SLOT_GEM_COST`.
+    private let premiumSlotGemCost: Int = 100
+
+    @State private var showPremiumSlotConfirm: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: LayoutConstants.spaceMD) {
-                header
-
-                ActiveSlotsBar(vm: vm)
+                TalentsSummaryCard(
+                    vm: vm,
+                    premiumSlotGemCost: premiumSlotGemCost,
+                    onTapPremiumSlot: { showPremiumSlotConfirm = true }
+                )
 
                 if vm.isLoading && vm.nodes.isEmpty {
                     loadingView
@@ -29,13 +37,12 @@ struct TalentsTabView: View {
                     canvasContainer
                 }
 
-                respecRow
+                resetRow
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             // Reserve room so respec row stays above the sticky bar when it appears.
             .padding(.bottom, vm.hasPendingChanges ? 96 : LayoutConstants.spaceMD)
 
-            // Sticky confirm bar (Stats-tab pattern).
             if vm.hasPendingChanges {
                 stickyConfirmBar
             }
@@ -87,62 +94,17 @@ struct TalentsTabView: View {
         } message: {
             Text("All unlocked talents will be refunded as skill points. Costs \(respecGemCost) gems.")
         }
+        .alert("Unlock 4th active slot?", isPresented: $showPremiumSlotConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Unlock — \(premiumSlotGemCost) gems") {
+                vm.unlockPremiumSlot()
+            }
+        } message: {
+            Text("Permanently adds a fourth active-skill slot. Costs \(premiumSlotGemCost) gems.")
+        }
         .task {
             await vm.load()
         }
-    }
-
-    // MARK: - Header (SP banner)
-
-    private var header: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text("SKILL POINTS")
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .tracking(2)
-                HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
-                    Text("\(vm.pointsAvailableAfterPending) available")
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                    if vm.hasPendingChanges {
-                        Text("(−\(vm.pendingCost) pending)")
-                            .font(DarkFantasyTheme.caption)
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                }
-            }
-            Spacer()
-            unlockedCountPill
-        }
-        .padding(LayoutConstants.spaceMD)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-        )
-    }
-
-    private var unlockedCountPill: some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: "sparkles")
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(DarkFantasyTheme.gold)
-                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-            Text("\(vm.unlockedNodes.count)/\(vm.nodes.count)")
-                .font(DarkFantasyTheme.uiLabel.bold())
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-        }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(DarkFantasyTheme.bgTertiary)
-        )
     }
 
     // MARK: - Canvas container
@@ -162,7 +124,6 @@ struct TalentsTabView: View {
             .padding(LayoutConstants.spaceMD)
         }
         .frame(maxWidth: .infinity)
-        // Bigger nodes need a taller viewport to feel comfortable; user can still pan/zoom.
         .frame(height: 560)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -204,49 +165,69 @@ struct TalentsTabView: View {
         .frame(height: 560)
     }
 
-    // MARK: - Respec row
+    // MARK: - Reset talents — inline rust-tinted row (prototype parity)
 
-    private var respecRow: some View {
+    private var resetRow: some View {
         Button {
             vm.showRespecConfirm = true
+            HapticManager.light()
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "arrow.counterclockwise")
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(DarkFantasyTheme.danger)
-                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                    .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                 Text("RESET TALENTS")
                     .font(DarkFantasyTheme.buttonLabelCompact)
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .tracking(2)
                 Spacer()
-                Text("\(respecGemCost) gems")
-                    .font(DarkFantasyTheme.uiLabel)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    gemDiamond
+                    Text("\(respecGemCost) gems")
+                        .font(DarkFantasyTheme.uiLabel)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
             }
             .padding(.horizontal, LayoutConstants.spaceMD)
             .padding(.vertical, LayoutConstants.spaceMS)
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .fill(DarkFantasyTheme.danger.opacity(0.04))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .stroke(DarkFantasyTheme.danger.opacity(0.22), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
         .disabled(vm.unlockedNodes.isEmpty || vm.isMutating)
-        .opacity(vm.unlockedNodes.isEmpty ? 0.5 : 1)
+        .opacity(vm.unlockedNodes.isEmpty ? 0.45 : 1)
     }
 
-    // MARK: - Sticky Confirm Bar (mirrors Stats tab `statsStickyBar`)
+    /// Small purple diamond — gem glyph for inline cost labels.
+    private var gemDiamond: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.71, green: 0.49, blue: 0.84),
+                        Color(red: 0.48, green: 0.29, blue: 0.66)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 8, height: 8)
+            .rotationEffect(.degrees(45))
+    }
+
+    // MARK: - Sticky Confirm Bar (appears only when there's a pending stage)
 
     private var stickyConfirmBar: some View {
         VStack(spacing: 0) {
-            // Top edge gradient to lift the bar off content
             Rectangle()
                 .fill(
                     LinearGradient(

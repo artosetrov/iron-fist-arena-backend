@@ -25,11 +25,6 @@ struct BuildingLockOverlay: View {
     /// gets a compact one. Passed as the sprite's `buildingHeight`.
     let spriteHeight: CGFloat
 
-    /// Optional custom text for the pill. When set, overrides the
-    /// default "LV X" / "SOON" label — used by the dungeon map where
-    /// locks are gated on "previous dungeon cleared", not on level.
-    var unlockHint: String? = nil
-
     private var padlockSize: CGFloat {
         // 28…52pt, scales with sprite height
         min(max(spriteHeight * 0.32, 28), 52)
@@ -81,12 +76,11 @@ struct BuildingLockOverlay: View {
 
     @ViewBuilder
     private var levelPill: some View {
-        let text = unlockHint ?? requiredLevel.map { "LV \($0)" } ?? "SOON"
+        let text = requiredLevel.map { "LV \($0)" } ?? "SOON"
         Text(text)
             .font(DarkFantasyTheme.badge)
             .textCase(.uppercase)
             .tracking(1)
-            .multilineTextAlignment(.center)
             .foregroundStyle(DarkFantasyTheme.textOnGold)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -102,9 +96,6 @@ struct BuildingLockOverlay: View {
     // MARK: - Accessibility
 
     private var accessibilityText: String {
-        if let hint = unlockHint, !hint.isEmpty {
-            return "Locked. \(hint)."
-        }
         if let lvl = requiredLevel {
             return "Locked. Unlocks at level \(lvl)."
         }

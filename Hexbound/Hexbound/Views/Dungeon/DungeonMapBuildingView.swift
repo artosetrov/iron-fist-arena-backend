@@ -9,13 +9,8 @@ struct DungeonMapBuildingView: View {
     let isCompleted: Bool
     /// Whether this is the next dungeon the player should tackle (pulsing highlight)
     var isNext: Bool = false
-    /// When the lock gate is a character level (first dungeon), pass the
-    /// required level so the overlay shows "LV X". `nil` means the lock
-    /// is gated on a previous dungeon being cleared.
+    /// Dungeon's required level — overlay shows "LV X".
     var requiredLevel: Int? = nil
-    /// Label of the previous dungeon whose completion unlocks this one.
-    /// When set, overlay shows "AFTER <LABEL>" instead of "LV X".
-    var previousDungeonLabel: String? = nil
     let onTap: (DungeonMapBuilding) -> Void
 
     @State private var isPressed = false
@@ -65,8 +60,7 @@ struct DungeonMapBuildingView: View {
                 if isLocked {
                     BuildingLockOverlay(
                         requiredLevel: requiredLevel,
-                        spriteHeight: buildingHeight,
-                        unlockHint: previousDungeonLabel.map { "AFTER \($0)" }
+                        spriteHeight: buildingHeight
                     )
                 }
             }

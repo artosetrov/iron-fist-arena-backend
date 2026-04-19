@@ -193,6 +193,12 @@ const ABILITY_CATALOG: Record<string, AbilityDef> = {
 interface BossDef {
   name: string;
   description: string;
+  /// Optional authored hook for the boss-reveal overlay. When absent,
+  /// the seed auto-promotes `description` as the tagline since existing
+  /// descriptions are already short, punchy one-liners. Authors can
+  /// override via the admin UI or a follow-up seed repair when a
+  /// distinct reveal copy is desired.
+  tagline?: string;
   level: number;
   statMultiplier: number;
   stance: string;
@@ -457,6 +463,7 @@ async function main() {
             defense: calcBossDefense(boss.level, boss.statMultiplier),
             speed: calcBossSpeed(boss.level, boss.statMultiplier),
             critChance: 5 + i * 0.5,
+            tagline: boss.tagline ?? boss.description,
             description: boss.description,
             floorNumber: i + 1,
             sortOrder: i,

@@ -5,6 +5,7 @@ struct DungeonRushDetailView: View {
     @State var vm: DungeonRushViewModel?
     @State var portalGlow: Bool = false
     @State var dustPhase: CGFloat = 0
+    @State private var revealedMinibossIdx: Int? = nil
 
     var body: some View {
         ZStack {
@@ -51,7 +52,52 @@ struct DungeonRushDetailView: View {
                 Task { await newVM.checkActiveRush() }
             } else {
                 vm?.applyPendingResult()
+                maybeShowMinibossReveal()
             }
+        }
+        .onChange(of: vm?.currentRoom?.type) { _, _ in
+            maybeShowMinibossReveal()
+        }
+        .onChange(of: vm?.isActive ?? false) { _, active in
+            if active { maybeShowMinibossReveal() }
+        }
+    }
+
+    // MARK: - Miniboss Reveal
+
+    /// Fires the root-level boss-reveal ceremony when the player enters
+    /// a miniboss room. Tracked per room index so re-renders don't
+    /// re-trigger. Fires every rush run — the miniboss is the run's
+    /// climax, not a unique-per-player moment.
+    private func maybeShowMinibossReveal() {
+        guard let vm = vm,
+              vm.isActive,
+              !vm.isFighting,
+              !vm.isGameOver,
+              let room = vm.currentRoom,
+              room.type == "miniboss",
+              revealedMinibossIdx != vm.currentRoomIndex
+        else { return }
+
+        revealedMinibossIdx = vm.currentRoomIndex
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+            let imageKey = "rush-miniboss-" + vm.enemyName
+                .lowercased()
+                .replacingOccurrences(of: " ", with: "-")
+            let data = BossRevealData.fromRushMiniboss(
+                name: vm.enemyName,
+                level: vm.enemyLevel,
+                floor: vm.currentFloor,
+                totalRooms: vm.totalRooms,
+                imageKey: imageKey,
+                onChallenge: {
+                    appState.dismissBossReveal()
+                    Task { await vm.fight() }
+                },
+                onSkip: { appState.dismissBossReveal() }
+            )
+            appState.presentBossReveal(data)
         }
     }
 }

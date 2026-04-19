@@ -77,7 +77,11 @@ Player-facing store: buy consumables and gear with gold, buy currency with real 
 
 ## Admin
 
-- `admin/src/app/` — shop tuning: item prices, offer schedules, contraband rotation, IAP reconciliation
+- `admin/src/app/(dashboard)/iap-products/page.tsx` — read-only IAP Products catalog page for live SKU/state review
+- `admin/src/app/(dashboard)/iap-products/iap-products-client.tsx` — filterable catalog table for enabled/disabled SKUs
+- `admin/src/app/api/admin/iap-products/route.ts` — admin proxy route used by the page
+- `backend/src/app/api/admin/iap-products/route.ts` — backend source for the admin catalog view
+- `admin/src/app/` — broader shop tuning: item prices, offer schedules, contraband rotation, IAP reconciliation
 
 ## Docs
 
@@ -90,6 +94,7 @@ Player-facing store: buy consumables and gear with gold, buy currency with real 
 - **Flat response shape.** Shop endpoints MUST return flat `{ gold, gems, ... }` — NOT nested `{ character: { gold, gems } }`. `ShopService.updateCharacter` assumes flat. See memory `feedback_flat_response_shape.md`.
 - **Optimistic UI.** Buy mutations update UI instantly, rollback on failure. Memory `feedback_optimistic_ui_everywhere.md`.
 - **IAP receipt verification.** Backend must validate Apple receipt via shared `lib/iap`. Never trust client-reported gem amounts.
+- **IAP Products admin surface is read-only.** The page reflects `IAP_PRODUCTS` from `backend/src/lib/game/balance.ts`; changing SKU enablement/pricing still requires editing balance config/code and deploying.
 - **Premium Pass Phase 2** (2026-04-14) shares the IAP verify infrastructure — don't break one without checking the other. Memory `project_premium_pass_phase2.md`.
 
 ## Tests / fixtures

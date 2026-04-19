@@ -216,6 +216,27 @@ final class DungeonRoomViewModel {
             return
         }
 
+        // Interactive Combat v1 — when the feature is on, route the dungeon
+        // boss through the match-lifecycle screen so the player picks stances
+        // round by round. Server extends /pvp/match/start to load the boss
+        // from the active DungeonRun and advance the floor on victory.
+        if !appState.interactiveCombatLocallyDisabled,
+           cache.gameConfig?.interactiveCombatEnabled == true,
+           let char = appState.currentCharacter,
+           let boss = selectedBoss {
+            isFighting = false
+            let bossMaxHp = boss.hp > 0 ? boss.hp : char.maxHp
+            appState.mainPath.append(AppRoute.interactiveBattle(
+                characterId: char.id,
+                opponentId: "boss_\(boss.name.lowercased().replacingOccurrences(of: " ", with: "_"))",
+                attackerMaxHp: char.maxHp,
+                defenderMaxHp: bossMaxHp,
+                opponentType: .dungeonBoss,
+                dungeonRunId: runId
+            ))
+            return
+        }
+
         #if DEBUG
         print("[DUNGEON-COMBAT] fight(): calling service.fight(runId: \(runId))")
         #endif

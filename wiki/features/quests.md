@@ -81,6 +81,7 @@ Daily-rotated quest set (e.g. "win 3 PvP, clear 2 dungeons") with progress track
 - **Tutorial quests separate.** `TutorialQuest` rows live in their own table and fire from `backend/src/lib/game/tutorial.ts` (see [[tutorial]]).
 - **Two catalog sources.** `quests.ts` (code-first) + `QuestDefinition` table (admin-tunable) — keep aligned.
 - **Reward surface is the CLAIMED modal, not a toast.** Both the detail-screen claim (`DailyQuestsViewModel`) and the inline banner claim (`ActiveQuestBanner`, `HubBannerCards`) present rewards via `ClaimRewardModalView`. The inline banners set `appState.claimRewardConfig` (root-level overlay in `HexboundApp`); the detail screen sets its own VM-local `claimRewardConfig`. Do NOT replace with `showToast(type: .quest, subtitle: "+Xg +Y XP")` — see [[why-reward-modal-over-toast]].
+- **Dungeon-quest navigation routes through Hub.** `dungeons_complete` cards in `DailyQuestsDetailView` must NOT push `AppRoute.dungeonMap` directly — that renders a bare standalone `DungeonMapView` without the hero card / floating HUD / ADVENTURES↔CASTLE button. Instead, set `appState.pendingShowDungeonMap = true` and pop with `appState.mainPath = NavigationPath()`. `HubView.onAppear` consumes the flag and runs `triggerMapTransition(toDungeon: true)` so the player lands on the embedded dungeon map under the full hub HUD, identical to pressing ADVENTURES from the hub. See `Hexbound/CLAUDE.md` → "Hub ↔ Dungeon Map Transition" for the underlying ZStack/`showDungeonMap` pattern.
 
 ## Tests / fixtures
 

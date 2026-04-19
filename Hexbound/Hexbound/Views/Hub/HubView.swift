@@ -389,6 +389,17 @@ struct HubView: View {
         // the tile badge and routes manual taps through the modal queue.
         .task { await fetchUnreadMailCount() }
         .onAppear {
+            // Honor cross-screen requests to land on the dungeon map with the
+            // full hub HUD (e.g. tapping the dungeon daily quest card). The
+            // standalone .dungeonMap route renders without the hero widget /
+            // floating icons, so we route those entries back to the hub and
+            // flip showDungeonMap here instead.
+            if appState.pendingShowDungeonMap {
+                appState.pendingShowDungeonMap = false
+                if !showDungeonMap {
+                    triggerMapTransition(toDungeon: true)
+                }
+            }
             // Latch onboarding state once on appear — prevents NPC vanishing mid-sequence
             if !onboardingActive, appState.currentCharacter != nil {
                 let tutorial = TutorialManager.shared

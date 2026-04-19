@@ -347,9 +347,7 @@ All endpoints below require `admin` role. Admin operations are split between two
 | GET | /admin/users | Search/browse users |
 | POST | /admin/ban | Ban user (expects `{user_id, reason}`) |
 | POST | /admin/unban | Unban user (expects `{user_id}`) |
-| GET | /admin/economy | Economy overview |
 | GET | /admin/matches | Browse PvP matches |
-| GET | /admin/stats | Game statistics |
 | GET | /admin/achievements | View/search achievements |
 | POST | /admin/achievements | Create/update achievement |
 | GET | /admin/skills | View/search skills |
@@ -364,7 +362,7 @@ All endpoints below require `admin` role. Admin operations are split between two
 | POST | /admin/seasons | Create/manage season |
 | GET/POST | /admin/hub-layout | Manage hub building positions |
 | GET/POST | /admin/dungeon-map-layout | Manage dungeon node positions |
-| GET | /admin/iap | View IAP analytics |
+| GET | /admin/iap-products | Review live IAP catalog flags |
 | POST | /admin/item-balance/config | Update balance config |
 | GET | /admin/item-balance/power-scores | Calculate item power scores |
 | GET | /admin/item-balance/profiles | Get balance profiles |
@@ -379,6 +377,8 @@ All endpoints below require `admin` role. Admin operations are split between two
 ### Admin Panel API (Dashboard CRUD)
 
 Admin dashboard operations are handled by the Admin Panel's own Next.js application (`/admin`). These are NOT backend API routes but are called by the admin dashboard frontend:
+
+Current analytics note: the repo does not currently expose a dedicated backend analytics-dashboard route family. Aggregate review now lives in the admin app's own server-action/read-side flow, while `/api/admin/iap-products` remains as a narrow backend admin catalog route for the IAP Products page.
 
 | Method | Path | Purpose |
 |--------|------|---------|

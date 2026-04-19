@@ -104,6 +104,13 @@ struct PassiveRespecResponse: Codable {
     let stats: PassiveStatsDelta?
 }
 
+/// POST /api/passives/active-slots/unlock-premium response.
+struct PremiumSlotUnlockResponse: Codable {
+    let success: Bool
+    let gems: Int
+    let maxSlots: Int
+}
+
 // MARK: - Active Slot (Interactive Combat v1)
 
 /// Mirrors backend `TalentSlotAction` enum.

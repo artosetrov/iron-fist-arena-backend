@@ -50,7 +50,6 @@ struct DungeonMapView: View {
 
                             // Layer 2: Dungeon buildings
                             let buildings = resolvedDungeonMapBuildings(from: cache)
-                            let sortedBuildings = buildings.sorted { $0.sortOrder < $1.sortOrder }
                             let nextId = nextDungeon?.id
                             ForEach(buildings) { building in
                                 DungeonMapBuildingView(
@@ -59,8 +58,7 @@ struct DungeonMapView: View {
                                     isLocked: isDungeonLocked(building, in: buildings),
                                     isCompleted: isDungeonCompleted(building.id),
                                     isNext: building.id == nextId,
-                                    requiredLevel: lockRequiredLevel(building, in: sortedBuildings),
-                                    previousDungeonLabel: lockPreviousLabel(building, in: sortedBuildings),
+                                    requiredLevel: building.minLevel,
                                     onTap: { tapped in
                                         navigateToDungeon(tapped)
                                     }
@@ -144,23 +142,6 @@ struct DungeonMapView: View {
         // All others: locked until previous dungeon is completed
         let prev = sorted[idx - 1]
         return !isDungeonCompleted(prev.id)
-    }
-
-    /// When a locked dungeon is gated on character level (first dungeon
-    /// only), returns the level; otherwise nil. `BuildingLockOverlay`
-    /// shows "LV X" when this is set and no `unlockHint` is provided.
-    private func lockRequiredLevel(_ building: DungeonMapBuilding, in sorted: [DungeonMapBuilding]) -> Int? {
-        guard let idx = sorted.firstIndex(where: { $0.id == building.id }), idx == 0 else { return nil }
-        return characterLevel < building.minLevel ? building.minLevel : nil
-    }
-
-    /// For sequential locks (idx > 0), returns the label of the
-    /// previous dungeon that must be cleared. The overlay renders this
-    /// as "AFTER <LABEL>".
-    private func lockPreviousLabel(_ building: DungeonMapBuilding, in sorted: [DungeonMapBuilding]) -> String? {
-        guard let idx = sorted.firstIndex(where: { $0.id == building.id }), idx > 0 else { return nil }
-        let prev = sorted[idx - 1]
-        return isDungeonCompleted(prev.id) ? nil : prev.label
     }
 
     private func isDungeonCompleted(_ dungeonId: String) -> Bool {

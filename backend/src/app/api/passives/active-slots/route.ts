@@ -23,7 +23,10 @@ import { getConsumablePrice } from '@/lib/game/consumable-pricing'
 // For atomic multi-slot updates (preferred from the picker), see ./batch/route.ts.
 
 const CACHE_TTL = 5 * 60 * 1000
-const MAX_SLOTS = 3
+// Hard ceiling for the slot index — enforced by iteration bounds.
+// Per-character allowance lives on `Character.activeSlotCount` (3 base, up to
+// 4 after buying the premium slot via /unlock-premium).
+const MAX_SLOTS_EVER = 4
 
 export type SlotResponse = {
   slot_index: number
@@ -62,10 +65,12 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true },
+      select: { userId: true, activeSlotCount: true },
     })
     if (!character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     if (character.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const maxSlots = character.activeSlotCount
 
     // Consumables meta is cheap and price-sensitive — always read fresh, don't
     // cache with the slot payload (prices can change via GameConfig mid-session).
@@ -84,7 +89,7 @@ export async function GET(req: NextRequest) {
       }
       return NextResponse.json({
         slots: reconciled,
-        max_slots: MAX_SLOTS,
+        max_slots: maxSlots,
         consumables_meta: consumablesMeta,
       })
     }
@@ -158,7 +163,7 @@ export async function GET(req: NextRequest) {
     await cacheSet(activeSlotsCacheKey(characterId), reconciled, CACHE_TTL)
     return NextResponse.json({
       slots: reconciled,
-      max_slots: MAX_SLOTS,
+      max_slots: maxSlots,
       consumables_meta: consumablesMeta,
     })
   } catch (error) {
@@ -190,8 +195,8 @@ export async function POST(req: NextRequest) {
     if (!character_id || typeof slot_index !== 'number') {
       return NextResponse.json({ error: 'character_id and slot_index are required' }, { status: 400 })
     }
-    if (!Number.isInteger(slot_index) || slot_index < 0 || slot_index >= MAX_SLOTS) {
-      return NextResponse.json({ error: `slot_index must be 0..${MAX_SLOTS - 1}` }, { status: 400 })
+    if (!Number.isInteger(slot_index) || slot_index < 0 || slot_index >= MAX_SLOTS_EVER) {
+      return NextResponse.json({ error: `slot_index must be 0..${MAX_SLOTS_EVER - 1}` }, { status: 400 })
     }
     const hasNode = !!node_id
     const hasConsumable = !!consumable_type
@@ -211,10 +216,11 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction(async (tx) => {
       const character = await tx.character.findUnique({
         where: { id: character_id },
-        select: { userId: true, class: true },
+        select: { userId: true, class: true, activeSlotCount: true },
       })
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
+      if (slot_index >= character.activeSlotCount) throw new Error('SLOT_LOCKED')
 
       if (hasNode) {
         const node = await tx.passiveNode.findUnique({
@@ -298,6 +304,7 @@ export async function POST(req: NextRequest) {
         NODE_NOT_UNLOCKED: { msg: 'Unlock this talent first', status: 400 },
         CLASS_RESTRICTED: { msg: 'This talent is not available for your class', status: 400 },
         CONSUMABLE_NOT_OWNED: { msg: 'Own this potion before equipping it', status: 400 },
+        SLOT_LOCKED: { msg: 'Unlock this slot first', status: 400 },
       }
       const mapped = map[error.message]
       if (mapped) return NextResponse.json({ error: mapped.msg }, { status: mapped.status })
@@ -323,8 +330,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'character_id and slot_index are required' }, { status: 400 })
     }
     const slotIndex = parseInt(slotIndexRaw, 10)
-    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= MAX_SLOTS) {
-      return NextResponse.json({ error: `slot_index must be 0..${MAX_SLOTS - 1}` }, { status: 400 })
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= MAX_SLOTS_EVER) {
+      return NextResponse.json({ error: `slot_index must be 0..${MAX_SLOTS_EVER - 1}` }, { status: 400 })
     }
 
     const character = await prisma.character.findUnique({

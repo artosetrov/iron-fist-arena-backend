@@ -33,26 +33,24 @@ struct BossDetailSheet: View {
         ZStack {
             DarkFantasyTheme.bgDungeonGradient.ignoresSafeArea()
 
+            atmosphericBackdrop
+
             ScrollView {
-                VStack(spacing: LayoutConstants.spaceMD) {
-                    // Boss portrait header
-                    bossPortraitHeader
+                VStack(spacing: LayoutConstants.sectionGap) {
+                    heroPortraitSection
+                    titleAndStatusSection
+                    loreCard
 
-                    // Lore section
-                    loreSection
-
-                    GoldDivider()
-
-                    // Loot section
                     if !boss.loot.isEmpty {
-                        lootSection
+                        lootPillRow
                     }
 
                     Spacer(minLength: LayoutConstants.spaceLG)
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, isNavigationMode ? LayoutConstants.spaceMD : LayoutConstants.spaceLG)
                 .padding(.bottom, state == .current ? 100 : LayoutConstants.spaceLG)
-                .padding(.top, isNavigationMode ? 0 : LayoutConstants.spaceLG)
+                .frame(maxWidth: .infinity)
             }
 
             // Sticky fight button at bottom (only for current boss)
@@ -163,89 +161,141 @@ struct BossDetailSheet: View {
         }
     }
 
-    // MARK: - Boss Portrait Header
+    // MARK: - Atmospheric Backdrop
 
-    private var bossPortraitHeader: some View {
-        ZStack(alignment: .bottom) {
-            // Boss image
+    /// Full-screen blurred boss image behind content. Mirrors the prototype's
+    /// dusty volumetric-light vibe without fighting the card hierarchy.
+    private var atmosphericBackdrop: some View {
+        ZStack {
             Group {
                 if UIImage(named: boss.fullImage) != nil {
-                    Image(boss.fullImage)
-                        .resizable()
-                        .scaledToFill()
+                    Image(boss.fullImage).resizable().scaledToFill()
                 } else if UIImage(named: boss.portraitImage) != nil {
-                    Image(boss.portraitImage)
-                        .resizable()
-                        .scaledToFill()
+                    Image(boss.portraitImage).resizable().scaledToFill()
                 } else {
-                    ZStack {
-                        DarkFantasyTheme.bgSecondary
-                        AssetPlaceholderView(systemIcon: "flame.fill")
-                            .frame(width: 80, height: 80)
-                    }
+                    Color.clear
                 }
             }
-            .frame(height: 280)
-            .frame(maxWidth: .infinity)
-            .clipped()
-            .opacity(state == .locked ? 0.4 : 1.0)
+            .opacity(state == .locked ? 0.12 : 0.22)
+            .blur(radius: 14)
+            .saturation(0.35)
+            .ignoresSafeArea()
 
-            // Bottom gradient fade
             LinearGradient(
                 colors: [
-                    .clear,
-                    DarkFantasyTheme.bgPrimary.opacity(0.6),
-                    DarkFantasyTheme.bgPrimary
+                    DarkFantasyTheme.bgDungeonDeep.opacity(0.3),
+                    DarkFantasyTheme.bgDungeonDeep.opacity(0.6),
+                    DarkFantasyTheme.bgDungeonDeep
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 120)
-            .frame(maxWidth: .infinity)
-
-            // Name + level overlay
-            VStack(spacing: LayoutConstants.spaceXS) {
-                // Status badge
-                statusPill
-
-                Text(boss.name.uppercased())
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .tracking(2)
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 6)
-                    .multilineTextAlignment(.center)
-
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    // Bug #14: Training Camp practice enemies (Straw Dummy etc.)
-                    // must not wear the BOSS label. Only the floor-10 culmination
-                    // (Arena Warden) and all other dungeons keep "BOSS".
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text(boss.isRealBoss ? "\u{2620}" : "\u{2694}\u{FE0F}")
-                            .font(DarkFantasyTheme.body)
-                        Text(boss.isRealBoss ? "BOSS" : "ENEMY")
-                            .font(DarkFantasyTheme.body.weight(.semibold))
-                            .tracking(2)
-                    }
-                    .foregroundStyle(stateColor)
-
-                    Text("•")
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-                    Text("Level \(boss.level)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-            }
-            .padding(.bottom, LayoutConstants.spaceMD)
+            .ignoresSafeArea()
         }
+        .allowsHitTesting(false)
+    }
+
+    // MARK: - Hero Portrait Section
+
+    private var heroPortraitSection: some View {
+        let size: CGFloat = 176
+
+        return ZStack {
+            // Rarity halo glow
+            Circle()
+                .fill(stateColor.opacity(DarkFantasyTheme.opacityMild))
+                .frame(width: size + 48, height: size + 48)
+                .blur(radius: 32)
+
+            // Physical frame
+            Circle()
+                .fill(DarkFantasyTheme.bgAbyss)
+                .frame(width: size, height: size)
+                .overlay(
+                    Group {
+                        if UIImage(named: boss.portraitImage) != nil {
+                            Image(boss.portraitImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else if UIImage(named: boss.fullImage) != nil {
+                            Image(boss.fullImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            AssetPlaceholderView(systemIcon: "flame.fill")
+                                .frame(width: 64, height: 64)
+                        }
+                    }
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+                )
+                .overlay(
+                    Circle().stroke(stateColor.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1.5)
+                )
+                .overlay(
+                    Circle()
+                        .inset(by: 3)
+                        .stroke(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy), lineWidth: 1)
+                )
+                .opacity(state == .locked ? 0.5 : 1.0)
+                .shadow(color: stateColor.opacity(DarkFantasyTheme.opacityMedium), radius: 18)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque), radius: 12, y: 6)
+
+            // Floating LVL badge — overlaps bottom of portrait
+            levelBadge
+                .offset(y: size / 2)
+        }
+        .frame(height: size + LayoutConstants.spaceMD)
+        .frame(maxWidth: .infinity)
+        .padding(.top, LayoutConstants.spaceSM)
+        .padding(.bottom, LayoutConstants.spaceMD)
+    }
+
+    private var levelBadge: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(systemName: "bolt.fill")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.gold)
+            Text("LVL \(boss.level)")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .tracking(1.5)
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: stateColor.opacity(0.1),
-                glowIntensity: 0.3,
-                cornerRadius: 0
-            )
+            Capsule().fill(DarkFantasyTheme.bgSecondary)
         )
+        .overlay(
+            Capsule().stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+        )
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy), radius: 6, y: 3)
+    }
+
+    // MARK: - Title & Status Section
+
+    private var titleAndStatusSection: some View {
+        VStack(spacing: LayoutConstants.spaceMS) {
+            Text(boss.name.uppercased())
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .tracking(2)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque), radius: 6)
+                .multilineTextAlignment(.center)
+
+            Text(bossSubtitleLabel)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textBossDesc)
+                .tracking(3)
+
+            statusPill
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var bossSubtitleLabel: String {
+        let role = boss.isRealBoss ? "BOSS" : "ENEMY"
+        return "\(role) • LEVEL \(boss.level)"
     }
 
     @ViewBuilder
@@ -256,20 +306,30 @@ struct BossDetailSheet: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DarkFantasyTheme.body)
                 Text("DEFEATED")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .tracking(1.5)
             }
-            .font(DarkFantasyTheme.body.bold())
-            .foregroundStyle(DarkFantasyTheme.textPrimary)
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.space2XS)
-            .background(Capsule().fill(DarkFantasyTheme.success))
+            .foregroundStyle(DarkFantasyTheme.textStatusGood)
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(Capsule().fill(DarkFantasyTheme.pill(.heal, .bg)))
+            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.heal, .border), lineWidth: 1))
 
         case .current:
-            Text("READY TO FIGHT")
-                .font(DarkFantasyTheme.body.bold())
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.space2XS)
-                .background(Capsule().fill(DarkFantasyTheme.arenaRankGold))
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Circle()
+                    .fill(DarkFantasyTheme.success)
+                    .frame(width: LayoutConstants.spaceSM, height: LayoutConstants.spaceSM)
+                    .shadow(color: DarkFantasyTheme.success.opacity(DarkFantasyTheme.opacityHeavy), radius: 4)
+                Text("READY TO FIGHT")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .tracking(1.5)
+            }
+            .foregroundStyle(DarkFantasyTheme.textStatusGood)
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(Capsule().fill(DarkFantasyTheme.pill(.heal, .bg)))
+            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.heal, .border), lineWidth: 1))
 
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
@@ -278,43 +338,52 @@ struct BossDetailSheet: View {
                     .scaledToFit()
                     .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("LOCKED")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .tracking(1.5)
             }
-            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.textSecondary)
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.space2XS)
-            .background(Capsule().fill(DarkFantasyTheme.lockedGray))
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(Capsule().fill(DarkFantasyTheme.pill(.offline, .bg)))
+            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.offline, .border), lineWidth: 1))
         }
     }
 
-    // MARK: - Lore Section
+    // MARK: - Lore Card (recessed italic quote)
 
-    private var loreSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text("LORE")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var loreCard: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMedium), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+                .padding(.horizontal, LayoutConstants.spaceXL)
 
-            Text(boss.extendedLore)
+            Text("\u{201C}\(boss.extendedLore)\u{201D}")
                 .font(DarkFantasyTheme.body.italic())
                 .foregroundStyle(DarkFantasyTheme.textBossDesc)
                 .lineSpacing(4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(LayoutConstants.spaceSM + 2)
-                .background(
-                    RadialGlowBackground(
-                        baseColor: DarkFantasyTheme.bgSecondary,
-                        glowColor: DarkFantasyTheme.bgTertiary,
-                        glowIntensity: 0.3,
-                        cornerRadius: LayoutConstants.panelRadius
-                    )
-                )
-                .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-                .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: stateColor.opacity(0.08))
-                .compositingGroup()
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(LayoutConstants.cardPadding)
         }
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgDungeonDeep,
+                glowColor: DarkFantasyTheme.bgSecondary,
+                glowIntensity: 0.2,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderSubtle.opacity(DarkFantasyTheme.opacityLight))
+        .compositingGroup()
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityStrong), radius: 4, y: 2)
     }
 
     // MARK: - Stats Section
@@ -408,39 +477,94 @@ struct BossDetailSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
     }
 
-    // MARK: - Loot Section
+    // MARK: - Loot Pill Row
 
-    private var lootSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            HStack {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image("hud-gift")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                    Text("POSSIBLE LOOT")
-                        .font(DarkFantasyTheme.body)
-                        .tracking(1)
-                }
-                .foregroundStyle(DarkFantasyTheme.lootGold)
-
-                Spacer()
+    private var lootPillRow: some View {
+        VStack(spacing: LayoutConstants.spaceMS) {
+            // Divider label — horizontal lines on both sides
+            HStack(spacing: LayoutConstants.spaceMS) {
+                dividerLine
+                Text("POSSIBLE LOOT")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                    .tracking(2)
+                dividerLine
             }
 
-            // Loot cards — use ItemCardView for consistent look with shop/inventory
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.inventoryGap), count: LayoutConstants.inventoryCols),
-                spacing: LayoutConstants.inventoryGap
-            ) {
-                ForEach(boss.loot) { lootItem in
-                    ItemCardView(item: lootItem.toItem(), context: .loot) {
-                        selectedLootForModal = lootItem
-                        withAnimation(MotionConstants.snappy) {
-                            showLootModal = true
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: LayoutConstants.spaceMS) {
+                    ForEach(boss.loot) { lootItem in
+                        lootPillCard(lootItem)
                     }
                 }
+                .padding(.horizontal, LayoutConstants.screenPadding)
             }
+            .padding(.horizontal, -LayoutConstants.screenPadding)
+        }
+    }
+
+    private var dividerLine: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [.clear, DarkFantasyTheme.borderSubtle.opacity(DarkFantasyTheme.opacityHeavy), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 1)
+    }
+
+    @ViewBuilder
+    private func lootPillCard(_ loot: LootPreview) -> some View {
+        let rarityColor = DarkFantasyTheme.rarityColor(for: loot.rarity)
+
+        Button {
+            selectedLootForModal = loot
+            withAnimation(MotionConstants.snappy) { showLootModal = true }
+        } label: {
+            HStack(spacing: LayoutConstants.spaceMS) {
+                lootIcon(loot)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(loot.rarity.displayName)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .foregroundStyle(rarityColor)
+                        .tracking(1.5)
+                    Text(loot.name)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(rarityColor.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityStrong), radius: 4, y: 2)
+        }
+        .buttonStyle(.scalePress)
+    }
+
+    @ViewBuilder
+    private func lootIcon(_ loot: LootPreview) -> some View {
+        if let key = loot.resolvedImageKey, UIImage(named: key) != nil {
+            Image(key)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(systemName: loot.icon)
+                .font(DarkFantasyTheme.iconMedium)
+                .foregroundStyle(DarkFantasyTheme.rarityColor(for: loot.rarity))
         }
     }
 

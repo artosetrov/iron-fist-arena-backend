@@ -703,7 +703,7 @@ model ReferralUse {
 ### Phase 4: Polish (3-4 дня) — DONE
 
 - [x] SFX: uiRewardClaim on quest claim, uiTap on navigate, dungeonUnlock on building unlock in LevelUpModal
-- [x] Analytics: structured JSON event logging (tutorial-analytics.ts) — 7 events across all endpoints
+- [x] Analytics: structured JSON event logging (tutorial-analytics.ts) — 8 events across all endpoints
 - [ ] NPC Каэль: подобрать лучший ассет / заказать арт (using "shopkeeper" placeholder)
 - [ ] A/B тест: с tutorial vs без (requires client analytics SDK)
 - [ ] Retention tracking: D1/D3/D7 по когортам (requires PostHog/Mixpanel integration)

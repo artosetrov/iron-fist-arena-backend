@@ -146,6 +146,8 @@ enum CombatFXAssetMap {
             return magicalAssets.randomElement() ?? "fx-magical-burst"
         case "poison":
             return poisonAssets.randomElement() ?? "fx-poison-skull"
+        case "fire":
+            return fireAssets.randomElement() ?? "fx-fire-flame"
         case "true_damage":
             return trueAssets.randomElement() ?? "fx-true-lightning"
         default:

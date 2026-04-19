@@ -10,12 +10,15 @@
  * `ANALYTICS_DEBUG=true` and is silent otherwise. Chosen so the event schema
  * can ship to production before the SDK decision lands.
  *
+ * Current boundary: this generic analytics layer is still a dormant scaffold.
+ * The typed event contract exists, but there are no live backend emitters
+ * wired into request/runtime flows yet. The active instrumentation path today
+ * is `backend/src/lib/game/tutorial-analytics.ts`.
+ *
  * Call-site rule: `track()` is fire-and-forget. Never await it, never let it
  * throw into request handlers. A failed analytics write must not degrade user
  * experience or produce 500s.
  */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 export type AuthProvider = 'email' | 'guest' | 'google' | 'apple'
 
@@ -90,7 +93,6 @@ export interface AnalyticsBackend {
 class NoopBackend implements AnalyticsBackend {
   async track(event: AnalyticsEvent): Promise<void> {
     if (process.env.ANALYTICS_DEBUG === 'true') {
-      // eslint-disable-next-line no-console
       console.log(`[analytics] ${event.name}`, event)
     }
   }
@@ -115,11 +117,9 @@ export function setAnalyticsBackend(b: AnalyticsBackend): void {
 export function track(event: AnalyticsEvent): void {
   try {
     void backend.track(event).catch((err) => {
-      // eslint-disable-next-line no-console
       console.error(`[analytics] ${event.name} track failed:`, err)
     })
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error(`[analytics] ${event.name} synchronous track error:`, err)
   }
 }

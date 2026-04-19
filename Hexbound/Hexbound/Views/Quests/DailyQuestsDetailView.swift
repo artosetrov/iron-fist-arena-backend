@@ -278,7 +278,16 @@ struct DailyQuestsDetailView: View {
                 if destination == .shop {
                     appState.shopInitialTab = 0
                 }
-                appState.mainPath.append(destination)
+                if destination == .dungeonMap {
+                    // Mirror the hub ADVENTURES button: pop back to the hub
+                    // and let HubView toggle its embedded dungeon map. The
+                    // standalone .dungeonMap route renders without the hero
+                    // card / floating HUD, which is what we want to avoid.
+                    appState.pendingShowDungeonMap = true
+                    appState.mainPath = NavigationPath()
+                } else {
+                    appState.mainPath.append(destination)
+                }
             } label: {
                 cardBody
             }

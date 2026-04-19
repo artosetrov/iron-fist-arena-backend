@@ -498,7 +498,7 @@ Every rule in `ECONOMY_RULES.md` passes:
 The plan fails rebalance review if any of the following ships:
 
 1. **Per-strike reward multipliers** (the original "×1.5 win, ×0.5 loss"). Rewards stay whole-match, whole-number. Per-strike multipliers are **damage only**, and damage is already capped by the 15-turn fight length.
-2. **Stance choice inflating win rate > 55% for the choosing player** in mirror matchups. Interactive combat must not dominate passive — in mixed queues, both populations must be within 5pp of 50% win rate on equal ELO. Tracked via analytics event `interactive_combat_outcome`.
+2. **Stance choice inflating win rate > 55% for the choosing player** in mirror matchups. Interactive combat must not dominate passive — in mixed queues, both populations must be within 5pp of 50% win rate on equal ELO. This would require explicit future instrumentation such as an `interactive_combat_outcome` event; it is not part of the current live analytics contract yet.
 3. **Active slot meta collapse** (one slot config wins > 40% of all fights). Admin-panel tunable cooldowns, feature flag rollback if observed.
 4. **Session TTL abuse** (player force-quits when losing, re-enters at full HP). Solution: session resume uses stored HP, not fresh HP. Encoded in the revised `Battle` columns.
 

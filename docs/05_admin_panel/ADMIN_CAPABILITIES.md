@@ -607,7 +607,7 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Can ban/unban, grant items, modify config
 - Can create/delete content (items, skills, dungeons)
 - Can broadcast mail/push
-- Can view all analytics
+- Can view stats, economy, IAP transaction review, and IAP Products catalog surfaces
 - Can rollback config
 
 ### Moderator
@@ -616,7 +616,7 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Can ban/unban
 - Can grant items/gold/gems to players
 - Cannot modify game config
-- Cannot access analytics
+- Cannot access stats/economy/IAP review or IAP Products catalog surfaces
 - Cannot broadcast mail
 - View-only on shop/economy
 
@@ -628,46 +628,32 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Can run balance sims
 - Cannot access player data
 - Cannot ban users
-- View-only on analytics
+- View-only on the narrower stats/economy/IAP transaction/catalog review surface
 
 ### Custom Roles
-- Define role with specific page permissions
-- Assign to users (e.g., "economy_manager", "content_designer")
+- Future-facing concept, not a live admin builder in the current repo
+- Current live roles are the fixed `admin` / `moderator` / `developer` set
 
 ---
 
-## 8. Miscellaneous Pages
+## 8. Settings & System Surface
 
 ### Item Balance History
 - View all item changes (created, modified, deleted)
 - Change log with admin who made change
 - Rollback to previous version
 
-### User Activity Log
-- Who accessed admin panel and when
-- Actions taken (ban, mail, grant)
-- Timestamp, admin ID, action details
-- Searchable, exportable
+### Settings (live today)
+- Basic database connectivity check
+- Current game-config key count
+- Admin-user roster
+- Role changes across the fixed live roles
+- Seed default config values
 
-### Performance Monitoring
-- API latency (p50, p95, p99)
-- Error rate
-- Database query performance
-- Cache hit rate
-- Alert if degraded
-
-### System Status
-- Database connection status
-- API server health
-- CDN/asset delivery status
-- Push notification service status
-- Third-party integrations (Apple IAP, Google Play)
-
-### Audit Trail
-- All admin actions logged
-- Who made what change when
-- Data integrity check (inconsistencies flagged)
-- Compliance export (for legal review)
+### Audit / performance / system ops (not standalone live pages today)
+- Audit logging exists as part of the broader admin/backend model, but there is no separate dedicated Audit Trail dashboard page in the current repo
+- Performance monitoring and rich system-status dashboards are not standalone live admin pages today
+- Treat these as adjacent operational concerns rather than fully implemented dashboard surfaces
 
 ---
 
@@ -693,52 +679,52 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ## 10. Page Surface Inventory
 
-**Overview surfaces:**
-1. Dashboard (KPI, alerts, graphs)
-2. Players (search, manage)
-3. Arena (PvP matches)
-4. User Activity Log
+This list is intended as a capability-oriented snapshot of the live dashboard surface, not a permanent count. For the current repo surface, verify against `admin/src/app/(dashboard)` and the live wiki audit.
 
-**Content management surfaces:**
-5. Items (CRUD)
-6. Consumables (CRUD)
-7. Skills (CRUD)
-8. Passives (tree editor)
-9. Dungeons (visual builder)
-10. Appearances/Cosmetics (CRUD)
-11. Assets (upload, library)
+**Overview / review surfaces**
+- Dashboard
+- Players
+- Matches
+- Economy
+- Settings (includes basic server info + role management, not a standalone system-ops suite)
 
-**Gameplay system surfaces:**
-12. Quests (CRUD)
-13. Achievements (CRUD)
-14. Events (CRUD)
-15. Seasons & Battle Pass (CRUD)
+**Content management surfaces**
+- Items
+- Consumables
+- Skills
+- Passives
+- Dungeons
+- Dungeon Map
+- Appearances
+- Assets
 
-**Economy surfaces:**
-16. Economy Overview
-17. Loot Tables
-18. Shop Offers (CRUD + A/B test)
-19. Upgrade/Repair Pricing
-20. Item Balance History
+**Gameplay system surfaces**
+- Quests
+- Achievements
+- Events
+- Seasons
+- Battle Pass
+- Daily Login
 
-**Balance and analytics surfaces:**
-21. Configuration Manager (live game config)
-22. Item Balance Simulator
-23. Analytics Dashboard (retention, engagement, economy)
-24. Performance Monitoring
+**Economy / balance surfaces**
+- Balance
+- Loot
+- Offers
+- Config
+- Item Balance
+- Snapshots
 
-**Live operations surfaces:**
-25. Mail System (broadcast, segment, targeted)
-26. Push Notifications (campaigns, A/B test)
-27. Feature Flags (manage toggles)
-28. Config Snapshots (save/rollback)
+**Live operations surfaces**
+- Mail
+- Push
+- Feature Flags
+- Social
 
-**System surfaces:**
-29. System Status
-30. Audit Trail
-31. Roles & Permissions
+**Reference / support surfaces**
+- Design System
+- Generic Tables shell
 
-This list is intended as a capability-oriented inventory snapshot, not a strict permanent count. For the current repo surface, verify against `admin/src/app/(dashboard)` and the live wiki audit.
+Current repo note: there is no standalone analytics dashboard route under `admin/src/app/(dashboard)` today. Analytics-adjacent behavior currently lives in the dashboard/economy surfaces and their admin-owned server-action/read-side flow, plus the dedicated `IAP Products` catalog page backed by `/api/admin/iap-products`. There is also no separate dedicated User Activity Log, Performance Monitoring, System Status, or Audit Trail page in the current dashboard surface.
 
 ---
 
@@ -768,5 +754,5 @@ This list is intended as a capability-oriented inventory snapshot, not a strict 
 ## Notes
 
 - **Security:** All config changes create audit log. High-risk actions (ban, rollback) require confirmation. IP whitelist optional.
-- **Performance:** Pagination on all lists. Debounced search. Lazy-load analytics graphs. Cache feature flags client-side.
+- **Performance:** Pagination on all lists. Debounced search. Lazy-load economy graphs where present. Cache feature flags client-side.
 - **UX:** Undo available on most destructive actions. Tooltips on all config params. Inline validation. Bulk actions for CSV import/export.

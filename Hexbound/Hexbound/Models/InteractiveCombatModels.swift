@@ -34,6 +34,13 @@ enum InteractiveBodyZone: String, Codable, CaseIterable, Sendable {
 struct InteractiveMatchStartRequest: Encodable, Sendable {
     let characterId: String
     let opponentId: String
+    /// "pvp" | "bot" | "dungeon_boss" — drives server-side fork. Backward-
+    /// compatible: server infers from opponent_id prefix when omitted, but
+    /// sending explicitly avoids the heuristic.
+    let opponentType: String?
+    /// Required when `opponentType == "dungeon_boss"`. Points at the active
+    /// DungeonRun the boss belongs to.
+    let dungeonRunId: String?
 }
 
 struct InteractiveCharacterSnapshot: Decodable, Sendable {
@@ -183,6 +190,9 @@ struct InteractiveStrikeTurn: Decodable, Sendable {
     let skillKey: String?
     let damageType: String?
     let healAmount: Int?
+    /// Server-applied status (poison / bleed / burn / etc.) — drives status
+    /// VFX + SFX in CombatFXAssetMap. Nil when no status fired this round.
+    let statusApplied: String?
 }
 
 struct InteractiveOpponentZones: Decodable, Sendable {

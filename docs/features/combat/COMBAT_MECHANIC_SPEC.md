@@ -413,7 +413,11 @@ All 6 must be delivered in ≤ 1.4 s. Anything extra (crit text, skill name, etc
 
 ---
 
-## 10. Telemetry events (reuse existing analytics table)
+## 10. Telemetry events (proposed analytics extension)
+
+These events are a proposal for future instrumentation work. The current live
+provider-agnostic analytics contract in `backend/src/lib/analytics.ts` does not
+yet emit this interactive-combat event family.
 
 Add six event types to the existing `pvp/*` namespace:
 

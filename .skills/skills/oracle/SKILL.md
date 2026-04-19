@@ -178,6 +178,73 @@ if (existing) return NextResponse.json({ error: 'email_conflict' }, { status: 40
 
 **Incident (2026-04-17, blocks 189-190):** Both `/auth/link-account` and `/auth/sync-user` were missing the pre-flight email uniqueness check. On duplicate email the routes fell through to a Prisma constraint failure (P2002) which was surfaced as a 500 instead of a meaningful 409. Fixed with explicit pre-flight guards in both routes.
 
+---
+
+**9c. Supabase auth revert completeness (CRITICAL — 2026-04-18).**
+When a route mutates the Supabase user (`auth.admin.updateUserById`) and then the downstream Prisma update fails, the revert path MUST restore **all** fields that were changed in Supabase — not just `user_metadata`. Reverting only metadata while leaving email/password/email_confirm in a half-upgraded state causes Supabase ↔ Prisma drift that persists until manually fixed.
+
+**Correct revert pattern for upgrade-guest:**
+```ts
+const revertPayload = {
+  user_metadata: { is_guest: true, username: undefined }
+}
+if (dbUser.email) {
+  revertPayload.email = dbUser.email          // restore original email
+  revertPayload.password = crypto.randomUUID() // invalidate the user's new credentials
+  revertPayload.email_confirm = true           // keep account usable as guest
+}
+await supabase.auth.admin.updateUserById(user.id, revertPayload)
+```
+
+**Rule:** Any route with a Supabase mutation + Prisma write pattern must have a revert block. Grep for `auth.admin.updateUserById` — if the catch/revert block only patches `user_metadata`, it is incomplete.
+
+**Incident (2026-04-18):** `upgrade-guest/route.ts` reverted only `user_metadata`. After a Prisma failure, the Supabase row retained the new email and password, making the account unreachable from the guest session. Fixed in commit `748f35d`.
+
+---
+
+**9d. Admin route role granularity — game-config writes (CRITICAL — 2026-04-18).**
+`getAdminUser()` succeeds for all three roles: `admin`, `developer`, `moderator`. Write endpoints on game-config routes must use `canModifyConfig(admin.role)` from `admin/src/lib/auth.ts`, which restricts to `admin` + `developer` only. GET endpoints remain open to all roles.
+
+**Banned pattern (moderators get write access):**
+```ts
+const admin = await getAdminUser()
+if (!admin) return 401
+// proceed to write — moderators can mutate balance config!
+```
+
+**Correct pattern:**
+```ts
+const admin = await getAdminUser()
+if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+if (!canModifyConfig(admin.role)) {
+  return NextResponse.json({ error: 'Insufficient permissions — admin or developer role required' }, { status: 403 })
+}
+// proceed to write
+```
+
+**Affected route categories:** item-balance, items, dungeons, seasons, events, dungeon-map-layout, passives, passives/connections, skills. IAP and user-role mutation routes are already stricter (`requireStrictAdmin`).
+
+**Scanner pattern:** `grep -rn "export async function POST\|PUT\|PATCH\|DELETE" admin/src/app/api/admin/ --include="*.ts" -l` — for each file, check that write handlers call `canModifyConfig` (or `requireStrictAdmin`) and not just `getAdminUser`.
+
+**Incident (2026-04-18):** Moderator role could mutate all balance config, items, seasons, events, dungeons. Fixed systematically across 10 route files in commit `abf2066`.
+
+### 10. Analytics Pattern (2026-04-18)
+
+Analytics events fire from server-authoritative call-sites (never client). Two rules:
+
+**10a. Fire-and-forget only — never block the request.**
+```ts
+// CORRECT — fire-and-forget after the main transaction commits
+void analyticsBackend.track('event_name', { ...payload })
+
+// WRONG — awaiting analytics can delay or block the response
+await analyticsBackend.track('event_name', { ...payload })
+```
+
+**10b. Call-site placement** — events must fire AFTER the Prisma transaction/commit, never inside it. Placing inside a transaction means a failed event causes a transaction rollback.
+
+**Introduced in commit `1f5d297` (2026-04-18):** 7 critical-funnel events: `signup`, `first_pvp`, `iap_purchase`, `bp_claim`, `daily_login`, `level_up`, `shop_upgrade`. New backend: `src/lib/analytics.ts` + `NoopBackend` (swap via `setAnalyticsBackend()`). iOS: `Services/AnalyticsService.swift` mirrors the same 7 events.
+
 ### 10. Deploy Awareness
 
 If changes touch admin/:

@@ -24,8 +24,17 @@ struct BPReward: Codable, Identifiable {
     let amount: Int
     var claimed: Bool
 
-    // Track is injected after decoding
+    // Track is injected after decoding — excluded from CodingKeys so synthesized
+    // init(from:) doesn't attempt to decode it (backend doesn't send it).
     var track: String = "free"
+
+    enum CodingKeys: String, CodingKey {
+        case level
+        case rewardType
+        case rewardName
+        case amount
+        case claimed
+    }
 
     var icon: String {
         switch rewardType {

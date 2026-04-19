@@ -2,8 +2,8 @@
 //  TalentNodeView.swift
 //  Hexbound
 //
-//  Single passive-tree node. Shape + color driven by bonusType and unlock state.
-//  Uses DarkFantasyTheme tokens only — no hardcoded colors.
+//  Single passive-tree node. Square tile — same visual DNA as item cards.
+//  State drives left gold bar, border, and pulse/dash. Uses DarkFantasyTheme tokens only.
 //
 
 import SwiftUI
@@ -18,6 +18,8 @@ struct TalentNodeView: View {
 
     let node: PassiveNode
     let state: NodeState
+    // Keystone gets a bigger footprint and a gold fill (like the prototype).
+    var isKeystone: Bool { node.tier >= 3 || node.bonusType == "keystone" || node.bonusType == "ultimate" }
 
     // Explicit init — `@State private var pulse` would otherwise make the
     // auto-synthesized memberwise init `private`, breaking callers like
@@ -27,51 +29,67 @@ struct TalentNodeView: View {
         self.state = state
     }
 
-    // Tier-based size — bumped to ≥ 44pt touch target per Apple HIG.
-    // Kept below `minNeighborDistance` (64pt in TalentTreeCanvas) so
-    // adjacent nodes never overlap at the tightest packing.
-    var size: CGFloat {
-        if node.tier >= 5 { return 56 }   // ultimate
-        if node.tier == 3 { return 50 }   // keystone
-        return 44
-    }
+    // Square tile footprint — regular 44×44, keystone 54×54.
+    var size: CGFloat { isKeystone ? 54 : 44 }
 
-    // MARK: - Pulse for pending state
+    // MARK: - Pulse for pending / unlockable
+
     @State private var pulse: Bool = false
+
+    private var cornerRadius: CGFloat { LayoutConstants.radiusMD } // 8
 
     private var strokeColor: Color {
         switch state {
-        case .unlocked:   DarkFantasyTheme.goldBright
+        case .unlocked:   DarkFantasyTheme.gold
         case .pending:    DarkFantasyTheme.goldBright
-        case .unlockable: DarkFantasyTheme.gold
+        case .unlockable: DarkFantasyTheme.goldDim
         case .locked:     DarkFantasyTheme.borderSubtle
-        }
-    }
-
-    private var fillColor: Color {
-        switch state {
-        case .unlocked:   DarkFantasyTheme.gold.opacity(0.28)
-        case .pending:    DarkFantasyTheme.gold.opacity(0.18)
-        case .unlockable: DarkFantasyTheme.bgElevated
-        case .locked:     DarkFantasyTheme.bgSecondary
-        }
-    }
-
-    private var iconColor: Color {
-        switch state {
-        case .unlocked:   DarkFantasyTheme.goldBright
-        case .pending:    DarkFantasyTheme.goldBright
-        case .unlockable: DarkFantasyTheme.textPrimary
-        case .locked:     DarkFantasyTheme.textDisabled
         }
     }
 
     private var strokeWidth: CGFloat {
         switch state {
-        case .unlocked:   3
-        case .pending:    3
-        case .unlockable: 2
-        case .locked:     1
+        case .unlocked:   1.5
+        case .pending:    2
+        case .unlockable: 1.5
+        case .locked:     1.5
+        }
+    }
+
+    private var fillStyle: AnyShapeStyle {
+        if isKeystone && state == .unlocked {
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+        }
+        switch state {
+        case .unlocked:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        DarkFantasyTheme.gold.opacity(0.18),
+                        DarkFantasyTheme.gold.opacity(0.05)
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+        case .pending:
+            return AnyShapeStyle(DarkFantasyTheme.gold.opacity(0.14))
+        case .unlockable, .locked:
+            return AnyShapeStyle(DarkFantasyTheme.bgPrimary)
+        }
+    }
+
+    private var iconColor: Color {
+        if isKeystone && state == .unlocked { return DarkFantasyTheme.textOnGold }
+        switch state {
+        case .unlocked:   return DarkFantasyTheme.goldBright
+        case .pending:    return DarkFantasyTheme.goldBright
+        case .unlockable: return DarkFantasyTheme.textSecondary
+        case .locked:     return DarkFantasyTheme.textDisabled
         }
     }
 
@@ -79,11 +97,54 @@ struct TalentNodeView: View {
         state == .pending ? [4, 3] : nil
     }
 
+    private var glowColor: Color {
+        switch state {
+        case .unlocked:   return DarkFantasyTheme.goldGlow
+        case .pending:    return DarkFantasyTheme.gold.opacity(0.40)
+        case .unlockable: return DarkFantasyTheme.gold.opacity(pulse ? 0.40 : 0.20)
+        case .locked:     return .clear
+        }
+    }
+
+    private var glowRadius: CGFloat {
+        switch state {
+        case .unlocked:   return 12
+        case .pending:    return 8
+        case .unlockable: return pulse ? 20 : 12
+        case .locked:     return 0
+        }
+    }
+
+    // Left 3px gold bar — only for unlocked state (matches item-card DNA).
+    @ViewBuilder
+    private var leftBar: some View {
+        if state == .unlocked && !isKeystone {
+            UnevenRoundedRectangle(
+                topLeadingRadius: cornerRadius,
+                bottomLeadingRadius: cornerRadius,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0
+            )
+            .fill(DarkFantasyTheme.gold)
+            .frame(width: 3)
+            .frame(maxHeight: .infinity)
+        }
+    }
+
     var body: some View {
         ZStack {
-            shapeBody
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(fillStyle)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(
+                            strokeColor,
+                            style: StrokeStyle(lineWidth: strokeWidth, dash: dashPattern ?? [])
+                        )
+                )
+                .overlay(alignment: .leading) { leftBar }
 
-            // Icon or fallback glyph
+            // Icon
             Image(systemName: symbolName)
                 .resizable()
                 .scaledToFit()
@@ -91,79 +152,67 @@ struct TalentNodeView: View {
                 .foregroundStyle(iconColor)
                 .frame(width: size * 0.42, height: size * 0.42)
 
-            // Cost badge for unlockable AND pending non-start nodes
-            if (state == .unlockable || state == .pending) && !node.isStartNode {
-                costBadge
+            // Rank pill (top-right) — keeps cost visible on unlockable nodes,
+            // and rank "1" on unlocked ranked nodes (for the MVP every unlocked
+            // node is rank 1 — the backend doesn't support multi-rank yet).
+            if shouldShowRankPill {
+                rankPill
                     .offset(x: size * 0.42, y: -size * 0.42)
             }
         }
         .frame(width: size, height: size)
-        .opacity(state == .pending && pulse ? 0.7 : 1.0)
-        .shadow(
-            color: shadowColor,
-            radius: state == .pending ? 6 : 8,
-            x: 0,
-            y: 0
-        )
+        .compositingGroup()
+        .shadow(color: glowColor, radius: glowRadius, x: 0, y: 0)
         .onAppear {
-            guard state == .pending else { return }
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+            // Pulse animation only for `.pending` and `.unlockable` — gives an
+            // affordance cue without being noisy on unlocked/locked tiles.
+            guard state == .pending || state == .unlockable else { return }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 pulse = true
             }
         }
+        .onDisappear { pulse = false }
         .accessibilityLabel(node.name)
         .accessibilityHint(node.description)
     }
 
-    private var shadowColor: Color {
+    // MARK: - Rank pill
+
+    private var shouldShowRankPill: Bool {
         switch state {
-        case .unlocked: DarkFantasyTheme.goldGlow
-        case .pending:  DarkFantasyTheme.gold.opacity(0.4)
-        default:        Color.clear
+        case .unlocked: return !isKeystone // keystone doesn't show rank badge in prototype
+        case .unlockable, .pending: return !node.isStartNode
+        case .locked: return false
         }
     }
 
-    @ViewBuilder
-    private var shapeBody: some View {
-        switch node.bonusType {
-        case "ultimate":
-            Rectangle()
-                .fill(fillColor)
-                .overlay(
-                    Rectangle()
-                        .strokeBorder(
-                            strokeColor,
-                            style: StrokeStyle(lineWidth: strokeWidth, dash: dashPattern ?? [])
-                        )
-                )
-                .frame(width: size * 0.72, height: size * 0.72)
-                .rotationEffect(.degrees(45))
-        case "keystone":
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(fillColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .strokeBorder(
-                            strokeColor,
-                            style: StrokeStyle(lineWidth: strokeWidth, dash: dashPattern ?? [])
-                        )
-                )
-        default:
-            Circle()
-                .fill(fillColor)
-                .overlay(
-                    Circle()
-                        .strokeBorder(
-                            strokeColor,
-                            style: StrokeStyle(lineWidth: strokeWidth, dash: dashPattern ?? [])
-                        )
-                )
-        }
+    private var rankPill: some View {
+        let text: String = {
+            switch state {
+            case .unlocked:             return "1"
+            case .unlockable, .pending: return "\(node.cost)"
+            case .locked:               return ""
+            }
+        }()
+        return Text(text)
+            .font(DarkFantasyTheme.badge)
+            .fontWeight(.bold)
+            .foregroundStyle(DarkFantasyTheme.textOnGold)
+            .frame(minWidth: 16, minHeight: 16)
+            .padding(.horizontal, 4)
+            .background(
+                Capsule().fill(DarkFantasyTheme.gold)
+            )
+            .overlay(
+                Capsule().stroke(DarkFantasyTheme.bgSecondary, lineWidth: 1.5)
+            )
     }
+
+    // MARK: - Symbols
 
     private var symbolName: String {
         // Ultimate/keystone hero symbols come from tier
-        if node.tier >= 5 { return "crown.fill" }
+        if isKeystone { return node.tier >= 5 ? "crown.fill" : "shield.fill" }
 
         // Map by mechanical bonusType first
         switch node.bonusType {
@@ -191,18 +240,5 @@ struct TalentNodeView: View {
         default:
             return "circle.grid.2x2.fill"
         }
-    }
-
-    private var costBadge: some View {
-        ZStack {
-            Circle()
-                .fill(DarkFantasyTheme.bgAbyss)
-            Circle()
-                .stroke(DarkFantasyTheme.gold, lineWidth: 1.5)
-            Text("\(node.cost)")
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(DarkFantasyTheme.gold)
-        }
-        .frame(width: 18, height: 18)
     }
 }

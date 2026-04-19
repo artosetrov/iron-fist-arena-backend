@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-04-18
+updated: 2026-04-19
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5053
+- In-scope files: 5068
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -221,6 +221,21 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 199 | [[block-199-backend-me-local-row-bootstrap-parity]] — `/api/me` now bootstraps a missing local user row, reloads on create races, and returns `409` on duplicate-email collisions instead of drifting into `401/404` ambiguity | Fixed |
 | 200 | [[block-200-backend-pvp-history-missing-opponent-guard]] — `/pvp/history` now skips rows whose opponent relation is missing instead of crashing the whole history response | Fixed |
 | 201 | [[block-201-backend-interactive-pvp-opponent-null-contract-guard]] — interactive `/pvp/strike` and `/pvp/match/complete` now fail explicitly with `409` when a row has no real `player2Id` instead of relying on nullability drift | Fixed |
+| 202 | [[block-202-backend-analytics-warning-cleanup-and-inventory-marker-sync]] — removed stale lint suppressions from `backend/src/lib/analytics.ts` and corrected the inventory marker that still claimed the file was untracked | Fixed |
+| 203 | [[block-203-inventory-tracked-marker-parity-for-recent-runtime-wave]] — removed stale `_(untracked)_` markers from the recent backend/iOS/prototype/wiki wave after `git ls-files` confirmed those files are already tracked | Fixed |
+| 204 | [[block-204-inventory-tracked-marker-parity-for-late-auth-and-feature-pages]] — removed the remaining stale `_(untracked)_` markers from late auth audit pages, feature pages, the reward-modal decision page, and the hosted reset-password page | Fixed |
+| 205 | [[block-205-analytics-doc-split-and-event-count-parity]] — analytics docs now reflect the live split between the 7-event core contract and the 8-event tutorial funnel logger, and Gold Mine planning no longer points at a non-existent analytics file | Fixed |
+| 206 | [[block-206-ios-analytics-auth-provider-enum-parity]] — the iOS analytics mirror now models `authProvider` as a fixed enum instead of a raw string, matching the backend analytics contract more closely | Fixed |
+| 207 | [[block-207-admin-analytics-surface-parity-and-dead-helper-removal]] — deleted the unused admin analytics helper and rewrote admin/API docs to describe the narrower live stats/economy/IAP review surface instead of a standalone analytics dashboard | Fixed |
+| 208 | [[block-208-project-overview-analytics-surface-parity]] — `PROJECT_OVERVIEW.md` now describes the narrower live analytics/review surface honestly and keeps retention/session dashboards in future-work territory | Fixed |
+| 209 | [[block-209-ios-analytics-scaffold-boundary-sync]] — the iOS analytics layer is now documented as a dormant typed scaffold rather than an already-wired live instrumentation surface | Fixed |
+| 210 | [[block-210-combat-telemetry-doc-proposal-boundary-sync]] — combat telemetry docs now describe interactive-combat events as a future analytics extension rather than a live event family already backed by the current analytics contract | Fixed |
+| 211 | [[block-211-admin-settings-and-system-surface-parity]] — `ADMIN_CAPABILITIES.md` now reflects the actual live settings/system surface instead of promising standalone audit/performance/system-status pages and custom-role tooling that do not exist yet | Fixed |
+| 212 | [[block-212-orchestrator-and-doc-index-admin-analytics-parity]] — `ORCHESTRATOR.md` and `DOCUMENTATION_INDEX.md` now use the same narrower admin analytics/settings language as the live admin capabilities doc | Fixed |
+| 213 | [[block-213-backend-analytics-scaffold-boundary-sync]] — the generic backend analytics layer is now documented as a dormant typed scaffold; the live instrumentation path today is tutorial structured logging, not `track(...)` call-sites | Fixed |
+| 214 | [[block-214-delete-orphan-admin-review-routes]] — deleted orphan backend admin review routes for `stats`, `economy`, and `iap`, while retaining the live `iap-products` catalog route and syncing docs/generated route maps to the narrower admin-owned review flow | Fixed |
+| 215 | [[block-215-shop-feature-map-iap-products-admin-surface-parity]] — the shop feature map now names the dedicated `IAP Products` admin page and its proxy/backend chain instead of hiding it behind a generic admin-tuning note | Fixed |
+| 216 | [[block-216-admin-monetization-wording-vs-live-iap-products-surface]] — admin monetization docs now describe `IAP Products` as a read-only catalog review surface instead of implying live SKU management in the dashboard | Fixed |
 
 ## Status Legend
 

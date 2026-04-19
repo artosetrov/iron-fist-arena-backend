@@ -290,6 +290,7 @@ private struct DungeonCatalogBoss: Decodable {
     let name: String
     let level: Int
     let hp: Int
+    let tagline: String?
     let description: String
     let imageUrl: String?
 }
@@ -344,7 +345,8 @@ private extension DungeonCatalogEntry {
                 description: boss.description,
                 portraitImage: portrait,
                 fullImage: portrait,
-                loot: combinedLoot
+                loot: combinedLoot,
+                tagline: boss.tagline
             )
         }
 

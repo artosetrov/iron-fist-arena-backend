@@ -27,7 +27,7 @@ Some nodes grant active abilities (not just passives):
 - `activeActionType`: burst_damage / heal_self / shield_self / stun_enemy / execute
 - `activeCooldown` — turns between uses
 - `activeMagnitude` — power of the ability
-- Max **3 active slots** by default
+- **3 active slots** by default; a 4th premium slot can be unlocked for **100 gems** (POST `/api/passives/active-slots/unlock-premium`). Per-character count lives on `Character.activeSlotCount` (max 4)
 
 ## Unlock Rules
 
@@ -44,10 +44,10 @@ Some nodes grant active abilities (not just passives):
 
 ## Visual Design
 
-- `TalentNodeView` with 4 states: `unlocked`, `pending`, `unlockable`, `locked`
-- Pending nodes pulse (gold dashed outline)
-- Connections rendered as lines between nodes on `TalentTreeCanvas`
-- Node size scales by tier (44pt → 50pt → 56pt) — all ≥ 44pt touch target per Apple HIG
+- `TalentNodeView` — square tile language (44×44, keystone 54×54), 3px gold left-bar on unlocked, rank/cost pill top-right; 4 states: `unlocked`, `pending`, `unlockable`, `locked`
+- Pending nodes pulse (gold dashed outline); unlockable nodes have a gold glow pulse
+- `TalentTreeCanvas` — radial top glow, 24pt grid backdrop, corner brackets, solid gold connections between unlocked nodes, animated dashed lines onto unlockable neighbors
+- `TalentsSummaryCard` — top card on the TALENTS tab (SP counter + 4 slot tiles); premium 4th slot shows purple gem + cost until bought
 
 ## See Also
 

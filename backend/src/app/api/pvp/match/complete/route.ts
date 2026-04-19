@@ -14,6 +14,7 @@ import {
   chaGoldBonus,
   streakGoldMultiplier,
   levelScaledReward,
+  trainingXpMultiplier,
 } from '@/lib/game/balance'
 import { cacheDeletePrefix } from '@/lib/cache'
 import { applyLevelUp } from '@/lib/game/progression'
@@ -26,7 +27,30 @@ import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultip
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
+import { currentDailyValue } from '@/lib/game/daily-counter'
+import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { Prisma } from '@prisma/client'
+
+interface DungeonRunFightState {
+  enemies: Enemy[]
+  isBoss: boolean
+  floorsCleared: number
+  totalGoldEarned: number
+  totalXpEarned: number
+}
+
+// Mirrors floorGoldReward / floorXpReward in /api/dungeons/run/[id]/fight.
+function dungeonFloorGoldReward(floor: number, difficulty: string): number {
+  const base = 30 + floor * 10
+  const mult = difficulty === 'hard' ? 1.5 : difficulty === 'easy' ? 0.7 : 1.0
+  return Math.round(base * mult)
+}
+function dungeonFloorXpReward(floor: number, difficulty: string): number {
+  const base = 20 + floor * 8
+  const mult = difficulty === 'hard' ? 1.5 : difficulty === 'easy' ? 0.7 : 1.0
+  return Math.round(base * mult)
+}
 
 /**
  * POST /api/pvp/match/complete — Interactive Combat v1 (FEATURE-FLAGGED)
@@ -92,10 +116,38 @@ export async function POST(req: NextRequest) {
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
     }
-    if (!match.player2Id) {
+
+    const opponentType = match.opponentType ?? 'pvp'
+    const isBot = opponentType === 'bot'
+    const isDungeonBoss = opponentType === 'dungeon_boss'
+    const isPvp = opponentType === 'pvp'
+
+    if (isPvp && !match.player2Id) {
       return NextResponse.json(
         { error: 'Player-vs-player opponent missing' },
         { status: 409 },
+      )
+    }
+
+    // Bot opponents travel via opponentSnapshot (no DB row). PvP opponents
+    // are loaded from the characters table and receive side-effects (gold,
+    // ELO, loss streak, revenge queue entry).
+    interface BotSnapshot {
+      kind: 'bot' | 'dungeon_boss'
+      id: string
+      character_name: string
+      class: string
+      level: number
+      avatar: string | null
+      max_hp: number
+    }
+    const botSnapshot = isBot || isDungeonBoss
+      ? (match.opponentSnapshot as unknown as BotSnapshot | null)
+      : null
+    if ((isBot || isDungeonBoss) && !botSnapshot) {
+      return NextResponse.json(
+        { error: 'Opponent snapshot missing on non-PvP match' },
+        { status: 500 },
       )
     }
 
@@ -106,14 +158,59 @@ export async function POST(req: NextRequest) {
       pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
       freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
       highestPvpRank: true,
+      dungeonClearsToday: true, dungeonClearsDate: true,
       user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     } as const
-    const [attacker, defender] = await Promise.all([
-      prisma.character.findUnique({ where: { id: match.player1Id }, select }),
-      prisma.character.findUnique({ where: { id: match.player2Id }, select }),
-    ])
-    if (!attacker || !defender) return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
+    const attacker = await prisma.character.findUnique({ where: { id: match.player1Id }, select })
+    if (!attacker) return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
     if (attacker.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const defender = isPvp && match.player2Id
+      ? await prisma.character.findUnique({ where: { id: match.player2Id }, select })
+      : null
+    if (isPvp && !defender) {
+      return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
+    }
+
+    // Proxy object for bot opponents — just enough for shared code below that
+    // reads defender.maxHp / defender.id / etc. Never written to the DB.
+    type DefenderProxy = {
+      id: string
+      characterName: string
+      class: string
+      origin: string | null
+      avatar: string | null
+      level: number
+      maxHp: number
+      pvpRating: number
+      pvpCalibrationGames: number
+      highestPvpRank: number | null
+    }
+    const defenderProxy: DefenderProxy = defender
+      ? {
+          id: defender.id,
+          characterName: defender.characterName,
+          class: defender.class,
+          origin: defender.origin,
+          avatar: defender.avatar,
+          level: defender.level,
+          maxHp: defender.maxHp,
+          pvpRating: defender.pvpRating,
+          pvpCalibrationGames: defender.pvpCalibrationGames,
+          highestPvpRank: defender.highestPvpRank,
+        }
+      : {
+          id: botSnapshot!.id,
+          characterName: botSnapshot!.character_name,
+          class: botSnapshot!.class,
+          origin: null,
+          avatar: botSnapshot!.avatar,
+          level: botSnapshot!.level,
+          maxHp: botSnapshot!.max_hp,
+          pvpRating: attacker.pvpRating, // bots share rating scale with player
+          pvpCalibrationGames: attacker.pvpCalibrationGames,
+          highestPvpRank: null,
+        }
 
     const choices = Array.isArray(match.interactiveChoices)
       ? (match.interactiveChoices as unknown as StoredRound[])
@@ -135,44 +232,112 @@ export async function POST(req: NextRequest) {
     else {
       // Max rounds: higher HP% wins
       const aPct = attackerFinalHp / attacker.maxHp
-      const dPct = defenderFinalHp / defender.maxHp
+      const dPct = defenderFinalHp / defenderProxy.maxHp
       attackerWon = aPct >= dPct
     }
-    const winnerId = attackerWon ? attacker.id : defender.id
-    const loserId  = attackerWon ? defender.id : attacker.id
+    const winnerId = attackerWon ? attacker.id : defenderProxy.id
+    const loserId  = attackerWon ? defenderProxy.id : attacker.id
 
-    // ELO
-    const winnerRatingBefore = attackerWon ? attacker.pvpRating : defender.pvpRating
-    const loserRatingBefore  = attackerWon ? defender.pvpRating : attacker.pvpRating
-    const kWinner = await getKFactor(attackerWon ? attacker.pvpCalibrationGames : defender.pvpCalibrationGames)
-    const kLoser  = await getKFactor(attackerWon ? defender.pvpCalibrationGames : attacker.pvpCalibrationGames)
-    const expectedWinner = 1 / (1 + Math.pow(10, (loserRatingBefore - winnerRatingBefore) / 400))
-    const expectedLoser  = 1 - expectedWinner
-    const newWinnerRating = Math.max(0, Math.round(winnerRatingBefore + kWinner * (1 - expectedWinner)))
-    const newLoserRating  = Math.max(0, Math.round(loserRatingBefore  + kLoser  * (0 - expectedLoser)))
-
-    // Rewards — same formulas as /pvp/fight
-    let goldReward = attackerWon
-      ? levelScaledReward(GOLD_REWARDS.PVP_WIN_BASE, attacker.level)
-      : levelScaledReward(GOLD_REWARDS.PVP_LOSS_BASE, attacker.level)
-    let xpReward = attackerWon
-      ? levelScaledReward(XP_REWARDS.PVP_WIN_XP, attacker.level)
-      : levelScaledReward(XP_REWARDS.PVP_LOSS_XP, attacker.level)
-
-    goldReward = chaGoldBonus(goldReward, attacker.cha)
-    if (attackerWon) {
-      const streakBonus = streakGoldMultiplier(attacker.pvpWinStreak + 1)
-      if (streakBonus > 0) goldReward = Math.floor(goldReward * (1 + streakBonus))
+    // ELO: for PvP, full K-factor symmetric calc. For bots, use a scaled-down
+    // asymmetric change so grinding bots doesn't pump rating (matches the
+    // original /pvp/resolve bot path: +30%k on win, -10%k on loss).
+    let newWinnerRating: number
+    let newLoserRating: number
+    if (isBot) {
+      const kFactor = await getKFactor(attacker.pvpCalibrationGames)
+      const delta = attackerWon
+        ? Math.round(kFactor * 0.3)
+        : -Math.round(kFactor * 0.1)
+      const attackerAfter = Math.max(0, attacker.pvpRating + delta)
+      newWinnerRating = attackerWon ? attackerAfter : defenderProxy.pvpRating
+      newLoserRating  = attackerWon ? defenderProxy.pvpRating : attackerAfter
+    } else {
+      const winnerRatingBefore = attackerWon ? attacker.pvpRating : defenderProxy.pvpRating
+      const loserRatingBefore  = attackerWon ? defenderProxy.pvpRating : attacker.pvpRating
+      const kWinner = await getKFactor(attackerWon ? attacker.pvpCalibrationGames : defenderProxy.pvpCalibrationGames)
+      const kLoser  = await getKFactor(attackerWon ? defenderProxy.pvpCalibrationGames : attacker.pvpCalibrationGames)
+      const expectedWinner = 1 / (1 + Math.pow(10, (loserRatingBefore - winnerRatingBefore) / 400))
+      const expectedLoser  = 1 - expectedWinner
+      newWinnerRating = Math.max(0, Math.round(winnerRatingBefore + kWinner * (1 - expectedWinner)))
+      newLoserRating  = Math.max(0, Math.round(loserRatingBefore  + kLoser  * (0 - expectedLoser)))
     }
-    const firstWin = attackerWon && isNewUtcDay(attacker.firstWinDate)
-    if (firstWin) {
-      goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
-      xpReward   = xpReward   * FIRST_WIN_BONUS.XP_MULT
+
+    // Rewards — formula diverges by mode.
+    //   PvP/bot  — `/pvp/fight`-compatible formula (PVP_WIN/LOSS_BASE).
+    //   dungeon_boss — `/dungeons/run/:id/fight`-compatible (floor * difficulty).
+    let goldReward: number
+    let xpReward: number
+    let rawXpReward = 0          // unscaled XP (dungeon only, for DR reporting)
+    let dungeonXpMultiplier = 1.0
+    let dungeonClearsAfter = 0    // for training DR response
+
+    const dungeonRun =
+      isDungeonBoss && match.dungeonRunId
+        ? await prisma.dungeonRun.findFirst({ where: { id: match.dungeonRunId } })
+        : null
+    if (isDungeonBoss && !dungeonRun) {
+      return NextResponse.json(
+        { error: 'Dungeon run disappeared mid-match.' },
+        { status: 409 },
+      )
     }
+
+    if (isDungeonBoss && dungeonRun) {
+      const currentFloor = dungeonRun.currentFloor
+      // Training-XP DR is per-character-per-UTC-day. Mirrors the logic in
+      // /dungeons/run/:id/fight verbatim so rewards stay identical across
+      // both code paths until the old endpoint is retired.
+      const clearsUsedToday = currentDailyValue(
+        attacker.dungeonClearsToday ?? 0,
+        attacker.dungeonClearsDate ?? null,
+        new Date(),
+      )
+      dungeonClearsAfter = clearsUsedToday + 1
+      dungeonXpMultiplier = trainingXpMultiplier(clearsUsedToday)
+
+      const baseGold = dungeonFloorGoldReward(currentFloor, dungeonRun.difficulty)
+      rawXpReward = dungeonFloorXpReward(currentFloor, dungeonRun.difficulty)
+
+      if (attackerWon) {
+        goldReward = Math.floor(
+          chaGoldBonus(baseGold, attacker.cha) * goldBonusMultiplier(attacker.user),
+        )
+        xpReward = Math.round(rawXpReward * dungeonXpMultiplier)
+      } else {
+        // Loss forfeits current-floor rewards — matches dungeon-run semantics
+        // where defeat ends the run and the player keeps earlier floors only.
+        goldReward = 0
+        xpReward = 0
+      }
+    } else {
+      goldReward = attackerWon
+        ? levelScaledReward(GOLD_REWARDS.PVP_WIN_BASE, attacker.level)
+        : levelScaledReward(GOLD_REWARDS.PVP_LOSS_BASE, attacker.level)
+      xpReward = attackerWon
+        ? levelScaledReward(XP_REWARDS.PVP_WIN_XP, attacker.level)
+        : levelScaledReward(XP_REWARDS.PVP_LOSS_XP, attacker.level)
+
+      goldReward = chaGoldBonus(goldReward, attacker.cha)
+      if (attackerWon) {
+        const streakBonus = streakGoldMultiplier(attacker.pvpWinStreak + 1)
+        if (streakBonus > 0) goldReward = Math.floor(goldReward * (1 + streakBonus))
+      }
+      const firstWin = attackerWon && isNewUtcDay(attacker.firstWinDate)
+      if (firstWin) {
+        goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
+        xpReward   = xpReward   * FIRST_WIN_BONUS.XP_MULT
+      }
+      const eventMultipliers = await getActiveEventMultipliers()
+      goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
+      xpReward   = applyEventXpMultiplier(xpReward, eventMultipliers)
+      goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+    }
+
+    // firstWin logic applies to the PvP/bot path only; dungeons don't
+    // participate in the per-day PvP win bonus. eventMultipliers is loaded
+    // here (once) for the response payload and loot/achievement side-effects.
+    const firstWin = !isDungeonBoss && attackerWon && isNewUtcDay(attacker.firstWinDate)
     const eventMultipliers = await getActiveEventMultipliers()
-    goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
-    xpReward   = applyEventXpMultiplier(xpReward, eventMultipliers)
-    goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
 
     const now = new Date()
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
@@ -203,6 +368,7 @@ export async function POST(req: NextRequest) {
       baseAttackerUpdate.pvpWinStreak = 0
     }
 
+    // Defender side-effects only apply for real PvP opponents. Bots have no DB row.
     const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
     const defenderXpReward   = attackerWon ? XP_REWARDS.PVP_LOSS_XP    : XP_REWARDS.PVP_WIN_XP
     const defenderUpdate: Record<string, unknown> = {
@@ -216,7 +382,7 @@ export async function POST(req: NextRequest) {
       defenderUpdate.pvpWins = { increment: 1 }
       defenderUpdate.pvpWinStreak = { increment: 1 }
       defenderUpdate.pvpLossStreak = 0
-      if (defender.highestPvpRank === null || defenderNewRating > defender.highestPvpRank) {
+      if (defenderProxy.highestPvpRank === null || defenderNewRating > defenderProxy.highestPvpRank) {
         defenderUpdate.highestPvpRank = defenderNewRating
       }
     } else {
@@ -252,6 +418,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // For dungeon_boss, pre-compute the next floor + advance conditions so we
+    // can bundle the DungeonRun update into the same transaction.
+    let dungeonNextFloorData: ReturnType<typeof generateDungeonFloor> | null = null
+    let dungeonIsComplete = false
+    let dungeonFloorJustCleared = 0
+    if (isDungeonBoss && dungeonRun && attackerWon) {
+      dungeonFloorJustCleared = dungeonRun.currentFloor
+      const bossIndex = dungeonRun.currentFloor
+      const totalBosses = getDungeonBossCount(dungeonRun.dungeonId)
+      dungeonIsComplete = bossIndex >= totalBosses
+      dungeonNextFloorData = dungeonIsComplete
+        ? { enemies: [], isBoss: false }
+        : generateDungeonFloor(dungeonRun.currentFloor + 1, dungeonRun.difficulty, dungeonRun.dungeonId)
+    }
+
     // Transactional finalize: idempotent via updateMany(status='in_progress')
     const finalizeResult = await prisma.$transaction(async (tx) => {
       const res = await tx.pvpMatch.updateMany({
@@ -269,14 +450,88 @@ export async function POST(req: NextRequest) {
       if (res.count === 0) return null  // raced to completion
 
       await tx.character.update({ where: { id: attacker.id }, data: baseAttackerUpdate })
-      await tx.character.update({ where: { id: defender.id }, data: defenderUpdate })
-      await tx.user.update({ where: { id: attacker.userId }, data: { gold: { increment: goldReward } } })
-      await tx.user.update({ where: { id: defender.userId }, data: { gold: { increment: defenderGoldReward } } })
+      if (goldReward > 0) {
+        await tx.user.update({ where: { id: attacker.userId }, data: { gold: { increment: goldReward } } })
+      }
 
-      const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000)
-      await tx.revengeQueue.create({
-        data: { victimId: loserId, attackerId: winnerId, matchId: match.id, expiresAt },
-      })
+      // PvP-only side-effects on the defender + revenge queue. Bots + dungeon bosses have no DB row.
+      if (isPvp && defender) {
+        await tx.character.update({ where: { id: defender.id }, data: defenderUpdate })
+        await tx.user.update({ where: { id: defender.userId }, data: { gold: { increment: defenderGoldReward } } })
+        const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000)
+        await tx.revengeQueue.create({
+          data: { victimId: loserId, attackerId: winnerId, matchId: match.id, expiresAt },
+        })
+      }
+
+      // Dungeon-specific: advance the run's floor counter or delete on
+      // completion / defeat. Mirrors /api/dungeons/run/[id]/fight semantics.
+      if (isDungeonBoss && dungeonRun) {
+        const lockedRun = await lockDungeonRunForUpdate(tx, dungeonRun.id)
+        if (!lockedRun) throw new Error('DUNGEON_RUN_NOT_ACTIVE')
+        if (
+          lockedRun.characterId !== attacker.id ||
+          lockedRun.dungeonId !== dungeonRun.dungeonId ||
+          lockedRun.difficulty !== dungeonRun.difficulty
+        ) {
+          throw new Error('DUNGEON_RUN_MISMATCH')
+        }
+        if (lockedRun.currentFloor !== dungeonRun.currentFloor) {
+          throw new Error('DUNGEON_RUN_STALE')
+        }
+
+        if (!attackerWon) {
+          await tx.dungeonRun.delete({ where: { id: dungeonRun.id } })
+        } else {
+          const state = (dungeonRun.state as unknown as DungeonRunFightState | null) ?? {
+            enemies: [], isBoss: false, floorsCleared: 0, totalGoldEarned: 0, totalXpEarned: 0,
+          }
+          // Track daily-clear counter on character for training XP DR.
+          await tx.character.update({
+            where: { id: attacker.id },
+            data: {
+              dungeonClearsToday: dungeonClearsAfter,
+              dungeonClearsDate: now,
+            },
+          })
+          // DungeonProgress upsert for the dungeon completion tracker.
+          await tx.dungeonProgress.upsert({
+            where: {
+              characterId_dungeonId: {
+                characterId: attacker.id,
+                dungeonId: dungeonRun.dungeonId,
+              },
+            },
+            create: {
+              characterId: attacker.id,
+              dungeonId: dungeonRun.dungeonId,
+              bossIndex: dungeonRun.currentFloor,
+              completed: dungeonIsComplete,
+            },
+            update: {
+              bossIndex: { set: dungeonRun.currentFloor },
+              completed: dungeonIsComplete,
+            },
+          })
+          if (dungeonIsComplete) {
+            await tx.dungeonRun.delete({ where: { id: dungeonRun.id } })
+          } else if (dungeonNextFloorData) {
+            await tx.dungeonRun.update({
+              where: { id: dungeonRun.id },
+              data: {
+                currentFloor: dungeonRun.currentFloor + 1,
+                state: JSON.parse(JSON.stringify({
+                  enemies: dungeonNextFloorData.enemies,
+                  isBoss: dungeonNextFloorData.isBoss,
+                  floorsCleared: state.floorsCleared + 1,
+                  totalGoldEarned: state.totalGoldEarned + goldReward,
+                  totalXpEarned: state.totalXpEarned + xpReward,
+                })) as Prisma.InputJsonValue,
+              },
+            })
+          }
+        }
+      }
       return true
     })
 
@@ -286,23 +541,42 @@ export async function POST(req: NextRequest) {
 
     await cacheDeletePrefix('leaderboard:')
 
-    // Side effects (parallel)
+    // Side effects (parallel). Fork by opponentType:
+    //   - PvP : applyLevelUp(defender), pvp_wins quest, pvp loot, pvp achievements
+    //   - bot : same as PvP minus defender level-up (no DB row)
+    //   - dungeon_boss : dungeons_complete quest, dungeon_<diff> loot, skip pvp achievements
+    const isFinalDungeonBoss = isDungeonBoss && dungeonIsComplete
+    const lootKey: string | null = !attackerWon
+      ? null
+      : isDungeonBoss
+        ? (isFinalDungeonBoss ? 'boss' : `dungeon_${dungeonRun?.difficulty ?? 'normal'}`)
+        : 'pvp'
+    const questKey = isDungeonBoss ? 'dungeons_complete' : 'pvp_wins'
+    const bpXpGrant = isDungeonBoss
+      ? BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR
+      : BATTLE_PASS.BP_XP_PER_PVP
+
     const [levelUpResult, , , lootItem, durabilityResult] = await Promise.all([
       applyLevelUp(prisma, attacker.id),
-      applyLevelUp(prisma, defender.id),
+      isPvp && defender ? applyLevelUp(prisma, defender.id) : Promise.resolve(null),
       (async () => {
         await Promise.all([
-          attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
-          attackerWon ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
-          awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
+          attackerWon ? updateDailyQuestProgress(prisma, attacker.id, questKey) : Promise.resolve(),
+          attackerWon && !isDungeonBoss ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+          attackerWon && isDungeonBoss ? updateWeeklyChallengeProgress(prisma, attacker.id, 'dungeons_complete') : Promise.resolve(),
+          awardBattlePassXp(prisma, attacker.id, bpXpGrant),
         ])
       })(),
-      attackerWon
-        ? rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp', attacker.luk)
+      lootKey
+        ? rollAndPersistLoot(prisma, attacker.id, attacker.level, lootKey, attacker.luk)
         : Promise.resolve(null),
       degradeEquipment(prisma, attacker.id),
       (async () => {
         try {
+          // PvP / bot achievements track pvp_wins + rank tiers. Dungeons have
+          // their own achievement set which lives in /api/dungeons/*; skip
+          // pvp_* here to avoid mis-attributing floor clears as PvP wins.
+          if (isDungeonBoss) return
           const updates: { key: string; increment: number; absolute?: boolean }[] = []
           if (attackerWon) {
             const newStreak = attacker.pvpWinStreak + 1
@@ -329,8 +603,10 @@ export async function POST(req: NextRequest) {
       })(),
     ])
 
-    if (attackerWon) incrementGuildChallenge(prisma, 'pvp_wins', 1).catch(() => {})
-    incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
+    // Guild challenges: pvp_wins only credits actual player-vs-player wins.
+    // Bot/dungeon fights still count toward gold_earned.
+    if (attackerWon && isPvp) incrementGuildChallenge(prisma, 'pvp_wins', 1).catch(() => {})
+    if (goldReward > 0) incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
 
     const loot: LootResponseItem[] = []
     if (lootItem) loot.push(lootItem)
@@ -355,9 +631,9 @@ export async function POST(req: NextRequest) {
         max_hp: attacker.maxHp, current_hp: attackerFinalHp, avatar: attacker.avatar,
       },
       enemy: {
-        id: defender.id, character_name: defender.characterName,
-        class: defender.class, origin: defender.origin, level: defender.level,
-        max_hp: defender.maxHp, current_hp: defenderFinalHp, avatar: defender.avatar,
+        id: defenderProxy.id, character_name: defenderProxy.characterName,
+        class: defenderProxy.class, origin: defenderProxy.origin, level: defenderProxy.level,
+        max_hp: defenderProxy.maxHp, current_hp: defenderFinalHp, avatar: defenderProxy.avatar,
       },
       combat_log,
       result: {
@@ -374,7 +650,33 @@ export async function POST(req: NextRequest) {
       rewards: { gold: goldReward, xp: xpReward },
       activeEvents: eventMultipliers.activeEvents,
       loot,
-      source: 'pvp',
+      source: isBot ? 'bot' : isDungeonBoss ? 'dungeon' : 'pvp',
+      opponent_type: opponentType,
+      // Dungeon-only block — mirrors /api/dungeons/run/[id]/fight response
+      // shape so the same iOS screen can render both paths.
+      dungeon: isDungeonBoss && dungeonRun
+        ? {
+            run_id: dungeonRun.id,
+            dungeon_id: dungeonRun.dungeonId,
+            difficulty: dungeonRun.difficulty,
+            floor_cleared: dungeonFloorJustCleared,
+            is_final_boss: isFinalDungeonBoss,
+            next_floor:
+              dungeonNextFloorData && !dungeonIsComplete
+                ? {
+                    number: dungeonRun.currentFloor + 1,
+                    enemies: dungeonNextFloorData.enemies,
+                    is_boss: dungeonNextFloorData.isBoss,
+                  }
+                : null,
+            dungeon_complete: dungeonIsComplete,
+            training_dr: {
+              clears_today: dungeonClearsAfter,
+              current_multiplier: dungeonXpMultiplier,
+              xp_raw: rawXpReward,
+            },
+          }
+        : undefined,
       matchId: match.id,
       durability_changes: durabilityResult.degraded,
     })

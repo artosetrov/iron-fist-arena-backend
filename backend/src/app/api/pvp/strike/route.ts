@@ -2,11 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput } from '@/lib/game/combat'
+import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import type { BodyZone } from '@/lib/game/balance'
 import { ConsumableType, Prisma } from '@prisma/client'
 import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
+
+// Snapshot shape written by /pvp/match/start for non-PvP opponents.
+// Bots/dungeon bosses have no DB row, so their combat stats travel with the match.
+interface OpponentSnapshot {
+  kind: 'bot'
+  id: string
+  character_name: string
+  class: string
+  level: number
+  avatar: string | null
+  max_hp: number
+  combat_stats: CharacterStats
+}
 
 /**
  * POST /api/pvp/strike — Interactive Combat v1 (FEATURE-FLAGGED, MATCH-AWARE)
@@ -272,39 +285,60 @@ export async function POST(req: NextRequest) {
     if (match.status !== 'in_progress') {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
     }
-    if (!match.player2Id) {
+    if (match.interactiveTimeoutAt && match.interactiveTimeoutAt < new Date()) {
+      return NextResponse.json({ error: 'Match timed out' }, { status: 410 })
+    }
+
+    const opponentType = match.opponentType ?? 'pvp'
+
+    // For PvP, defender is a real character. For bot/dungeon, defender stats live
+    // in match.opponentSnapshot (no DB row exists).
+    if (opponentType === 'pvp' && !match.player2Id) {
       return NextResponse.json(
         { error: 'Player-vs-player opponent missing' },
         { status: 409 },
       )
     }
-    if (match.interactiveTimeoutAt && match.interactiveTimeoutAt < new Date()) {
-      return NextResponse.json({ error: 'Match timed out' }, { status: 410 })
+    const opponentSnapshot =
+      opponentType !== 'pvp'
+        ? (match.opponentSnapshot as unknown as OpponentSnapshot | null)
+        : null
+    if (opponentType !== 'pvp' && !opponentSnapshot) {
+      return NextResponse.json(
+        { error: 'Opponent snapshot missing on non-PvP match' },
+        { status: 500 },
+      )
     }
-
-    const defenderId = match.player2Id
 
     // Auth: player1 must belong to caller
     const attackerRow = await prisma.character.findUnique({
       where: { id: match.player1Id },
       select: { userId: true, maxHp: true, currentHp: true },
     })
-    const defenderRow = await prisma.character.findUnique({
-      where: { id: defenderId },
-      select: { maxHp: true, currentHp: true },
-    })
-    if (!attackerRow || !defenderRow) {
+    if (!attackerRow) {
       return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
     }
     if (attackerRow.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const defenderRow =
+      opponentType === 'pvp' && match.player2Id
+        ? await prisma.character.findUnique({
+            where: { id: match.player2Id },
+            select: { maxHp: true, currentHp: true },
+          })
+        : { maxHp: opponentSnapshot!.max_hp, currentHp: opponentSnapshot!.max_hp }
+    if (!defenderRow) {
+      return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
+    }
+
     await initCombatConfig()
-    const [attackerStats, defenderStats] = await Promise.all([
-      loadCombatCharacter(match.player1Id),
-      loadCombatCharacter(defenderId),
-    ])
+    const attackerStats = await loadCombatCharacter(match.player1Id)
+    const defenderStats =
+      opponentType === 'pvp' && match.player2Id
+        ? await loadCombatCharacter(match.player2Id)
+        : (opponentSnapshot!.combat_stats as CharacterStats)
 
     // Read current HPs from choices (last entry) or from character row (round 0)
     const choices = Array.isArray(match.interactiveChoices)
@@ -481,15 +515,16 @@ export async function POST(req: NextRequest) {
     }
 
     const matchFinished = newAttackerHp <= 0 || newDefenderHp <= 0 || (strikeIndex + 1) >= MAX_ROUNDS
+    const opponentId = match.player2Id ?? opponentSnapshot?.id ?? ''
     let winnerId: string | null = null
     if (matchFinished) {
       if (newDefenderHp <= 0 && newAttackerHp > 0) winnerId = match.player1Id
-      else if (newAttackerHp <= 0 && newDefenderHp > 0) winnerId = defenderId
+      else if (newAttackerHp <= 0 && newDefenderHp > 0) winnerId = opponentId
       else {
         // Both alive at MAX_ROUNDS (or both 0, unlikely) → higher HP% wins
         const aPct = newAttackerHp / attackerRow.maxHp
         const dPct = newDefenderHp / defenderRow.maxHp
-        winnerId = aPct >= dPct ? match.player1Id : defenderId
+        winnerId = aPct >= dPct ? match.player1Id : opponentId
       }
     }
 

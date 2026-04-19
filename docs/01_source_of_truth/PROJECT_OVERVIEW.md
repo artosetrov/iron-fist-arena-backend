@@ -382,7 +382,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Test encounter difficulty
 
 ### Economy & Monetization
-- Gem pricing tiers (manage IAP products)
+- Gem pricing tiers (review live IAP catalog; edits remain code/config-driven)
 - Gold balance adjustments (bulk grants)
 - Shop offer rotation (create/schedule)
 - Revenue charts (Recharts integration)
@@ -420,10 +420,10 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Config snapshots (export/restore)
 
 ### Analytics & Reporting
-- PvP match analytics (win rates by class, rating)
-- Economy tracking (gold sink/faucet)
-- Player retention cohorts
-- Session length distribution
+- Aggregate admin stats (users, characters, PvP match volume, average level)
+- Economy review (currency circulation, IAP gem totals, top holders)
+- IAP transaction review for verified purchases
+- Instrumentation groundwork via provider-agnostic analytics events and tutorial funnel logs; deeper retention/session analytics remain future work
 
 ### Admin Logs & Audit
 - Searchable activity log (all admin actions)
@@ -507,7 +507,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Leaderboard background job optimization
 - In-game tournament/event system UI
 - Legendary item crafting system (via LegendaryShard)
-- Advanced analytics dashboard
+- Deeper retention and behavior analytics dashboard
 - Content moderation tools
 
 ### Planned (Medium Priority)

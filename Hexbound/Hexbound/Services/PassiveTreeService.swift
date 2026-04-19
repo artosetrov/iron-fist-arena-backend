@@ -223,6 +223,32 @@ final class PassiveTreeService {
         }
     }
 
+    // MARK: - Unlock premium (4th) active slot
+
+    /// Unlocks the 4th active-skill slot. Flat gem cost on server.
+    /// Returns the new `maxSlots` and remaining gems on success.
+    func unlockPremiumSlot(characterId: String) async -> PremiumSlotUnlockResponse? {
+        do {
+            let response: PremiumSlotUnlockResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesActiveSlotsUnlockPremium,
+                body: RespecBody(characterId: characterId)
+            )
+            HapticManager.success()
+            return response
+        } catch let error as APIError {
+            switch error {
+            case .clientError(_, let message, _):
+                appState.showToast(message, type: .error)
+            default:
+                appState.showToast("Failed to unlock slot", type: .error)
+            }
+            return nil
+        } catch {
+            appState.showToast("Failed to unlock slot", type: .error)
+            return nil
+        }
+    }
+
     // MARK: - Respec
 
     /// Refunds all points, deletes all unlocked nodes, spends RESPEC_GEM_COST gems.

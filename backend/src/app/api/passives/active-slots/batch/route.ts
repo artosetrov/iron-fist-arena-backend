@@ -34,7 +34,9 @@ import {
 // Behaviour: DELETE all 3 rows, INSERT the new ones inside a single transaction.
 // Cache is invalidated on success.
 
-const MAX_SLOTS = 3
+// Per-character slot count comes from `Character.activeSlotCount` (3 default,
+// up to 4 after unlocking the premium slot via /unlock-premium). The payload
+// must carry exactly that many entries.
 
 type SlotPayload = {
   slot_index: number
@@ -64,18 +66,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const validation = validateSlotsPayload(slots)
-    if ('error' in validation) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
-
     await prisma.$transaction(async (tx) => {
       const character = await tx.character.findUnique({
         where: { id: character_id },
-        select: { userId: true, class: true },
+        select: { userId: true, class: true, activeSlotCount: true },
       })
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
+
+      const validation = validateSlotsPayload(slots, character.activeSlotCount)
+      if ('error' in validation) throw new Error(`BAD_REQUEST:${validation.error}`)
 
       // Validate each talent slot (node exists, activatable, unlocked, class-ok).
       const talentNodeIds = slots
@@ -156,6 +156,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
+      if (error.message.startsWith('BAD_REQUEST:')) {
+        return NextResponse.json(
+          { error: error.message.slice('BAD_REQUEST:'.length) },
+          { status: 400 },
+        )
+      }
       const map: Record<string, { msg: string; status: number }> = {
         NOT_FOUND: { msg: 'Character not found', status: 404 },
         FORBIDDEN: { msg: 'Forbidden', status: 403 },
@@ -173,12 +179,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function validateSlotsPayload(slots: SlotPayload[]):
+function validateSlotsPayload(slots: SlotPayload[], maxSlots: number):
   | { error: string }
   | { ok: true }
 {
-  if (slots.length !== MAX_SLOTS) {
-    return { error: `slots must contain exactly ${MAX_SLOTS} entries` }
+  if (slots.length !== maxSlots) {
+    return { error: `slots must contain exactly ${maxSlots} entries` }
   }
 
   const seenIndex = new Set<number>()
@@ -186,8 +192,8 @@ function validateSlotsPayload(slots: SlotPayload[]):
   let consumableCount = 0
 
   for (const s of slots) {
-    if (!Number.isInteger(s.slot_index) || s.slot_index < 0 || s.slot_index >= MAX_SLOTS) {
-      return { error: `slot_index must be 0..${MAX_SLOTS - 1}` }
+    if (!Number.isInteger(s.slot_index) || s.slot_index < 0 || s.slot_index >= maxSlots) {
+      return { error: `slot_index must be 0..${maxSlots - 1}` }
     }
     if (seenIndex.has(s.slot_index)) {
       return { error: `Duplicate slot_index ${s.slot_index}` }

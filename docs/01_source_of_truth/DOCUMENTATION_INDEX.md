@@ -62,7 +62,7 @@ Admin capabilities, live configuration, and management tools.
 
 | Document | Location | Purpose |
 |----------|----------|---------|
-| **Admin Capabilities** | `docs/05_admin_panel/ADMIN_CAPABILITIES.md` | Admin surface reference: player management, content CRUD, economy controls, feature flags, live config, analytics, audit logs |
+| **Admin Capabilities** | `docs/05_admin_panel/ADMIN_CAPABILITIES.md` | Admin surface reference: player management, content CRUD, economy controls, feature flags, live config, stats/economy/IAP review, and settings/role management |
 
 ---
 

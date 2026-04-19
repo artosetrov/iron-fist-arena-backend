@@ -27,7 +27,7 @@
 **Взаимодействие:** → FE (API contracts), → Admin (schema sync, admin coverage), → QA (validation), → DevOps (migrations).
 
 ### 4. Admin Panel Engineer (APE)
-**Зона:** Admin UI, live config, moderation tools, content management, analytics dashboards.
+**Зона:** Admin UI, live config, moderation tools, content management, stats/economy/IAP review surfaces.
 **Когда вызывать:** Новая game feature (проверить admin impact), config changes, new management page.
 **Файлы-источники:** `admin/src/`, `admin/prisma/schema.prisma`.
 **Взаимодействие:** ← BE (schema sync), ← Game Designer (config params), → DevOps (subtree deploy).

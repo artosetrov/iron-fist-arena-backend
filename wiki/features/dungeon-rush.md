@@ -93,6 +93,7 @@ Fixed 12-room sequence: `combat, event, combat, treasure, elite, miniboss, shop,
 - **Death = loss.** No continue on death; all in-run loot banks at run end only. Check `resolve` semantics.
 - **Shop room in-run.** Distinct from main [[shop]] — uses gold earned during run; unlock via `shop-buy` endpoint.
 - **Stamina gated.** Run start consumes stamina; check `DUNGEON_RUSH_STAMINA_COST` in balance.
+- **Miniboss reveal ceremony.** `DungeonRushDetailView` watches `currentRoom?.type` and fires `AppState.presentBossReveal(_:)` the first time the miniboss room becomes current in a given run (tracked by `revealedMinibossIdx`). Compact ~1.2s variant of the shared overlay; CTA commits directly to `vm.fight()`. See [[why-boss-reveal-ceremony]].
 
 ## Tests / fixtures
 

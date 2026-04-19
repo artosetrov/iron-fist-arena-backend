@@ -98,6 +98,7 @@ enum VFXEffectType: Equatable {
     case physicalHit, physicalCrit
     case magicalHit, magicalCrit
     case poisonHit, poisonCrit
+    case fireHit, fireCrit
     case trueHit, trueCrit
     case dodge, miss, block
     case heal
@@ -114,6 +115,7 @@ enum VFXEffectType: Equatable {
             switch dmgType {
             case "magical":     return .magicalCrit
             case "poison":      return .poisonCrit
+            case "fire":        return .fireCrit
             case "true_damage": return .trueCrit
             default:            return .physicalCrit
             }
@@ -121,6 +123,7 @@ enum VFXEffectType: Equatable {
             switch dmgType {
             case "magical":     return .magicalHit
             case "poison":      return .poisonHit
+            case "fire":        return .fireHit
             case "true_damage": return .trueHit
             default:            return .physicalHit
             }
@@ -129,15 +132,15 @@ enum VFXEffectType: Equatable {
 
     var isCrit: Bool {
         switch self {
-        case .physicalCrit, .magicalCrit, .poisonCrit, .trueCrit: true
+        case .physicalCrit, .magicalCrit, .poisonCrit, .fireCrit, .trueCrit: true
         default: false
         }
     }
 
     var duration: Double {
         switch self {
-        case .physicalHit, .magicalHit, .poisonHit, .trueHit: 0.7
-        case .physicalCrit, .magicalCrit, .poisonCrit, .trueCrit: 0.85
+        case .physicalHit, .magicalHit, .poisonHit, .fireHit, .trueHit: 0.7
+        case .physicalCrit, .magicalCrit, .poisonCrit, .fireCrit, .trueCrit: 0.85
         case .dodge: 0.5
         case .miss: 0.4
         case .block: 0.6
@@ -151,6 +154,7 @@ enum VFXEffectType: Equatable {
         case .physicalHit, .physicalCrit: DarkFantasyTheme.gold
         case .magicalHit, .magicalCrit:  DarkFantasyTheme.classMage
         case .poisonHit, .poisonCrit:    DarkFantasyTheme.success
+        case .fireHit, .fireCrit:        DarkFantasyTheme.stamina
         case .trueHit, .trueCrit:        .white
         case .dodge:                      DarkFantasyTheme.textSecondary
         case .miss:                       DarkFantasyTheme.textTertiary
@@ -173,6 +177,7 @@ enum VFXEffectType: Equatable {
         case .physicalHit, .physicalCrit: DarkFantasyTheme.goldBright
         case .magicalHit, .magicalCrit:  DarkFantasyTheme.purple
         case .poisonHit, .poisonCrit:    DarkFantasyTheme.vfxPoisonGlow
+        case .fireHit, .fireCrit:        DarkFantasyTheme.vfxBurnGlow
         case .trueHit, .trueCrit:        DarkFantasyTheme.goldBright
         case .dodge:                      DarkFantasyTheme.textTertiary
         case .miss:                       DarkFantasyTheme.textDisabled

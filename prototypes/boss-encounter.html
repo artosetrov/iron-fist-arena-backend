@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Arcane Relic Noir - Boss Encounter</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Work+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#010f1f",
+                        "secondary-container": "#00b55d",
+                        "error": "#ffb4ab",
+                        "on-surface": "#d5e4fa",
+                        "tertiary-fixed": "#ffdf9d",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-secondary-fixed": "#00210c",
+                        "surface-container-highest": "#283647",
+                        "primary-container": "#121826",
+                        "primary": "#c1c6d9",
+                        "surface-bright": "#2c3a4c",
+                        "on-primary-fixed-variant": "#414656",
+                        "surface-container-high": "#1d2b3c",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#233143",
+                        "tertiary": "#fabd00",
+                        "outline": "#909096",
+                        "tertiary-container": "#211600",
+                        "surface-container-low": "#0e1c2d",
+                        "on-secondary": "#003919",
+                        "on-surface-variant": "#c6c6cc",
+                        "inverse-surface": "#d5e4fa",
+                        "surface-variant": "#283647",
+                        "error-container": "#93000a",
+                        "on-background": "#d5e4fa",
+                        "surface-dim": "#051424",
+                        "background": "#051424",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#3f2e00",
+                        "on-secondary-container": "#003e1c",
+                        "on-secondary-fixed-variant": "#005227",
+                        "secondary-fixed-dim": "#4de082",
+                        "outline-variant": "#45464c",
+                        "on-tertiary-fixed-variant": "#5b4300",
+                        "on-primary-fixed": "#161b29",
+                        "on-primary-container": "#7c8192",
+                        "secondary": "#4de082",
+                        "on-primary": "#2b303f",
+                        "primary-fixed-dim": "#c1c6d9",
+                        "surface-container": "#122031",
+                        "secondary-fixed": "#6dfe9c",
+                        "primary-fixed": "#dde2f5",
+                        "tertiary-fixed-dim": "#fabd00",
+                        "surface-tint": "#c1c6d9",
+                        "surface": "#051424",
+                        "on-tertiary-container": "#a47b00",
+                        "inverse-primary": "#595e6e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "section-gap": "1rem",
+                        "card-padding": "1.25rem",
+                        "stat-grid-gutter": "0.75rem",
+                        "divider-margin": "0.75rem",
+                        "element-tight": "0.25rem"
+                    },
+                    "fontFamily": {
+                        "caption-caps": ["Work Sans"],
+                        "stat-value": ["Work Sans"],
+                        "button-label": ["Work Sans"],
+                        "title-xl": ["Manrope"],
+                        "header-section": ["Work Sans"],
+                        "body-sm": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "caption-caps": ["10px", {"letterSpacing": "0.05em", "fontWeight": "400"}],
+                        "stat-value": ["16px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "button-label": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "title-xl": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "header-section": ["14px", {"lineHeight": "18px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface h-screen w-full overflow-hidden flex flex-col relative antialiased selection:bg-tertiary/30">
+<!-- Top Navigation Anchor (from JSON execution rules) -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-5 h-16 bg-[#051424]/80 backdrop-blur-md full-width border-b border-gradient-to-r from-transparent via-white/20 to-transparent shadow-none">
+<button class="text-slate-400 hover:bg-white/5 hover:text-amber-300 active:scale-95 transition-transform duration-200 w-10 h-10 flex items-center justify-center rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-lg font-black text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)] font-manrope font-bold tracking-widest uppercase">
+            ENCOUNTER
+        </h1>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400 text-xl">account_circle</span>
+</div>
+</nav>
+<!-- Atmospheric Background (Tonal Layering & Depth) -->
+<div class="absolute inset-0 z-0 select-none pointer-events-none">
+<div class="absolute inset-0 bg-background/85 z-10 backdrop-blur-[2px]"></div>
+<img alt="" class="w-full h-full object-cover object-top opacity-30 mix-blend-luminosity" data-alt="A massive, hulking rusty golem towering in a dark, atmospheric industrial ruin with glowing amber eyes and dusty, cinematic volumetric lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnYiBDxBDbKwDjnfM8tww43MS76QrVBBtHfM168qDVbBBAT1Tmxx8otPgXZG2PFv3f-5XjtXElbHjY52ErWy9DCN6SZCzJt68zr0idIV9HgoOD5bOPQIVD5X_ut0Yu9ZV5A21MnrdwIT3a5KC1r4ltirI_dVpAlUlf8mf48UHB4esatv_ZNGUxhosC_but9z7knJDxqQ226PftuIw_b8c52bYC4JkWQ0mU2JQpa-hWbfMfCmXS1aJz-7Qzgd9jFCuUU2vnZ1ijnuHe"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent z-20"></div>
+</div>
+<!-- Main Content Canvas -->
+<main class="relative z-30 flex-1 flex flex-col items-center justify-center px-4 pt-20 pb-6 w-full max-w-md mx-auto h-full">
+<!-- Center Flex Wrapper for vertical centering -->
+<div class="flex flex-col items-center w-full my-auto">
+<!-- Hero Frame (Tactile Skeuomorphism & Glassmorphism) -->
+<div class="relative w-40 h-40 md:w-48 md:h-48 mb-6 flex-shrink-0">
+<!-- Rarity Halo Glow -->
+<div class="absolute inset-0 rounded-full bg-tertiary/15 blur-2xl animate-pulse"></div>
+<!-- Physical Frame -->
+<div class="relative w-full h-full rounded-full border border-tertiary/30 bg-surface-container-lowest overflow-hidden shadow-[inset_0_0_30px_rgba(250,189,0,0.15)] ring-1 ring-black/50">
+<img alt="Rusty Golem Portrait" class="w-full h-full object-cover object-center scale-105" data-alt="Detailed close-up portrait of a menacing rusty golem face with glowing amber mechanical eyes, weathered dark steel plating, and subtle magical energy leaking from its joints" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDonKn9yI1NLpuyB2OCTg6ZvrdhVrJlRongWfuxPFosbzjWJd6NgutVnpTz_1Jy9ZFVLZmaRtZwoHODpSf8h0bd2zxYjNnDqy6UDgXwKCv8k4-ZNOiUXZM1P6BIyC-x6bLSI4R_7_XmYuUJaF3mf-Px41rF2mLEnteOV2T3bHttyrdmjHgJce294XcDWEfg2rydQlY_hFOxlyzREQgkmC749P5dGOXrfZIBwL3rdT9EF9OVi4HfmsxA55sWc1UOUUArlJdfxj6ioh61"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent"></div>
+</div>
+<!-- Floating Level Badge -->
+<div class="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-surface-container border border-outline-variant/50 rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-md">
+<span class="material-symbols-outlined text-tertiary text-[16px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-caption-caps text-caption-caps text-on-surface whitespace-nowrap">LVL 2</span>
+</div>
+</div>
+<!-- Typography & Status -->
+<div class="text-center w-full mb-6">
+<h2 class="font-title-xl text-title-xl text-on-surface mb-1 drop-shadow-md tracking-wider">RUSTY GOLEM</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant/70 uppercase tracking-[0.2em] text-[10px]">Ancient Construct</p>
+<!-- Glowing Status Badge -->
+<div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary-container/10 border border-secondary-container/20 shadow-[inset_0_0_10px_rgba(0,181,93,0.1)]">
+<div class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(77,224,130,0.8)] animate-pulse"></div>
+<span class="font-caption-caps text-caption-caps text-secondary font-semibold">READY TO FIGHT</span>
+</div>
+</div>
+<!-- Lore Box (Recessed Container) -->
+<div class="w-full p-4 mb-8 rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] text-center relative overflow-hidden">
+<!-- Subtle internal accent line -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-tertiary/30 to-transparent"></div>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed text-[13px]">
+                    "Gears grind. Rust crumbles. It still hits hard. A forgotten construct from the old wars, wandering the lower levels."
+                </p>
+</div>
+<!-- Loot Section -->
+<div class="w-full mb-8">
+<!-- Divider Title -->
+<div class="flex items-center justify-center gap-3 mb-4">
+<div class="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/40 to-transparent"></div>
+<span class="font-caption-caps text-caption-caps text-outline">POSSIBLE LOOT</span>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/40 to-transparent"></div>
+</div>
+<!-- Loot Cards -->
+<div class="flex justify-center gap-4">
+<!-- Common Item -->
+<div class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-surface-container-high border border-tertiary-fixed-dim/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] w-32">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-[22px]" style="font-variation-settings: 'FILL' 1;">toll</span>
+<div class="flex flex-col">
+<span class="font-caption-caps text-[9px] text-tertiary-fixed-dim/70 tracking-wider">COMMON</span>
+<span class="font-stat-value text-stat-value text-on-surface text-[14px]">Gold</span>
+</div>
+</div>
+<!-- Trash Item -->
+<div class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-surface-container-high border border-outline-variant/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] w-32">
+<span class="material-symbols-outlined text-outline text-[22px]" style="font-variation-settings: 'FILL' 1;">build_circle</span>
+<div class="flex flex-col">
+<span class="font-caption-caps text-[9px] text-outline/70 tracking-wider">TRASH</span>
+<span class="font-stat-value text-stat-value text-on-surface-variant text-[14px]">Scrap</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button (Primary Interaction) -->
+<div class="w-full mt-auto">
+<button class="w-full relative group overflow-hidden rounded-xl bg-tertiary-container border border-tertiary/40 shadow-[0_4px_20px_rgba(250,189,0,0.15)] active:scale-95 transition-all duration-200 flex flex-col items-center justify-center py-3.5 px-6">
+<!-- Inner magical glow -->
+<div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(250,189,0,0.3)] pointer-events-none group-hover:shadow-[inset_0_0_30px_rgba(250,189,0,0.5)] transition-shadow"></div>
+<!-- Top highlight line -->
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-tertiary/60 to-transparent"></div>
+<div class="flex items-center gap-2 z-10 mb-0.5">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">swords</span>
+<span class="font-button-label text-button-label text-on-tertiary-container text-[16px] tracking-widest drop-shadow-sm">FIGHT ENEMY</span>
+</div>
+<div class="font-caption-caps text-caption-caps text-tertiary/80 z-10 flex items-center gap-1 tracking-widest">
+<span>COST: 10</span>
+<span class="material-symbols-outlined text-[12px] text-tertiary/80" style="font-variation-settings: 'FILL' 1;">flash_on</span>
+</div>
+</button>
+</div>
+</main>
+</body></html>

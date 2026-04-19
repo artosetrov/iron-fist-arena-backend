@@ -1,5 +1,30 @@
 # Hexbound Wiki — Log
 
+## [2026-04-19] feature | TALENTS screen redesign — prototype parity + premium 4th slot
+
+Re-skinned the TALENTS tab to match the new HTML prototype and opened a gem-gated 4th active-skill slot:
+- **iOS UI**: `TalentNodeView` rewritten to a square-tile language (44×44, keystone 54×54) with 3px gold left-bar on unlocked, cost/rank pill top-right, pulsing gold glow on unlockable. `TalentTreeCanvas` gains radial top glow, 24pt grid backdrop, corner brackets, and an animated dashed stroke onto unlockable neighbours. New `TalentsSummaryCard` merges the old SP banner + `ActiveSlotsBar` into one card with 4 tiles (3 regular + premium). `TalentsTabView` now hosts a rust-tinted inline reset row and the existing sticky Confirm bar.
+- **Backend**: new `POST /api/passives/active-slots/unlock-premium` deducts `PASSIVES.PREMIUM_ACTIVE_SLOT_GEM_COST = 100` inside a `FOR UPDATE` tx and bumps `Character.activeSlotCount` (3 → 4, hard cap `MAX_ACTIVE_SLOTS`). Existing `active-slots` routes now read `activeSlotCount` off the character and drop the hard-coded `MAX_SLOTS = 3`.
+- **Files touched**: `Hexbound/Views/Hero/Talents/{TalentNodeView,TalentTreeCanvas,TalentsTabView,TalentsSummaryCard,PassiveTreeViewModel}.swift`, `Services/PassiveTreeService.swift`, `Network/APIEndpoints.swift`, `Models/PassiveTree.swift`, `backend/src/app/api/passives/active-slots/{route,batch/route,unlock-premium/route}.ts`, `backend/src/lib/game/balance.ts`. `Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` deleted (all call sites replaced).
+- **Prototype**: `prototypes/talents-screen.html` saved as the reference snapshot.
+
+## [2026-04-19] schema | `characters.active_slot_count` history repair
+
+Captured a pre-existing drift: `Character.activeSlotCount` (default 3) had been referenced by `passives/active-slots/*` route handlers for weeks, but the schema column was never recorded in the Prisma migration history. `scripts/check_schema_drift.py` flagged it on re-run. Added an idempotent `ALTER TABLE ADD COLUMN IF NOT EXISTS` migration so Prisma history matches `schema.prisma`; the column is already live in prod, so the migration resolves to a no-op everywhere and the drift guard stays quiet going forward.
+- **Code touched:** `backend/prisma/migrations/20260419_character_active_slot_count/migration.sql` (new; `IF NOT EXISTS` keeps it safe on any environment).
+
+## [2026-04-19] schema | `dungeon_bosses.tagline` for reveal subtitle
+
+Follow-up to the boss reveal ceremony. Added a nullable `tagline String?` column to `DungeonBoss` so the reveal subtitle can be authored instead of derived from `extendedLore`. Client (`BossRevealData.fromDungeonBoss`) prefers `boss.tagline` when present, falls back to first-sentence trimming. Migration backfills `tagline = description` for existing rows (existing descriptions are already tagline-quality one-liners); seed auto-promotes `description` into `tagline` for new dungeons unless the author supplies an explicit `tagline` override. Schema drift check OK (65 models / 703 columns).
+- **Updated:** `[[why-boss-reveal-ceremony]]` (Subtitle source section closed the open follow-up).
+- **Code touched:** `backend/prisma/schema.prisma` (`DungeonBoss.tagline`), `backend/prisma/migrations/20260419_dungeon_boss_tagline/migration.sql` (new — additive `ALTER TABLE` + null-safe backfill `UPDATE`), `admin/prisma/schema.prisma` (mirrored), `backend/src/app/api/dungeons/list/route.ts` (select + response), `backend/prisma/seed-dungeons.ts` (`BossDef.tagline?` + auto-promote), iOS `DungeonInfo.swift` (`BossInfo.tagline`), `DungeonService.swift` (`DungeonCatalogBoss.tagline` + mapping), `BossRevealData.swift` (tagline-first subtitle).
+
+## [2026-04-19] decision | Daily-quest dungeon entry routes through Hub HUD
+
+`DailyQuestsDetailView` previously pushed `AppRoute.dungeonMap` for the `dungeons_complete` quest card, which rendered the bare standalone `DungeonMapView` — no hero widget, no floating icons, no ADVENTURES↔CASTLE button. Now the card pops to hub (`appState.mainPath = NavigationPath()`) and raises a new `AppState.pendingShowDungeonMap` flag; `HubView.onAppear` consumes the flag and runs `triggerMapTransition(toDungeon: true)` so the dungeon map appears inside the hub's embedded ZStack with the full HUD, matching the ADVENTURES button experience.
+- **Code touched:** `Hexbound/Hexbound/App/AppState.swift` (new `pendingShowDungeonMap: Bool`), `Hexbound/Hexbound/Views/Quests/DailyQuestsDetailView.swift` (destination branch for `.dungeonMap`), `Hexbound/Hexbound/Views/Hub/HubView.swift` (`.onAppear` flag consumer). No new files, no pbxproj change, no schema/balance change.
+- **Updated:** `wiki/features/quests.md` (added dungeon-navigation gotcha referencing the Hub ZStack pattern in `Hexbound/CLAUDE.md`).
+
 ## [2026-04-19] decision | Interactive Combat UX polish — round strip, micro-log, auto-submit, long-press skip, summary stars
 
 Ported four UX beats from an HTML battle prototype into the iOS Interactive Combat screen. All client-only — server contract (`/pvp/strike`) untouched; crit/block/dodge still resolved server-side per root CLAUDE.md rule.
@@ -1897,3 +1922,138 @@ Closed the next PvP/runtime parity block:
 - **Fixes:** added explicit `409 Player-vs-player opponent missing` guards to `strike` and `match/complete`, narrowed the rest of the flow onto a non-null `player2Id`, and documented the contract instead of relying on nullability drift
 - **Inventory refresh:** updated current counts to `5053` in-scope files and `263 in-scope wiki markdown files / 262 wiki pages`
 - **Verification:** `cd backend && npx eslint src/app/api/pvp/strike/route.ts src/app/api/pvp/match/complete/route.ts`, `cd backend && npm run build`, and `git diff --check`
+
+## [2026-04-19] audit | Block 202 backend analytics warning cleanup and inventory marker sync
+
+Closed the next backend/runtime truth-sync block:
+- **Created:** `[[block-202-backend-analytics-warning-cleanup-and-inventory-marker-sync]]`
+- **Files audited:** `backend/src/lib/analytics.ts`, `wiki/audit/project-file-inventory.md`
+- **Fixes:** removed stale lint suppressions from `backend/src/lib/analytics.ts`, left analytics runtime behavior unchanged, and corrected the inventory marker that still claimed the file was untracked even though it already lived in Git
+- **Inventory refresh:** updated current counts to `5064` in-scope files and `266 in-scope wiki markdown files / 265 wiki pages`
+- **Verification:** prior `cd backend && npm run build` runs had already isolated `backend/src/lib/analytics.ts` as the remaining warning tail in this slice, and `git diff --check` passes after the cleanup
+
+## [2026-04-19] audit | Block 203 inventory tracked-marker parity for recent runtime wave
+
+Closed the next inventory truth-sync block:
+- **Created:** `[[block-203-inventory-tracked-marker-parity-for-recent-runtime-wave]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md` plus the recent backend/iOS/prototype/wiki wave it still mislabeled as `_(untracked)_`
+- **Fixes:** removed stale `_(untracked)_` markers from already-tracked backend tests/helpers, iOS runtime files, retained strike-reveal prototype references, and recent audit pages after `git ls-files` confirmed the files already lived in Git
+- **Inventory refresh:** updated current counts to `5065` in-scope files and `267 in-scope wiki markdown files / 266 wiki pages`
+- **Verification:** `git ls-files -- <corrected file set>` and `git diff --check`
+
+## [2026-04-19] audit | Block 204 inventory tracked-marker parity for late auth and feature pages
+
+Closed the next inventory truth-sync block:
+- **Created:** `[[block-204-inventory-tracked-marker-parity-for-late-auth-and-feature-pages]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, late auth audit pages, `wiki/features/onboarding.md`, `wiki/features/opponent-profile.md`, `wiki/decisions/why-reward-modal-over-toast.md`, and `backend/src/app/reset-password/page.tsx`
+- **Fixes:** removed the remaining stale `_(untracked)_` markers from the later auth/audit wave plus the hosted reset-password page and late-added feature/decision pages after `git ls-files` confirmed they were already tracked
+- **Inventory refresh:** updated current counts to `5066` in-scope files and `268 in-scope wiki markdown files / 267 wiki pages`
+- **Verification:** `git ls-files -- <corrected file set>` and `git diff --check`
+
+## [2026-04-19] audit | Block 205 analytics doc split and event-count parity
+
+Closed the next analytics truth-sync block:
+- **Created:** `[[block-205-analytics-doc-split-and-event-count-parity]]`
+- **Files audited:** `backend/src/lib/analytics.ts`, `backend/src/lib/game/tutorial-analytics.ts`, `docs/02_product_and_features/ONBOARDING_SPEC.md`, `docs/features/gold-mine/GOLD_MINE_MINIGAME_PLAN.md`, `wiki/features/tutorial.md`
+- **Fixes:** updated tutorial analytics docs from `7` to `8` events, clarified that tutorial funnel logging is separate from the 7-event provider-agnostic core analytics contract, and replaced the stale Gold Mine plan reference to the non-existent `backend/src/lib/analytics/events.ts` file
+- **Inventory refresh:** updated current counts to `5067` in-scope files and `269 in-scope wiki markdown files / 268 wiki pages`
+- **Verification:** live helper comparison (`backend/src/lib/analytics.ts` vs `backend/src/lib/game/tutorial-analytics.ts`) plus `git diff --check`
+
+## [2026-04-19] audit | Block 206 iOS analytics auth-provider enum parity
+
+Closed the next analytics/runtime typing block:
+- **Created:** `[[block-206-ios-analytics-auth-provider-enum-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Services/AnalyticsService.swift`, `backend/src/lib/analytics.ts`
+- **Fixes:** added a dedicated Swift `AnalyticsAuthProvider` enum, narrowed `AnalyticsEvent.signup` away from raw `String`, and kept the wire payload unchanged by serializing back through `rawValue`
+- **Inventory refresh:** updated current counts to `5068` in-scope files and `270 in-scope wiki markdown files / 269 wiki pages`
+- **Verification:** contract comparison against `backend/src/lib/analytics.ts` plus `git diff --check`
+
+## [2026-04-19] audit | Block 207 admin analytics surface parity and dead helper removal
+
+Closed the next admin/runtime truth-sync block:
+- **Created:** `[[block-207-admin-analytics-surface-parity-and-dead-helper-removal]]`
+- **Files audited:** `admin/src/actions/analytics.ts`, `backend/src/app/api/admin/stats/route.ts`, `backend/src/app/api/admin/economy/route.ts`, `backend/src/app/api/admin/iap/route.ts`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/03_backend_and_api/API_REFERENCE.md`
+- **Fixes:** deleted the dead `admin/src/actions/analytics.ts` helper after confirming it had no imports, rewrote admin capability docs to describe the narrower live stats/economy/IAP review surface, and corrected API docs so `/admin/iap` is described as IAP transaction review rather than generic analytics
+- **Inventory refresh:** updated current counts to `5068` in-scope files and `271 in-scope wiki markdown files / 270 wiki pages`
+- **Verification:** dead-helper import search across `admin/src`, live route inspection for `stats/economy/iap`, and `git diff --check`
+
+## [2026-04-19] audit | Block 208 project overview analytics surface parity
+
+Closed the next source-of-truth analytics block:
+- **Created:** `[[block-208-project-overview-analytics-surface-parity]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `backend/src/app/api/admin/stats/route.ts`, `backend/src/app/api/admin/economy/route.ts`, `backend/src/app/api/admin/iap/route.ts`
+- **Fixes:** rewrote the current analytics section in `PROJECT_OVERVIEW.md` to describe the live aggregate stats/economy/IAP review surface, moved retention/session-style analytics back into future-work wording, and renamed the roadmap item so it no longer reads like a half-live dashboard
+- **Inventory refresh:** updated current counts to `5069` in-scope files and `272 in-scope wiki markdown files / 271 wiki pages`
+- **Verification:** live source-of-truth comparison against admin docs/routes plus `git diff --check`
+
+## [2026-04-19] audit | Block 209 iOS analytics scaffold boundary sync
+
+Closed the next analytics truth-sync block:
+- **Created:** `[[block-209-ios-analytics-scaffold-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Services/AnalyticsService.swift`, `docs/retro/RETRO_2026-04-18.md`
+- **Fixes:** clarified in code comments and retrospective docs that `AnalyticsService.swift` is currently a dormant typed scaffold with no live call-sites yet, while backend analytics plus tutorial structured logs remain the active instrumentation paths
+- **Inventory refresh:** updated current counts to `5070` in-scope files and `273 in-scope wiki markdown files / 272 wiki pages`
+- **Verification:** `rg -n "AnalyticsService\\.shared|setBackend\\(|track\\(" Hexbound/Hexbound -g '*.swift'` plus `git diff --check`
+
+## [2026-04-19] audit | Block 210 combat telemetry doc proposal boundary sync
+
+Closed the next analytics/combat truth-sync block:
+- **Created:** `[[block-210-combat-telemetry-doc-proposal-boundary-sync]]`
+- **Files audited:** `docs/features/combat/COMBAT_MECHANIC_SPEC.md`, `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`, `backend/src/lib/analytics.ts`
+- **Fixes:** reframed combat telemetry docs so interactive-combat events are treated as a future analytics extension instead of a live event family already backed by the current provider-agnostic analytics contract
+- **Inventory refresh:** updated current counts to `5071` in-scope files and `274 in-scope wiki markdown files / 273 wiki pages`
+- **Verification:** live contract comparison against `backend/src/lib/analytics.ts` plus `git diff --check`
+
+## [2026-04-19] audit | Block 211 admin settings and system surface parity
+
+Closed the next admin surface truth-sync block:
+- **Created:** `[[block-211-admin-settings-and-system-surface-parity]]`
+- **Files audited:** `admin/src/app/(dashboard)/settings/page.tsx`, `admin/src/app/(dashboard)/settings/settings-client.tsx`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`
+- **Fixes:** rewrote the settings/system sections in `ADMIN_CAPABILITIES.md` so they describe the live Settings page (basic DB/config/admin-user info, fixed-role management, config seeding) instead of promising standalone User Activity Log, Performance Monitoring, System Status, Audit Trail, or custom-role builder pages that do not exist in the current dashboard
+- **Inventory refresh:** updated current counts to `5072` in-scope files and `275 in-scope wiki markdown files / 274 wiki pages`
+- **Verification:** live settings-page comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 212 orchestrator and doc-index admin analytics parity
+
+Closed the next navigation-layer truth-sync block:
+- **Created:** `[[block-212-orchestrator-and-doc-index-admin-analytics-parity]]`
+- **Files audited:** `docs/ORCHESTRATOR.md`, `docs/01_source_of_truth/DOCUMENTATION_INDEX.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`
+- **Fixes:** narrowed the Admin Panel Engineer zone wording in `ORCHESTRATOR.md` and rewrote the `DOCUMENTATION_INDEX.md` admin summary so both now describe the same live stats/economy/IAP review + settings/role-management surface as the current admin capabilities doc
+- **Inventory refresh:** updated current counts to `5073` in-scope files and `276 in-scope wiki markdown files / 275 wiki pages`
+- **Verification:** comparison against the updated admin capabilities doc plus `git diff --check`
+
+## [2026-04-19] audit | Block 213 backend analytics scaffold boundary sync
+
+Closed the next analytics truth-sync block:
+- **Created:** `[[block-213-backend-analytics-scaffold-boundary-sync]]`
+- **Files audited:** `backend/src/lib/analytics.ts`, `docs/retro/RETRO_2026-04-18.md`, `backend/src/lib/game/tutorial-analytics.ts`
+- **Fixes:** clarified in code comments and retrospective docs that the generic backend analytics layer is currently a typed scaffold without live `track(...)` emitters, while `tutorial-analytics.ts` remains the active instrumentation path today
+- **Inventory refresh:** updated current counts to `5074` in-scope files and `277 in-scope wiki markdown files / 276 wiki pages`
+- **Verification:** `rg -n "\\btrack\\(" backend/src -g '*.ts'` plus `git diff --check`
+
+## [2026-04-19] audit | Block 214 delete orphan admin review routes
+
+Closed the next admin review/runtime cleanup block:
+- **Created:** `[[block-214-delete-orphan-admin-review-routes]]`
+- **Files audited:** `backend/src/app/api/admin/economy/route.ts`, `backend/src/app/api/admin/iap/route.ts`, `backend/src/app/api/admin/stats/route.ts`, `backend/src/app/api/admin/iap-products/route.ts`, `admin/src/app/(dashboard)/economy/page.tsx`, `admin/src/app/(dashboard)/iap-products/page.tsx`, `admin/src/app/api/admin/iap-products/route.ts`, `docs/03_backend_and_api/API_REFERENCE.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `wiki/_generated/api-routes.json`
+- **Fixes:** deleted the orphan backend admin review routes for `stats`, `economy`, and `iap` after confirming the live admin review surface already runs through admin-owned server actions/direct read-side flow, retained the still-live `iap-products` backend route chain, and synced API/docs/generated route maps to that narrower reality
+- **Inventory refresh:** updated current counts to `5072` in-scope files and `278 in-scope wiki markdown files / 277 wiki pages`
+- **Verification:** repo-wide route-consumer search, live `economy`/`iap-products` page comparison, and `git diff --check`
+
+## [2026-04-19] audit | Block 215 shop feature map IAP Products admin surface parity
+
+Closed the next shop/admin truth-sync block:
+- **Created:** `[[block-215-shop-feature-map-iap-products-admin-surface-parity]]`
+- **Files audited:** `wiki/features/shop.md`, `admin/src/app/(dashboard)/iap-products/page.tsx`, `admin/src/app/(dashboard)/iap-products/iap-products-client.tsx`, `admin/src/app/api/admin/iap-products/route.ts`, `backend/src/app/api/admin/iap-products/route.ts`
+- **Fixes:** updated the shop feature map so the dedicated `IAP Products` admin page is visible as a first-class surface, documented its proxy/backend route chain, and marked it as a read-only catalog review page instead of leaving it hidden behind a generic admin-tuning note
+- **Inventory refresh:** updated current counts to `5073` in-scope files and `279 in-scope wiki markdown files / 278 wiki pages`
+- **Verification:** live page/proxy/backend comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 216 admin monetization wording vs live IAP Products surface
+
+Closed the next monetization truth-sync block:
+- **Created:** `[[block-216-admin-monetization-wording-vs-live-iap-products-surface]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/app/(dashboard)/iap-products/page.tsx`, `admin/src/app/(dashboard)/iap-products/iap-products-client.tsx`, `backend/src/app/api/admin/iap-products/route.ts`
+- **Fixes:** rewrote monetization wording so docs now describe `IAP Products` as a read-only catalog review surface, not a live dashboard SKU-management tool
+- **Inventory refresh:** updated current counts to `5074` in-scope files and `280 in-scope wiki markdown files / 279 wiki pages`
+- **Verification:** live page/client/backend comparison plus `git diff --check`

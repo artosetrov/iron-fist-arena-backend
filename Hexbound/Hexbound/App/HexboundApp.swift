@@ -72,6 +72,18 @@ struct HexboundApp: App {
                 }
             }
             .overlay {
+                // Boss Reveal ceremony — mounted between DailyLogin (150)
+                // and HeroForge (200) so it sits above routine HUD modals
+                // but below blocking session/auth overlays. Driven by
+                // AppState.presentBossReveal / dismissBossReveal.
+                if appState.isBossRevealing, let reveal = appState.pendingBossReveal {
+                    BossRevealOverlayView(data: reveal)
+                        .environment(appState)
+                        .transition(.opacity)
+                        .zIndex(170)
+                }
+            }
+            .overlay {
                 // BUG-08: Hero forge loading overlay owned at root so it
                 // survives the `.loreIntro` / `.characterSelect` transition.
                 // Previously lived inside OnboardingDetailView and was torn
@@ -85,6 +97,7 @@ struct HexboundApp: App {
             }
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
             .animation(.easeInOut(duration: 0.3), value: appState.isForgingHero)
+            .animation(.easeInOut(duration: 0.3), value: appState.isBossRevealing)
             .animation(.easeInOut(duration: 0.5), value: showSplash)
             .task {
                 // Wire push service into AppDelegate for token forwarding

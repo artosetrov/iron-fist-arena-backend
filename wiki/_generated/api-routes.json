@@ -139,18 +139,6 @@
         "hasTransaction": false
       },
       {
-        "url": "/api/admin/economy",
-        "file": "backend/src/app/api/admin/economy/route.ts",
-        "methods": [
-          "GET"
-        ],
-        "requiresAuth": false,
-        "adminOnly": true,
-        "rateLimited": false,
-        "idempotencyKey": false,
-        "hasTransaction": false
-      },
-      {
         "url": "/api/admin/events",
         "file": "backend/src/app/api/admin/events/route.ts",
         "methods": [
@@ -176,8 +164,8 @@
         "hasTransaction": false
       },
       {
-        "url": "/api/admin/iap",
-        "file": "backend/src/app/api/admin/iap/route.ts",
+        "url": "/api/admin/iap-products",
+        "file": "backend/src/app/api/admin/iap-products/route.ts",
         "methods": [
           "GET"
         ],
@@ -370,18 +358,6 @@
           "POST",
           "PUT",
           "DELETE"
-        ],
-        "requiresAuth": false,
-        "adminOnly": true,
-        "rateLimited": false,
-        "idempotencyKey": false,
-        "hasTransaction": false
-      },
-      {
-        "url": "/api/admin/stats",
-        "file": "backend/src/app/api/admin/stats/route.ts",
-        "methods": [
-          "GET"
         ],
         "requiresAuth": false,
         "adminOnly": true,

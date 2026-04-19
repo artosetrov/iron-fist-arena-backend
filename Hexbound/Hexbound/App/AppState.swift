@@ -89,6 +89,13 @@ final class AppState {
     // MARK: - Dungeon
     var selectedDungeonId: String?
 
+    /// Set by entry points outside the Hub (daily quests, contextual hints,
+    /// etc.) that want the player to land on the dungeon map *with* the full
+    /// hub HUD (hero card, floating icons, ADVENTURES/CASTLE button) rather
+    /// than the bare standalone `DungeonMapView`. HubView consumes the flag
+    /// in `.onAppear`, flips `showDungeonMap = true`, and clears it.
+    var pendingShowDungeonMap = false
+
     // MARK: - Shop
     var shopInitialTab: Int = 0
 
@@ -116,6 +123,37 @@ final class AppState {
     var showDailyLoginPopup = false
     var dailyLoginCanClaim = false       // drives the hub widget badge
     var unreadMailCount = 0               // drives the inbox badge on hub
+
+    // MARK: - Boss Reveal Overlay
+    //
+    // Root-level ceremonial intro for new bosses. Two call sites:
+    //   1. DungeonSelectViewModel — once-per-boss on first unlock
+    //      (locked → current), gated by UserDefaults cache.
+    //   2. DungeonRushViewModel — every miniboss room reveal.
+    //
+    // Lives at root in HexboundApp.swift so the overlay survives
+    // NavigationStack pushes / `currentScreen` transitions that would
+    // otherwise tear it down mid-choreography.
+    var pendingBossReveal: BossRevealData?
+    var isBossRevealing = false
+
+    func presentBossReveal(_ data: BossRevealData) {
+        pendingBossReveal = data
+        withAnimation(.easeInOut(duration: MotionConstants.overlayFade)) {
+            isBossRevealing = true
+        }
+    }
+
+    func dismissBossReveal() {
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
+            isBossRevealing = false
+        }
+        // Clear payload after the fade so the overlay can finish animating.
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            self?.pendingBossReveal = nil
+        }
+    }
 
     // MARK: - Hero Forge Overlay (BUG-08)
     //
@@ -445,6 +483,8 @@ final class AppState {
         cachedTypedQuests = nil
         cachedDailyLogin = nil
         cachedBonusClaimedToday = false
+        pendingBossReveal = nil
+        isBossRevealing = false
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
         dailyLoginCanClaim = false
         selectedTab = .hub

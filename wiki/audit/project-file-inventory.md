@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-18
+updated: 2026-04-19
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5044
-- Untracked project-owned files: 9
-- In-scope files listed here: 5053
+- Tracked files: 5049
+- Untracked project-owned files: 25
+- In-scope files listed here: 5074
 
 ## Excluded Generated / Vendor Areas
 
@@ -32,8 +32,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .github: 1
 - .skills: 17
 - [root]: 3
-- admin: 217
-- backend: 381
+- admin: 218
+- backend: 379
 - Buildings: 21
 - docs: 177
 - figma-assets: 333
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 17
 - sounds: 33
 - User: 1059
-- wiki: 268
+- wiki: 278
 
 ## File List By Block
 
@@ -265,7 +265,6 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/public/dange.jpg
 - admin/public/ds-previews/divider.png
 - admin/src/actions/achievement-definitions.ts
-- admin/src/actions/analytics.ts
 - admin/src/actions/appearances.ts
 - admin/src/actions/assets.ts
 - admin/src/actions/balance.ts
@@ -337,6 +336,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/events/page.tsx
 - admin/src/app/(dashboard)/flags/flags-client.tsx
 - admin/src/app/(dashboard)/flags/page.tsx
+- admin/src/app/(dashboard)/iap-products/iap-products-client.tsx _(untracked)_
+- admin/src/app/(dashboard)/iap-products/page.tsx _(untracked)_
 - admin/src/app/(dashboard)/item-balance/config/config-editor-client.tsx
 - admin/src/app/(dashboard)/item-balance/config/page.tsx
 - admin/src/app/(dashboard)/item-balance/dashboard-client.tsx
@@ -387,6 +388,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/tables/[tableName]/table-client.tsx
 - admin/src/app/(dashboard)/tables/page.tsx
 - admin/src/app/api/admin/item-balance/apply-suggestions/route.ts
+- admin/src/app/api/admin/iap-products/route.ts _(untracked)_
 - admin/src/app/api/admin/item-balance/config/route.ts
 - admin/src/app/api/admin/item-balance/profiles/route.ts
 - admin/src/app/api/admin/item-balance/simulate/combat/route.ts
@@ -476,7 +478,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/.env.example
 - backend/.gitignore
 - backend/CLAUDE.md
-- backend/email-templates/reset-password.html _(untracked)_
+- backend/email-templates/reset-password.html
 - backend/eslint.config.mjs
 - backend/next.config.ts
 - backend/package-lock.json
@@ -544,10 +546,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/config/restore/route.ts
 - backend/src/app/api/admin/design-tokens/route.ts
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
-- backend/src/app/api/admin/economy/route.ts
 - backend/src/app/api/admin/events/route.ts
 - backend/src/app/api/admin/hub-layout/route.ts
-- backend/src/app/api/admin/iap/route.ts
+- backend/src/app/api/admin/iap-products/route.ts _(untracked)_
 - backend/src/app/api/admin/item-balance/apply-suggestions/route.ts
 - backend/src/app/api/admin/item-balance/config/route.ts
 - backend/src/app/api/admin/item-balance/power-scores/route.ts
@@ -563,7 +564,6 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/passives/route.ts
 - backend/src/app/api/admin/seasons/route.ts
 - backend/src/app/api/admin/skills/route.ts
-- backend/src/app/api/admin/stats/route.ts
 - backend/src/app/api/admin/unban/route.ts
 - backend/src/app/api/admin/users/route.ts
 - backend/src/app/api/appearances/route.ts
@@ -721,7 +721,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/user/password/route.ts
 - backend/src/app/layout.tsx
 - backend/src/lib/apple-iap.ts
-- backend/src/lib/analytics.ts _(untracked)_
+- backend/src/lib/analytics.ts
 - backend/src/lib/auth-admin.ts
 - backend/src/lib/auth.ts
 - backend/src/lib/cache.ts
@@ -756,7 +756,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/hp-regen.ts
 - backend/src/lib/game/inventory-response.ts
 - backend/src/lib/game/item-balance.ts
-- backend/src/lib/game/item-stats.ts _(untracked)_
+- backend/src/lib/game/item-stats.ts
 - backend/src/lib/game/item-constants.ts
 - backend/src/lib/game/item-sets.ts
 - backend/src/lib/game/item-validation.ts
@@ -787,23 +787,23 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/shared-kv.ts
 - backend/src/lib/supabase/server.ts
 - backend/src/middleware.ts
-- backend/tests/api/auth-guest.test.ts _(untracked)_
+- backend/tests/api/auth-guest.test.ts
 - backend/tests/api/auth-login.test.ts
-- backend/tests/api/me.test.ts _(untracked)_
+- backend/tests/api/me.test.ts
 - backend/tests/api/auth-register.test.ts
-- backend/tests/api/auth-forgot-password.test.ts _(untracked)_
-- backend/tests/api/auth-google-apple.test.ts _(untracked)_
-- backend/tests/api/auth-guest-login.test.ts _(untracked)_
-- backend/tests/api/auth-upgrade-guest.test.ts _(untracked)_
-- backend/tests/api/auth-link-account.test.ts _(untracked)_
-- backend/tests/api/auth-sync-user.test.ts _(untracked)_
-- backend/tests/api/auth-upgrade-guest-oauth.test.ts _(untracked)_
+- backend/tests/api/auth-forgot-password.test.ts
+- backend/tests/api/auth-google-apple.test.ts
+- backend/tests/api/auth-guest-login.test.ts
+- backend/tests/api/auth-upgrade-guest.test.ts
+- backend/tests/api/auth-link-account.test.ts
+- backend/tests/api/auth-sync-user.test.ts
+- backend/tests/api/auth-upgrade-guest-oauth.test.ts
 - backend/tests/api/battle-pass-claim.test.ts
 - backend/tests/api/admin-config.test.ts
 - backend/tests/api/admin-config-restore.test.ts
-- backend/tests/api/achievement-claim.test.ts _(untracked)_
-- backend/tests/api/achievement-list.test.ts _(untracked)_
-- backend/tests/api/character-progression-derived-stats.test.ts _(untracked)_
+- backend/tests/api/achievement-claim.test.ts
+- backend/tests/api/achievement-list.test.ts
+- backend/tests/api/character-progression-derived-stats.test.ts
 - backend/tests/api/dungeon-rush-resolve.test.ts
 - backend/tests/api/iap-apple-notifications.test.ts
 - backend/tests/api/iap-restore-purchases.test.ts
@@ -812,7 +812,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/inventory-sell.test.ts
 - backend/tests/api/inventory-unequip.test.ts
 - backend/tests/api/mail-list.test.ts
-- backend/tests/api/pvp-history.test.ts _(untracked)_
+- backend/tests/api/pvp-history.test.ts
 - backend/tests/api/pvp-prepare-bot-ticket.test.ts
 - backend/tests/api/pvp-resolve.test.ts
 - backend/tests/api/social-challenges.test.ts
@@ -837,7 +837,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/lib/dungeon.test.ts
 - backend/tests/lib/elo.test.ts
 - backend/tests/lib/item-balance.test.ts
-- backend/tests/lib/item-stats.test.ts _(untracked)_
+- backend/tests/lib/item-stats.test.ts
 - backend/tests/lib/progression.test.ts
 - backend/tests/lib/rate-limit.test.ts
 - backend/tests/lib/rogue-execute.test.ts
@@ -1052,7 +1052,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/rules/rules-swift.md
 - docs/rules/rules-ui-design.md
 - docs/SOURCE_OF_TRUTH.md
-- docs/07_ui_ux/STRIKE_REVEAL_SHAPE_B_PLAN.md _(untracked)_
+- docs/07_ui_ux/STRIKE_REVEAL_SHAPE_B_PLAN.md
 - docs/templates/TEMPLATE_API_MODULE.md
 - docs/templates/TEMPLATE_FEATURE.md
 - docs/templates/TEMPLATE_RULE.md
@@ -3473,7 +3473,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Resources/image16.png
 - Hexbound/Hexbound/Services/AchievementService.swift
 - Hexbound/Hexbound/Services/AssetManager.swift
-- Hexbound/Hexbound/Services/AnalyticsService.swift _(untracked)_
+- Hexbound/Hexbound/Services/AnalyticsService.swift
 - Hexbound/Hexbound/Services/AuthService.swift
 - Hexbound/Hexbound/Services/BattlePassService.swift
 - Hexbound/Hexbound/Services/BattlePreloader.swift
@@ -3764,8 +3764,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/UI/combat_result/reward-rating-up.png
 - Hexbound/UI/combat_result/reward-turns.png
 - Hexbound/UI/combat_result/reward-xp.png
-- Hexbound/Hexbound/Models/RoundVerdict.swift _(untracked)_
-- Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift _(untracked)_
+- Hexbound/Hexbound/Models/RoundVerdict.swift
+- Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift
 
 ### onboarding-assets (10)
 
@@ -3782,9 +3782,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 
 ### prototypes (3)
 
-- prototypes/strike-reveal-b.html _(untracked)_
-- prototypes/strike-reveal-compact.html _(untracked)_
-- prototypes/strike-reveal-integration.html _(untracked)_
+- prototypes/strike-reveal-b.html
+- prototypes/strike-reveal-compact.html
+- prototypes/strike-reveal-integration.html
 
 ### qa-reports (4)
 
@@ -5069,56 +5069,71 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-149-root-combat-history-doc-relocation.md
 - wiki/audit/block-150-root-gold-mine-doc-relocation.md
 - wiki/audit/block-151-root-release-audit-relocation.md
-- wiki/audit/block-152-root-bootstrap-and-ignore-parity.md _(untracked)_
-- wiki/audit/block-153-ios-talent-detail-sheet-slot-aware-picker-unification.md _(untracked)_
-- wiki/audit/block-154-backend-pvp-match-start-prisma-create-parity.md _(untracked)_
-- wiki/audit/block-155-backend-pvp-strike-complete-prisma-json-parity.md _(untracked)_
-- wiki/audit/block-156-stale-audit-tail-quests-and-interactive-pvp-sync.md _(untracked)_
-- wiki/audit/block-157-stale-audit-tail-contraband-and-social-challenges-sync.md _(untracked)_
-- wiki/audit/block-158-backend-item-stat-authority-rolled-stats-parity.md _(untracked)_
-- wiki/audit/block-159-ios-game-init-item-stat-preview-parity.md _(untracked)_
-- wiki/audit/block-160-ios-strike-reveal-partial-implementation-boundary.md _(untracked)_
-- wiki/audit/block-161-auth-reset-password-surface-parity.md _(untracked)_
-- wiki/audit/block-162-daily-login-reward-toast-tail-removal.md _(untracked)_
-- wiki/audit/block-163-hub-tutorial-quest-reward-modal-parity.md _(untracked)_
-- wiki/audit/block-164-ios-gold-mine-bonus-reward-modal-parity.md _(untracked)_
-- wiki/audit/block-165-ios-upgrade-stat-bonus-config-fallback-parity.md _(untracked)_
-- wiki/audit/block-166-ios-referral-apply-reward-modal-parity.md _(untracked)_
-- wiki/audit/block-167-ios-mail-claim-reward-modal-parity.md _(untracked)_
-- wiki/audit/block-168-backend-character-progression-derived-stats-transaction-parity.md _(untracked)_
-- wiki/audit/block-169-stale-audit-tail-item-stat-preview-sync.md _(untracked)_
-- wiki/audit/block-170-backend-appearance-wallet-response-boundary.md _(untracked)_
-- wiki/audit/block-171-project-git-helper-tracked-only-staging.md _(untracked)_
-- wiki/audit/block-172-audio-and-asset-doc-boundary-parity.md _(untracked)_
-- wiki/audit/block-173-admin-design-system-dead-preview-export-removal.md _(untracked)_
-- wiki/audit/block-174-stale-audit-tail-prototype-decision-sync.md _(untracked)_
-- wiki/audit/block-175-wiki-opponent-profile-and-onboarding-feature-pages.md _(untracked)_
-- wiki/audit/block-176-stale-audit-tail-audio-bootstrap-boundary-sync.md _(untracked)_
-- wiki/audit/block-177-stale-audit-tail-item-balance-cross-process-sync.md _(untracked)_
-- wiki/audit/block-178-stale-audit-tail-tutorial-migration-sync.md _(untracked)_
-- wiki/audit/block-179-instant-retro-local-state-de-tracking.md _(untracked)_
-- wiki/audit/block-180-backend-achievement-cosmetic-claim-runtime-parity.md _(untracked)_
-- wiki/audit/block-181-admin-achievement-cosmetic-authoring-parity.md _(untracked)_
-- wiki/audit/block-182-backend-achievement-list-definition-text-parity.md _(untracked)_
-- wiki/audit/block-183-achievement-doc-count-and-reward-summary-parity.md _(untracked)_
-- wiki/audit/block-184-achievement-product-doc-runtime-parity.md _(untracked)_
-- wiki/audit/block-185-stale-operations-tail-env-and-landing-sync.md _(untracked)_
-- wiki/audit/block-186-backend-guest-oauth-wallet-merge-parity.md _(untracked)_
-- wiki/audit/block-187-backend-forgot-password-canonical-host-fallback.md _(untracked)_
-- wiki/audit/block-188-auth-link-account-surface-parity.md _(untracked)_
-- wiki/audit/block-189-backend-link-account-duplicate-email-guard.md _(untracked)_
-- wiki/audit/block-190-backend-sync-user-duplicate-email-guard.md _(untracked)_
-- wiki/audit/block-191-backend-guest-login-device-race-recovery.md _(untracked)_
+- wiki/audit/block-152-root-bootstrap-and-ignore-parity.md
+- wiki/audit/block-153-ios-talent-detail-sheet-slot-aware-picker-unification.md
+- wiki/audit/block-154-backend-pvp-match-start-prisma-create-parity.md
+- wiki/audit/block-155-backend-pvp-strike-complete-prisma-json-parity.md
+- wiki/audit/block-156-stale-audit-tail-quests-and-interactive-pvp-sync.md
+- wiki/audit/block-157-stale-audit-tail-contraband-and-social-challenges-sync.md
+- wiki/audit/block-158-backend-item-stat-authority-rolled-stats-parity.md
+- wiki/audit/block-159-ios-game-init-item-stat-preview-parity.md
+- wiki/audit/block-160-ios-strike-reveal-partial-implementation-boundary.md
+- wiki/audit/block-161-auth-reset-password-surface-parity.md
+- wiki/audit/block-162-daily-login-reward-toast-tail-removal.md
+- wiki/audit/block-163-hub-tutorial-quest-reward-modal-parity.md
+- wiki/audit/block-164-ios-gold-mine-bonus-reward-modal-parity.md
+- wiki/audit/block-165-ios-upgrade-stat-bonus-config-fallback-parity.md
+- wiki/audit/block-166-ios-referral-apply-reward-modal-parity.md
+- wiki/audit/block-167-ios-mail-claim-reward-modal-parity.md
+- wiki/audit/block-168-backend-character-progression-derived-stats-transaction-parity.md
+- wiki/audit/block-169-stale-audit-tail-item-stat-preview-sync.md
+- wiki/audit/block-170-backend-appearance-wallet-response-boundary.md
+- wiki/audit/block-171-project-git-helper-tracked-only-staging.md
+- wiki/audit/block-172-audio-and-asset-doc-boundary-parity.md
+- wiki/audit/block-173-admin-design-system-dead-preview-export-removal.md
+- wiki/audit/block-174-stale-audit-tail-prototype-decision-sync.md
+- wiki/audit/block-175-wiki-opponent-profile-and-onboarding-feature-pages.md
+- wiki/audit/block-176-stale-audit-tail-audio-bootstrap-boundary-sync.md
+- wiki/audit/block-177-stale-audit-tail-item-balance-cross-process-sync.md
+- wiki/audit/block-178-stale-audit-tail-tutorial-migration-sync.md
+- wiki/audit/block-179-instant-retro-local-state-de-tracking.md
+- wiki/audit/block-180-backend-achievement-cosmetic-claim-runtime-parity.md
+- wiki/audit/block-181-admin-achievement-cosmetic-authoring-parity.md
+- wiki/audit/block-182-backend-achievement-list-definition-text-parity.md
+- wiki/audit/block-183-achievement-doc-count-and-reward-summary-parity.md
+- wiki/audit/block-184-achievement-product-doc-runtime-parity.md
+- wiki/audit/block-185-stale-operations-tail-env-and-landing-sync.md
+- wiki/audit/block-186-backend-guest-oauth-wallet-merge-parity.md
+- wiki/audit/block-187-backend-forgot-password-canonical-host-fallback.md
+- wiki/audit/block-188-auth-link-account-surface-parity.md
+- wiki/audit/block-189-backend-link-account-duplicate-email-guard.md
+- wiki/audit/block-190-backend-sync-user-duplicate-email-guard.md
+- wiki/audit/block-191-backend-guest-login-device-race-recovery.md
 - wiki/audit/block-192-backend-guest-login-signin-failure-cleanup.md
-- wiki/audit/block-193-backend-upgrade-guest-full-supabase-rollback.md _(untracked)_
-- wiki/audit/block-194-backend-oauth-local-init-cleanup-and-collision-guards.md _(untracked)_
-- wiki/audit/block-195-backend-upgrade-guest-oauth-transaction-cleanup.md _(untracked)_
-- wiki/audit/block-196-backend-register-local-init-cleanup.md _(untracked)_
-- wiki/audit/block-197-backend-login-local-row-bootstrap-parity.md _(untracked)_
-- wiki/audit/block-198-backend-auth-guest-local-row-race-recovery.md _(untracked)_
-- wiki/audit/block-199-backend-me-local-row-bootstrap-parity.md _(untracked)_
-- wiki/audit/block-200-backend-pvp-history-missing-opponent-guard.md _(untracked)_
-- wiki/audit/block-201-backend-interactive-pvp-opponent-null-contract-guard.md _(untracked)_
+- wiki/audit/block-193-backend-upgrade-guest-full-supabase-rollback.md
+- wiki/audit/block-194-backend-oauth-local-init-cleanup-and-collision-guards.md
+- wiki/audit/block-195-backend-upgrade-guest-oauth-transaction-cleanup.md
+- wiki/audit/block-196-backend-register-local-init-cleanup.md
+- wiki/audit/block-197-backend-login-local-row-bootstrap-parity.md
+- wiki/audit/block-198-backend-auth-guest-local-row-race-recovery.md
+- wiki/audit/block-199-backend-me-local-row-bootstrap-parity.md
+- wiki/audit/block-200-backend-pvp-history-missing-opponent-guard.md
+- wiki/audit/block-201-backend-interactive-pvp-opponent-null-contract-guard.md
+- wiki/audit/block-202-backend-analytics-warning-cleanup-and-inventory-marker-sync.md _(untracked)_
+- wiki/audit/block-203-inventory-tracked-marker-parity-for-recent-runtime-wave.md _(untracked)_
+- wiki/audit/block-204-inventory-tracked-marker-parity-for-late-auth-and-feature-pages.md _(untracked)_
+- wiki/audit/block-205-analytics-doc-split-and-event-count-parity.md _(untracked)_
+- wiki/audit/block-206-ios-analytics-auth-provider-enum-parity.md _(untracked)_
+- wiki/audit/block-207-admin-analytics-surface-parity-and-dead-helper-removal.md _(untracked)_
+- wiki/audit/block-208-project-overview-analytics-surface-parity.md _(untracked)_
+- wiki/audit/block-209-ios-analytics-scaffold-boundary-sync.md _(untracked)_
+- wiki/audit/block-210-combat-telemetry-doc-proposal-boundary-sync.md _(untracked)_
+- wiki/audit/block-211-admin-settings-and-system-surface-parity.md _(untracked)_
+- wiki/audit/block-212-orchestrator-and-doc-index-admin-analytics-parity.md _(untracked)_
+- wiki/audit/block-213-backend-analytics-scaffold-boundary-sync.md _(untracked)_
+- wiki/audit/block-214-delete-orphan-admin-review-routes.md _(untracked)_
+- wiki/audit/block-215-shop-feature-map-iap-products-admin-surface-parity.md _(untracked)_
+- wiki/audit/block-216-admin-monetization-wording-vs-live-iap-products-surface.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md
@@ -5130,7 +5145,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/decisions/why-exponential-upgrades.md
 - wiki/decisions/why-k-factor-48.md
 - wiki/decisions/why-no-gem-to-gold.md
-- wiki/decisions/why-reward-modal-over-toast.md _(untracked)_
+- wiki/decisions/why-reward-modal-over-toast.md
 - wiki/decisions/why-rogue-execute.md
 - wiki/entities/classes.md
 - wiki/entities/design-system.md
@@ -5150,8 +5165,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/features/leaderboard.md
 - wiki/features/mail.md
 - wiki/features/minigames.md
-- wiki/features/onboarding.md _(untracked)_
-- wiki/features/opponent-profile.md _(untracked)_
+- wiki/features/onboarding.md
+- wiki/features/opponent-profile.md
 - wiki/features/passive-tree.md
 - wiki/features/prestige.md
 - wiki/features/pvp-combat.md
@@ -5294,4 +5309,4 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/systems/social.md
 - wiki/systems/stamina.md
 - wiki/systems/stance-system.md
-- backend/src/app/reset-password/page.tsx _(untracked)_
+- backend/src/app/reset-password/page.tsx

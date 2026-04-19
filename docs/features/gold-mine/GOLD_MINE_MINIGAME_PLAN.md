@@ -356,7 +356,7 @@ return {
 - `backend/src/routes/gold-mine.ts` — add handler, modify `collect-all`
 - `backend/src/lib/game/gold-mine.ts` — add `createMinigameSession()`, `claimMinigameBonus()`, `getUnlockedShafts()`
 - `backend/src/lib/game/shaft-catalog.ts` — **NEW**
-- `backend/src/lib/analytics/events.ts` — register `minigame_gold_mine_claimed`
+- `backend/src/lib/analytics.ts` — extend the core analytics contract if `minigame_gold_mine_claimed` graduates from plan to live instrumentation
 
 ### 2.4 Admin Panel
 

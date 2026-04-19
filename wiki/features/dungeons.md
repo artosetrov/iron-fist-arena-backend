@@ -89,6 +89,7 @@ Players select a dungeon, enter a room, fight enemies round-by-round, progress t
 - **Seed determinism.** Run seed chosen at start; rooms/drops derive from seed so admin can replay for bug investigation.
 - **Achievement hook.** `dungeons_complete` quest + achievement counters fire on final boss clear, not on individual rooms.
 - **Loot only on clear.** Abandon = no loot. Defeat = no loot. Victory = full drop table roll.
+- **Boss reveal ceremony.** On first `.current` open of a real boss (`isRealBoss == true`), `BossDetailSheet.onAppear` fires `AppState.presentBossReveal(_:)` once per boss (UserDefaults `bossRevealSeen_<name>_<id>`). Practice enemies (Training Camp dummies) are skipped. See [[why-boss-reveal-ceremony]].
 
 ## Tests / fixtures
 

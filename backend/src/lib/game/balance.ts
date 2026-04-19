@@ -539,6 +539,9 @@ export const PASSIVES = {
   MAX_PASSIVE_POINTS: 50,
   RESPEC_GEM_COST: 50,
   RESPEC_GOLD_COST: 5000, // Alternative gold cost for respec (gold sink)
+  BASE_ACTIVE_SLOTS: 3,   // Slot count granted by default.
+  MAX_ACTIVE_SLOTS: 4,    // Hard cap after the premium unlock.
+  PREMIUM_ACTIVE_SLOT_GEM_COST: 100, // One-time gem cost to unlock the 4th slot.
 } as const;
 
 // --- Gem costs (Economy v3, 2026-04-13) ---

@@ -400,6 +400,30 @@ final class PassiveTreeViewModel {
         }
     }
 
+    /// Unlock the 4th active-skill slot. Flat gem cost (server-side).
+    /// Optimistic: bumps `maxActiveSlots` after the API call succeeds.
+    func unlockPremiumSlot() {
+        guard !isMutating else { return }
+        guard maxActiveSlots < 4 else { return }
+        isMutating = true
+
+        Task { [weak self] in
+            guard let self else { return }
+            let result = await service.unlockPremiumSlot(characterId: characterId)
+            isMutating = false
+            if let result, result.success {
+                maxActiveSlots = result.maxSlots
+                appState.currentCharacter?.gems = result.gems
+                appState.showToast(
+                    "Slot unlocked",
+                    subtitle: "4th active-skill slot available",
+                    type: .reward
+                )
+                SFXManager.shared.play(.uiConfirm)
+            }
+        }
+    }
+
     /// Respec — gems cost applied server-side; we only confirm & refresh.
     func respec() {
         guard !isMutating else { return }

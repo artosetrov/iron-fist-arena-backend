@@ -348,6 +348,10 @@ enum SFX: String, CaseIterable {
         case .magicalCrit:  return .hitCritical
         case .poisonHit:    return .hitPoison
         case .poisonCrit:   return .hitCritical
+        // No dedicated fire SFX asset yet — alias to magical until a burn/flame
+        // wav lands in Resources/Audio/SFX/.
+        case .fireHit:      return .hitMagical
+        case .fireCrit:     return .hitCritical
         case .trueHit:      return .hitTrue
         case .trueCrit:     return .hitCritical
         case .dodge:        return .combatDodge

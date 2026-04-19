@@ -1,5 +1,14 @@
 import SwiftUI
 
+/// Interactive combat opponent type — drives server-side logic fork in
+/// /pvp/match/start + /strike + /complete. Raw values match the backend's
+/// `opponent_type` string enum, so this encodes directly to the wire.
+enum InteractiveOpponentType: String, Hashable, Codable, Sendable {
+    case pvp
+    case bot
+    case dungeonBoss = "dungeon_boss"
+}
+
 enum AppRoute: Hashable, Codable {
     // Auth
     case login
@@ -17,10 +26,22 @@ enum AppRoute: Hashable, Codable {
     case combat
     case combatResult
     case loot
-    /// Interactive Combat v1 — new match-lifecycle fight screen.
-    /// Routed here when `GameConfig.interactiveCombatEnabled == true` (driven
-    /// by server env flag `INTERACTIVE_COMBAT_V1`). Classic flow uses `.combat`.
-    case interactiveBattle(characterId: String, opponentId: String, attackerMaxHp: Int, defenderMaxHp: Int)
+    /// Interactive Combat v1 — match-lifecycle fight screen.
+    /// `opponentType` lets the same UI drive PvP, bot, and dungeon boss fights —
+    /// the server forks its logic in /pvp/match/start by reading this field.
+    /// `.pvp` — real opponent, ELO + revenge queue.
+    /// `.bot` — NPC bot (npc_* ids), client-side AI picks server-side zones,
+    /// no ELO swing, no revenge queue.
+    /// `.dungeonBoss` — boss from an active DungeonRun. `dungeonRunId` must be
+    /// set. Server advances the run's floor counter on win.
+    case interactiveBattle(
+        characterId: String,
+        opponentId: String,
+        attackerMaxHp: Int,
+        defenderMaxHp: Int,
+        opponentType: InteractiveOpponentType = .pvp,
+        dungeonRunId: String? = nil
+    )
 
     // Arena
     case arena
@@ -137,12 +158,14 @@ struct MainRouterView: View {
         case .combat: CombatDetailView()
         case .combatResult: CombatResultDetailView()
         case .loot: LootDetailView()
-        case .interactiveBattle(let characterId, let opponentId, let attackerMaxHp, let defenderMaxHp):
+        case .interactiveBattle(let characterId, let opponentId, let attackerMaxHp, let defenderMaxHp, let opponentType, let dungeonRunId):
             InteractiveBattleRouteView(
                 characterId: characterId,
                 opponentId: opponentId,
                 attackerMaxHp: attackerMaxHp,
-                defenderMaxHp: defenderMaxHp
+                defenderMaxHp: defenderMaxHp,
+                opponentType: opponentType,
+                dungeonRunId: dungeonRunId
             )
         
         // Arena

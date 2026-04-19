@@ -295,6 +295,35 @@ In combat, VS, and comparison views, **mirror the enemy avatar horizontally** wi
 ### Assets vs Emojis
 Replace emojis with game assets when available. Add `assetIcon` computed property to models.
 
+### SF Symbols — Prefer Project Assets (CRITICAL)
+**Always prefer `Image("asset-name")` over `Image(systemName:)` when a matching asset exists in `Assets.xcassets`.** SF Symbols break the dark-fantasy art style — they look like iOS system UI, not a game.
+
+Known mappings (add to this list when new ones are found):
+- `envelope.fill`, `envelope.badge.fill` → `Image("hud-inbox")`
+- `lock.fill` → `Image("icon-padlock")`
+- `bubble.left.fill`, `message.fill` → `Image("hud-inbox")`
+- `gift.fill` → `Image("hud-gift")`
+- `bell.fill`, `bell.badge.fill` → `Image("hud-inbox")` (or a dedicated bell asset if added)
+- `chevron.left`, `arrow.left` → `Image("ui-arrow-left")`
+- `chevron.right`, `arrow.right` → `Image("ui-arrow-right")` (only for standalone nav arrows — row disclosure `chevron.right` is fine)
+- `chevron.up`, `arrow.up` → `Image("ui-arrow-up")`
+- `chevron.down`, `arrow.down` → `Image("ui-arrow-down")`
+- `speaker.wave.2.fill` → `Image("hud-sound-on")`
+- `speaker.slash.fill` → `Image("hud-sound-off")`
+- `die.face.5.fill`, `dice.fill` → `Image("ui-dice")`
+- `gearshape.fill`, `gear` → `Image("icon-settings")`
+- `cart.fill`, `bag.fill` → `Image("icon-shop")`
+- `trophy.fill` → `Image("icon-pvp-rating")` or `Image("icon-leaderboard")` (pick by context)
+- `flag.fill`, `scroll.fill` → `Image("hud-quests")` / `Image("hud-daily-quests")`
+- `person.fill`, `person.2.fill` → use class icon (`icon-mage`/`icon-rogue`/`icon-tank`/`icon-warrior`) or race icon (`race-icon-*`)
+
+**When it's OK to keep SF Symbols:**
+- Standard chrome no player notices: `xmark` (close buttons — `.closeButton` style), `eye` / `eye.slash` (password visibility toggle), row disclosure `chevron.right`, `checkmark`
+- Temporary placeholders explicitly marked `// TODO: replace with asset`
+- Dev/admin screens (ScreenCatalogView, DevPanel)
+
+**Before using `Image(systemName:)` in new code** — check `Hexbound/Resources/Assets.xcassets/` for a matching asset first. If it exists, use it. If it doesn't and the icon is player-facing, flag it for an asset add rather than silently shipping an SF Symbol.
+
 ## Sizing Rules
 
 ### Minimum Font Size (CRITICAL)

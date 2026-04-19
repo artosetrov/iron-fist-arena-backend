@@ -212,11 +212,17 @@ final class ArenaViewModel {
            let char = appState.currentCharacter,
            let opponent = opponents.first(where: { $0.id == opponentId }) {
             showComparison = false
+            // NPC bots (first 3 onboarding fights) live outside the characters
+            // table — server forks on this flag and reads stats from the bot
+            // generator instead of a DB row.
+            let opponentType: InteractiveOpponentType =
+                opponent.id.hasPrefix("npc_") ? .bot : .pvp
             appState.mainPath.append(AppRoute.interactiveBattle(
                 characterId: char.id,
                 opponentId: opponent.id,
                 attackerMaxHp: char.maxHp,
-                defenderMaxHp: opponent.maxHp
+                defenderMaxHp: opponent.maxHp,
+                opponentType: opponentType
             ))
             return
         }
