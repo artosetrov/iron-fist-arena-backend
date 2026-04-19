@@ -31,7 +31,14 @@ echo ""
 echo "🔎 Проверяю iOS release config..."
 python3 scripts/check_release_config.py
 
-# 3. Проверить что Fastlane identity настроен
+# 3. Проверить что upload auth настроен
+has_asc_api_key=false
+if [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] && [ -n "${APP_STORE_CONNECT_ISSUER_ID:-}" ]; then
+    if [ -n "${APP_STORE_CONNECT_API_KEY_PATH:-}" ] || [ -n "${APP_STORE_CONNECT_API_KEY_CONTENT:-}" ] || [ -n "${APP_STORE_CONNECT_API_KEY_CONTENT_BASE64:-}" ]; then
+        has_asc_api_key=true
+    fi
+fi
+
 has_fastlane_apple_id=false
 if [ -n "${FASTLANE_APPLE_ID:-}" ]; then
     has_fastlane_apple_id=true
@@ -46,16 +53,20 @@ elif [ -f "$LOCAL_APPFILE" ] && grep -Eq '^[[:space:]]*(team_id|itc_team_id)\(' 
     has_fastlane_team=true
 fi
 
-if [ "$has_fastlane_apple_id" != "true" ] || [ "$has_fastlane_team" != "true" ]; then
+if [ "$has_asc_api_key" != "true" ] && { [ "$has_fastlane_apple_id" != "true" ] || [ "$has_fastlane_team" != "true" ]; }; then
     echo ""
-    echo "❌ Сначала настрой Fastlane identity:"
-    echo "   Нужен Apple ID и Team ID / App Store Connect Team ID"
+    echo "❌ Сначала настрой auth для загрузки в App Store Connect:"
     echo ""
-    echo "   Вариант A: создать fastlane/Appfile.local"
+    echo "   Вариант A (рекомендуется для CI): App Store Connect API key env vars"
+    echo "   APP_STORE_CONNECT_API_KEY_ID=..."
+    echo "   APP_STORE_CONNECT_ISSUER_ID=..."
+    echo "   APP_STORE_CONNECT_API_KEY_PATH=...            # или APP_STORE_CONNECT_API_KEY_CONTENT(_BASE64)"
+    echo ""
+    echo "   Вариант B: создать fastlane/Appfile.local"
     echo "   1. Скопируй fastlane/Appfile.local.example → fastlane/Appfile.local"
     echo "   2. Заполни apple_id / team_id / itc_team_id"
     echo ""
-    echo "   Вариант B: передать env vars"
+    echo "   Вариант C: передать Apple ID env vars"
     echo "   FASTLANE_APPLE_ID=..."
     echo "   FASTLANE_TEAM_ID=..."
     echo "   FASTLANE_ITC_TEAM_ID=...   # если нужен отдельный ASC team"

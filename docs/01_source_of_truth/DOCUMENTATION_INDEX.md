@@ -1,6 +1,6 @@
 # Hexbound — Documentation Index (Master Reference)
 
-*Master index of active project documentation. For live file-by-file repo status and current audit progress, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last updated: 2026-04-16*
+*Master index of active project documentation. For live file-by-file repo status, current audit progress, and feature/runtime maps, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last updated: 2026-04-19*
 
 ---
 
@@ -152,9 +152,9 @@ Superseded, legacy, or reference-only documents.
 4. Implement: Follow **DEVELOPMENT_RULES.md** (strict null checks, TypeScript)
 
 ### For Admin Panel Developers
-1. Start with: **PROJECT_OVERVIEW.md** (tech stack, 38 pages overview)
-2. Then read: **ADMIN_CAPABILITIES.md** (what each page does)
-3. Reference: **ADMIN_CAPABILITIES.md** (all config keys)
+1. Start with: **PROJECT_OVERVIEW.md** (tech stack and current admin/runtime overview)
+2. Then read: **ADMIN_CAPABILITIES.md** (what each live page actually does)
+3. Reference: **API_REFERENCE.md** for backend-owned routes and `wiki/features/*` for feature-specific runtime boundaries
 4. Implement: Follow **DEVELOPMENT_RULES.md** (strict null checks, TypeScript, form validation)
 
 ### For iOS/SwiftUI Developers
@@ -177,9 +177,9 @@ Superseded, legacy, or reference-only documents.
 4. Use: **UI_PR_CHECKLIST.md** (testing criteria)
 
 ### For Admins / Operations
-1. Start with: **PROJECT_OVERVIEW.md** (deployment info)
-2. Then read: **ADMIN_CAPABILITIES.md** (what you can do)
-3. Reference: **ADMIN_CAPABILITIES.md** (config keys to edit)
+1. Start with: **PROJECT_OVERVIEW.md** (deployment/runtime overview)
+2. Then read: **ADMIN_CAPABILITIES.md** (what the live dashboard can do today)
+3. Reference: **DEPLOY.md**, **DATABASE_MIGRATIONS.md**, and **API_REFERENCE.md** for backend-owned operational steps
 4. Use: **TESTFLIGHT_GUIDE.md** (iOS deployment)
 
 ---
@@ -210,7 +210,7 @@ Superseded, legacy, or reference-only documents.
 ### Economy (Gold, Gems, IAP)
 - **ECONOMY.md** — Currency types, pricing, monetization
 - **GAME_SYSTEMS.md** — Gold sinks/faucets, daily gem card
-- **ADMIN_CAPABILITIES.md** — Economy config keys
+- **ADMIN_CAPABILITIES.md** — Economy review, offers, loot, live config, and IAP products surfaces
 - **BALANCE_CONSTANTS.md** — Gold/gem reward formulas
 
 ### Cosmetics & Appearance
@@ -220,7 +220,7 @@ Superseded, legacy, or reference-only documents.
 ### Battle Pass & Seasons
 - **GAME_SYSTEMS.md** — Battle pass mechanics
 - **ECONOMY.md** — Pricing, premium tier benefits
-- **ADMIN_CAPABILITIES.md** — Battle pass admin page
+- **ADMIN_CAPABILITIES.md** — Battle pass rewards and season-window admin surfaces
 
 ### Daily Systems (Quests, Login, Training)
 - **GAME_SYSTEMS.md** — Daily quest types, daily login, training ground
@@ -228,12 +228,11 @@ Superseded, legacy, or reference-only documents.
 
 ### Achievements
 - **GAME_SYSTEMS.md** — Achievement system
-- **ADMIN_CAPABILITIES.md** — Achievement admin page
+- **ADMIN_CAPABILITIES.md** — Achievement definition and aggregate-stats surfaces
 
 ### Admin Panel
 - **PROJECT_OVERVIEW.md** — admin surface overview
-- **ADMIN_CAPABILITIES.md** — Detailed page descriptions
-- **ADMIN_CAPABILITIES.md** — All 80+ config keys
+- **ADMIN_CAPABILITIES.md** — Detailed live page descriptions and capability boundaries
 
 ### Design System (iOS)
 - **DESIGN_SYSTEM.md** — DarkFantasyTheme, ButtonStyles, LayoutConstants
@@ -245,7 +244,7 @@ Superseded, legacy, or reference-only documents.
 
 ### Push Notifications
 - **GAME_SYSTEMS.md** — Push system overview
-- **ADMIN_CAPABILITIES.md** — Push campaign creation page
+- **ADMIN_CAPABILITIES.md** — Push campaign sender and send-result review surface
 - **API_REFERENCE.md** — Push endpoints
 
 ### Leaderboards
@@ -254,7 +253,7 @@ Superseded, legacy, or reference-only documents.
 
 ### Mail/Inbox
 - **GAME_SYSTEMS.md** — Mail system
-- **ADMIN_CAPABILITIES.md** — Mail composition page
+- **ADMIN_CAPABILITIES.md** — Mail composition and reward attachment surface
 
 ### World, Lore & Audio
 - **WORLD_AND_LORE.md** — Setting, origins, classes, tone, locations, narrative approach
@@ -283,15 +282,15 @@ Superseded, legacy, or reference-only documents.
 
 ### "I need to balance a game constant"
 1. [ ] Read **BALANCE_CONSTANTS.md** to find the value
-2. [ ] Use **ADMIN_CAPABILITIES.md** to find the config key
+2. [ ] Use **ADMIN_CAPABILITIES.md** to confirm whether the value is live-config-backed in admin
 3. [ ] Check **BALANCE_CONSTANTS.md** for impact analysis
-4. [ ] Edit via **ADMIN_CAPABILITIES.md** admin panel
+4. [ ] Edit via the live admin/config surface only if that constant is actually admin-backed; otherwise change the code/config source of truth
 5. [ ] Test impact in staging
 
 ### "I'm adding a new item/skill/boss"
 1. [ ] Review **PROJECT_OVERVIEW.md** schema (Item, Skill, DungeonBoss models)
 2. [ ] Check **BALANCE_CONSTANTS.md** for stat ranges
-3. [ ] Use **ADMIN_CAPABILITIES.md** to add via admin panel
+3. [ ] Use **ADMIN_CAPABILITIES.md** to confirm whether creation happens in admin or in code/config
 4. [ ] Update **ASSET_PROMPTS_INDEX.md** if adding art
 5. [ ] Test in game
 

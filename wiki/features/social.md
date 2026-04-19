@@ -41,7 +41,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 
 - `backend/src/lib/game/social.ts` — friendship state machine, block/unblock logic
 - `backend/src/lib/game/challenges.ts` — challenge creation, accept, expire
-- `backend/src/lib/game/guild.ts` (if present) — guild membership + permissions
+- `backend/src/lib/game/guild-challenge.ts` — guild-scoped challenge helpers
 
 ### Prisma models touched
 
@@ -77,7 +77,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 
 ## Admin
 
-- `admin/src/app/(dashboard)/social/` — moderation (mute, ban, clear DMs)
+- `admin/src/app/(dashboard)/social/page.tsx` — read-only social review page for friendships, direct messages, and challenge history
 
 ## Docs
 
@@ -92,10 +92,13 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 - **Guild spec in flux.** Full guild system (chat, rank, bank) is still design phase. Today: Guild Hall UI exists; underlying features mostly social primitives.
 - **DMs separate from mail.** `DirectMessage` (player-to-player) vs `MailRecipient` (system broadcast). Don't conflate. See [[mail]].
 - **Rate limits.** Friend requests and challenges need rate limits to prevent spam.
+- **Admin social surface is review-only today.** The dashboard shows recent friendships/messages/challenges, but it is not a live moderation console with mute/ban/clear-message actions.
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/social/*` (if present)
+- `backend/tests/api/social-challenges.test.ts`
+- `backend/tests/api/social-messages.test.ts`
+- No broader `social/*` backend suite is checked in today beyond these route-level tests
 
 ## Related features
 

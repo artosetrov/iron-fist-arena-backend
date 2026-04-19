@@ -1,6 +1,6 @@
 # Hexbound — Project Overview (Source of Truth)
 
-*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-16.*
+*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-19.*
 
 ---
 
@@ -100,7 +100,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ### Daily Systems
 - **Daily Quests** (7 types): PvP wins, dungeon completions, gold spent, item upgrades, consumable use, shell game plays, gold mine collects
-- **Daily Login Rewards** — 30-day cycle with streak tracking
+- **Daily Login Rewards** — 7-day cycle with streak tracking
 - **Training Ground** — unlimited free practice PvE combat (1 stamina)
 
 ### Battle Pass
@@ -127,20 +127,20 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ### Mail/Inbox System
 - Broadcast, segment, or character-targeted messages
-- Attachments: Gold, Gems, XP, items
+- Admin-composed attachments today: Gold, Gems, XP
 - Expiration, read/claimed status tracking
 - Admin-composable via MailMessage model
 
 ### Live Configuration
 - Live key-value config surface via `GameConfig`
-- No redeployment needed for balance changes
-- Admin console support for real-time updates
+- Many balance/config changes can ship without redeploy
+- Admin config surfaces apply changes on the next live request rather than through a separate real-time push layer
 - Categories: Combat, Economy, Progression, UI/UX, Events
 
 ### Feature Flags
-- Boolean, percentage, segment-based toggles
+- Boolean, percentage, segment, and JSON toggles
 - Environment-scoped (production, staging, dev)
-- A/B testing infrastructure
+- Gradual rollout / targeted-override support
 - Admin CRUD via FeatureFlag model
 
 ### Prestige System
@@ -150,12 +150,12 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ### Push Notifications
 - Broadcast/segment/user-targeted campaigns
-- Delivery logging (sent, delivered, failed)
-- Data payloads for deep linking
+- Send logging (sent / failed) plus token counts
+- Optional route payload for in-app navigation
 - Per-user opt-in via PushToken
 
 ### In-App Purchases (IAP)
-- Receipt validation via Supabase Auth
+- Backend receipt validation for StoreKit / Apple purchase flows
 - Gem purchases with configurable tiers
 - Transaction tracking + verification logs
 - Daily Gem Card (30-day subscription)
@@ -351,72 +351,62 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 ## Admin Panel
 
 ### Dashboard
-- KPI snapshot (DAU, revenue, active sessions)
-- Recent admin logs
-- Feature flag status
+- KPI snapshot (DAU/new users/total users/PvP today/gold avg/gems avg)
+- Alert cards for class-balance or activity drops
+- Economy / PvP / player / system-health review sections
 
 ### Character Management
-- Search/filter characters by name, level, class, rating
-- View detailed stats, inventory, skills, passives
-- Manual reward grants (gold/gems/items)
+- Search/filter players by username or email
+- View detailed stats, characters, equipment, match history, purchases
+- Manual grants currently center on gold/gems plus selected inventory-reset flows
 - Ban/unban users
-- Prestige reset trigger
-- Reset stats respecs
 
 ### Item Management
-- CRUD all 200+ items
+- Item catalog CRUD
 - Edit stats, rarity, class restrictions, drop rates
-- Bulk upload via CSV
 - Image management (Supabase Storage)
 
 ### Skills & Passives
 - CRUD skill database
-- Test damage calculations
 - CRUD passive nodes
-- Visual tree editor (planned)
+- Passive connection editing
 
 ### Dungeon & Boss Configuration
 - CRUD dungeons (difficulty, loot pools, image)
 - CRUD bosses per dungeon
 - CRUD boss abilities
-- Test encounter difficulty
 
 ### Economy & Monetization
 - Gem pricing tiers (review live IAP catalog; edits remain code/config-driven)
-- Gold balance adjustments (bulk grants)
-- Shop offer rotation (create/schedule)
+- Gold/gem grants currently live through player-detail actions rather than a broad bulk-grant console
+- Shop offer rotation (create + active windows)
 - Revenue charts (Recharts integration)
 - Daily Gem Card visibility via the live IAP catalog (product config remains code/config-driven)
 
 ### Achievements
 - CRUD achievement definitions
 - Set targets, rewards, icons
-- View progress per character
-- Trigger early unlock (testing)
+- View aggregate progress / completion stats
 
 ### Battle Pass
-- Create/configure seasons
-- Define tier rewards (free + premium)
-- Upload season artwork
-- Season schedule (start/end dates)
+- Seasons and battle-pass rewards are separate live screens
+- Define tier rewards (free + premium) by season
+- Season windows are managed from the Seasons page
 
 ### Push Notifications
 - Compose campaigns (broadcast/segment)
-- Schedule deployment
-- View delivery logs
-- A/B test variants
+- View sent/failed totals and token counts
 
 ### Feature Flags
-- Boolean, percentage, segment toggles
-- A/B testing configuration
+- Boolean, percentage, segment, and JSON flags
+- Targeted rollout configuration
 - Environment scoping
 - View active flags per environment
 
 ### Live Configuration
 - Key-value pair editor for live config keys
-- Syntax validation for JSON values
-- Audit trail (who changed what, when)
-- Instant apply (no redeployment)
+- Validation on config-heavy forms/routes where implemented
+- Next-request effect for live config changes
 - Config snapshots (export/restore)
 
 ### Analytics & Reporting
@@ -426,21 +416,20 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Instrumentation groundwork via provider-agnostic analytics events and tutorial funnel logs; deeper retention/session analytics remain future work
 
 ### Admin Logs & Audit
-- Searchable activity log (all admin actions)
-- Timestamp, admin ID, action, target, details
-- Export audit trail (CSV)
+- Audit coverage exists across many high-risk/config/content mutations
+- Several routes write admin log records or structured audit entries
+- There is no standalone searchable audit-trail dashboard page today
 
 ### Balance Simulation
-- Run economy simulations
-- Item balance impact analysis
-- Combat formula testing sandbox
-- Save/compare simulation results
+- Item-balance validation and simulation runs
+- Combat / matchup / item-impact simulations
+- Recent simulation history review
 
 ### Content Management
 - Event creation (tournaments, rushes, gold rushes)
 - Mail message composition (broadcast/segment)
 - Cosmetic/skin upload and configuration
-- Seasonal content scheduling
+- Season/event windows through the live season and event pages
 
 ---
 
@@ -463,19 +452,19 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Log every transaction (audit trail)
 
 ### 4. Live Configuration
-- GameConfig model holds all balance values (no code redeployment)
+- GameConfig holds a large share of live balance/config values without code redeploy
 - Admin console updates instantly apply to next API call
-- Feature flags allow gradual rollouts or A/B testing
+- Feature flags allow gradual rollouts and targeted overrides
 
 ### 5. Asynchronous Processing
 - Rate limiting (Upstash) prevents abuse
-- Mail/push notifications queued (async send)
+- Push send runs through backend logging/send helpers; broader queued async processing remains selective
 - Leaderboard recalculation via background jobs (planned)
 
 ### 6. Role-Based Access Control (RBAC)
-- User.role field (player/admin/moderator planned)
-- Admin endpoints protected via middleware
-- AdminLog tracks all privileged actions
+- User/account role model includes player plus fixed admin-dashboard roles
+- Admin endpoints are protected through auth helpers plus per-route/per-action guards
+- AdminLog and adjacent audit entries cover many, but not all, privileged actions
 
 ---
 

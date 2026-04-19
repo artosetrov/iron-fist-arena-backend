@@ -417,6 +417,8 @@ Valid zones: `head`, `chest`, `legs`
 | `BASE_ACTIVE_SLOTS` | `3` |
 | `MAX_ACTIVE_SLOTS` | `4` |
 | `PREMIUM_ACTIVE_SLOT_GEM_COST` | `100` |
+| `FREE_RESPEC_PER_WEEK` | `1` |
+| `FREE_RESPEC_WINDOW_DAYS` | `7` |
 
 ## Gem costs
 

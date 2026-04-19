@@ -56,13 +56,20 @@ struct TalentsTabView: View {
                 isUnlockable: vm.isUnlockable(node),
                 pointsAvailable: vm.pointsAvailableAfterPending,
                 isMutating: vm.isMutating,
+                // Talents v2 — `onStage` advances the staged target rank by one
+                // (stageNextRank supports both locked→1 first unlocks and
+                // already-unlocked rank-ups). Keeps the sheet closed on the
+                // first tap for flat nodes; stays open for ranked nodes so
+                // the player can chain rank-ups.
                 onStage: {
-                    vm.stageUnlock(node)
-                    vm.selectedNode = nil
+                    vm.stageNextRank(node)
+                    if node.maxRankResolved <= 1 { vm.selectedNode = nil }
                 },
                 onUnstage: {
-                    vm.unstageUnlock(node)
-                    vm.selectedNode = nil
+                    // For ranked nodes, peel a single staged rank. For flat
+                    // nodes this is equivalent to the old "clear pending".
+                    vm.unstageRankStep(node)
+                    if !vm.isPending(node) { vm.selectedNode = nil }
                 },
                 onClose: { vm.selectedNode = nil },
                 equippedSlotIndex: vm.equippedSlotIndex(for: node.id),
@@ -75,7 +82,11 @@ struct TalentsTabView: View {
                         vm.clearActive(slotIndex: idx)
                     }
                     vm.selectedNode = nil
-                }
+                },
+                currentRank: vm.committedRank(for: node.id),
+                maxRank: node.maxRankResolved,
+                pendingTargetRank: vm.pendingTargetRank(node),
+                nextRankCost: vm.nextRankCost(for: node)
             )
             .presentationDetents([.medium])
             .presentationBackground(DarkFantasyTheme.bgSecondary)
@@ -117,6 +128,8 @@ struct TalentsTabView: View {
                 isUnlocked: vm.isUnlocked,
                 isPending: vm.isPending,
                 isUnlockable: vm.isUnlockable,
+                currentRank: { vm.committedRank(for: $0.id) },
+                stagedRank: { vm.pendingTargetRank($0) ?? 0 },
                 onTap: { node in
                     vm.selectedNode = node
                 }

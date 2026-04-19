@@ -43,6 +43,15 @@ psql "$DATABASE_URL" -f prisma/seeds/passive-tree.sql
 psql "$DATABASE_URL" -f prisma/seeds/passive-tree-activatable.sql
 ```
 
+Talents v2 (2026-04-19) layers the new Warrior tree on top. It only touches
+`warrior.*` dotted-key rows so it is safe to run before Rogue/Mage/Tank v2
+seeds land:
+
+```bash
+# Requires migration 20260419_talents_v2_current_rank to be applied first.
+psql "$DATABASE_URL" -f prisma/seeds/passives-warrior-v2.sql
+```
+
 Run only the feature seeds your environment actually needs.
 
 ## Existing database without `_prisma_migrations`

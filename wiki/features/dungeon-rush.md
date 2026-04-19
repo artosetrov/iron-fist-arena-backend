@@ -79,7 +79,9 @@ Fixed 12-room sequence: `combat, event, combat, treasure, elite, miniboss, shop,
 
 ## Admin
 
-- `admin/src/app/` — rush catalog / room balance (if present)
+- No dedicated Dungeon Rush admin page today.
+- `admin/src/app/(dashboard)/minigame-sessions/page.tsx` — read-only session review surface for recent minigame activity, including rush runs
+- Shared tuning lives in the broader dungeon/config/balance surfaces rather than in a rush-specific room-catalog editor
 
 ## Docs
 

@@ -9,14 +9,15 @@
 1. **Apple Developer Account** with App Store Connect access
 2. **Xcode 15+** with iOS 17 SDK
 3. **Fastlane** installed: `brew install fastlane`
-4. **Fastlane identity configured**: use `FASTLANE_*` env vars or local ignored file `Hexbound/fastlane/Appfile.local`
+4. **Upload auth configured**: prefer App Store Connect API key env vars for CI, or use local ignored file `Hexbound/fastlane/Appfile.local`
 5. **Signing**: valid provisioning profile "Hexbound AppStore" for `com.hexbound.app`
 
 Current repo reality:
 
 - `Fastfile` lanes exist and are usable as the release skeleton
 - release identity is intentionally kept out of the tracked `Appfile`
-- team/local overrides belong in ignored local files or CI env vars
+- CI-friendly upload auth can come from App Store Connect API key env vars
+- local team/account overrides belong in ignored local files or env vars
 - treat Fastlane release as **validated setup-required**, not ad hoc manual editing
 
 ## Environment Config
@@ -45,6 +46,11 @@ python3 scripts/check_release_config.py
 ```
 
 The same preflight now runs automatically from Fastlane and from `scripts/deploy_testflight.sh`.
+
+Preferred auth model:
+
+- CI / shared release machine: `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, and either `APP_STORE_CONNECT_API_KEY_PATH` or `APP_STORE_CONNECT_API_KEY_CONTENT(_BASE64)`
+- local release from a developer Mac: ignored `Hexbound/fastlane/Appfile.local`
 
 ## Release Flow
 
@@ -77,7 +83,7 @@ This runs:
 
 This step depends on:
 
-- real Apple credentials/team configuration being present at runtime
+- upload auth being present at runtime, either via App Store Connect API key env vars or Apple ID based Fastlane identity
 - valid iOS runtime config in `Config/Local.secrets.xcconfig`
 
 ### 3. Test in TestFlight
@@ -110,6 +116,7 @@ fastlane build
 ```
 
 Useful for verifying compilation before committing.
+This lane only needs valid iOS runtime config and signing; App Store Connect upload auth is required for `fastlane beta`, not for `fastlane build`.
 
 For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` is still the cleanest non-upload gate.
 
@@ -117,16 +124,17 @@ For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodep
 
 | File | Purpose |
 |------|---------|
-| `Hexbound/fastlane/Fastfile` | Lane definitions + release preflight |
+| `Hexbound/fastlane/Fastfile` | Lane definitions + release preflight + upload auth selection |
 | `Hexbound/fastlane/Appfile` | Bundle identifier + env/local identity loading |
-| `Hexbound/fastlane/Appfile.local` | Ignored local release credentials |
+| `Hexbound/fastlane/Appfile.local` | Ignored local Apple ID based release credentials |
 | `Hexbound/Config/*.xcconfig` | Build-time runtime config by environment |
 
 ## Setup Checklist (First Time)
 
 - [ ] Copy `Hexbound/Config/Local.secrets.example.xcconfig` → `Hexbound/Config/Local.secrets.xcconfig`
 - [ ] Fill in API / Supabase / Google values
-- [ ] Copy `Hexbound/fastlane/Appfile.local.example` → `Hexbound/fastlane/Appfile.local` or provide `FASTLANE_*` env vars
+- [ ] For CI/shared machine: set `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, and key path/content env vars
+- [ ] For local release: copy `Hexbound/fastlane/Appfile.local.example` → `Hexbound/fastlane/Appfile.local` or provide `FASTLANE_*` env vars
 - [ ] Create App ID `com.hexbound.app` in Apple Developer Portal
 - [ ] Create provisioning profile "Hexbound AppStore"
 - [ ] Create app in App Store Connect (see `docs/10_operations/TESTFLIGHT_GUIDE.md` for details)
@@ -139,7 +147,7 @@ For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodep
 |---------|-----|
 | "No signing certificate" | Open Xcode → Signing & Capabilities → enable Automatic Signing |
 | "Provisioning profile not found" | Create "Hexbound AppStore" profile in developer.apple.com |
-| Missing local Appfile identity | Create `fastlane/Appfile.local` or provide `FASTLANE_*` env vars |
+| Missing upload auth | Set App Store Connect API key env vars, or create `fastlane/Appfile.local`, or provide `FASTLANE_*` env vars |
 | Build number conflict | Fastlane auto-increments, but if stuck: manually set in Xcode |
 | Thought Swift hardcoded the backend config | Config now comes from `Config/*.xcconfig` + `Info.plist`, not from Swift source |
 

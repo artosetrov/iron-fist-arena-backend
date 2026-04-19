@@ -18,16 +18,32 @@ struct TalentNodeView: View {
 
     let node: PassiveNode
     let state: NodeState
+    /// Talents v2: server-confirmed rank (1…maxRank). 0 when the node has never
+    /// been unlocked. Defaults to 0 so pre-v2 callers keep compiling.
+    let currentRank: Int
+    /// Talents v2: locally-staged target rank (1/2/3) pending commit. 0 when
+    /// nothing is staged for this node.
+    let stagedRank: Int
     // Keystone gets a bigger footprint and a gold fill (like the prototype).
     var isKeystone: Bool { node.tier >= 3 || node.bonusType == "keystone" || node.bonusType == "ultimate" }
 
     // Explicit init — `@State private var pulse` would otherwise make the
     // auto-synthesized memberwise init `private`, breaking callers like
     // `TalentTreeCanvas`.
-    init(node: PassiveNode, state: NodeState) {
+    init(
+        node: PassiveNode,
+        state: NodeState,
+        currentRank: Int = 0,
+        stagedRank: Int = 0
+    ) {
         self.node = node
         self.state = state
+        self.currentRank = currentRank
+        self.stagedRank = stagedRank
     }
+
+    /// Effective rank including staging — drives the pip strip's "bright" count.
+    private var effectiveRank: Int { max(currentRank, stagedRank) }
 
     // Square tile footprint — regular 44×44, keystone 54×54.
     var size: CGFloat { isKeystone ? 54 : 44 }
@@ -152,12 +168,20 @@ struct TalentNodeView: View {
                 .foregroundStyle(iconColor)
                 .frame(width: size * 0.42, height: size * 0.42)
 
-            // Rank pill (top-right) — keeps cost visible on unlockable nodes,
-            // and rank "1" on unlocked ranked nodes (for the MVP every unlocked
-            // node is rank 1 — the backend doesn't support multi-rank yet).
+            // Rank pill (top-right) — cost chip on locked/unlockable, current
+            // rank indicator on unlocked single-rank nodes. Ranked nodes (v2)
+            // use the pip strip below instead of a numeric rank pill.
             if shouldShowRankPill {
                 rankPill
                     .offset(x: size * 0.42, y: -size * 0.42)
+            }
+
+            // Talents v2: rank pip strip for ranked nodes (maxRank > 1).
+            // Sits just above the tile and shows 1 pip per rank step, filled
+            // for committed ranks, dashed for pending-staged ranks.
+            if showRankPipStrip {
+                rankPipStrip
+                    .offset(y: -(size * 0.5) - 7)
             }
         }
         .frame(width: size, height: size)
@@ -178,7 +202,14 @@ struct TalentNodeView: View {
 
     // MARK: - Rank pill
 
+    /// Ranked nodes (maxRank > 1) use the pip strip below the tile for rank
+    /// progress. The numeric pill would be redundant — and in the "pending
+    /// first unlock to rank 1" case it would collide visually with the pip.
+    private var isRanked: Bool { node.maxRankResolved > 1 }
+
     private var shouldShowRankPill: Bool {
+        // Never show the pill when the pip strip is already communicating rank.
+        if isRanked { return false }
         switch state {
         case .unlocked: return !isKeystone // keystone doesn't show rank badge in prototype
         case .unlockable, .pending: return !node.isStartNode
@@ -189,9 +220,14 @@ struct TalentNodeView: View {
     private var rankPill: some View {
         let text: String = {
             switch state {
-            case .unlocked:             return "1"
-            case .unlockable, .pending: return "\(node.cost)"
-            case .locked:               return ""
+            case .unlocked:
+                // Single-rank unlocked nodes still show a "1" checkmark-style chip.
+                return currentRank > 0 ? "\(currentRank)" : "1"
+            case .unlockable, .pending:
+                // Cost to get from 0 → rank 1 for ranked nodes, full cost for flat.
+                return "\(node.rankCostSchedule.first ?? node.cost)"
+            case .locked:
+                return ""
             }
         }()
         return Text(text)
@@ -206,6 +242,59 @@ struct TalentNodeView: View {
             .overlay(
                 Capsule().stroke(DarkFantasyTheme.bgSecondary, lineWidth: 1.5)
             )
+    }
+
+    // MARK: - Rank pip strip (Talents v2)
+
+    /// Show the pip strip for any ranked node that has at least surfaced as
+    /// unlockable — keeps the tile readable even when still locked (player can
+    /// see it's a multi-rank node at a glance).
+    private var showRankPipStrip: Bool {
+        guard isRanked else { return false }
+        // Hide pips on fully-locked-and-unreachable nodes to reduce visual
+        // noise in the deep-locked background.
+        return state != .locked
+    }
+
+    private var rankPipStrip: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<node.maxRankResolved, id: \.self) { i in
+                pipView(index: i)
+            }
+        }
+    }
+
+    /// One rank pip. Three states:
+    ///   - filled gold: `i < currentRank`               (server-confirmed)
+    ///   - dashed gold: `currentRank ≤ i < stagedRank` (locally staged)
+    ///   - empty slate: otherwise
+    @ViewBuilder
+    private func pipView(index i: Int) -> some View {
+        let isCommitted = i < currentRank
+        let isStaged = i >= currentRank && i < stagedRank
+        let pipSize: CGFloat = 6
+
+        ZStack {
+            Circle()
+                .fill(isCommitted ? DarkFantasyTheme.gold : Color.clear)
+            Circle()
+                .strokeBorder(
+                    isCommitted
+                        ? DarkFantasyTheme.goldBright
+                        : (isStaged
+                            ? DarkFantasyTheme.goldBright
+                            : DarkFantasyTheme.borderSubtle),
+                    style: StrokeStyle(
+                        lineWidth: 1,
+                        dash: isStaged ? [1.5, 1.5] : []
+                    )
+                )
+        }
+        .frame(width: pipSize, height: pipSize)
+        .shadow(
+            color: isCommitted ? DarkFantasyTheme.goldGlow.opacity(0.6) : .clear,
+            radius: 2
+        )
     }
 
     // MARK: - Symbols

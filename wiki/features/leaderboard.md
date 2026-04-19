@@ -57,7 +57,9 @@ Global ranked list of players by PvP rating; search, browse top, tap row to open
 
 ## Admin
 
-- `admin/src/app/(dashboard)/leaderboard/` — view ranks, ban/unban player, manual rating adjust (if present)
+- No dedicated leaderboard admin page today.
+- `admin/src/app/(dashboard)/matches/page.tsx` — PvP match history and rating-delta review surface
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — account/player drill-down for adjacent moderation and purchase review
 
 ## Docs
 
@@ -71,6 +73,7 @@ Global ranked list of players by PvP rating; search, browse top, tap row to open
 - **Tap-row actions work.** Challenge / Message / AddFriend from leaderboard row route through the shared [[opponent-profile]] surface.
 - **Search is name-prefix.** Full-text search is not implemented — just `startsWith` (case-insensitive). Don't promise substring matching.
 - **Achievement hook.** `ranking` category achievements fire on PvP resolve based on rank milestones reached.
+- **No admin rating-adjust tool today.** Rating review exists in admin, but there is no standalone manual leaderboard/rating editor page in the live dashboard.
 
 ## Tests / fixtures
 

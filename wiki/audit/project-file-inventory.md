@@ -10,9 +10,9 @@ updated: 2026-04-19
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5049
-- Untracked project-owned files: 35
-- In-scope files listed here: 5084
+- Tracked files: 5124
+- Untracked project-owned files: 16
+- In-scope files listed here: 5140
 
 ## Excluded Generated / Vendor Areas
 
@@ -29,23 +29,23 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 
 - .claude: 132
 - .cursor: 10
-- .github: 1
+- .github: 2
 - .skills: 17
 - [root]: 3
-- admin: 218
-- backend: 379
+- admin: 224
+- backend: 388
 - Buildings: 21
-- docs: 177
+- docs: 184
 - figma-assets: 333
 - graphify-out: 869
-- Hexbound: 1497
+- Hexbound: 1515
 - onboarding-assets: 10
-- prototypes: 3
+- prototypes: 10
 - qa-reports: 4
-- scripts: 17
+- scripts: 18
 - sounds: 33
-- User: 1059
-- wiki: 283
+- User: 1060
+- wiki: 307
 
 ## File List By Block
 
@@ -197,7 +197,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .cursor/rules/rules-swift.mdc
 - .cursor/rules/rules-ui-design.mdc
 
-### .github (1)
+### .github (2)
 
 - .github/workflows/ci.yml
 
@@ -221,7 +221,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills/skills/oracle/SKILL.md
 - .skills/skills/wiki-sync/SKILL.md
 
-### [root] (27)
+### [root] (3)
 
 - .gitignore
 - .mcp.json
@@ -251,7 +251,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - terms.html _(deleted in working tree)_
 - UI_RESPONSIVENESS_AUDIT.md _(deleted in working tree)_
 
-### admin (217)
+### admin (224)
 
 - admin/.gitignore
 - admin/ADMIN_MOBILE_UX_AUDIT.md
@@ -473,7 +473,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (363)
+### backend (388)
 
 - backend/.env.example
 - backend/.gitignore
@@ -876,7 +876,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (176)
+### docs (184)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -2266,7 +2266,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - graphify-out/graph.json
 - graphify-out/manifest.json
 
-### Hexbound (1497)
+### Hexbound (1515)
 
 - Hexbound/.gitignore
 - Hexbound/.swiftlint.yml
@@ -3780,7 +3780,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - onboarding-assets/panel-3-1b-dungeon-victory.png
 - onboarding-assets/panel-3-2-forge.png
 
-### prototypes (3)
+### prototypes (10)
 
 - prototypes/strike-reveal-b.html
 - prototypes/strike-reveal-compact.html
@@ -3793,7 +3793,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - qa-reports/QA_REPORT_2026-04-10.md
 - qa-reports/QA_REPORT_2026-04-12.md
 
-### scripts (15)
+### scripts (18)
 
 - scripts/check_ios_backend_drift.sh
 - scripts/check_schema_drift.py
@@ -3847,7 +3847,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - sounds/sfx/ui/ui_tap_heavy.mp3
 - sounds/sfx/ui/ui_tap.mp3
 
-### User (1059)
+### User (1060)
 
 - User/bg/hf_20260410_172307_8c722970-571d-43a5-a1b4-ff6ae391b06b.png
 - User/bg/image 11.png
@@ -4777,7 +4777,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/items/Sturdy Totem.png
 - User/items/Worn Charm.png
 - User/items/Worn Totem.png
-- User/Key/SubscriptionKey_3GU77952AY.p8
+- User/Key/README.md _(untracked)_
 - User/loading/image 10.png
 - User/Onbording/hf_20260407_220946_eff54c9d-2b22-4c31-840d-30af6a268546.png
 - User/Onbording/hf_20260407_221016_5b345f50-38ee-4c71-a90e-6caee20d827a.png
@@ -4909,7 +4909,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (225)
+### wiki (307)
 
 - wiki/_generated/README.md
 - wiki/_generated/api-routes.json
@@ -5143,7 +5143,16 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-223-admin-arena-dungeons-assets-surface-parity.md _(untracked)_
 - wiki/audit/block-224-admin-gameplay-systems-surface-parity.md _(untracked)_
 - wiki/audit/block-225-admin-consumables-achievements-and-snapshots-surface-parity.md _(untracked)_
-- wiki/audit/block-226-admin-dashboard-and-economy-overview-surface-parity.md _(untracked)_
+- wiki/audit/block-226-admin-dashboard-and-economy-overview-surface-parity.md
+- wiki/audit/block-227-admin-role-settings-and-security-wording-parity.md _(untracked)_
+- wiki/audit/block-228-admin-remaining-page-surface-inventory-parity.md _(untracked)_
+- wiki/audit/block-229-admin-tech-stack-and-data-fetching-parity.md _(untracked)_
+- wiki/audit/block-230-project-overview-liveops-and-admin-surface-parity.md _(untracked)_
+- wiki/audit/block-231-auth-feature-map-admin-surface-parity.md _(untracked)_
+- wiki/audit/block-232-source-of-truth-documentation-index-admin-workflow-parity.md _(untracked)_
+- wiki/audit/block-233-feature-maps-daily-login-and-referral-admin-boundary-sync.md _(untracked)_
+- wiki/audit/block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync.md _(untracked)_
+- wiki/audit/block-235-feature-maps-minigames-and-social-runtime-boundary-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

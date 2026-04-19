@@ -74,13 +74,16 @@ cd Hexbound/
 bundle install
 # или: gem install fastlane
 
-# 2. Либо отредактировать fastlane/Appfile, либо подготовить FASTLANE_* env vars
-open fastlane/Appfile
+# 2. Подготовить upload auth
+# Если релизишь локально через Apple ID flow:
+cp fastlane/Appfile.local.example fastlane/Appfile.local
+open fastlane/Appfile.local
 ```
 
 Поддерживаются оба варианта:
 
-- заполнить `fastlane/Appfile`
+- для CI / shared release runner: передать `APP_STORE_CONNECT_API_KEY_ID` + `APP_STORE_CONNECT_ISSUER_ID` + `APP_STORE_CONNECT_API_KEY_PATH` или `APP_STORE_CONNECT_API_KEY_CONTENT(_BASE64)`
+- для локального релиза: заполнить локальный игнорируемый `fastlane/Appfile.local`
 - или передать `FASTLANE_APPLE_ID` + `FASTLANE_TEAM_ID` (и при необходимости `FASTLANE_ITC_TEAM_ID`)
 
 ### Загрузка на TestFlight (одна команда):
@@ -92,9 +95,10 @@ cd Hexbound/
 
 Fastlane автоматически: инкрементирует build number → соберёт архив → загрузит на TestFlight.
 
-`./scripts/deploy_testflight.sh` теперь валидирует оба setup-path:
+`./scripts/deploy_testflight.sh` теперь валидирует все setup-path:
 
-- заполненный `fastlane/Appfile`
+- App Store Connect API key env vars
+- заполненный `fastlane/Appfile.local`
 - или env-based Fastlane identity
 
 ### Другие полезные команды:

@@ -40,7 +40,6 @@ Tavern building surfaces three minigames: Shell Game (guess-the-shell betting), 
 
 ### Business logic
 
-- `backend/src/lib/game/minigames.ts` (if present) — shared session helpers
 - `backend/src/lib/game/balance.ts` — Shell Game bet tiers, Fortune Wheel reward distribution, gem cost
 - Per-game resolvers live in-route
 
@@ -73,9 +72,9 @@ Tavern building surfaces three minigames: Shell Game (guess-the-shell betting), 
 
 ### Services
 
-- `Hexbound/Hexbound/Services/MinigameService.swift` (if present) — shell + wheel API wrappers
-  - Shell Game typically goes through its own ViewModel-owned `APIClient` call
-  - Fortune Wheel same pattern
+- No shared `MinigameService.swift` today.
+- `Hexbound/Hexbound/Views/Minigames/ShellGameViewModel.swift` — shell-game API calls live directly in the view model
+- `Hexbound/Hexbound/Views/Minigames/FortuneWheelViewModel.swift` — fortune-wheel API calls live directly in the view model
 
 ### Cache
 
@@ -105,7 +104,10 @@ Tavern building surfaces three minigames: Shell Game (guess-the-shell betting), 
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/minigames/*` (if present)
+- `backend/tests/api/shell-game-start.test.ts`
+- `backend/tests/api/shell-game-guess.test.ts`
+- `backend/tests/api/shell-game-play-deprecated.test.ts`
+- No single broad `minigames/*` backend suite is checked in today; coverage is per-route
 
 ## Related features
 

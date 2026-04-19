@@ -62,7 +62,7 @@ Players share a unique 8-character invite code; when an invitee signs up and hit
 
 ## Admin
 
-- `admin/src/app/` — referral funnel dashboard (if present); view reward claim history
+- `admin/src/app/(dashboard)/referrals/page.tsx` — read-only referral claims review page with total claims, last-7-days count, and recent qualification rows
 
 ## Docs
 
@@ -74,6 +74,7 @@ Players share a unique 8-character invite code; when an invitee signs up and hit
 - **Prisma schema sync.** Adding `ReferralRewardClaim` required `cp backend/prisma/schema.prisma admin/prisma/schema.prisma`. Missing copy = admin CI fail + crash. See CLAUDE.md Prisma Schema Sync section.
 - **Milestone-gated.** Rewards fire on tutorial/progression milestones, not on signup alone — check `tutorial.ts` for trigger points.
 - **Unique invite code generation.** 8-character code must be globally unique on `characters.referral_code` — handle DB uniqueness collision with retry.
+- **Admin surface is review-only today.** The referrals page is an audit/review table, not a full funnel analytics or manual-credit dashboard.
 
 ## Related features
 

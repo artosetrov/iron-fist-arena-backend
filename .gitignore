@@ -3,6 +3,9 @@
 *~
 .env
 .env.local
+*.p8
+AuthKey_*.p8
+SubscriptionKey_*.p8
 .claude/settings.local.json
 *.onnx
 .next/

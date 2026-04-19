@@ -44,20 +44,65 @@ final class PassiveTreeViewModel {
 
     // Pending allocation (Stats-style staged unlock).
     // Nodes here are visually staged but NOT spent server-side until commitPending().
-    private(set) var pendingUnlockIds: Set<String> = []
+    //
+    // Talents v2 (2026-04-19): a single dict tracks BOTH first-unlocks and
+    // rank-ups. Key = node id, value = target rank (1 = first unlock,
+    // 2 or 3 = rank-up to that rank). A node can be staged from locked straight
+    // to rank 3 in one session — on commit we issue 3 sequential unlock calls
+    // (rank 1 → 2 → 3).
+    private(set) var pendingRanks: [String: Int] = [:]
+
+    /// Back-compat helper: just the set of nodes that have ANY pending action.
+    /// Prefer `pendingRanks[id]` when you need the target rank number.
+    var pendingUnlockIds: Set<String> { Set(pendingRanks.keys) }
 
     // Derived — recomputed when inputs change
     private(set) var unlockedIds: Set<String> = []
     private(set) var unlockableIds: Set<String> = []
     private(set) var adjacency: [String: Set<String>] = [:]
 
+    // MARK: - Rank helpers
+
+    /// Committed current rank from the server (1..maxRank), or 0 when the node
+    /// has never been unlocked.
+    func committedRank(for nodeId: String) -> Int {
+        unlockedNodes.first(where: { $0.nodeId == nodeId })?.currentRankResolved ?? 0
+    }
+
+    /// Effective rank including any pending staging — what the node "looks
+    /// like" to the player in-session. Used for ring progress, CTA copy, etc.
+    func effectiveRank(for nodeId: String) -> Int {
+        max(committedRank(for: nodeId), pendingRanks[nodeId] ?? 0)
+    }
+
+    /// Additional SP the user would spend to advance this node from its
+    /// *committed* rank to `targetRank`. Used for cost chips on staged nodes.
+    func additionalSPCost(node: PassiveNode, toRank targetRank: Int) -> Int {
+        let committed = committedRank(for: node.id)
+        guard targetRank > committed else { return 0 }
+        let schedule = node.rankCostSchedule
+        var total = 0
+        for i in committed..<min(targetRank, schedule.count) { total += schedule[i] }
+        return total
+    }
+
+    /// Cost to reach the next rank from the current effective rank. Returns
+    /// nil when the node is already at max (committed + pending combined).
+    func nextRankCost(for node: PassiveNode) -> Int? {
+        let eff = effectiveRank(for: node.id)
+        guard eff < node.maxRankResolved else { return nil }
+        return node.rankCostSchedule[eff]
+    }
+
     // MARK: - Pending derived helpers
 
-    /// Sum of cost across staged-but-not-committed nodes.
+    /// Sum of SP across staged-but-not-committed ranks (ranks above the
+    /// committed baseline, per node).
     var pendingCost: Int {
         var total = 0
-        for id in pendingUnlockIds {
-            if let n = nodes.first(where: { $0.id == id }) { total += n.cost }
+        for (id, targetRank) in pendingRanks {
+            guard let n = nodes.first(where: { $0.id == id }) else { continue }
+            total += additionalSPCost(node: n, toRank: targetRank)
         }
         return total
     }
@@ -67,7 +112,7 @@ final class PassiveTreeViewModel {
         passivePointsAvailable - pendingCost
     }
 
-    var hasPendingChanges: Bool { !pendingUnlockIds.isEmpty }
+    var hasPendingChanges: Bool { !pendingRanks.isEmpty }
 
     init(service: PassiveTreeService, appState: AppState, characterId: String) {
         self.service = service
@@ -118,8 +163,8 @@ final class PassiveTreeViewModel {
 
     private func recomputeDerived() {
         unlockedIds = Set(unlockedNodes.map(\.nodeId))
-        // Effective "frontier" = committed unlocked ∪ staged pending.
-        // This lets a staged node act as a parent for the next stageable node.
+        // Effective "frontier" for connectivity = committed ∪ any pending
+        // (first-unlock OR rank-up). Both signal "this tile is on".
         let effectiveUnlocked = unlockedIds.union(pendingUnlockIds)
         var available: Set<String> = []
         for node in nodes where !effectiveUnlocked.contains(node.id) {
@@ -140,7 +185,8 @@ final class PassiveTreeViewModel {
     func canUnlock(_ node: PassiveNode) -> Bool {
         guard !unlockedIds.contains(node.id) else { return false }
         guard unlockableIds.contains(node.id) else { return false }
-        return passivePointsAvailable >= node.cost
+        // Talents v2: affordability is the cost of rank 1, not the total node cost.
+        return passivePointsAvailable >= node.rankCostSchedule.first ?? node.cost
     }
 
     func isUnlocked(_ node: PassiveNode) -> Bool {
@@ -152,65 +198,130 @@ final class PassiveTreeViewModel {
     }
 
     func isPending(_ node: PassiveNode) -> Bool {
-        pendingUnlockIds.contains(node.id)
+        pendingRanks[node.id] != nil
     }
 
-    /// Can we add this node to the pending set right now?
+    /// Target rank the user currently has staged for this node (1/2/3), or
+    /// nil when nothing is staged. Rendered as a "→ RANK N" chip in the sheet.
+    func pendingTargetRank(_ node: PassiveNode) -> Int? {
+        pendingRanks[node.id]
+    }
+
+    /// Can we start a first-unlock staging on this node right now?
+    /// Talents v2: uses the rank-1 cost, not the total node cost.
     func canStage(_ node: PassiveNode) -> Bool {
-        guard !unlockedIds.contains(node.id), !pendingUnlockIds.contains(node.id) else { return false }
+        guard !unlockedIds.contains(node.id), pendingRanks[node.id] == nil else { return false }
         guard unlockableIds.contains(node.id) else { return false }
-        return pointsAvailableAfterPending >= node.cost
+        let rankOneCost = node.rankCostSchedule.first ?? node.cost
+        return pointsAvailableAfterPending >= rankOneCost
+    }
+
+    /// Can we stage a rank-up (or initial-unlock) advancing this node by one
+    /// rank from its current effective rank?
+    func canStageRankUp(_ node: PassiveNode) -> Bool {
+        guard node.isRanked || committedRank(for: node.id) == 0 else { return false }
+        let eff = effectiveRank(for: node.id)
+        guard eff < node.maxRankResolved else { return false }
+
+        // First unlock still needs connectivity.
+        if eff == 0 && !unlockableIds.contains(node.id) { return false }
+
+        guard let cost = node.nextRankCost(currentRank: eff) else { return false }
+        return pointsAvailableAfterPending >= cost
     }
 
     // MARK: - Mutations (Stage → Confirm pattern, mirrors Stats tab)
 
-    /// Stage a node into the pending allocation. UI flips immediately,
-    /// no API call yet. Confirm via `commitPending()`.
+    /// Stage a node into the pending allocation at rank 1. UI flips immediately,
+    /// no API call yet. Confirm via `commitPending()`. Prefer `stageNextRank`
+    /// when you want to advance an already-unlocked ranked node.
     func stageUnlock(_ node: PassiveNode) {
         guard canStage(node) else { return }
-        pendingUnlockIds.insert(node.id)
+        pendingRanks[node.id] = 1
         recomputeDerived()
         HapticManager.light()
     }
 
-    /// Remove a node from pending. If a downstream pending node only
-    /// had this one as a parent, it is also un-staged (cascade).
-    func unstageUnlock(_ node: PassiveNode) {
-        guard pendingUnlockIds.contains(node.id) else { return }
-        pendingUnlockIds.remove(node.id)
-        // Cascade: any pending node that is no longer reachable should drop too.
-        var changed = true
-        while changed {
-            changed = false
-            recomputeDerived()
-            for id in pendingUnlockIds {
-                guard let n = nodes.first(where: { $0.id == id }) else { continue }
-                let effective = unlockedIds.union(pendingUnlockIds).subtracting([id])
-                let reachable = n.isStartNode ||
-                    (adjacency[id] ?? []).contains(where: { effective.contains($0) })
-                if !reachable {
-                    pendingUnlockIds.remove(id)
-                    changed = true
-                    break
-                }
-            }
+    /// Advance this node's staged target rank by one. Works for both locked
+    /// nodes (first bump = rank 1 unlock) and already-unlocked ranked nodes
+    /// (first bump = committedRank + 1). Bumps by one rank per call; when
+    /// already at max no-ops.
+    func stageNextRank(_ node: PassiveNode) {
+        guard canStageRankUp(node) else { return }
+        let eff = effectiveRank(for: node.id)
+        pendingRanks[node.id] = eff + 1
+        recomputeDerived()
+        HapticManager.light()
+    }
+
+    /// Step a node's pending target rank down by one. If the node drops below
+    /// its committed rank (rank-up being undone) the key is removed entirely.
+    /// Cascades: any downstream pending first-unlock that loses its last
+    /// frontier ancestor is un-staged too.
+    func unstageRankStep(_ node: PassiveNode) {
+        guard let target = pendingRanks[node.id] else { return }
+        let committed = committedRank(for: node.id)
+        if target <= 1 || target - 1 <= committed {
+            pendingRanks.removeValue(forKey: node.id)
+        } else {
+            pendingRanks[node.id] = target - 1
         }
+        cascadeRemoveOrphanedPending()
+        recomputeDerived()
+        HapticManager.light()
+    }
+
+    /// Legacy alias used by existing call sites — un-stages ALL pending ranks
+    /// on the node (same as tapping unstage until empty).
+    func unstageUnlock(_ node: PassiveNode) {
+        guard pendingRanks.removeValue(forKey: node.id) != nil else { return }
+        cascadeRemoveOrphanedPending()
         recomputeDerived()
         HapticManager.light()
     }
 
     /// Drop the entire pending set without firing any API calls.
     func resetPending() {
-        guard !pendingUnlockIds.isEmpty else { return }
-        pendingUnlockIds.removeAll()
+        guard !pendingRanks.isEmpty else { return }
+        pendingRanks.removeAll()
         recomputeDerived()
         HapticManager.light()
     }
 
-    /// Commit all staged unlocks server-side, in BFS order from the
-    /// committed unlocked frontier so each unlock satisfies adjacency.
-    /// Optimistic per node; on failure we stop and refund the rest into
-    /// the pool (they remain pending for the user to retry or reset).
+    /// Internal: after a pending removal, drop any other pending entry whose
+    /// node is no longer reachable from the committed-∪-still-pending frontier.
+    /// Only first-unlock (rank 1) entries can become unreachable; rank-ups
+    /// always stay valid as long as the committed-rank node itself exists.
+    private func cascadeRemoveOrphanedPending() {
+        var changed = true
+        while changed {
+            changed = false
+            recomputeDerived()
+            for (id, target) in pendingRanks {
+                guard target == 1 else { continue } // rank-ups are always valid
+                guard let n = nodes.first(where: { $0.id == id }) else {
+                    pendingRanks.removeValue(forKey: id); changed = true; break
+                }
+                let effective = unlockedIds.union(pendingRanks.keys).subtracting([id])
+                let reachable = n.isStartNode ||
+                    (adjacency[id] ?? []).contains(where: { effective.contains($0) })
+                if !reachable {
+                    pendingRanks.removeValue(forKey: id); changed = true; break
+                }
+            }
+        }
+    }
+
+    /// Commit all staged changes server-side.
+    ///
+    /// Talents v2 order: first-unlocks flow BFS-style from the committed
+    /// frontier (adjacency still matters), then rank-ups run sequentially
+    /// against whichever nodes are now unlocked. Each rank-up issues exactly
+    /// one unlock call per rank step (1→2, 2→3) so the server can validate
+    /// `currentRank === rank - 1` at each step.
+    ///
+    /// Optimistic per step; on ANY failure we stop and leave the remainder of
+    /// the staging intact for the user to retry or reset.
     func commitPending() {
         guard hasPendingChanges, !isMutating else { return }
         isMutating = true
@@ -219,46 +330,83 @@ final class PassiveTreeViewModel {
         let prevPoints = passivePointsAvailable
         let prevUnlockedNodes = unlockedNodes
 
-        // Compute a valid commit order: BFS from committed unlocked set.
-        let order = bfsCommitOrder()
+        let plan = commitPlan()
         HapticManager.light()
 
         Task { [weak self] in
             guard let self else { return }
             var anySuccess = false
-            for node in order {
-                let result = await service.unlock(characterId: characterId, nodeId: node.id)
-                if let result, result.success {
-                    // Apply optimistically into local state.
-                    passivePointsAvailable = result.passivePointsAvailable
-                    appState.currentCharacter?.passivePointsAvailable = passivePointsAvailable
+
+            for step in plan {
+                // Rank 1 hits the first-unlock path (creates the row); rank 2/3
+                // hit the rank-up path (updates currentRank).
+                let result = await service.unlock(
+                    characterId: characterId,
+                    nodeId: step.node.id,
+                    rank: step.targetRank
+                )
+                guard let result, result.success else { break }
+
+                // Apply optimistically into local state.
+                passivePointsAvailable = result.passivePointsAvailable
+                appState.currentCharacter?.passivePointsAvailable = passivePointsAvailable
+
+                if step.targetRank == 1 {
                     let optimistic = CharacterPassiveUnlocked(
-                        id: "optimistic-\(node.id)",
-                        nodeId: node.id,
-                        nodeKey: node.nodeKey,
-                        name: node.name,
-                        description: node.description,
-                        bonusType: node.bonusType,
-                        bonusStat: node.bonusStat,
-                        bonusValue: node.bonusValue,
-                        tier: node.tier,
-                        cost: node.cost,
-                        icon: node.icon,
-                        isActivatable: node.isActivatable,
-                        activeActionType: node.activeActionType,
-                        activeCooldown: node.activeCooldown,
-                        activeMagnitude: node.activeMagnitude,
-                        unlockedAt: nil
+                        id: "optimistic-\(step.node.id)",
+                        nodeId: step.node.id,
+                        nodeKey: step.node.nodeKey,
+                        name: step.node.name,
+                        description: step.node.description,
+                        bonusType: step.node.bonusType,
+                        bonusStat: step.node.bonusStat,
+                        bonusValue: step.node.bonusValue,
+                        tier: step.node.tier,
+                        cost: step.node.cost,
+                        icon: step.node.icon,
+                        isActivatable: step.node.isActivatable,
+                        activeActionType: step.node.activeActionType,
+                        activeCooldown: step.node.activeCooldown,
+                        activeMagnitude: step.node.activeMagnitude,
+                        unlockedAt: nil,
+                        currentRank: result.currentRank ?? 1,
+                        maxRank: result.maxRank ?? step.node.maxRankResolved
                     )
                     unlockedNodes.append(optimistic)
-                    pendingUnlockIds.remove(node.id)
-                    recomputeDerived()
-                    anySuccess = true
-                } else {
-                    // Stop on first failure; remaining stay in pending.
-                    break
+                } else if let idx = unlockedNodes.firstIndex(where: { $0.nodeId == step.node.id }) {
+                    // Bump the rank on the optimistic row. CharacterPassiveUnlocked
+                    // is a value type so we rebuild it — only currentRank changes.
+                    let prev = unlockedNodes[idx]
+                    unlockedNodes[idx] = CharacterPassiveUnlocked(
+                        id: prev.id,
+                        nodeId: prev.nodeId,
+                        nodeKey: prev.nodeKey,
+                        name: prev.name,
+                        description: prev.description,
+                        bonusType: prev.bonusType,
+                        bonusStat: prev.bonusStat,
+                        bonusValue: prev.bonusValue,
+                        tier: prev.tier,
+                        cost: prev.cost,
+                        icon: prev.icon,
+                        isActivatable: prev.isActivatable,
+                        activeActionType: prev.activeActionType,
+                        activeCooldown: prev.activeCooldown,
+                        activeMagnitude: prev.activeMagnitude,
+                        unlockedAt: prev.unlockedAt,
+                        currentRank: result.currentRank ?? step.targetRank,
+                        maxRank: result.maxRank ?? prev.maxRankResolved
+                    )
                 }
+
+                // Clear the staged target once it's been fully satisfied.
+                if let target = pendingRanks[step.node.id], target <= step.targetRank {
+                    pendingRanks.removeValue(forKey: step.node.id)
+                }
+                recomputeDerived()
+                anySuccess = true
             }
+
             isMutating = false
             if anySuccess {
                 SFXManager.shared.play(.uiConfirm)
@@ -273,35 +421,54 @@ final class PassiveTreeViewModel {
         }
     }
 
-    /// BFS-order pending nodes so each commit step has a satisfied parent.
-    private func bfsCommitOrder() -> [PassiveNode] {
-        var ordered: [PassiveNode] = []
-        var resolved = unlockedIds
-        var remaining = pendingUnlockIds
+    /// One server-side step in a commit plan — "take this node to this rank".
+    private struct CommitStep {
+        let node: PassiveNode
+        let targetRank: Int
+    }
 
-        // Multiple passes; each pass picks every pending node whose
-        // adjacency intersects the resolved frontier.
-        while !remaining.isEmpty {
-            var addedThisPass: [String] = []
-            for id in remaining {
-                guard let node = nodes.first(where: { $0.id == id }) else {
-                    addedThisPass.append(id) // bogus id — drop it
-                    continue
-                }
-                let isReachable = node.isStartNode ||
+    /// Build the commit plan: BFS-ordered first-unlocks interleaved with
+    /// sequential rank-up steps so every call the server sees is valid.
+    private func commitPlan() -> [CommitStep] {
+        var plan: [CommitStep] = []
+        var resolved = unlockedIds                        // committed first-unlocks
+        var remainingRankOne: Set<String> = pendingRanks
+            .filter { committedRank(for: $0.key) == 0 }
+            .map(\.key)
+            .reduce(into: Set<String>()) { $0.insert($1) }
+
+        // Pass 1 — BFS first-unlocks. Each pass adds every pending first-unlock
+        // whose adjacency now hits the resolved frontier, then advances the
+        // frontier and loops until nothing new can be added.
+        while !remainingRankOne.isEmpty {
+            var added: [String] = []
+            for id in remainingRankOne {
+                guard let node = nodes.first(where: { $0.id == id }) else { added.append(id); continue }
+                let reachable = node.isStartNode ||
                     (adjacency[id] ?? []).contains(where: { resolved.contains($0) })
-                if isReachable {
-                    ordered.append(node)
-                    addedThisPass.append(id)
-                }
+                if reachable { plan.append(CommitStep(node: node, targetRank: 1)); added.append(id) }
             }
-            if addedThisPass.isEmpty { break }
-            for id in addedThisPass {
-                remaining.remove(id)
-                resolved.insert(id)
+            if added.isEmpty { break }
+            for id in added { remainingRankOne.remove(id); resolved.insert(id) }
+        }
+
+        // Pass 2 — rank-ups. One CommitStep per rank step so the server sees
+        // currentRank+1 at every call. Covers:
+        //   (a) nodes that were already committed and got rank-ups staged
+        //   (b) nodes that were staged locked → rank 2/3 in the same session
+        //       (rank 1 came from pass 1 above)
+        for (id, target) in pendingRanks {
+            guard let node = nodes.first(where: { $0.id == id }) else { continue }
+            let startRank = max(1, committedRank(for: id))
+            // If the node isn't yet in `resolved` (rank-1 BFS failed to add it)
+            // there's no point queuing rank-ups — they'd fail the server check.
+            if committedRank(for: id) == 0 && !resolved.contains(id) { continue }
+            if target <= startRank { continue }
+            for r in (startRank + 1)...target {
+                plan.append(CommitStep(node: node, targetRank: r))
             }
         }
-        return ordered
+        return plan
     }
 
     // MARK: - Active Slot Mutations
@@ -437,7 +604,7 @@ final class PassiveTreeViewModel {
                 passivePointsAvailable = result.passivePointsAvailable
                 unlockedNodes = []
                 activeSlots = []
-                pendingUnlockIds.removeAll()
+                pendingRanks.removeAll()
                 recomputeDerived()
                 // Sync gems + talent points on the character model so HeroDetailView
                 // badges + header update immediately (GoldMine/Respec pattern).

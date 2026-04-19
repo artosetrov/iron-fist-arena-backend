@@ -13,10 +13,21 @@ final class PassiveTreeService {
     private struct UnlockBody: Encodable {
         let characterId: String
         let nodeId: String
+        /// Talents v2: nil (or omitted) = first-time unlock at rank 1. Pass 2/3
+        /// to rank up an already-unlocked ranked node.
+        let rank: Int?
     }
 
     private struct RespecBody: Encodable {
         let characterId: String
+    }
+
+    /// Talents v2: respec can be the free-weekly path or a paid gem path.
+    /// `useFree == false` forces the paid path even when the free respec is
+    /// available (lets the player save their free respec for later in the week).
+    private struct RespecV2Body: Encodable {
+        let characterId: String
+        let useFree: Bool?
     }
 
     private struct ActiveSlotMutationBody: Encodable {
@@ -78,12 +89,20 @@ final class PassiveTreeService {
 
     // MARK: - Unlock node
 
-    /// Spends one or more passive points to unlock a node. Server validates connectivity + cost.
-    func unlock(characterId: String, nodeId: String) async -> PassiveUnlockResponse? {
+    /// Spends one or more passive points to unlock a node OR rank it up.
+    ///
+    /// Talents v2 (2026-04-19): pass `rank: nil` (or 1) for a first-time unlock,
+    /// `rank: 2` or `3` for rank-ups. Server validates that the target rank is
+    /// exactly `currentRank + 1` and that the character has enough SP.
+    func unlock(
+        characterId: String,
+        nodeId: String,
+        rank: Int? = nil
+    ) async -> PassiveUnlockResponse? {
         do {
             let response: PassiveUnlockResponse = try await APIClient.shared.post(
                 APIEndpoints.passivesUnlock,
-                body: UnlockBody(characterId: characterId, nodeId: nodeId)
+                body: UnlockBody(characterId: characterId, nodeId: nodeId, rank: rank)
             )
             HapticManager.light()
             return response
@@ -251,12 +270,19 @@ final class PassiveTreeService {
 
     // MARK: - Respec
 
-    /// Refunds all points, deletes all unlocked nodes, spends RESPEC_GEM_COST gems.
-    func respec(characterId: String) async -> PassiveRespecResponse? {
+    /// Refunds all points, deletes all unlocked nodes.
+    ///
+    /// Talents v2 (2026-04-19): if `useFree == true` and the character has a
+    /// free respec available, no gems are spent; otherwise `RESPEC_GEM_COST`
+    /// gems are deducted. `useFree: nil` defers to server default (true).
+    func respec(
+        characterId: String,
+        useFree: Bool? = nil
+    ) async -> PassiveRespecResponse? {
         do {
             let decoded: PassiveRespecResponse = try await APIClient.shared.post(
                 APIEndpoints.passivesRespec,
-                body: RespecBody(characterId: characterId)
+                body: RespecV2Body(characterId: characterId, useFree: useFree)
             )
             HapticManager.medium()
             return decoded

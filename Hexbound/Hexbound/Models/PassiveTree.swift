@@ -39,6 +39,32 @@ struct PassiveNode: Codable, Identifiable, Hashable {
     let activeActionType: TalentSlotAction?
     let activeCooldown: Int?
     let activeMagnitude: Double?
+
+    // Talents v2 (2026-04-19): ranked nodes. Backend is source of truth — each
+    // node ships a per-rank cost schedule (e.g. `[1,2,3]` for a cost=6 ranked
+    // stat node, `[3]` for a keystone, `[5]` for an ultimate). Legacy payloads
+    // omit these fields; clients fall back to `cost`/`[cost]`/1 accordingly.
+    let rankCosts: [Int]?
+    let maxRank: Int?
+
+    /// Per-rank cost schedule with a legacy fallback — use this instead of
+    /// `rankCosts` when you need a guaranteed non-nil array.
+    var rankCostSchedule: [Int] { rankCosts ?? [cost] }
+
+    /// Max rank supported by this node. Defaults to 1 if the backend omits it.
+    var maxRankResolved: Int { maxRank ?? rankCostSchedule.count }
+
+    /// True when this node has more than one rank (ranked stat nodes).
+    var isRanked: Bool { maxRankResolved > 1 }
+
+    /// Cost to advance from `currentRank` to the next rank, or nil when already
+    /// at max rank or when the node is single-rank.
+    func nextRankCost(currentRank: Int) -> Int? {
+        guard currentRank >= 0, currentRank < maxRankResolved else { return nil }
+        let schedule = rankCostSchedule
+        guard currentRank < schedule.count else { return nil }
+        return schedule[currentRank]
+    }
 }
 
 /// Directed edge between two PassiveNode ids.
@@ -74,6 +100,21 @@ struct CharacterPassiveUnlocked: Codable, Identifiable, Hashable {
     let activeCooldown: Int?
     let activeMagnitude: Double?
     let unlockedAt: String?   // ISO8601 string — decoded as String to avoid Date strategy issues
+
+    // Talents v2 (2026-04-19): per-character rank progress. Old backends don't
+    // return these; callers coalesce to rank 1 / max rank 1 for compatibility.
+    let currentRank: Int?
+    let maxRank: Int?
+
+    /// Rank the character currently has in this node. Legacy payloads collapse
+    /// to 1 because pre-v2 nodes were always single-rank.
+    var currentRankResolved: Int { currentRank ?? 1 }
+
+    /// Max rank available for this node (1 for keystones/ultimates/legacy).
+    var maxRankResolved: Int { maxRank ?? 1 }
+
+    /// True when the character can still invest points into this node.
+    var canRankUp: Bool { currentRankResolved < maxRankResolved }
 }
 
 struct CharacterPassiveResponse: Codable {
@@ -93,6 +134,12 @@ struct PassiveUnlockResponse: Codable {
     let success: Bool
     let passivePointsAvailable: Int
     let stats: PassiveStatsDelta?
+
+    // Talents v2 (2026-04-19): the unlock endpoint also services rank-ups.
+    // All three are optional so pre-v2 responses keep decoding.
+    let currentRank: Int?
+    let maxRank: Int?
+    let spSpent: Int?
 }
 
 struct PassiveRespecResponse: Codable {
@@ -102,6 +149,12 @@ struct PassiveRespecResponse: Codable {
     let gemsSpent: Int
     let gemsRemaining: Int
     let stats: PassiveStatsDelta?
+
+    // Talents v2 (2026-04-19): free-weekly respec. Both fields are optional so
+    // legacy responses decode cleanly.
+    let usedFreeRespec: Bool?
+    /// ISO8601 string for the moment the next free respec becomes available.
+    let nextFreeRespecAt: String?
 }
 
 /// POST /api/passives/active-slots/unlock-premium response.

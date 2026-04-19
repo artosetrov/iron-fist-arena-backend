@@ -2158,6 +2158,96 @@ Closed the next stale overview block inside `ADMIN_CAPABILITIES.md`:
 - **Inventory refresh:** updated current counts to `5084` in-scope files and `290 in-scope wiki markdown files / 289 wiki pages`
 - **Verification:** live dashboard/economy comparison plus `git diff --check`
 
+## [2026-04-19] audit | Block 227 admin role settings and security wording parity
+
+Closed the next stale access-model block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-227-admin-role-settings-and-security-wording-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/lib/auth.ts`, `admin/src/app/api/auth/login/route.ts`, `admin/src/app/(dashboard)/settings/page.tsx`, `admin/src/app/api/settings/role/route.ts`, `admin/src/actions/item-balance.ts`
+- **Fixes:** rewrote the roles/settings/security section so it now matches the real fixed-role auth model, admin-only settings flow, simulation-history surface, and narrower audit/rollback semantics instead of implying a stricter enterprise permissions matrix than the repo currently ships
+- **Inventory refresh:** updated current counts to `5085` in-scope files and `291 in-scope wiki markdown files / 290 wiki pages`
+- **Verification:** live auth/settings/item-balance comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 228 admin remaining page surface inventory parity
+
+Closed the next stale page-map block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-228-admin-remaining-page-surface-inventory-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/src/components/layout/nav-items.ts`, `admin/src/app/(dashboard)/battle-pass/page.tsx`, `admin/src/app/(dashboard)/battle-pass/battle-pass-client.tsx`, `admin/src/app/(dashboard)/daily-login/page.tsx`, `admin/src/app/(dashboard)/daily-login/daily-login-client.tsx`, `admin/src/app/(dashboard)/iap-products/page.tsx`, `admin/src/app/(dashboard)/iap-products/iap-products-client.tsx`, `admin/src/app/(dashboard)/matchmaking/page.tsx`, `admin/src/app/(dashboard)/minigame-sessions/page.tsx`, `admin/src/app/(dashboard)/minigame-sessions/minigame-sessions-client.tsx`, `admin/src/app/(dashboard)/referrals/page.tsx`, `admin/src/app/(dashboard)/social/page.tsx`, `admin/src/app/(dashboard)/dungeon-map/page.tsx`, `admin/src/app/(dashboard)/dungeon-map/dungeon-map-client.tsx`, `admin/src/app/(dashboard)/design-system/page.tsx`, `admin/src/app/(dashboard)/design-system/design-system-client.tsx`
+- **Fixes:** added first-class capability sections for the remaining live sidebar routes, rewrote the bottom page inventory so it now includes `Matchmaking`, `Referrals`, `IAP Products`, `Minigame Sessions`, and the real placement of `Social`, and narrowed each section to the actual live page behavior instead of implied analytics/moderation/storybook tooling
+- **Inventory refresh:** updated current counts to `5127` in-scope files and `294 in-scope wiki markdown files / 293 wiki pages`
+- **Verification:** live nav/page comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 229 admin tech stack and data fetching parity
+
+Closed the next stale implementation-summary block inside `ADMIN_CAPABILITIES.md`:
+- **Created:** `[[block-229-admin-tech-stack-and-data-fetching-parity]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `admin/package.json`, `admin/src/lib/backend-api.ts`, `admin/src/lib/backend-admin.ts`, `admin/src/components/forms/dynamic-form.tsx`, `admin/src/app/(dashboard)/dungeon-map/dungeon-map-client.tsx`
+- **Fixes:** rewrote the bottom tech-stack / backend-integration / data-fetching section so it now reflects the actual Next.js 15 + Recharts + server-action/direct-fetch model, and removed stale claims about a repo-wide React Query layer, websocket metrics, and generic debounced autosave
+- **Inventory refresh:** updated current counts to `5128` in-scope files and `295 in-scope wiki markdown files / 294 wiki pages`
+- **Verification:** package/runtime search plus `git diff --check`
+
+## [2026-04-19] audit | Block 230 project overview liveops and admin surface parity
+
+Closed the next source-of-truth drift block adjacent to the admin cleanup:
+- **Created:** `[[block-230-project-overview-liveops-and-admin-surface-parity]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `wiki/features/daily-login.md`, `wiki/features/shop.md`, `wiki/features/auth.md`, `admin/src/lib/feature-flags.ts`, `admin/src/actions/feature-flags.ts`, `admin/src/app/(dashboard)/flags/flags-client.tsx`, `admin/src/actions/push.ts`, `admin/src/lib/push-campaigns.ts`, `admin/src/app/(dashboard)/push/push-client.tsx`
+- **Fixes:** rewrote stale liveops/admin wording in `PROJECT_OVERVIEW.md` so it now matches the cleaned repo truth — daily login is back to the live 7-day cycle, feature flags are gradual-rollout/targeting tools instead of a full A/B suite, push now describes sent/failed + token-count review, IAP wording reflects backend receipt validation, and the admin summary no longer promises broader scheduling/audit/simulation tooling than the current dashboard ships
+- **Inventory refresh:** updated current counts to `5129` in-scope files and `296 in-scope wiki markdown files / 295 wiki pages`
+- **Verification:** source-of-truth comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 231 auth feature map admin surface parity
+
+Closed the next stale admin-path tail in the auth feature map:
+- **Created:** `[[block-231-auth-feature-map-admin-surface-parity]]`
+- **Files audited:** `wiki/features/auth.md`, `admin/src/app/login/page.tsx`, `admin/src/app/(dashboard)/players/page.tsx`, `admin/src/app/(dashboard)/players/[id]/page.tsx`, `admin/src/app/(dashboard)/settings/page.tsx`, `admin/src/app/api/settings/role/route.ts`
+- **Fixes:** replaced the deleted `admin/src/app/(dashboard)/users/` path with the real auth-adjacent admin surfaces: login, players, settings, and role mutation
+- **Inventory refresh:** updated current counts to `5131` in-scope files and `297 in-scope wiki markdown files / 296 wiki pages`
+- **Verification:** path existence check plus `git diff --check`
+
+## [2026-04-19] audit | Block 232 documentation index admin workflow parity
+
+Closed the next master-index drift block adjacent to the admin cleanup:
+- **Created:** `[[block-232-source-of-truth-documentation-index-admin-workflow-parity]]`
+- **Files audited:** `docs/01_source_of_truth/DOCUMENTATION_INDEX.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/03_backend_and_api/API_REFERENCE.md`
+- **Fixes:** refreshed the documentation-index freshness banner, rewrote the admin/operations quick-reference and workflow checklist language, and removed the stale assumption that `ADMIN_CAPABILITIES.md` is a universal config-key registry or default execution path for every balance/content workflow
+- **Inventory refresh:** updated current counts to `5134` in-scope files and `298 in-scope wiki markdown files / 297 wiki pages`
+- **Verification:** source-of-truth comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 233 daily login and referral feature-map admin boundary sync
+
+Closed the next feature-map boundary block after the admin capability cleanup:
+- **Created:** `[[block-233-feature-maps-daily-login-and-referral-admin-boundary-sync]]`
+- **Files audited:** `wiki/features/daily-login.md`, `wiki/features/referral.md`, `admin/src/app/(dashboard)/daily-login/page.tsx`, `admin/src/app/(dashboard)/daily-login/daily-login-client.tsx`, `admin/src/app/(dashboard)/referrals/page.tsx`, `Hexbound/Hexbound/Services/DailyLoginService.swift`
+- **Fixes:** replaced older “if present” wording with the real daily-login and referrals admin pages, documented the current `DailyLoginService.swift` surface, locked daily-login wording back to the live 7-day cycle, and marked referrals as a read-only claims-review surface instead of a funnel analytics dashboard
+- **Inventory refresh:** updated current counts to `5135` in-scope files and `299 in-scope wiki markdown files / 298 wiki pages`
+- **Verification:** live page/service existence check plus `git diff --check`
+
+## [2026-04-19] audit | Block 234 leaderboard and dungeon rush feature-map admin boundary sync
+
+Closed the next pair of stale admin-boundary tails in the feature-map layer:
+- **Created:** `[[block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync]]`
+- **Files audited:** `wiki/features/leaderboard.md`, `wiki/features/dungeon-rush.md`, `admin/src/app/(dashboard)/matches/page.tsx`, `admin/src/app/(dashboard)/players/[id]/page.tsx`, `admin/src/app/(dashboard)/minigame-sessions/page.tsx`, `admin/src/app/(dashboard)/minigame-sessions/minigame-sessions-client.tsx`
+- **Fixes:** replaced the phantom leaderboard admin page with the real matches/player-detail review surfaces, removed the implied manual rating-adjust tool, and replaced the vague Dungeon Rush admin note with the live minigame-sessions review surface plus an explicit “no rush-specific room-catalog editor today” boundary
+- **Inventory refresh:** updated current counts to `5136` in-scope files and `300 in-scope wiki markdown files / 299 wiki pages`
+- **Verification:** live page existence check plus `git diff --check`
+
+## [2026-04-19] audit | Block 235 minigames and social runtime boundary sync
+
+Closed the next speculative runtime-boundary block in the feature-map layer:
+- **Created:** `[[block-235-feature-maps-minigames-and-social-runtime-boundary-sync]]`
+- **Files audited:** `wiki/features/minigames.md`, `wiki/features/social.md`, `admin/src/app/(dashboard)/social/page.tsx`, `Hexbound/Hexbound/Views/Minigames/ShellGameViewModel.swift`, `Hexbound/Hexbound/Views/Minigames/FortuneWheelViewModel.swift`, `backend/src/lib/game/guild-challenge.ts`, `backend/tests/api/shell-game-start.test.ts`, `backend/tests/api/shell-game-guess.test.ts`, `backend/tests/api/shell-game-play-deprecated.test.ts`, `backend/tests/api/social-challenges.test.ts`, `backend/tests/api/social-messages.test.ts`
+- **Fixes:** removed speculative shared minigame service/helper wording, rewrote social admin as a read-only review surface instead of a moderation console, replaced the speculative guild helper note with the real `guild-challenge.ts`, and swapped vague test placeholders for the current route-level test files
+- **Inventory refresh:** updated current counts to `5137` in-scope files and `301 in-scope wiki markdown files / 300 wiki pages`
+- **Verification:** live file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 236 inventory summary and section header parity
+
+Closed the next inventory consistency block after the feature-map wave:
+- **Created:** `[[block-236-inventory-summary-and-section-header-parity]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `git ls-files`, `git ls-files --others --exclude-standard`
+- **Fixes:** refreshed the top tracked/untracked/in-scope counts, refreshed category totals, and updated stale section-header counts so the inventory no longer contradicts itself after the late admin/wiki cleanup wave
+- **Inventory refresh:** updated current counts to `5140` in-scope files and `302 in-scope wiki markdown files / 301 wiki pages`
+- **Verification:** git-derived count comparison plus `git diff --check`
+
 ## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
 
 Mid-session `xcodebuild ... build` failed with linker `Undefined symbols: Hexbound.BossInfo.init(id:…isRealBoss:tagline:) + default argument 8` from `DungeonService.o`, and a separate pass reported `TalentsTabView.swift:100` cascade — `"no dynamic member 'unlockPremiumSlot' using key path from root type 'PassiveTreeViewModel'"` + `"referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Bindable<PassiveTreeViewModel>'"` + `"cannot call value of non-function type 'Binding<Subject>'"`. Both methods/members were present in source — `BossInfo` had the expected memberwise init with `tagline: String? = nil`, and `PassiveTreeViewModel.unlockPremiumSlot()` existed at line 405 with backend route + service + model already wired. A clean-then-build (`xcodebuild ... clean build`) passed with zero code changes.

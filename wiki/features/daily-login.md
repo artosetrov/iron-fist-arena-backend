@@ -52,7 +52,7 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 
 ### Services
 
-- Reuses `APIClient` directly (no dedicated service file) OR `DailyLoginService.swift` if present
+- `Hexbound/Hexbound/Services/DailyLoginService.swift` — fetches daily-login status and claim payloads, then applies authoritative reward state to `AppState`
 
 ### Cache
 
@@ -60,7 +60,8 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 
 ## Admin
 
-- `admin/src/app/(dashboard)/daily-login/` — calendar reward editor (if present)
+- `admin/src/app/(dashboard)/daily-login/page.tsx` — live daily-login rewards page
+- `admin/src/app/(dashboard)/daily-login/daily-login-client.tsx` — 7-day reward-cycle editor backed by `daily_login_rewards`
 
 ## Docs
 
@@ -73,11 +74,11 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 - **Streak break.** Skipping a day resets position to 1 (not to 0) — verify in `daily-login.ts`.
 - **Popup gating.** Show popup ONLY on first session of the day. `GameDataCache.dailyLogin.todayClaimed` must gate re-display.
 - **Claim idempotency.** `POST /claim` must be safe on double-tap — server returns same payload if already claimed today.
-- **Calendar length.** Typical calendar is 7 or 30 days — rotate position on loop or stop at max (check config).
+- **Calendar length.** Live admin/config today is a 7-day reward cycle. Keep docs/UI aligned with the 7-entry editor unless the backend/admin surface is widened together.
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/daily-login/*` (if present)
+- No dedicated backend daily-login test file is checked in today; verify runtime behavior against the two live routes plus `daily-login.ts`.
 
 ## Related features
 

@@ -6,6 +6,7 @@ import re
 import sys
 import argparse
 from pathlib import Path
+from urllib.parse import urlparse
 
 PLACEHOLDER_PREFIXES = (
     "__MISSING_",
@@ -21,6 +22,10 @@ def strip_inline_comment(value: str) -> str:
         if index == 0 or value[index - 1].isspace():
             return value[:index].rstrip()
     return value.strip()
+
+
+def normalize_xcconfig_value(value: str) -> str:
+    return value.replace(r"\:", ":")
 
 
 def parse_xcconfig(path: Path, seen: set[Path] | None = None) -> dict[str, str]:
@@ -62,7 +67,24 @@ def resolve_value(key: str, values: dict[str, str], stack: tuple[str, ...] = ())
         nested_key = match.group(1)
         return resolve_value(nested_key, values, stack + (key,))
 
-    return re.sub(r"\$\(([^)]+)\)", replace, raw_value)
+    resolved = re.sub(r"\$\(([^)]+)\)", replace, raw_value)
+    return normalize_xcconfig_value(resolved)
+
+
+def validate_xcconfig_url_literals(path: Path) -> None:
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("//"):
+            continue
+        if "=" not in raw_line:
+            continue
+        _, raw_value = raw_line.split("=", 1)
+        value = strip_inline_comment(raw_value)
+        if "//" in value:
+            fail(
+                f"{path.name}:{line_number} uses a literal // sequence. "
+                "In xcconfig files build URLs with $(HEXBOUND_URL_SLASH) so Xcode does not truncate them."
+            )
 
 
 def fail(message: str) -> None:
@@ -97,6 +119,11 @@ def main() -> int:
     project_root = Path(__file__).resolve().parents[1]
     config_dir = project_root / "Config"
 
+    validate_xcconfig_url_literals(config_dir / "Local.secrets.example.xcconfig")
+    local_secrets = config_dir / "Local.secrets.xcconfig"
+    if local_secrets.exists():
+        validate_xcconfig_url_literals(local_secrets)
+
     debug_values = parse_xcconfig(config_dir / "Debug.xcconfig")
     release_values = parse_xcconfig(config_dir / "Release.xcconfig")
 
@@ -120,6 +147,19 @@ def main() -> int:
         fail("HEXBOUND_API_BASE_URL for Debug must use https://")
     if not allow_placeholders and not release_api.startswith("https://"):
         fail("HEXBOUND_API_BASE_URL for Release must use https://")
+
+    if not allow_placeholders:
+        debug_host = urlparse(debug_api).netloc
+        release_host = urlparse(release_api).netloc
+        supabase_host = urlparse(
+            validate_required_key("HEXBOUND_SUPABASE_PROJECT_URL", release_values, allow_placeholders=False)
+        ).netloc
+        if not debug_host:
+            fail("HEXBOUND_API_BASE_URL for Debug is missing a host")
+        if not release_host:
+            fail("HEXBOUND_API_BASE_URL for Release is missing a host")
+        if not supabase_host:
+            fail("HEXBOUND_SUPABASE_PROJECT_URL is missing a host")
     if debug_api == release_api:
         warn(
             "Debug and Release API hosts are the same. This keeps local builds working, "

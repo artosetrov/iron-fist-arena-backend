@@ -74,6 +74,38 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
+### Matchmaking
+**Purpose:** Review rating-distribution health and the live ELO tuning baseline
+**Features:**
+- Summary cards:
+  - active characters in the last 7 days
+  - matches played in the last 7 days
+  - calibration/default K-factor
+  - calibration games
+- Rating distribution buckets for active characters
+- Read-only notes pointing back to the live `elo.*` config keys
+
+**Current repo note:** the live matchmaking page is a read-only review screen. It does **not** currently expose queue inspection, live pair-debugging, forced rematch tools, or direct config mutation from this route.
+
+---
+
+### Referrals (Claims Review)
+**Purpose:** Review referrer ↔ invitee qualification claims
+**Features:**
+- Summary cards:
+  - total claims
+  - last 7 days
+  - shown rows
+- Recent claims table:
+  - referrer character
+  - invitee character
+  - qualified-at timestamp
+- Read-only audit note pointing back to the backend qualification helper
+
+**Current repo note:** the live referrals page is a Phase 1 audit surface. It does **not** currently expose dispute resolution, manual credit, or claim repair actions from the dashboard.
+
+---
+
 ## 2. Content Management
 
 ### Items (CRUD)
@@ -223,6 +255,18 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
+### Dungeon Map
+**Purpose:** Adjust the shared dungeon-overworld node layout
+**Features:**
+- Background-map editor with draggable dungeon nodes
+- Per-node X / Y / size editing
+- Reset to defaults
+- Save layout back to the server
+
+**Current repo note:** the live dungeon-map screen is a manual layout editor. It does **not** currently expose procedural path generation, pathing previews, route validation, or unlock-graph authoring.
+
+---
+
 ### Appearances/Cosmetics (CRUD)
 **Purpose:** Manage character appearance skins
 **Fields:**
@@ -338,6 +382,36 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
+### Battle Pass Rewards
+**Purpose:** Manage reward rows per season and level
+**Features:**
+- Choose season
+- Review rewards grouped by level
+- Add free or premium reward rows
+- Edit reward type, reward amount, and optional reward id
+- Delete individual reward rows
+- Bulk-generate default rewards up to a chosen max level
+
+**Current repo note:** the live battle-pass page is a reward-authoring surface. It does **not** currently expose pass pricing, purchase analytics, grant/revoke flows, or season sales reporting from this page.
+
+---
+
+### Daily Login Rewards
+**Purpose:** Configure the live 7-day login cycle
+**Features:**
+- Review all 7 day slots
+- Edit reward type:
+  - gold
+  - gems
+  - consumable
+- Edit amount and consumable id
+- Reset the whole cycle to defaults
+- Preview the current 7-day reward order
+
+**Current repo note:** the live daily-login page manages the reward cycle only. It does **not** currently expose calendar scheduling, alternate streak rules, or multiple named reward calendars.
+
+---
+
 ## 4. Economy Management
 
 ### Economy Overview
@@ -423,6 +497,47 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - View aggregate purchases and revenue totals
 
 **Current repo note:** the live shop-offers surface does **not** currently ship A/B pricing experiments or a separate pause/schedule state machine beyond active toggle plus start/end windows.
+
+---
+
+### IAP Products (Catalog Review)
+**Purpose:** Review the live purchasable SKU catalog
+**Views:**
+- Summary cards:
+  - total SKUs
+  - enabled SKUs
+  - disabled/grandfathered SKUs
+- Filter by product id
+- Optional hide-disabled toggle
+- Table columns:
+  - product id
+  - USD price
+  - gems
+  - gold
+  - premium / monthly-card / subscription flags
+  - extra bundled items
+  - enabled / disabled status
+
+**Current repo note:** the live IAP Products page is read-only. Changes to price, enabled flags, and bundle contents still come from code/config (`IAP_PRODUCTS`) plus StoreKit/App Store sync, not admin CRUD mutations.
+
+---
+
+### Minigame Sessions
+**Purpose:** Review recent minigame session outcomes and claims
+**Views:**
+- Per-game count cards
+- Filter by game type
+- Filter by player name / email / username
+- Session table:
+  - game type
+  - character / user
+  - status
+  - bet amount
+  - claimed gold
+  - claimed gems
+  - created / claimed timestamps
+
+**Current repo note:** the live minigame-sessions page is a read-only audit surface. It does **not** currently expose manual claim repair, force-expire, replay, or per-session mutation tools.
 
 ---
 
@@ -669,35 +784,52 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 
 ---
 
+### Social Hub
+**Purpose:** Review friendships, direct messages, and challenge activity
+**Views:**
+- Summary cards:
+  - active friendships
+  - total messages / messages today
+  - total challenges / pending / completed
+  - blocked relationships
+- Recent messages table with sender / receiver player links
+- Recent challenges table
+- Recent friendships table
+
+**Current repo note:** the live social page is a review surface. It does **not** currently expose moderator actions like delete message, unblock friendship, resend challenge, or export/search tooling beyond the built-in recent tables.
+
+---
+
 ## 7. Roles & Permissions
 
 ### Admin
-- Full access to all pages
-- Can ban/unban, grant items, modify config
-- Can create/delete content (items, skills, dungeons)
-- Can broadcast mail/push
-- Can view stats, economy, IAP transaction review, and IAP Products catalog surfaces
-- Can rollback config
+- Can sign into the admin dashboard
+- Can access admin-only surfaces such as Settings and role mutation
+- Can use config/content mutation routes protected by `canModifyConfig`
+- Can access player-management, liveops, economy-review, and catalog-review surfaces
+- Can create snapshots and trigger config restore / rollback flows
 
 ### Moderator
-- Player management only
-- Can search, view player details
-- Can ban/unban
-- Can grant items/gold/gems to players
-- Cannot modify game config
-- Cannot access stats/economy/IAP review or IAP Products catalog surfaces
-- Cannot broadcast mail
-- View-only on shop/economy
+- Can sign into the admin dashboard
+- Can access general review/ops surfaces that only require an authenticated admin session
+- Can use player-management flows currently exposed through the live player pages
+- Cannot use config/content mutation routes guarded by `canModifyConfig`
+- Cannot access the admin-only Settings page
+- Cannot change roles
 
 ### Developer
-- Config modification only
-- Can view/edit the live config categories exposed to this role
-- Can create snapshots and rollback
-- Can manage feature flags
-- Can run balance sims
-- Cannot access player data
-- Cannot ban users
-- View-only on the narrower stats/economy/IAP transaction/catalog review surface
+- Can sign into the admin dashboard
+- Can use config/content mutation routes guarded by `canModifyConfig`
+- Can manage feature flags, balance/config surfaces, seasons, items, dungeons, skills, passives, and similar admin/developer edit flows
+- Can create snapshots and use config restore / rollback flows
+- Cannot access the admin-only Settings page
+- Cannot change roles
+
+**Current repo note:** this section is a practical summary of the live role model, not a perfect page-by-page permission matrix. In the current repo:
+- allowed dashboard roles are the fixed `admin` / `moderator` / `developer` set
+- config/content mutation is commonly guarded through `canModifyConfig` (`admin` or `developer`)
+- role mutation and the Settings page are `admin`-only
+- several review/ops surfaces still allow any authenticated admin-session role unless a stricter guard is applied per route/action
 
 ### Custom Roles
 - Future-facing concept, not a live admin builder in the current repo
@@ -708,9 +840,10 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ## 8. Settings & System Surface
 
 ### Item Balance History
-- View all item changes (created, modified, deleted)
-- Change log with admin who made change
-- Rollback to previous version
+- View simulation history from the Item Balance simulation page
+- Inspect recent run type, summary, config, and results payloads
+
+**Current repo note:** the live repo exposes simulation-run history, not a full item edit/change-history log with per-item rollback.
 
 ### Settings (live today)
 - Basic database connectivity check
@@ -718,6 +851,8 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Admin-user roster
 - Role changes across the fixed live roles
 - Seed default config values
+
+**Current repo note:** the Settings page itself is admin-only.
 
 ### Audit / performance / system ops (not standalone live pages today)
 - Audit logging exists as part of the broader admin/backend model, but there is no separate dedicated Audit Trail dashboard page in the current repo
@@ -729,20 +864,21 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 ## 9. Access Control & Security
 
 **Authentication:**
-- OAuth via internal service or email + password
-- 2FA optional (recommended for admins)
-- Session timeout after 30 min inactivity
+- Email + password sign-in through Supabase-backed auth
+- Admin access is limited to users whose role is one of `admin` / `moderator` / `developer`
+- Admin session is stored in the `admin-token` cookie (currently up to 7 days)
 
 **Authorization:**
-- Role-based access (admin/moderator/developer/custom)
-- Page-level permissions
-- Action-level permissions (can view but not edit)
+- Fixed role set: `admin`, `moderator`, `developer`
+- Page- and action-level permissions vary by route/action
+- Many mutation routes use `canModifyConfig` (`admin` or `developer`)
+- Some stricter operations are explicitly `admin`-only, such as role mutation
+- Custom roles are not a live feature
 
 **Audit:**
-- All changes logged to AdminLog table
-- IP address tracked
-- Rollback capability on most actions
-- Approval workflow for high-risk actions (mass ban, config rollback)
+- Many high-risk or config/content mutations write admin log records or structured audit entries
+- Coverage varies by route/action and should be verified in code for sensitive workflows
+- Rollback is available for config through snapshots/restore paths and for some simulation/config surfaces, not as a universal capability on most actions
 
 ---
 
@@ -754,7 +890,10 @@ This list is intended as a capability-oriented snapshot of the live dashboard su
 - Dashboard
 - Players
 - Matches
+- Matchmaking
+- Referrals
 - Economy
+- Social
 - Settings (includes basic server info + role management, not a standalone system-ops suite)
 
 **Content management surfaces**
@@ -777,8 +916,10 @@ This list is intended as a capability-oriented snapshot of the live dashboard su
 
 **Economy / balance surfaces**
 - Balance
+- IAP Products
 - Loot
 - Offers
+- Minigame Sessions
 - Config
 - Item Balance
 - Snapshots
@@ -787,41 +928,61 @@ This list is intended as a capability-oriented snapshot of the live dashboard su
 - Mail
 - Push
 - Feature Flags
-- Social
 
 **Reference / support surfaces**
 - Design System
 - Generic Tables shell
 
-Current repo note: there is no standalone analytics dashboard route under `admin/src/app/(dashboard)` today. Analytics-adjacent behavior currently lives in the dashboard/economy surfaces and their admin-owned server-action/read-side flow, plus the dedicated `IAP Products` catalog page backed by `/api/admin/iap-products`. There is also no separate dedicated User Activity Log, Performance Monitoring, System Status, or Audit Trail page in the current dashboard surface.
+Current repo note: there is no standalone analytics dashboard route under `admin/src/app/(dashboard)` today. Analytics-adjacent behavior currently lives in the dashboard/economy surfaces and a small set of read-only review pages such as `IAP Products`, `Matchmaking`, `Minigame Sessions`, and `Referrals`, rather than a unified telemetry suite. There is also no separate dedicated User Activity Log, Performance Monitoring, System Status, or Audit Trail page in the current dashboard surface.
 
 ---
 
 ## Tech Stack
 
 **Frontend:**
-- Next.js 15 (React)
+- Next.js 15 (React 19)
 - TypeScript
-- TailwindCSS + shadcn/ui
-- Chart.js or Recharts for graphs
-- Zod for form validation
+- TailwindCSS + shadcn/ui + Radix primitives
+- Recharts for chart surfaces
+- Zod and typed helpers on validation-heavy routes/forms
+- `react-hook-form` on the dynamic form surface and selected admin forms
 
 **Backend Integration:**
-- API routes call backend endpoints
-- All mutations require admin auth token
-- Optimistic updates where safe
-- Debounced auto-save (5s)
+- Mixed model:
+  - server actions
+  - same-origin admin API routes
+  - backend proxy/helpers for canonical backend-owned data
+- Mutations require an authenticated admin session, with stricter guards depending on the route/action
+- Many edit flows now refresh from the server after mutation instead of relying on broad optimistic state
+- Save behavior is page-specific; there is no repo-wide debounced auto-save layer
 
 **Data Fetching:**
 - Server-side rendering for initial load
-- Client-side React Query for live data
-- WebSocket for real-time metrics (optional)
-- Polling fallback (5s interval)
+- Server actions plus direct `fetch(...)` calls to local API routes and backend proxy helpers
+- `no-store` fetches on selected review pages that must reflect live state
+- No repo-wide React Query layer today
+- No websocket-driven real-time metrics layer today
 
 ---
 
 ## Notes
 
 - **Security:** confirmation and audit behavior varies by route/action. High-risk flows like bans, deletes, and rollback-style operations commonly require confirmation, but this document should not be read as a formal security-control matrix.
-- **Performance:** Pagination on all lists. Debounced search. Lazy-load economy graphs where present. Cache feature flags client-side.
+- **Performance:** Pagination exists on many list/review surfaces. Some screens use simple client-side filtering or local debounce-like state, but there is no universal repo-wide debounced-search contract. Chart-heavy overview pages keep the heavier visualization work on the dedicated review screens.
 - **UX:** Inline validation exists on many live forms. Some config-heavy screens include helper text/tooltips. Undo and CSV import/export are **not** general admin capabilities across the current dashboard.
+
+---
+
+## 11. Design Reference
+
+### Design System
+**Purpose:** Internal visual reference for shared tokens and component previews
+**Views:**
+- Colors
+- Typography
+- Spacing & radius
+- Component previews
+- Screen previews
+- Figma-aligned component variants plus fallback domain preview groups
+
+**Current repo note:** the live design-system page is a reference surface for the team. It is **not** currently a publishable Storybook replacement, token export pipeline, or component package registry.

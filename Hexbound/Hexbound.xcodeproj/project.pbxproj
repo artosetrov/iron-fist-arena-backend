@@ -1118,6 +1118,7 @@
 			isa = PBXGroup;
 			children = (
 				A0394C602F688BD400860F7B /* HexboundProducts.storekit */,
+				C0F000000000000000000010 /* Config */,
 				12BD0F5BC7B1632586F61346 /* Hexbound */,
 				9CCC2D362EF031FA188A04BD /* Products */,
 				A0EBD6252F68D53C0067FDF7 /* Recovered References */,
@@ -1144,7 +1145,6 @@
 			children = (
 				02E5682DDDCFDA8038B5CE1C /* Info.plist */,
 				ENTL00001000000000000001 /* Hexbound.entitlements */,
-				C0F000000000000000000010 /* Config */,
 				36D1E6B13C04CFECB0BA6BBD /* App */,
 				B7C1B3175550513FAF0F7C63 /* Models */,
 				CD285380352203EFB483DBC9 /* Network */,

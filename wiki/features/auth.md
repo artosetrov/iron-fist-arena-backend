@@ -89,7 +89,10 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 
 ## Admin
 
-- `admin/src/app/(dashboard)/users/` — user lookup, account unlocking, manual email verify
+- `admin/src/app/login/page.tsx` — admin email/password sign-in surface gated to `admin` / `moderator` / `developer`
+- `admin/src/app/(dashboard)/players/` — live player lookup and account-adjacent review/actions
+- `admin/src/app/(dashboard)/settings/page.tsx` — admin-only settings surface with admin-user roster
+- `admin/src/app/api/settings/role/route.ts` — fixed-role mutation route (`admin` only)
 
 ## Docs
 

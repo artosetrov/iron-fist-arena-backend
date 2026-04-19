@@ -16,6 +16,11 @@ struct TalentTreeCanvas: View {
     let isUnlocked: (PassiveNode) -> Bool
     let isPending: (PassiveNode) -> Bool
     let isUnlockable: (PassiveNode) -> Bool
+    /// Talents v2: committed rank from server (0 = not unlocked). Optional with
+    /// a default so legacy call sites still compile.
+    var currentRank: (PassiveNode) -> Int = { _ in 0 }
+    /// Talents v2: locally-staged target rank (0 = nothing staged).
+    var stagedRank: (PassiveNode) -> Int = { _ in 0 }
     let onTap: (PassiveNode) -> Void
 
     private let nodePadding: CGFloat = 36         // keep nodes from touching edges
@@ -169,7 +174,12 @@ struct TalentTreeCanvas: View {
                 Button {
                     onTap(node)
                 } label: {
-                    TalentNodeView(node: node, state: state(for: node))
+                    TalentNodeView(
+                        node: node,
+                        state: state(for: node),
+                        currentRank: currentRank(node),
+                        stagedRank: stagedRank(node)
+                    )
                 }
                 .buttonStyle(.plain)
                 .position(screenPosition(for: node))

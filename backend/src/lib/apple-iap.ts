@@ -8,6 +8,7 @@
  *   APPLE_IAP_KEY_ID       — Key ID from App Store Connect (API Keys → In-App Purchase)
  *   APPLE_IAP_ISSUER_ID    — Issuer ID from App Store Connect
  *   APPLE_IAP_PRIVATE_KEY  — .p8 private key contents (with \n for newlines)
+ *   APPLE_IAP_PRIVATE_KEY_PATH — local path to a .p8 private key file (preferred for local dev)
  *   APPLE_BUNDLE_ID        — Your app bundle ID (com.hexbound.app)
  *
  * In sandbox/development, set:
@@ -15,6 +16,8 @@
  */
 
 import * as crypto from 'crypto'
+import * as fs from 'fs'
+import * as path from 'path'
 
 // ──────────────────────────────────────────────
 // Types
@@ -47,10 +50,30 @@ export interface AppleVerifyResult {
 // JWT Generation for App Store Server API
 // ──────────────────────────────────────────────
 
+function loadApplePrivateKey(): string | undefined {
+  const inlinePrivateKey = process.env.APPLE_IAP_PRIVATE_KEY?.replace(/\\n/g, '\n').trim()
+  if (inlinePrivateKey) return inlinePrivateKey
+
+  const privateKeyPath = process.env.APPLE_IAP_PRIVATE_KEY_PATH?.trim()
+  if (!privateKeyPath) return undefined
+
+  const resolvedPath = path.isAbsolute(privateKeyPath)
+    ? privateKeyPath
+    : path.resolve(process.cwd(), privateKeyPath)
+
+  try {
+    return fs.readFileSync(resolvedPath, 'utf8').trim()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.warn(`[Apple IAP] Failed to read APPLE_IAP_PRIVATE_KEY_PATH at ${resolvedPath}: ${message}`)
+    return undefined
+  }
+}
+
 function getAppleConfig() {
   const keyId = process.env.APPLE_IAP_KEY_ID
   const issuerId = process.env.APPLE_IAP_ISSUER_ID
-  const privateKey = process.env.APPLE_IAP_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  const privateKey = loadApplePrivateKey()
   const bundleId = process.env.APPLE_BUNDLE_ID || 'com.hexbound.app'
   const environment = process.env.APPLE_IAP_ENVIRONMENT || 'production'
 
