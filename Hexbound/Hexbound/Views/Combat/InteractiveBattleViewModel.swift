@@ -261,6 +261,25 @@ final class InteractiveBattleViewModel {
     private let appState: AppState
     private let attackerCharacterId: String
     private let defenderCharacterId: String
+    /// Tells the server to fork its /match/start logic: `.pvp` hits Character
+    /// FKs and ELO; `.bot` synthesizes the opponent from `npc-bots.ts`;
+    /// `.dungeonBoss` pulls the boss from the caller's active DungeonRun.
+    let opponentType: InteractiveOpponentType
+
+    /// For `.dungeonBoss` opponents — identifier of the active DungeonRun.
+    /// Required on the server path; nil for PvP/bot.
+    let dungeonRunId: String?
+
+    /// Animation speed toggle — mirrors `CombatViewModel.speedMode` (0 = 1x, 1 = 2x).
+    /// 2x halves every sleep/animation duration in `animateStrike`. Flipped by
+    /// the SPEED pill in InteractiveBattleView's HUD.
+    var speedMode: Int = 0
+    var speedMultiplier: Double {
+        speedMode == 1 ? 0.5 : 1.0
+    }
+    var speedLabel: String {
+        speedMode == 0 ? "1x" : "2x"
+    }
 
     // MARK: - Init
 
@@ -272,10 +291,14 @@ final class InteractiveBattleViewModel {
          attackerMaxHp: Int,
          defenderMaxHp: Int,
          attackerCurrentHp: Int? = nil,
-         defenderCurrentHp: Int? = nil) {
+         defenderCurrentHp: Int? = nil,
+         opponentType: InteractiveOpponentType = .pvp,
+         dungeonRunId: String? = nil) {
         self.appState = appState
         self.attackerCharacterId = attackerCharacterId
         self.defenderCharacterId = defenderCharacterId
+        self.opponentType = opponentType
+        self.dungeonRunId = dungeonRunId
         self.state = InteractiveMatchState(
             matchId: "",   // populated by /match/start
             attackerId: attackerCharacterId,
@@ -529,7 +552,9 @@ final class InteractiveBattleViewModel {
     private func performStartMatch() async {
         let body = InteractiveMatchStartRequest(
             characterId: attackerCharacterId,
-            opponentId: defenderCharacterId
+            opponentId: defenderCharacterId,
+            opponentType: opponentType.rawValue,
+            dungeonRunId: dungeonRunId
         )
         do {
             let response: InteractiveMatchStartResponse = try await APIClient.shared.post(
@@ -869,7 +894,7 @@ final class InteractiveBattleViewModel {
     /// Animates a single strike using the classic `playTurn` pipeline:
     /// slide-in → VFX+SFX+PNG FX → flash → damage popup → HP tween → slide back.
     private func animateStrike(log: CombatLog, isPlayerAttacking: Bool) async {
-        let sm: Double = 1.0
+        let sm: Double = speedMultiplier
 
         let defenderPos = isPlayerAttacking ? enemyAvatarPos  : playerAvatarPos
         let attackerPos = isPlayerAttacking ? playerAvatarPos : enemyAvatarPos
@@ -1008,7 +1033,7 @@ final class InteractiveBattleViewModel {
             isMiss: miss,
             isDodge: dodge,
             isBlocked: blocked,
-            statusApplied: nil,
+            statusApplied: turn.statusApplied,
             heal: turn.healAmount,
             damageType: turn.damageType,
             skillUsed: turn.skillUsed

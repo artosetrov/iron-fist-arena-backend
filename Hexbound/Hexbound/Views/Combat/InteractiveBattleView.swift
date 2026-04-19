@@ -55,7 +55,7 @@ struct InteractiveBattleView: View {
 
             // Canvas particle VFX — mounted behind PNG FX so sparks sit
             // under the slash/crit/text layer but above the UI chrome.
-            CombatVFXOverlay(vfxManager: vm.vfxManager, speedMultiplier: 1.0)
+            CombatVFXOverlay(vfxManager: vm.vfxManager, speedMultiplier: vm.speedMultiplier)
                 .allowsHitTesting(false)
 
             // PNG image FX overlay — slash, crit text, shield, heal.
@@ -834,6 +834,8 @@ struct InteractiveBattleRouteView: View {
     let opponentId: String
     let attackerMaxHp: Int
     let defenderMaxHp: Int
+    let opponentType: InteractiveOpponentType
+    let dungeonRunId: String?
 
     @State private var vm: InteractiveBattleViewModel?
 
@@ -860,7 +862,9 @@ struct InteractiveBattleRouteView: View {
                     attackerCharacterId: characterId,
                     defenderCharacterId: opponentId,
                     attackerMaxHp: attackerMaxHp,
-                    defenderMaxHp: defenderMaxHp
+                    defenderMaxHp: defenderMaxHp,
+                    opponentType: opponentType,
+                    dungeonRunId: dungeonRunId
                 )
             }
         }
