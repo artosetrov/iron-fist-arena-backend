@@ -546,33 +546,6 @@ final class GoldMineViewModel {
         }
     }
 
-    /// Called by `GoldMineMiniGameView` via its `onFinish` callback once the
-    /// player completes (or skips) the 15s round. Server is authoritative —
-    /// this just wires the bonus into local state.
-    func applyBonusResult(_ result: MinigameBonusResult) {
-        // Capture the shaft key BEFORE we clear the pending session — the
-        // overlay needs it to render the cleared banner.
-        let sessionShaftKey = pendingMinigameSession?.shaftKey
-        withAnimation(MotionConstants.smooth) {
-            appState.currentCharacter?.gold = result.gold
-            appState.currentCharacter?.gems = result.gems
-            activeShaft = result.activeShaft
-            pendingMinigameSession = nil
-        }
-        syncVisualCounters()
-
-        if result.shaftCompleted, let cleared = sessionShaftKey ?? result.activeShaft?.key {
-            clearedShaftKey = cleared
-        }
-
-        if result.bonusGold > 0 || result.bonusGems > 0 {
-            claimReward = ClaimRewardData(
-                goldEarned: result.bonusGold,
-                gemsEarned: result.bonusGems
-            )
-        }
-    }
-
     /// Called when the player taps Skip + confirms, or the server rejects the
     /// bonus call. Cleans up local state without applying any reward.
     func cancelMinigameSession() {

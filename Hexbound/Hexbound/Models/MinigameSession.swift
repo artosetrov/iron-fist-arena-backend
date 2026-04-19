@@ -85,25 +85,6 @@ struct MinigameSessionInfo: Codable, Equatable, Identifiable {
     let expiresAt: String
 }
 
-/// Result of a completed mini-game, returned by /minigame-bonus.
-struct MinigameBonusResult: Codable, Equatable {
-    let bonusGold: Int
-    let bonusGems: Int
-    let gold: Int
-    let gems: Int
-    let activeShaft: ActiveShaft?
-    let shaftCompleted: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case bonusGold = "bonus_gold"
-        case bonusGems = "bonus_gems"
-        case gold
-        case gems
-        case activeShaft = "active_shaft"
-        case shaftCompleted = "shaft_completed"
-    }
-}
-
 enum GoldMineSlotStatus: String, Codable {
     case idle
     case mining
