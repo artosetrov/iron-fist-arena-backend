@@ -45,6 +45,8 @@ struct InteractiveBattleView: View {
 
             VStack(spacing: LayoutConstants.spaceMD) {
                 duelHeader
+                roundStrip
+                InteractiveMicroLogView(entries: vm.microLogEntries)
                 Spacer(minLength: 0)
                 predictPanel
             }
@@ -91,6 +93,48 @@ struct InteractiveBattleView: View {
         }
     }
 
+    // MARK: - Round Strip
+
+    /// Small tracking strip between the duel header and the predict panel.
+    /// Left: current round number (mirrors the prototype "ROUND 3" marker).
+    /// Right: short phase label so the player always knows what they are
+    /// being asked to do. Hidden in terminal / summary phases where it
+    /// would compete with the VICTORY / DEFEAT chrome.
+    @ViewBuilder
+    private var roundStrip: some View {
+        if shouldShowRoundStrip {
+            HStack {
+                Text("ROUND \(vm.currentRoundNumber)")
+                    .font(DarkFantasyTheme.badge)
+                    .tracking(2)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                Spacer(minLength: LayoutConstants.spaceSM)
+                Text(phaseTagLabel)
+                    .font(DarkFantasyTheme.badge)
+                    .tracking(2)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, LayoutConstants.space2XS)
+        }
+    }
+
+    private var shouldShowRoundStrip: Bool {
+        switch vm.phase {
+        case .predict, .resolving, .reveal: return true
+        default: return false
+        }
+    }
+
+    private var phaseTagLabel: String {
+        switch vm.phase {
+        case .predict:   return "CHOOSE YOUR STRIKE"
+        case .resolving: return "STRIKING…"
+        case .reveal:    return "REVEAL"
+        default:         return ""
+        }
+    }
+
     // MARK: - Duel Header (YOU vs ENEMY)
 
     /// Duel header with live avatar anchor reporting. After layout, each
@@ -115,6 +159,14 @@ struct InteractiveBattleView: View {
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .player, bounds: $0)]
+                }
+                // Long-press own portrait → skip this round. Gesture only
+                // fires during `.predict`; any other phase is a no-op inside
+                // the VM's `skipAndSubmit()` guard.
+                .onLongPressGesture(minimumDuration: 0.5) {
+                    guard vm.phase.isPredicting else { return }
+                    HapticManager.medium()
+                    vm.skipAndSubmit()
                 }
                 // Player stance always resolves to a confirmed selection:
                 // the VM defaults to .chest and the picker keeps a current
@@ -569,14 +621,14 @@ struct InteractivePredictView: View {
                 title: "ATTACK",
                 selection: Binding(
                     get: { vm.selectedAttackZone },
-                    set: { vm.selectedAttackZone = $0 }
+                    set: { vm.pickAttack($0) }
                 )
             )
             zonePicker(
                 title: "DEFEND",
                 selection: Binding(
                     get: { vm.selectedDefendZone },
-                    set: { vm.selectedDefendZone = $0 }
+                    set: { vm.pickDefend($0) }
                 )
             )
 
@@ -854,6 +906,129 @@ struct InteractiveBattleRouteView: View {
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         default:
             break
+        }
+    }
+}
+
+// MARK: - Inline Micro Log
+//
+// A compact auto-expiring ticker shown above the predict panel. Each entry
+// lives for `MicroLogEntry.ttl` then fades out. The view owns a timer that
+// re-renders once every 0.3s so stale entries visibly drop even when the VM
+// isn't publishing new state.
+
+struct InteractiveMicroLogView: View {
+    let entries: [MicroLogEntry]
+
+    /// Ticking `now` so fade-out opacity recomputes without a VM prod.
+    @State private var now: Date = Date()
+
+    /// Only the entries still within their TTL — keeps the strip from
+    /// showing yesterday's round when the player sits idle in `.predict`.
+    private var visible: [MicroLogEntry] {
+        entries.filter { now.timeIntervalSince($0.createdAt) < MicroLogEntry.ttl }
+    }
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            ForEach(visible) { entry in
+                MicroLogRow(entry: entry, now: now)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                        removal:   .opacity.combined(with: .move(edge: .top))
+                    ))
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
+        .animation(.easeInOut(duration: 0.2), value: visible.map(\.id))
+        .onAppear { startTicker() }
+    }
+
+    /// Periodic clock tick — cheap way to drive opacity fade without
+    /// pushing extra state into the VM. Stops when the view disappears.
+    private func startTicker() {
+        Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(300))
+                await MainActor.run { now = Date() }
+            }
+        }
+    }
+}
+
+private struct MicroLogRow: View {
+    let entry: MicroLogEntry
+    let now: Date
+
+    var body: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Text(sideTag)
+                .font(DarkFantasyTheme.badge)
+                .tracking(1.5)
+                .foregroundStyle(sideColor)
+                .frame(width: 46, alignment: .leading)
+
+            Text(entry.zoneLabel)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            Spacer(minLength: LayoutConstants.space2XS)
+
+            Text(resultLabel)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(resultColor)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.space2XS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.4))
+        )
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(sideColor)
+                .frame(width: 2)
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
+        }
+        .opacity(opacity)
+    }
+
+    private var sideTag: String {
+        entry.side == .you ? "YOU" : "ENEMY"
+    }
+
+    private var sideColor: Color {
+        entry.side == .you ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+    }
+
+    /// Entry fades out over the last 0.6s of its TTL so it doesn't snap away.
+    private var opacity: Double {
+        let age = now.timeIntervalSince(entry.createdAt)
+        let fadeStart = MicroLogEntry.ttl - 0.6
+        if age <= fadeStart { return 1.0 }
+        let remaining = max(0, MicroLogEntry.ttl - age)
+        return max(0, min(1, remaining / 0.6))
+    }
+
+    private var resultLabel: String {
+        switch entry.kind {
+        case .hit:   return "\(entry.damage) DMG"
+        case .crit:  return "\(entry.damage) CRIT!"
+        case .block: return "BLOCKED"
+        case .dodge: return "DODGED"
+        case .miss:  return "MISS"
+        }
+    }
+
+    private var resultColor: Color {
+        switch entry.kind {
+        case .hit:   return DarkFantasyTheme.textPrimary
+        case .crit:  return DarkFantasyTheme.gold
+        case .block: return DarkFantasyTheme.info
+        case .dodge: return DarkFantasyTheme.textTertiary
+        case .miss:  return DarkFantasyTheme.textTertiary
         }
     }
 }

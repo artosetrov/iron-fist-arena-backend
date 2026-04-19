@@ -33,6 +33,7 @@ struct BattleSummaryView: View {
     var body: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             header
+            BattleVictoryStars(stars: stars)
             BattleStatsHeader(stats: stats, playerWon: playerWon)
             logCard
             continueButton
@@ -44,6 +45,27 @@ struct BattleSummaryView: View {
     /// so this is stable for the lifetime of the screen.
     private var stats: RoundExchange.BattleStats {
         RoundExchange.aggregate(log: vm.battleLog)
+    }
+
+    /// Three end-of-battle star criteria, derived client-side from the
+    /// frozen `battleLog` + final HP snapshot. No backend contract — the
+    /// stars are informational and don't grant extra rewards.
+    ///   • Victory ............ player is the match winner
+    ///   • Survivor ........... final attacker HP > 50% of max
+    ///   • Critical Hit ....... any player-side crit landed during the match
+    private var stars: [BattleStar] {
+        let hpRatio = vm.state.attackerMaxHp > 0
+            ? Double(vm.state.attackerHp) / Double(vm.state.attackerMaxHp)
+            : 0
+        let survivor = playerWon && hpRatio > 0.5
+        let critLanded = vm.battleLog.contains { exchange in
+            exchange.allyEvents.contains(where: { $0.isCritStrike })
+        }
+        return [
+            BattleStar(kind: .victory,  earned: playerWon,  title: "CLAIM",    subtitle: "VICTORY"),
+            BattleStar(kind: .survivor, earned: survivor,   title: "STAY ABOVE", subtitle: "50% HP"),
+            BattleStar(kind: .critical, earned: critLanded, title: "LAND A",    subtitle: "CRITICAL HIT"),
+        ]
     }
 
     // MARK: - Header
@@ -361,6 +383,87 @@ struct BattleStatsHeader: View {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .stroke(tint.opacity(0.3), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Victory Stars
+//
+// Three-slot row mirroring the prototype's "stay above 50% HP / crit /
+// claim victory" criteria. Stars are informational — they highlight
+// skill beats from the fight, they don't grant extra rewards, so the
+// logic stays on the client.
+
+struct BattleStar: Identifiable, Equatable {
+    enum Kind: String, Sendable { case victory, survivor, critical }
+
+    let id = UUID()
+    let kind: Kind
+    let earned: Bool
+    let title: String
+    let subtitle: String
+}
+
+struct BattleVictoryStars: View {
+    let stars: [BattleStar]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            ForEach(stars) { star in
+                BattleStarTile(star: star)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+}
+
+private struct BattleStarTile: View {
+    let star: BattleStar
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(iconColor)
+                .shadow(color: shadowColor, radius: star.earned ? 10 : 0, y: 0)
+
+            Text(star.title)
+                .font(DarkFantasyTheme.badge)
+                .tracking(1.2)
+                .foregroundStyle(labelColor)
+
+            Text(star.subtitle)
+                .font(DarkFantasyTheme.badge)
+                .tracking(1.2)
+                .foregroundStyle(labelColor)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(star.earned ? 0.6 : 0.3))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(borderColor, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("\(star.title) \(star.subtitle), \(star.earned ? "earned" : "missed")"))
+    }
+
+    private var iconColor: Color {
+        star.earned ? DarkFantasyTheme.gold : DarkFantasyTheme.textTertiary.opacity(0.4)
+    }
+
+    private var shadowColor: Color {
+        star.earned ? DarkFantasyTheme.gold.opacity(0.5) : .clear
+    }
+
+    private var labelColor: Color {
+        star.earned ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary
+    }
+
+    private var borderColor: Color {
+        star.earned ? DarkFantasyTheme.gold.opacity(0.4) : DarkFantasyTheme.borderSubtle
     }
 }
 

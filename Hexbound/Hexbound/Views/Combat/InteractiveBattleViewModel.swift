@@ -52,6 +52,20 @@ final class InteractiveBattleViewModel {
     /// Purely presentational — flag used to visually highlight the auto-chosen zones.
     var lastStrikeWasSkipped: Bool = false
 
+    /// Auto-submit tracking. `attackTouched` / `defendTouched` flip to `true`
+    /// when the player *actively* picks a zone this round (not just the
+    /// defaulted .chest). When both become true the VM schedules a short
+    /// delayed submit so the player sees their pick land before the strike
+    /// fires. Reset each round by `revealCompleted()` + `applyMatchStart()`.
+    var attackTouched: Bool = false
+    var defendTouched: Bool = false
+
+    /// Transient micro-log ticker shown during `.predict` to remind the
+    /// player what just happened. Populated when `applyStrikeResponse`
+    /// settles, trimmed to the most recent 3 entries, and individual
+    /// entries auto-expire (timestamp-driven TTL handled by the view).
+    var microLogEntries: [MicroLogEntry] = []
+
     /// Final `/match/complete` payload, emitted for navigation to CombatResultDetailView.
     var finalCombatData: CombatData?
 
@@ -219,6 +233,18 @@ final class InteractiveBattleViewModel {
     private var strikeTask: Task<Void, Never>?
     private var completeTask: Task<Void, Never>?
     private var startTask: Task<Void, Never>?
+    private var autoSubmitTask: Task<Void, Never>?
+
+    /// Delay between the player's second zone pick and the auto-submit firing.
+    /// Gives a reflex window to change mind on the final pick.
+    static let autoSubmitDelaySeconds: Double = 0.35
+
+    /// 1-based index of the round the player is currently picking for.
+    /// Advances on round transition (after reveal completes). Used by the
+    /// round strip above the predict panel.
+    var currentRoundNumber: Int {
+        battleLog.count + 1
+    }
 
     /// Background `/pvp/match/complete` fired at the moment the match enters
     /// `.summary`, so that by the time the player taps CONTINUE the response
@@ -282,10 +308,46 @@ final class InteractiveBattleViewModel {
     func submitStrike() {
         guard case .predict = phase else { return }
         predictTimerTask?.cancel()
+        autoSubmitTask?.cancel()
         lastStrikeWasSkipped = false
         phase = .resolving
         strikeTask = Task { [weak self] in
             await self?.resolveStrike()
+        }
+    }
+
+    /// Actively pick the attack zone and arm the auto-submit timer if both
+    /// zones are now player-chosen this round.
+    func pickAttack(_ zone: InteractiveBodyZone) {
+        guard case .predict = phase else { return }
+        selectedAttackZone = zone
+        attackTouched = true
+        scheduleAutoSubmitIfReady()
+    }
+
+    /// Actively pick the defend zone and arm the auto-submit timer if both
+    /// zones are now player-chosen this round.
+    func pickDefend(_ zone: InteractiveBodyZone) {
+        guard case .predict = phase else { return }
+        selectedDefendZone = zone
+        defendTouched = true
+        scheduleAutoSubmitIfReady()
+    }
+
+    /// Schedule a delayed auto-submit when both attack and defend have been
+    /// actively picked this round. Re-arming (picking another zone again)
+    /// cancels the prior task and restarts the delay so the most recent
+    /// pick always controls timing.
+    private func scheduleAutoSubmitIfReady() {
+        autoSubmitTask?.cancel()
+        guard attackTouched, defendTouched else { return }
+        autoSubmitTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.autoSubmitDelaySeconds))
+            if Task.isCancelled { return }
+            await MainActor.run {
+                guard let self, case .predict = self.phase else { return }
+                self.submitStrike()
+            }
         }
     }
 
@@ -422,6 +484,9 @@ final class InteractiveBattleViewModel {
         lastOpponentActiveFiredLabel = nil
         lastPlayerConsumableFired = nil
         lastOpponentConsumableFired = nil
+        attackTouched = false
+        defendTouched = false
+        autoSubmitTask?.cancel()
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -432,6 +497,7 @@ final class InteractiveBattleViewModel {
         strikeTask?.cancel()
         completeTask?.cancel()
         startTask?.cancel()
+        autoSubmitTask?.cancel()
     }
 
     // MARK: - Timer
@@ -501,6 +567,10 @@ final class InteractiveBattleViewModel {
         currentExchange = nil
         battleLog.removeAll(keepingCapacity: true)
         damagePopups.removeAll(keepingCapacity: true)
+        microLogEntries.removeAll(keepingCapacity: true)
+        attackTouched = false
+        defendTouched = false
+        autoSubmitTask?.cancel()
         // Fresh match — wipe any prior-match intent history so the hint
         // rebuilds from this duel's observations only.
         opponentAttackHistory.removeAll(keepingCapacity: true)
@@ -665,6 +735,11 @@ final class InteractiveBattleViewModel {
         )
         currentExchange = exchange
         battleLog.append(exchange)
+        appendMicroLog(
+            response: response,
+            playerAttackZone: selectedAttackZone,
+            playerDefendZone: selectedDefendZone
+        )
 
         // Enter reveal and run the scripted VFX/SFX/HP-tween sequence.
         // HP is NOT set to the final server value up front — `animateStrike`
@@ -677,6 +752,61 @@ final class InteractiveBattleViewModel {
             opponent: response.opponentStrike,
             targetAttackerHp: response.attackerHp,
             targetDefenderHp: response.defenderHp
+        )
+    }
+
+    // MARK: - Micro Log
+
+    /// Push up to two entries (you + enemy) into `microLogEntries` for the
+    /// round that just resolved. Entries auto-expire by TTL in the view;
+    /// we also clamp the buffer to the 3 most recent so fast rounds don't
+    /// accumulate stale lines if the view is backgrounded.
+    private func appendMicroLog(response: InteractiveStrikeResponse,
+                                playerAttackZone: InteractiveBodyZone,
+                                playerDefendZone: InteractiveBodyZone) {
+        let oppZones = response.oppZones
+        let youEntry = makeMicroEntry(
+            side: .you,
+            turn: response.playerStrike,
+            attackZone: playerAttackZone,
+            defendZone: oppZones.defend
+        )
+        microLogEntries.append(youEntry)
+
+        if let oppTurn = response.opponentStrike {
+            let enemyEntry = makeMicroEntry(
+                side: .enemy,
+                turn: oppTurn,
+                attackZone: oppZones.attack,
+                defendZone: playerDefendZone
+            )
+            microLogEntries.append(enemyEntry)
+        }
+
+        // Keep the most recent 3 entries only — the view shows at most 3
+        // lines, and a tight cap keeps the buffer obviously bounded.
+        if microLogEntries.count > 3 {
+            microLogEntries.removeFirst(microLogEntries.count - 3)
+        }
+    }
+
+    private func makeMicroEntry(side: MicroLogEntry.Side,
+                                turn: InteractiveStrikeTurn,
+                                attackZone: InteractiveBodyZone,
+                                defendZone: InteractiveBodyZone) -> MicroLogEntry {
+        let kind: MicroLogEntry.Kind
+        if turn.isDodge == true        { kind = .dodge }
+        else if turn.isMiss == true    { kind = .miss }
+        else if turn.isCrit == true    { kind = .crit }
+        else if turn.damage <= 0       { kind = .block }
+        else                           { kind = .hit }
+
+        let label = "\(attackZone.rawValue.uppercased()) → \(defendZone.rawValue.uppercased())"
+        return MicroLogEntry(
+            side: side,
+            kind: kind,
+            zoneLabel: label,
+            damage: max(0, turn.damage)
         )
     }
 
@@ -951,6 +1081,42 @@ extension InteractiveBattleViewModel.Phase {
         if case .summary = self { return true }
         return false
     }
+}
+
+// MARK: - Micro Log Entry
+//
+// Transient one-line recap of a single strike within an exchange, shown as
+// an inline auto-expiring ticker above the predict panel. Two entries are
+// pushed per round (player strike + opponent strike), each with a creation
+// timestamp so the view can fade them out after their TTL.
+
+struct MicroLogEntry: Identifiable, Equatable, Sendable {
+    enum Side: Sendable { case you, enemy }
+    enum Kind: Sendable { case hit, crit, block, dodge, miss }
+
+    let id: UUID
+    let side: Side
+    let kind: Kind
+    let zoneLabel: String   // "HEAD → CHEST"
+    let damage: Int         // 0 for block/dodge/miss
+    let createdAt: Date
+
+    init(id: UUID = UUID(),
+         side: Side,
+         kind: Kind,
+         zoneLabel: String,
+         damage: Int,
+         createdAt: Date = Date()) {
+        self.id = id
+        self.side = side
+        self.kind = kind
+        self.zoneLabel = zoneLabel
+        self.damage = damage
+        self.createdAt = createdAt
+    }
+
+    /// Lifetime of a single ticker entry before the view fades it out.
+    static let ttl: TimeInterval = 2.4
 }
 
 // MARK: - Fighter Profile (view-ready snapshot)

@@ -1,5 +1,30 @@
 # Hexbound Wiki — Log
 
+## [2026-04-19] decision | Interactive Combat UX polish — round strip, micro-log, auto-submit, long-press skip, summary stars
+
+Ported four UX beats from an HTML battle prototype into the iOS Interactive Combat screen. All client-only — server contract (`/pvp/strike`) untouched; crit/block/dodge still resolved server-side per root CLAUDE.md rule.
+- **Round strip** (`InteractiveBattleView.roundStrip`) — `ROUND N · CHOOSE YOUR STRIKE / STRIKING… / REVEAL` label between duel header and predict panel. Derived from `vm.currentRoundNumber = battleLog.count + 1`.
+- **Inline micro-log** (`InteractiveMicroLogView` + private `MicroLogRow`) — 2 entries per round (you + enemy) with 2.4s TTL, fade-out over last 0.6s, cap 3 entries. Uses a local 300ms ticker so the VM doesn't publish per-frame state. Colour-coded: gold crit, info-blue block, muted miss/dodge.
+- **Auto-submit** — new `vm.pickAttack(_:)` / `vm.pickDefend(_:)` set `attackTouched` / `defendTouched` and arm a 350ms delayed `submitStrike()`. Re-picking restarts the task. Flags reset on round advance + match start.
+- **Long-press own portrait = skip** — 0.5s hold on player `DuelFighterCard` calls `vm.skipAndSubmit()` + medium haptic. Existing SKIP button kept for discoverability.
+- **Pre-result stars on `BattleSummaryView`** — three `BattleStarTile`s (Claim Victory / Stay Above 50% HP / Critical Hit) above stats header. Same criteria as canonical `CombatResultDetailView` stars but derived from `vm.battleLog` + final HP. Pre-result teaser before reward modal loads.
+- **Code touched:** `Views/Combat/InteractiveBattleViewModel.swift` (new `MicroLogEntry`, auto-submit task, pick helpers, micro-log emit), `Views/Combat/InteractiveBattleView.swift` (round strip, micro-log view + row, long-press portrait gesture), `Views/Combat/BattleSummaryView.swift` (`BattleStar`, `BattleVictoryStars`, `BattleStarTile`). No new files, no pbxproj change. No schema change, no balance change. `xcodebuild` clean (iPhone 17 sim).
+- **Updated:** `wiki/features/pvp-combat.md` (new "Interactive Combat UX polish" section, Victory Stars split into canonical + pre-result).
+
+## [2026-04-19] decision | Boss reveal ceremony — Dungeons + Dungeon Rush
+
+Added a root-level `BossRevealOverlayView` that fires from two surfaces with different cadence. Dungeons: once per real boss on first `.current` detail open (gated by `UserDefaults["bossRevealSeen_<name>_<id>"]`, skipped for Training Camp practice enemies). Dungeon Rush: every run when the `miniboss` room becomes current (compact 1.2s variant, CTA commits directly to `vm.fight()`). Generic DTO `BossRevealData` decouples the overlay from `BossInfo`/`RushRoom`. Mounted at `HexboundApp` root (`zIndex: 170`). Zero new DS tokens — reuses `RadialGlowBackground`, `FiligreeLine`, `.buttonStyle(.fight(accent:))`, `.dungeonBossAppear` SFX (3 variations, auto haptic `heavy`). Accent: `arenaRankGold` for Dungeons, `purple` for Rush (matches existing miniboss badge colour).
+- **Created:** `[[why-boss-reveal-ceremony]]` (rationale — once-per-boss vs per-run cadence, CTA behaviour, DS mapping, alternatives rejected), `Views/Components/BossRevealData.swift`, `Views/Components/BossRevealOverlayView.swift`
+- **Updated:** `[[dungeons]]` (added Boss Reveal Ceremony section), `wiki/features/dungeons.md` + `wiki/features/dungeon-rush.md` (notable gotcha entries), `wiki/index.md` (decisions list + page count 263→264)
+- **Code touched:** `AppState.swift` (`pendingBossReveal`/`isBossRevealing`/`presentBossReveal`/`dismissBossReveal`, cleanup on logout), `HexboundApp.swift` (root overlay mount), `BossDetailSheet.swift` (onAppear trigger + UserDefaults gate), `DungeonRushDetailView.swift` (onChange trigger + per-run guard), `project.pbxproj` (2 files × 4 sections), graphify re-index. No schema change, no balance change.
+
+## [2026-04-19] decision | Victory stars become labelled conditions on both arenas
+
+Replaced the opaque `starRating: Int?` scalar on `BattleResultConfig` with `starConditions: [StarCondition]?` and extended the Victory screen to render both earned and missed slots with their labels. Dungeon and PvP screens now both surface a three-slot row; conditions are derived client-side (dungeon: HP fraction; PvP: HP fraction + crit landed via `combatLog`) and are purely visual — gold/XP/rating are unchanged.
+- **Created:** `[[why-victory-star-conditions]]` (rationale, formulas, animation contract)
+- **Updated:** `[[dungeons]]` (added Victory Stars section), `[[pvp-combat]]` (added Victory Stars section), `wiki/index.md` (decisions list + page count 262→263)
+- **Code touched:** `BattleResultModels.swift`, `BattleResultSections.swift`, `BattleResultAnimations.swift`, `BattleResultCardView.swift`, `DungeonVictoryView.swift`, `CombatResultDetailView.swift`. No schema change, no balance change. `xcodebuild` clean.
+
 ## [2026-04-17] decision | Quest reward banners → CLAIMED modal
 
 Replaced `showToast("Quest Complete!", subtitle: "+Xg +Y XP", .quest)` in two inline quest-claim sites (`HubBannerCards.swift:596`, `ActiveQuestBanner.swift:246`) with `ClaimRewardModalView` ceremony. Added root-level `AppState.claimRewardConfig` slot + overlay mount in `HexboundApp.swift` (zIndex 180) so inline banners without their own VM can surface the modal.

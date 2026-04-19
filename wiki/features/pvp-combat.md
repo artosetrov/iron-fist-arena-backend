@@ -9,7 +9,7 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 ## Status
 
 - **Phase:** In production
-- **Last major change:** 2026-04-14 — Fight 404 → classic fallback shipped; UUID id decoding fix; Interactive Combat Phase 3.B shipped 2026-04-13
+- **Last major change:** 2026-04-19 — Interactive Combat UX polish: round strip, inline micro-log, auto-submit, long-press skip, BattleSummaryView stars. 2026-04-14 — Fight 404 → classic fallback shipped; UUID id decoding fix; Interactive Combat Phase 3.B shipped 2026-04-13
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -114,6 +114,35 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 - `docs/06_game_systems/BALANCE_CONSTANTS.md` — formula constants
 - `docs/03_backend_and_api/API_REFERENCE.md` — route reference
 - Interactive Combat phases: see memory `project_interactive_combat_phase1.md`, `project_interactive_combat_phase3_shipped.md`, `project_interactive_combat_phase3b_shipped.md`
+
+## Victory Stars (UI flourish)
+
+Stars appear on **two layers** with identical criteria. They are visual — they do not affect rating, rewards, or matchmaking.
+
+### Canonical — `CombatResultDetailView`
+`CombatResultDetailView.buildConfig(_:)` derives three labelled `StarCondition` slots from `CombatData.combatLog` on the win path only (guarded by `isWin`).
+
+### Pre-result teaser — `BattleSummaryView`
+Interactive Combat's end-of-battle summary screen shows the same three stars above the stats header. Computed from `vm.battleLog` + final attacker HP (`BattleSummaryView.stars`), so the player sees the recap *before* the rewards modal loads. Defeat: survivor star is never lit.
+
+### Criteria
+1. **Claim victory** — player wins the match
+2. **Stay above 50% HP** — final HP / max HP > 0.5
+3. **Land a critical hit** — any player-side crit landed
+
+Summary view: tiles use `BattleVictoryStars` + `BattleStarTile` (in `BattleSummaryView.swift`). Missed tiles render dim with `opacity 0.3` fill + tertiary border. Rationale: [[why-victory-star-conditions]].
+
+## Interactive Combat UX polish (2026-04-19)
+
+Four UX upgrades shipped alongside the existing zone-picker + actives HUD. All client-only — server contract untouched.
+
+- **Round strip** (`InteractiveBattleView.roundStrip`) — `ROUND N · CHOOSE YOUR STRIKE` / `STRIKING…` / `REVEAL` label above the predict panel. `vm.currentRoundNumber = battleLog.count + 1`. Hidden in `.summary` / `.finished` / `.error`.
+- **Inline micro-log** (`InteractiveMicroLogView`) — auto-expiring ticker showing the last two strikes (you + enemy) per round. `MicroLogEntry` with `ttl = 2.4s`, visible buffer capped at 3 entries. The view drives fade-out via a 300ms ticker updating a local `now` state — no new `@Observable` property, no VM prod per frame. Colour-coded: gold = crit, blue = block, muted = miss/dodge.
+- **Auto-submit** — `vm.pickAttack(_:)` / `vm.pickDefend(_:)` set `attackTouched` / `defendTouched` flags. When both are true, `scheduleAutoSubmitIfReady()` arms a 350ms delayed `submitStrike()`. Changing a zone again cancels and restarts the task so the reflex window always follows the most recent pick. Flags reset on round advance (`revealCompleted()`) and match start (`applyMatchStart`).
+- **Long-press own portrait = skip** — 0.5s hold on the player's `DuelFighterCard` → `vm.skipAndSubmit()` + medium haptic. The existing `SKIP` button stays for discoverability; long-press is the shortcut.
+
+### Server-authoritative guard
+None of these touch resolution. Crit/block/dodge decisions still come from `/pvp/strike`. The view derives all displayable outcomes from `InteractiveStrikeTurn` flags (`isCrit`, `isDodge`, `isMiss`, `damage == 0`).
 
 ## Notable gotchas
 
