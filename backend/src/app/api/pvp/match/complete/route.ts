@@ -235,8 +235,22 @@ export async function POST(req: NextRequest) {
       const dPct = defenderFinalHp / defenderProxy.maxHp
       attackerWon = aPct >= dPct
     }
+    // `winnerId` / `loserId` are used for two purposes:
+    //   1. iOS response (`result.winner_id`) — anything goes, iOS compares by id
+    //   2. DB persistence on `pvp_matches` — must be a real `characters.id`
+    //      because `winner_id_fkey` / `loser_id_fkey` are FK-constrained.
+    //
+    // Bot and dungeon_boss opponents are synthetic (id lives in
+    // `opponentSnapshot` JSON, no row in `characters`), so we keep the
+    // synthetic id for the response but split out *CharacterId vars that
+    // NULL-out the non-PvP side for the DB write. See FK violation incident
+    // 2026-04-20 ("Failed to complete match" on bot fights).
     const winnerId = attackerWon ? attacker.id : defenderProxy.id
     const loserId  = attackerWon ? defenderProxy.id : attacker.id
+    const winnerCharacterId =
+      attackerWon ? attacker.id : (isPvp && defender ? defender.id : null)
+    const loserCharacterId =
+      attackerWon ? (isPvp && defender ? defender.id : null) : attacker.id
 
     // ELO: for PvP, full K-factor symmetric calc. For bots, use a scaled-down
     // asymmetric change so grinding bots doesn't pump rating (matches the
@@ -440,7 +454,8 @@ export async function POST(req: NextRequest) {
         data: {
           player1RatingAfter: attackerNewRating,
           player2RatingAfter: defenderNewRating,
-          winnerId, loserId,
+          winnerId: winnerCharacterId,
+          loserId: loserCharacterId,
           combatLog: JSON.parse(JSON.stringify(combat_log)) as Prisma.InputJsonValue,
           turnsTaken: combat_log.length,
           goldReward, xpReward,
