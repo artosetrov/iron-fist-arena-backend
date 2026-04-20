@@ -77,7 +77,10 @@ Global ranked list of players by PvP rating; search, browse top, tap row to open
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/leaderboard/*` (if present)
+- No dedicated leaderboard backend test file is checked in today
+- Adjacent PvP/rating review coverage lives in:
+  - `backend/tests/api/pvp-history.test.ts`
+  - `backend/tests/api/pvp-resolve.test.ts`
 
 ## Related features
 

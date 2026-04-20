@@ -1,5 +1,5 @@
 # Admin Panel Capabilities (Source of Truth)
-*Derived from admin panel code. Updated: 2026-04-16*
+*Derived from admin panel code. Updated: 2026-04-19*
 
 This is a high-level capability map of the Next.js admin dashboard, organized by area of responsibility. Treat `wiki/` plus the audited route/action files as the live source of truth for current behavior and access control.
 

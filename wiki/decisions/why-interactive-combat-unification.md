@@ -62,7 +62,8 @@ Extend the match lifecycle endpoints with an explicit `opponent_type` fork so th
 
 - Backend typecheck clean on modified routes (`npx tsc --noEmit`; test-file pre-existing errors unchanged).
 - Prod deployed as `dpl_J1Vaz3EEejmrzaAWw5aziSzxEyAb`.
-- 17 pre-existing drift migrations reconciled via `prisma migrate resolve --applied` + `migrate deploy`. `scripts/check_schema_drift.py` passes.
+- Follow-up ops reconcile on `2026-04-19` completed Prisma history adoption for the shared DB: `_prisma_migrations` restored, all `37` repo migrations recorded as applied, `npm run db:migrate:status` now reports `Database schema is up to date!`, and `npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` reports `No difference detected.`
+- `scripts/check_schema_drift.py` passes.
 - Smoke: `POST /api/pvp/match/start {character_id, opponent_id:"npc_…", opponent_type:"bot"}` returns 401 unauth (expected without token) — route exists and doesn't 404 anymore.
 
 ## Revert plan

@@ -311,7 +311,17 @@
 - [[block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync]] — the leaderboard and Dungeon Rush feature maps now point at the real adjacent admin review pages instead of phantom dedicated admin routes or room-catalog tooling
 - [[block-235-feature-maps-minigames-and-social-runtime-boundary-sync]] — the minigames and social feature maps now point at the real view-model/admin/helper/test ownership instead of speculative shared services, broader guild helpers, or moderation-console wording
 - [[block-236-inventory-summary-and-section-header-parity]] — the project inventory now matches current git-derived summary counts and no longer carries obviously stale section-header totals after the late cleanup wave
+- [[block-237-feature-maps-liveops-test-fixture-boundary-sync]] — the quests, battle-pass, mail, and events feature maps now describe the actual checked-in backend test surface instead of older `__tests__/* (if present)` placeholders
+- [[block-238-inventory-untracked-marker-parity-after-git-state-shift]] — the project inventory now reflects the current narrow untracked set after the git-state shift, removing stale `_(untracked)_` markers and adding the real untracked backend test file
+- [[block-239-feature-maps-auth-character-tutorial-progression-boundary-sync]] — the auth, tutorial, characters, stamina, and prestige feature maps now point at the real backend test files and real adjacent admin surfaces instead of placeholder `__tests__/*` notes and phantom admin trees
+- [[block-240-feature-maps-runtime-test-and-admin-surface-sync]] — the remaining runtime-heavy feature maps now point at the real backend test files and precise live admin pages instead of broad directory shorthand and leftover `__tests__/*` placeholders
+- [[block-241-feature-map-pvp-combat-test-and-admin-boundary-sync]] — the PvP combat feature map now points at the real backend PvP tests and the precise live admin review surfaces instead of a generic `__tests__` placeholder and broad `admin/src/app/` wording
+- [[block-242-source-of-truth-ownership-and-residual-surface-wording-sync]] — source-of-truth ownership and the last small feature-map wording tails now reflect the current repo instead of `[TBD]` owners, broad admin shorthand, and over-claimed prestige client parity
+- [[block-243-api-reference-runtime-and-admin-surface-parity]] — `API_REFERENCE.md` now matches the live shop, Gold Mine, backend-admin, and admin-local route surfaces instead of carrying stale IAP wording, incomplete minigame coverage, and a misleading `NOT IMPLEMENTED` graveyard
+- [[block-244-feature-map-and-ui-plan-residual-boundary-sync]] — the remaining stash/achievements shorthand and Strike Reveal “if present” QA wording now point at the current repo instead of broader directory notes and a nonexistent snapshot-test target
+- [[block-245-project-overview-feature-flag-model-parity]] — `PROJECT_OVERVIEW.md` now describes `FeatureFlag` as the live rollout/targeting model instead of collapsing it back into A/B-testing shorthand
+- [[block-246-admin-capabilities-freshness-metadata-sync]] — `ADMIN_CAPABILITIES.md` now carries the same 2026-04-19 freshness stamp as the audit wave that rewrote its live admin surface map
 
 ---
 
-*302 in-scope wiki markdown files | 301 wiki pages (13 systems, 15 decisions, 3 entities, 236 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*
+*312 in-scope wiki markdown files | 311 wiki pages (13 systems, 15 decisions, 3 entities, 246 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*

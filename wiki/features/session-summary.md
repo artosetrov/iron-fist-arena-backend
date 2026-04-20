@@ -63,7 +63,7 @@ On app foreground after an idle period, players see a Session Summary: combat si
 
 ## Docs
 
-- `docs/02_product_and_features/GAME_SYSTEMS.md` — session-summary pattern (if documented)
+- `docs/03_backend_and_api/API_REFERENCE.md` — `/session-summary` route reference
 
 ## Notable gotchas
 
@@ -75,7 +75,7 @@ On app foreground after an idle period, players see a Session Summary: combat si
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/session-summary/*` (if present)
+- No dedicated session-summary backend test file is checked in today
 
 ## Related features
 

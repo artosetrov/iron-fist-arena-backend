@@ -92,7 +92,9 @@ Each player owns a Character with class (warrior/rogue/mage/tank), origin (human
 
 ## Admin
 
-- `admin/src/app/(dashboard)/characters/` — player lookup, level/gold grants, class/origin override
+- `admin/src/app/(dashboard)/players/page.tsx` — player search / account review entry point
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — character detail review plus gold/gems grant and inventory reset
+- No dedicated `admin/src/app/(dashboard)/characters/` tree is checked in today
 
 ## Docs
 
@@ -112,7 +114,9 @@ Each player owns a Character with class (warrior/rogue/mage/tank), origin (human
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/character/*` (if present)
+- `backend/tests/api/characters-list.test.ts`
+- `backend/tests/api/character-progression-derived-stats.test.ts`
+- No broader dedicated character CRUD/backend suite is checked in today
 
 ## Related features
 

@@ -6,6 +6,7 @@ import type { CharacterClassType } from '@/lib/game/combat'
 
 const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 5
+const MIN_OPPONENTS = 3 // sparse-pool floor — if fewer real candidates match, backfill with bots
 const GEAR_SCORE_TOLERANCE = 0.8 // ±80% gear score range
 const RATING_RANGE = 200 // ±200 ELO for Phase 1 matchmaking
 
@@ -155,14 +156,26 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => a.levelDiff - b.levelDiff || a.ratingDiff - b.ratingDiff || a.gearDiff - b.gearDiff)
       .slice(0, MAX_OPPONENTS)
 
-    // --- NPC Bot injection for new players ---
-    // Players with < NPC_FIGHT_THRESHOLD total fights get bot opponents mixed in.
+    // --- NPC Bot injection ---
+    // Two independent reasons we mix in bots:
+    //   1) New-player onboarding: players with < NPC_FIGHT_THRESHOLD fights see bots so the
+    //      first 5–10 matches are predictable wins (smooth onboarding curve).
+    //   2) Sparse-pool fallback: real candidate count < MIN_OPPONENTS (e.g. immediately after
+    //      a DB reset, off-peak hours, or a brand-new region) — backfill so the player always
+    //      sees a full list, never an empty Arena.
     // Bots are placed at the TOP of the list so the player picks them first.
     const totalFights = character.pvpWins + character.pvpLosses
     let opponents = sorted as Record<string, unknown>[]
 
-    if (shouldFaceBots(character.pvpWins, character.pvpLosses)) {
-      const botsNeeded = Math.min(NPC_FIGHT_THRESHOLD - totalFights, MAX_OPPONENTS)
+    const newPlayerBots = shouldFaceBots(character.pvpWins, character.pvpLosses)
+      ? Math.min(NPC_FIGHT_THRESHOLD - totalFights, MAX_OPPONENTS)
+      : 0
+    const sparsePoolBots = sorted.length < MIN_OPPONENTS
+      ? MAX_OPPONENTS - sorted.length
+      : 0
+    const botsNeeded = Math.max(newPlayerBots, sparsePoolBots)
+
+    if (botsNeeded > 0) {
       const bots: Record<string, unknown>[] = []
       for (let i = 0; i < botsNeeded; i++) {
         bots.push(generateBotOpponentCard(

@@ -10,9 +10,9 @@ updated: 2026-04-19
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5124
-- Untracked project-owned files: 16
-- In-scope files listed here: 5140
+- Tracked files: 5140
+- Untracked project-owned files: 10
+- In-scope files listed here: 5150
 
 ## Excluded Generated / Vendor Areas
 
@@ -33,7 +33,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills: 17
 - [root]: 3
 - admin: 224
-- backend: 388
+- backend: 389
 - Buildings: 21
 - docs: 184
 - figma-assets: 333
@@ -44,8 +44,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - qa-reports: 4
 - scripts: 18
 - sounds: 33
-- User: 1060
-- wiki: 307
+- User: 1059
+- wiki: 317
 
 ## File List By Block
 
@@ -336,8 +336,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/events/page.tsx
 - admin/src/app/(dashboard)/flags/flags-client.tsx
 - admin/src/app/(dashboard)/flags/page.tsx
-- admin/src/app/(dashboard)/iap-products/iap-products-client.tsx _(untracked)_
-- admin/src/app/(dashboard)/iap-products/page.tsx _(untracked)_
+- admin/src/app/(dashboard)/iap-products/iap-products-client.tsx
+- admin/src/app/(dashboard)/iap-products/page.tsx
 - admin/src/app/(dashboard)/item-balance/config/config-editor-client.tsx
 - admin/src/app/(dashboard)/item-balance/config/page.tsx
 - admin/src/app/(dashboard)/item-balance/dashboard-client.tsx
@@ -388,7 +388,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/tables/[tableName]/table-client.tsx
 - admin/src/app/(dashboard)/tables/page.tsx
 - admin/src/app/api/admin/item-balance/apply-suggestions/route.ts
-- admin/src/app/api/admin/iap-products/route.ts _(untracked)_
+- admin/src/app/api/admin/iap-products/route.ts
 - admin/src/app/api/admin/item-balance/config/route.ts
 - admin/src/app/api/admin/item-balance/profiles/route.ts
 - admin/src/app/api/admin/item-balance/simulate/combat/route.ts
@@ -473,7 +473,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (388)
+### backend (389)
 
 - backend/.env.example
 - backend/.gitignore
@@ -548,7 +548,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
 - backend/src/app/api/admin/events/route.ts
 - backend/src/app/api/admin/hub-layout/route.ts
-- backend/src/app/api/admin/iap-products/route.ts _(untracked)_
+- backend/src/app/api/admin/iap-products/route.ts
 - backend/src/app/api/admin/item-balance/apply-suggestions/route.ts
 - backend/src/app/api/admin/item-balance/config/route.ts
 - backend/src/app/api/admin/item-balance/power-scores/route.ts
@@ -799,6 +799,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/auth-sync-user.test.ts
 - backend/tests/api/auth-upgrade-guest-oauth.test.ts
 - backend/tests/api/battle-pass-claim.test.ts
+- backend/tests/api/characters-list.test.ts
 - backend/tests/api/admin-config.test.ts
 - backend/tests/api/admin-config-restore.test.ts
 - backend/tests/api/achievement-claim.test.ts
@@ -3847,7 +3848,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - sounds/sfx/ui/ui_tap_heavy.mp3
 - sounds/sfx/ui/ui_tap.mp3
 
-### User (1060)
+### User (1059)
 
 - User/bg/hf_20260410_172307_8c722970-571d-43a5-a1b4-ff6ae391b06b.png
 - User/bg/image 11.png
@@ -4777,7 +4778,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/items/Sturdy Totem.png
 - User/items/Worn Charm.png
 - User/items/Worn Totem.png
-- User/Key/README.md _(untracked)_
+- User/Key/README.md
 - User/loading/image 10.png
 - User/Onbording/hf_20260407_220946_eff54c9d-2b22-4c31-840d-30af6a268546.png
 - User/Onbording/hf_20260407_221016_5b345f50-38ee-4c71-a90e-6caee20d827a.png
@@ -4909,7 +4910,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (307)
+### wiki (309)
 
 - wiki/_generated/README.md
 - wiki/_generated/api-routes.json
@@ -5119,40 +5120,51 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-199-backend-me-local-row-bootstrap-parity.md
 - wiki/audit/block-200-backend-pvp-history-missing-opponent-guard.md
 - wiki/audit/block-201-backend-interactive-pvp-opponent-null-contract-guard.md
-- wiki/audit/block-202-backend-analytics-warning-cleanup-and-inventory-marker-sync.md _(untracked)_
-- wiki/audit/block-203-inventory-tracked-marker-parity-for-recent-runtime-wave.md _(untracked)_
-- wiki/audit/block-204-inventory-tracked-marker-parity-for-late-auth-and-feature-pages.md _(untracked)_
-- wiki/audit/block-205-analytics-doc-split-and-event-count-parity.md _(untracked)_
-- wiki/audit/block-206-ios-analytics-auth-provider-enum-parity.md _(untracked)_
-- wiki/audit/block-207-admin-analytics-surface-parity-and-dead-helper-removal.md _(untracked)_
-- wiki/audit/block-208-project-overview-analytics-surface-parity.md _(untracked)_
-- wiki/audit/block-209-ios-analytics-scaffold-boundary-sync.md _(untracked)_
-- wiki/audit/block-210-combat-telemetry-doc-proposal-boundary-sync.md _(untracked)_
-- wiki/audit/block-211-admin-settings-and-system-surface-parity.md _(untracked)_
-- wiki/audit/block-212-orchestrator-and-doc-index-admin-analytics-parity.md _(untracked)_
-- wiki/audit/block-213-backend-analytics-scaffold-boundary-sync.md _(untracked)_
-- wiki/audit/block-214-delete-orphan-admin-review-routes.md _(untracked)_
-- wiki/audit/block-215-shop-feature-map-iap-products-admin-surface-parity.md _(untracked)_
-- wiki/audit/block-216-admin-monetization-wording-vs-live-iap-products-surface.md _(untracked)_
-- wiki/audit/block-217-admin-economy-review-vs-fantasy-analytics-dashboard.md _(untracked)_
-- wiki/audit/block-218-admin-push-surface-vs-live-campaign-sender.md _(untracked)_
-- wiki/audit/block-219-admin-feature-flags-targeting-surface-parity.md _(untracked)_
-- wiki/audit/block-220-admin-balance-and-offers-surface-parity.md _(untracked)_
-- wiki/audit/block-221-admin-items-crud-surface-parity.md _(untracked)_
-- wiki/audit/block-222-admin-player-appearance-mail-and-footer-surface-parity.md _(untracked)_
-- wiki/audit/block-223-admin-arena-dungeons-assets-surface-parity.md _(untracked)_
-- wiki/audit/block-224-admin-gameplay-systems-surface-parity.md _(untracked)_
-- wiki/audit/block-225-admin-consumables-achievements-and-snapshots-surface-parity.md _(untracked)_
+- wiki/audit/block-202-backend-analytics-warning-cleanup-and-inventory-marker-sync.md
+- wiki/audit/block-203-inventory-tracked-marker-parity-for-recent-runtime-wave.md
+- wiki/audit/block-204-inventory-tracked-marker-parity-for-late-auth-and-feature-pages.md
+- wiki/audit/block-205-analytics-doc-split-and-event-count-parity.md
+- wiki/audit/block-206-ios-analytics-auth-provider-enum-parity.md
+- wiki/audit/block-207-admin-analytics-surface-parity-and-dead-helper-removal.md
+- wiki/audit/block-208-project-overview-analytics-surface-parity.md
+- wiki/audit/block-209-ios-analytics-scaffold-boundary-sync.md
+- wiki/audit/block-210-combat-telemetry-doc-proposal-boundary-sync.md
+- wiki/audit/block-211-admin-settings-and-system-surface-parity.md
+- wiki/audit/block-212-orchestrator-and-doc-index-admin-analytics-parity.md
+- wiki/audit/block-213-backend-analytics-scaffold-boundary-sync.md
+- wiki/audit/block-214-delete-orphan-admin-review-routes.md
+- wiki/audit/block-215-shop-feature-map-iap-products-admin-surface-parity.md
+- wiki/audit/block-216-admin-monetization-wording-vs-live-iap-products-surface.md
+- wiki/audit/block-217-admin-economy-review-vs-fantasy-analytics-dashboard.md
+- wiki/audit/block-218-admin-push-surface-vs-live-campaign-sender.md
+- wiki/audit/block-219-admin-feature-flags-targeting-surface-parity.md
+- wiki/audit/block-220-admin-balance-and-offers-surface-parity.md
+- wiki/audit/block-221-admin-items-crud-surface-parity.md
+- wiki/audit/block-222-admin-player-appearance-mail-and-footer-surface-parity.md
+- wiki/audit/block-223-admin-arena-dungeons-assets-surface-parity.md
+- wiki/audit/block-224-admin-gameplay-systems-surface-parity.md
+- wiki/audit/block-225-admin-consumables-achievements-and-snapshots-surface-parity.md
 - wiki/audit/block-226-admin-dashboard-and-economy-overview-surface-parity.md
-- wiki/audit/block-227-admin-role-settings-and-security-wording-parity.md _(untracked)_
-- wiki/audit/block-228-admin-remaining-page-surface-inventory-parity.md _(untracked)_
-- wiki/audit/block-229-admin-tech-stack-and-data-fetching-parity.md _(untracked)_
-- wiki/audit/block-230-project-overview-liveops-and-admin-surface-parity.md _(untracked)_
-- wiki/audit/block-231-auth-feature-map-admin-surface-parity.md _(untracked)_
-- wiki/audit/block-232-source-of-truth-documentation-index-admin-workflow-parity.md _(untracked)_
-- wiki/audit/block-233-feature-maps-daily-login-and-referral-admin-boundary-sync.md _(untracked)_
-- wiki/audit/block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync.md _(untracked)_
-- wiki/audit/block-235-feature-maps-minigames-and-social-runtime-boundary-sync.md _(untracked)_
+- wiki/audit/block-227-admin-role-settings-and-security-wording-parity.md
+- wiki/audit/block-228-admin-remaining-page-surface-inventory-parity.md
+- wiki/audit/block-229-admin-tech-stack-and-data-fetching-parity.md
+- wiki/audit/block-230-project-overview-liveops-and-admin-surface-parity.md
+- wiki/audit/block-231-auth-feature-map-admin-surface-parity.md
+- wiki/audit/block-232-source-of-truth-documentation-index-admin-workflow-parity.md
+- wiki/audit/block-233-feature-maps-daily-login-and-referral-admin-boundary-sync.md
+- wiki/audit/block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync.md
+- wiki/audit/block-235-feature-maps-minigames-and-social-runtime-boundary-sync.md
+- wiki/audit/block-236-inventory-summary-and-section-header-parity.md
+- wiki/audit/block-237-feature-maps-liveops-test-fixture-boundary-sync.md _(untracked)_
+- wiki/audit/block-238-inventory-untracked-marker-parity-after-git-state-shift.md _(untracked)_
+- wiki/audit/block-239-feature-maps-auth-character-tutorial-progression-boundary-sync.md _(untracked)_
+- wiki/audit/block-240-feature-maps-runtime-test-and-admin-surface-sync.md _(untracked)_
+- wiki/audit/block-241-feature-map-pvp-combat-test-and-admin-boundary-sync.md _(untracked)_
+- wiki/audit/block-242-source-of-truth-ownership-and-residual-surface-wording-sync.md _(untracked)_
+- wiki/audit/block-243-api-reference-runtime-and-admin-surface-parity.md _(untracked)_
+- wiki/audit/block-244-feature-map-and-ui-plan-residual-boundary-sync.md _(untracked)_
+- wiki/audit/block-245-project-overview-feature-flag-model-parity.md _(untracked)_
+- wiki/audit/block-246-admin-capabilities-freshness-metadata-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

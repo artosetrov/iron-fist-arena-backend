@@ -67,7 +67,8 @@ Players earn Battle Pass XP from play; climb a 50-tier track with free + premium
 
 ## Admin
 
-- `admin/src/app/(dashboard)/battle-pass/` — season editor, reward tuning, weekly challenge catalog
+- `admin/src/app/(dashboard)/battle-pass/page.tsx` — battle-pass rewards/admin page
+- `admin/src/app/(dashboard)/battle-pass/battle-pass-client.tsx` — live reward and track editing surface
 
 ## Docs
 
@@ -84,7 +85,9 @@ Players earn Battle Pass XP from play; climb a 50-tier track with free + premium
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/battle-pass/*` (if present)
+- `backend/tests/api/battle-pass-claim.test.ts` — claim-path contract coverage
+- `backend/tests/prisma/battle-pass-reward-repair.test.ts` — reward repair/backfill safety coverage
+- No broader dedicated `battle-pass/*` route suite is checked in today beyond these focused tests
 
 ## Related features
 

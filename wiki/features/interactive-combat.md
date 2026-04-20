@@ -69,7 +69,10 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 ## Admin
 
-- `admin/src/app/` — interactive match monitoring, active-effect catalog tuning
+- No dedicated interactive-combat admin dashboard is checked in today
+- `admin/src/app/(dashboard)/matches/page.tsx` — adjacent match-review surface
+- `admin/src/app/(dashboard)/skills/page.tsx` — active-skill catalog/admin editing
+- `admin/src/app/(dashboard)/passives/page.tsx` — adjacent active-slot / passive-tree editing surface
 
 ## Docs
 
@@ -86,7 +89,11 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/` — strike resolver unit tests, active-slot validation tests
+- No dedicated interactive-combat strike/active-slot backend test file is checked in today
+- Adjacent PvP/runtime coverage lives in:
+  - `backend/tests/api/pvp-resolve.test.ts`
+  - `backend/tests/api/pvp-prepare-bot-ticket.test.ts`
+  - `backend/tests/api/pvp-history.test.ts`
 
 ## Related features
 

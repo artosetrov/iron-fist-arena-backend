@@ -247,7 +247,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 
 ### Admin & Configuration
 - `GameConfig` — Live config key-values
-- `FeatureFlag` — A/B test toggles, segments
+- `FeatureFlag` — environment-scoped rollout, percentage, segment, and targeted override rules
 - `AdminLog` — Audit trail for admin actions
 - `ConfigSnapshot` — Config backup/restore
 - `DesignToken` — Dynamic theme tokens
@@ -579,10 +579,10 @@ PVP RPG/
 
 ## Contact & Ownership
 
-- **Project Lead**: [TBD]
-- **Backend Owner**: [TBD]
-- **Admin Panel Owner**: [TBD]
-- **iOS Owner**: [TBD]
+- **Project Lead**: Artem
+- **Backend Owner**: Artem
+- **Admin Panel Owner**: Artem
+- **iOS Owner**: Artem
 
 ---
 

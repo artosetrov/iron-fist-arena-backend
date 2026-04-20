@@ -99,7 +99,8 @@ Fixed 12-room sequence: `combat, event, combat, treasure, elite, miniboss, shop,
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/dungeon-rush/*` (if present)
+- `backend/tests/api/dungeon-rush-resolve.test.ts`
+- No dedicated rush start/status/shop-buy backend test file is checked in today
 
 ## Related features
 

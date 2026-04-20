@@ -64,7 +64,10 @@ Users have a single shared stash across all their characters (100 slots). Deposi
 
 ## Admin
 
-- No dedicated admin page for stash (items are managed via `admin/src/app/(dashboard)/items/`); stash rows inspected through Supabase console if needed
+- No dedicated admin page for stash. Adjacent item management lives in:
+  - `admin/src/app/(dashboard)/items/page.tsx`
+  - `admin/src/app/(dashboard)/items/items-client.tsx`
+- Stash rows themselves are still inspected through Supabase console if needed
 
 ## Docs
 
@@ -82,7 +85,7 @@ Users have a single shared stash across all their characters (100 slots). Deposi
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/stash/*` (if present)
+- No dedicated stash backend test file is checked in today
 
 ## Related features
 

@@ -7,7 +7,7 @@ sources:
   - backend/prisma/schema.prisma
   - backend/src/lib/game/events.ts
   - docs/04_database/SCHEMA_REFERENCE.md
-updated: 2026-04-15
+updated: 2026-04-19
 ---
 
 # Audit Block 008 — Prisma Migrations: Baseline and Early Delta Chain
@@ -18,7 +18,7 @@ This block covers the migration history foundation plus the first wave of post-b
 
 - **Files audited in this block:** 11
 - **Primary file types:** Prisma migration SQL, Prisma migration metadata
-- **Status:** Early chain is mostly coherent, but data-migration duplication and native-type drift need tighter policy
+- **Status:** Early chain is coherent; data-migration duplication still needs tighter policy
 - **Related pages:** [[audit-index]], [[project-file-inventory]], [[block-007-backend-root-prisma-foundation]], [[block-006-project-scripts]], [[social]], [[dungeons]], [[economy]]
 
 ## Summary
@@ -28,7 +28,7 @@ This block covers the migration history foundation plus the first wave of post-b
   1. `backend/prisma/migrations/` was missing `migration_lock.toml`, which prevented Prisma from treating the folder as a normal migration history for tooling such as migration diff.
   2. Migration history never added the extra `EventType` enum values that exist in `schema.prisma` and are already handled by runtime code (`double_xp`, `drop_rate_boost`, `weekend_warrior`).
 - The March data migrations (`20260320_*`, `20260322_*`) duplicate catalog content that also lives in `prisma/seed.ts` and code-side gem-pack definitions. That duplication is now one of the clearest database-layer technical debt seams in the repo.
-- `20260327_guild_challenges_milestones` uses raw `TIMESTAMPTZ` columns while the current Prisma schema models those fields as plain `DateTime` without native annotations. That likely works at runtime, but it is a real schema/native-type review point.
+- Follow-up reconcile on `2026-04-19` closed the earlier native-type / constraint-name drift: Prisma history was restored on the shared DB, and `schema.prisma` now explicitly models the long-lived Postgres reality for `guild_challenges`, `milestone_claims`, legacy index names, FK actions, and selected `updated_at` defaults.
 
 ## Problems Fixed In This Block
 
@@ -49,7 +49,7 @@ This block covers the migration history foundation plus the first wave of post-b
 | `backend/prisma/migrations/20260322_catalog_drop_system/migration.sql` | Catalog/drop-system data migration | Backfills `drop_chance`, inserts higher-tier catalog items, adds drop lookup index, and removes orphaned procedural `loot_%` rows. | Depends on `items` + `equipment_inventory`; used indirectly by dungeon/drop/shop systems. | Preserves `loot_%` items still referenced by inventory, but deletes truly orphaned procedural catalog rows. | Powerful but heavy migration: mixes large content inserts, data backfill, and cleanup in one file, and duplicates item catalog content later repeated in `prisma/seed.ts`. | Needs review |
 | `backend/prisma/migrations/20260323_add_social_system/migration.sql` | Social schema delta | Adds friendships, direct messages, and `characters.last_active_at`. | Used by social friends/status/message routes. | Friendship uniqueness and message expiry/query indexes are core to the feature. | Migration is structurally sound. Only minor inconsistency: enums/tables are not schema-qualified the same way as baseline SQL. | OK |
 | `backend/prisma/migrations/20260324_add_challenges/migration.sql` | Social challenge schema delta | Adds duel/challenge rows linked to PvP matches. | Used by social challenge routes and related PvP flows. | Challenge lifecycle depends on status enum, expiry indexing, and nullable `match_id` once completed. | Clear and coherent. | OK |
-| `backend/prisma/migrations/20260327_guild_challenges_milestones/migration.sql` | Guild/milestone schema delta | Adds `guild_challenges` and `milestone_claims` with idempotent raw SQL. | Used by guild challenge logic and milestone claim tracking. | Uses `IF NOT EXISTS`, inline unique constraint, and character cascade deletion. | Needs native-type review: raw SQL uses `TIMESTAMPTZ`, while current Prisma schema models these fields as plain `DateTime` without explicit `@db.Timestamptz`. | Needs review |
+| `backend/prisma/migrations/20260327_guild_challenges_milestones/migration.sql` | Guild/milestone schema delta | Adds `guild_challenges` and `milestone_claims` with idempotent raw SQL. | Used by guild challenge logic and milestone claim tracking. | Uses `IF NOT EXISTS`, inline unique constraint, and character cascade deletion. | Follow-up reconcile on `2026-04-19` aligned Prisma to the live DB: `dbgenerated` ids, `@db.Timestamptz(6)` timestamps, preserved legacy index names, and matching FK actions. | Fixed |
 | `backend/prisma/migrations/20260329_add_updated_at/migration.sql` | Timestamp harmonization | Adds missing `updated_at` columns to core tables. | Supports Prisma `@updatedAt` fields and asset/API response freshness logic. | Idempotent `ADD COLUMN IF NOT EXISTS` avoids reapply hazards. | Good corrective migration; no issue found. | OK |
 | `backend/prisma/migrations/20260415_add_missing_event_type_values/migration.sql` | Audit-created repair migration | Adds missing `EventType` enum values required by current schema and runtime event handling. | Used by event runtime (`backend/src/lib/game/events.ts`) and schema parity tooling. | Additive enum values only; safe to apply repeatedly with `IF NOT EXISTS`. | Created during audit to repair real migration-history drift. | Fixed |
 
@@ -74,8 +74,20 @@ This block covers the migration history foundation plus the first wave of post-b
 
 - No current operator doc explains when data belongs in a migration versus in `prisma/seed.ts`.
 - No current migration doc warns that column/index drift checks alone are insufficient; enum values matter too.
-- No current DB doc explains the native-type mismatch risk around raw `TIMESTAMPTZ` migrations versus unannotated Prisma `DateTime`.
 - Running `prisma migrate diff --from-migrations ...` safely requires a shadow database URL; that operational requirement is not documented in the local migration guidance.
+
+## Follow-up (2026-04-19)
+
+- The shared database referenced by `backend/.env` still had no `_prisma_migrations` table even after later feature work had landed.
+- Restored Prisma history with `db:migrate:adopt` + `prisma migrate resolve --applied` for every repo migration already present in the live schema.
+- Aligned `backend/prisma/schema.prisma` to the actual long-lived Postgres shape instead of replaying risky historical DDL:
+  - `guild_challenges` / `milestone_claims` now use `dbgenerated("(gen_random_uuid())::text")` ids and `@db.Timestamptz(6)` timestamps in Prisma.
+  - Legacy index / unique names remain explicit in Prisma (`idx_guild_challenges_dates`, `idx_milestone_claims_character`, `referral_reward_claims_referrer_character_id_invitee_character_`, `pvp_matches_status_idx`).
+  - Relation actions now match the live DB on `character_active_slots`, `milestone_claims`, and `pvp_matches.player2_id`.
+  - Prisma-side `updatedAt` defaults now match the current DB reality, including removing the extra default from `PremiumSubscription.updatedAt`.
+- Result:
+  - `npm run db:migrate:status` → `Database schema is up to date!`
+  - `npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` → `No difference detected.`
 
 ## Verification
 

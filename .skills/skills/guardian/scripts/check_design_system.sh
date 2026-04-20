@@ -140,6 +140,26 @@ done | \
 
 echo ""
 
+# --- 3b. Player-facing SF Symbols with asset equivalents (2026-04-19) ---
+# Incident: commits a450bfc + c4ee12f swept 15 Image(systemName:) → Image("asset")
+# calls across 13 player-facing files. SF Symbols leak iOS system-UI vibe into
+# dark-fantasy screens. This scan flags the mappings we have confirmed assets for.
+echo "## Player-facing SF Symbols with confirmed asset replacements"
+echo ""
+# Pattern: Image(systemName: "X") where X has a known dark-fantasy asset swap
+# Skip dev views (ScreenCatalog, DevPanel, DesignSystemPreview, *Editor).
+grep -rn --include="*.swift" -E 'Image\(systemName:\s*"(lock\.fill|gift\.fill|envelope\.fill|envelope\.badge\.fill|bubble\.left\.fill|scroll\.fill|dice\.fill|trophy\.fill)"' "$TARGET" 2>/dev/null | \
+  grep -v 'ScreenCatalog' | \
+  grep -v 'DevPanel' | \
+  grep -v 'DesignSystemPreview' | \
+  grep -vE '/[A-Za-z]*Editor' | \
+  grep -v '//' | \
+  while IFS= read -r line; do
+    echo "❌ SF Symbol with asset swap available: $line"
+  done
+
+echo ""
+
 # --- 4. Inline button styling (not using ButtonStyles.swift) ---
 echo "## Suspicious Inline Button Styling"
 echo ""

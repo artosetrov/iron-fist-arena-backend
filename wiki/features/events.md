@@ -51,7 +51,8 @@ Admin-scheduled time-windowed events deliver banners, modifiers, and rewards; ac
 
 ## Admin
 
-- `admin/src/app/(dashboard)/events/` — event editor: create, schedule, activate, attach config JSON
+- `admin/src/app/(dashboard)/events/page.tsx` — event cards/admin page
+- `admin/src/app/(dashboard)/events/events-client.tsx` — live event CRUD + config JSON surface
 
 ## Docs
 
@@ -68,7 +69,7 @@ Admin-scheduled time-windowed events deliver banners, modifiers, and rewards; ac
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/events/*` (if present)
+- No dedicated backend `events` test file is checked in today; event behavior is exercised through the active-events route plus the systems that consume event modifiers
 
 ## Related features
 

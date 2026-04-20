@@ -245,7 +245,70 @@ await analyticsBackend.track('event_name', { ...payload })
 
 **Introduced in commit `1f5d297` (2026-04-18):** 7 critical-funnel events: `signup`, `first_pvp`, `iap_purchase`, `bp_claim`, `daily_login`, `level_up`, `shop_upgrade`. New backend: `src/lib/analytics.ts` + `NoopBackend` (swap via `setAnalyticsBackend()`). iOS: `Services/AnalyticsService.swift` mirrors the same 7 events.
 
-### 10. Deploy Awareness
+### 11. Defensive Reads + Lazy Supabase Init (2026-04-19)
+
+**11a. Lazy-init Supabase clients on prerender-reachable pages.**
+Next.js prerender executes page module code at build time. A top-level `const supabase = createClient(process.env.SUPABASE_URL!, ...)` will crash the build with "supabaseUrl is required" if either env var is missing (even when the page never renders at build time). Auth pages such as `/reset-password` MUST construct the client inside the component/handler body, not at module scope.
+
+**Banned pattern (module-scope):**
+```ts
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, ...)
+export default function Page() { ... }
+```
+
+**Correct pattern (lazy):**
+```ts
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !anonKey) return null  // let the page handle missing env gracefully
+  return createClient(url, anonKey)
+}
+export default function Page() { const supabase = getSupabase(); ... }
+```
+
+**Incident (2026-04-19, commit `e2b5185`):** `backend/src/app/reset-password/page.tsx` held a module-scope Supabase client. Next's prerender pass crashed when env vars were absent, blocking the entire Vercel build.
+
+**Scanner pattern:** `grep -rn "createClient(" backend/src/app --include="*.tsx" --include="*.ts"` — flag any hit that sits outside a function body.
+
+---
+
+**11b. Raw-SQL fallback for user-critical read paths.**
+When a single Prisma `findMany` serves a boot-critical screen (character list, hub bootstrap, arena splash), wrap it in a typed raw-SQL fallback so the screen still loads when the generated Prisma client is transiently out of sync with the live schema (between migration apply and Vercel redeploy).
+
+**Pattern:**
+```ts
+async function fetchRows(userId: string): Promise<Row[]> {
+  try {
+    return await prisma.character.findMany({ where: { userId }, select: {...} }) as Row[]
+  } catch (error) {
+    console.warn('prisma read warning, retrying with raw SQL:', error)
+  }
+  return prisma.$queryRaw<Row[]>`SELECT c.id, c.user_id AS "userId", ... FROM characters c WHERE c.user_id = ${userId}`
+}
+```
+
+Use `Promise.allSettled` for downstream fan-outs (per-row regen, enrichment) so one bad row cannot black out the whole list.
+
+**Introduced in commits `16fe0b5` + `0658532` (2026-04-19)** after character list started 500-ing for some users post-migration. The fallback is defensive only — root cause is still schema/Prisma client drift; the fallback just keeps the app usable while drift is resolved.
+
+**Do not blanket-apply:** reserve for read endpoints whose failure blocks the app from booting. Write endpoints must still fail loud.
+
+---
+
+**11c. Grep downstream consumers when a required column becomes nullable.**
+When `schema.prisma` flips a column from required to optional (`field String` → `field String?`), the Prisma client types flip from `T` to `T | null` for every consumer. Any admin/backend code that dereferences the field without a null-check becomes a Vercel-build-blocker.
+
+**Checklist after any `required → nullable` change:**
+```bash
+# Replace <Model> and <field> with the changed ones:
+grep -rn "\.<field>" admin/src backend/src --include="*.ts" --include="*.tsx"
+```
+Then null-check every call site.
+
+**Incident (2026-04-19, commit `ed3001d`):** `PvpMatch.player2Id` became nullable to support bot/boss matches. Admin `/matches` page dereferenced `match.player2.characterName` directly → admin build failed tsc. Fix was a small `match.player2?.characterName ?? '—'` patch, but the issue was caught only by tsc, not by gatekeeper preflight — running the grep earlier would have caught it before push.
+
+### 12. Deploy Awareness
 
 If changes touch admin/:
 - Remind about `git subtree push --prefix=admin admin-deploy main` after pushing to origin.
@@ -253,6 +316,7 @@ If changes touch admin/:
 If changes touch backend/:
 - Backend auto-deploys on push to origin/main. No extra step needed.
 - But if schema.prisma changed → admin schema must be synced.
+- If `backend/src/lib/game/balance.ts` changed → run `npm run docs:balance` and commit `docs/06_game_systems/BALANCE_CONSTANTS_AUTO.md` in the same change. CI `docs:balance:check` blocks otherwise. (Two repeats on 2026-04-19, commits `049dd2f` + `3630a15`.)
 
 ## Output Format
 

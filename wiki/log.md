@@ -1,5 +1,14 @@
 # Hexbound Wiki — Log
 
+## [2026-04-19] ops | Prisma migration history + live schema parity restored
+
+Finished the legacy Prisma adoption/reconcile pass for the shared Supabase database referenced by `backend/.env`.
+- **Problem:** the live DB already contained almost the full schema, including `characters.active_slot_count`, `dungeon_bosses.tagline`, `character_passives.current_rank`, and `characters.last_free_respec_at`, but `public._prisma_migrations` was missing. Prisma therefore reported all `37` repo migrations as pending even though replaying many of their SQL files would have been unsafe.
+- **History recovery:** ran `npm run db:migrate:adopt` for `20260306_baseline`, then recorded the remaining repo migrations via `prisma migrate resolve --applied ...`. No historical DDL was replayed against live gameplay tables in this pass; only Prisma history was reconstructed.
+- **Schema alignment:** updated `backend/prisma/schema.prisma` and mirrored `admin/prisma/schema.prisma` to match the actual long-lived Postgres shape instead of forcing the DB through a risky cleanup migration. This included: `dbgenerated("(gen_random_uuid())::text")` ids on `guild_challenges` / `milestone_claims`; `@db.Timestamptz(6)` on their timestamp fields; preserved legacy index/constraint names (`idx_guild_challenges_dates`, `idx_milestone_claims_character`, `referral_reward_claims_referrer_character_id_invitee_character_`, `pvp_matches_status_idx`); matched live FK actions on `character_active_slots`, `milestone_claims`, and `pvp_matches.player2_id`; and matched the current `updated_at` default reality (including removing the extra Prisma-side default from `PremiumSubscription.updatedAt`).
+- **Verification:** `public._prisma_migrations` now contains `37` rows; `backend: npm run db:migrate:status` returns `Database schema is up to date!`; `backend: npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` returns `No difference detected.`; `python3 scripts/check_schema_drift.py` passes; backend/admin Prisma schemas are identical again.
+- **Code touched:** `backend/prisma/schema.prisma`, `admin/prisma/schema.prisma`, live `_prisma_migrations` history in the shared DB.
+
 ## [2026-04-19] feature | Interactive Combat unification — PvP + bot + dungeon_boss
 
 Migrated PvP, NPC bot, and dungeon boss fights through the single `/pvp/match/{start,strike,complete}` lifecycle so one `AppRoute.interactiveBattle` screen drives three modes. Dungeon Rush and the Guild Hall challenge replay stay on classic combat until a dedicated follow-up session.
@@ -2247,6 +2256,96 @@ Closed the next inventory consistency block after the feature-map wave:
 - **Fixes:** refreshed the top tracked/untracked/in-scope counts, refreshed category totals, and updated stale section-header counts so the inventory no longer contradicts itself after the late admin/wiki cleanup wave
 - **Inventory refresh:** updated current counts to `5140` in-scope files and `302 in-scope wiki markdown files / 301 wiki pages`
 - **Verification:** git-derived count comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 237 liveops feature-map test fixture boundary sync
+
+Closed the next test-fixture placeholder block in the feature-map layer:
+- **Created:** `[[block-237-feature-maps-liveops-test-fixture-boundary-sync]]`
+- **Files audited:** `wiki/features/quests.md`, `wiki/features/battle-pass.md`, `wiki/features/mail.md`, `wiki/features/events.md`, `backend/tests/api/tutorial-quest.test.ts`, `backend/tests/api/battle-pass-claim.test.ts`, `backend/tests/prisma/battle-pass-reward-repair.test.ts`, `backend/tests/api/mail-list.test.ts`
+- **Fixes:** replaced the old `backend/src/__tests__/* (if present)` placeholders with the actual focused backend tests that exist today, and made the narrower or missing coverage explicit where no dedicated suite is checked in
+- **Inventory refresh:** updated current counts to `5141` in-scope files and `303 in-scope wiki markdown files / 302 wiki pages`
+- **Verification:** backend test-file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 238 inventory untracked marker parity after git-state shift
+
+Closed the next inventory-marker drift block after the git-state shift:
+- **Created:** `[[block-238-inventory-untracked-marker-parity-after-git-state-shift]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `git ls-files`, `git ls-files --others --exclude-standard`
+- **Fixes:** refreshed the tracked/untracked summary counts, updated the moved `backend` and `User` category totals, removed stale `_(untracked)_` markers from files that are now tracked, and added the real untracked `backend/tests/api/characters-list.test.ts` entry
+- **Inventory refresh:** updated current counts to `5142` in-scope files and `304 in-scope wiki markdown files / 303 wiki pages`
+- **Verification:** git-state comparison plus `git diff --check`
+
+## [2026-04-19] audit | Block 239 feature maps auth, character, tutorial, and progression boundary sync
+
+Closed the next feature-map placeholder/admin-boundary block:
+- **Created:** `[[block-239-feature-maps-auth-character-tutorial-progression-boundary-sync]]`
+- **Files audited:** `wiki/features/auth.md`, `wiki/features/tutorial.md`, `wiki/features/characters.md`, `wiki/features/stamina.md`, `wiki/features/prestige.md`, adjacent backend tests under `backend/tests/api/` and `backend/tests/lib/`, plus adjacent admin player/config/balance pages
+- **Fixes:** replaced the old `backend/src/__tests__/* (if present)` placeholders with the real checked-in auth/tutorial/character/stamina test files, removed the phantom `admin/src/app/(dashboard)/characters/` tree, and narrowed tutorial/stamina/prestige admin wording to the real adjacent review/tuning surfaces that exist today
+- **Inventory refresh:** updated current counts to `5143` in-scope files and `305 in-scope wiki markdown files / 304 wiki pages`
+- **Verification:** live file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 240 runtime feature-map test and admin surface sync
+
+Closed the next wider runtime feature-map cleanup block:
+- **Created:** `[[block-240-feature-maps-runtime-test-and-admin-surface-sync]]`
+- **Files audited:** `wiki/features/interactive-combat.md`, `passive-tree.md`, `session-summary.md`, `gold-mine.md`, `stash.md`, `inventory.md`, `shop.md`, `dungeons.md`, `leaderboard.md`, `dungeon-rush.md`, `battle-pass.md`, `events.md`, `quests.md`, `mail.md`, adjacent backend tests, and live admin page/client files for skills/passives/items/dungeons/mail/quests/events/battle-pass/matches/economy/config/minigame sessions
+- **Fixes:** replaced the remaining placeholder `__tests__/*` notes with the real checked-in tests or explicit “no dedicated backend test file today” wording, and rewrote broad admin directory notes to the exact live page/client surfaces that actually exist in the dashboard
+- **Inventory refresh:** updated current counts to `5144` in-scope files and `306 in-scope wiki markdown files / 305 wiki pages`
+- **Verification:** live file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 241 PvP combat feature-map test and admin boundary sync
+
+Closed the remaining live `__tests__` placeholder block in the feature-map layer:
+- **Created:** `[[block-241-feature-map-pvp-combat-test-and-admin-boundary-sync]]`
+- **Files audited:** `wiki/features/pvp-combat.md`, adjacent backend PvP tests, and live admin review surfaces under matches / players / economy
+- **Fixes:** replaced the stale generic `backend/src/__tests__/` note with the real checked-in PvP/runtime tests, and rewrote the broad `admin/src/app/` wording to the exact live match / player / economy review pages
+- **Inventory refresh:** updated current counts to `5145` in-scope files and `307 in-scope wiki markdown files / 306 wiki pages`
+- **Verification:** live file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 242 source-of-truth ownership and residual surface wording sync
+
+Closed the next small truth-sync block after the big feature-map cleanup wave:
+- **Created:** `[[block-242-source-of-truth-ownership-and-residual-surface-wording-sync]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `wiki/features/session-summary.md`, `wiki/features/prestige.md`, `wiki/features/auth.md`, `wiki/features/minigames.md`, adjacent admin page files, `API_REFERENCE.md`, and the shared iOS prestige display components
+- **Fixes:** replaced the remaining `[TBD]` ownership footer in `PROJECT_OVERVIEW.md`, rewrote `session-summary` to the real API doc, narrowed a few broad admin path shorthands to exact live pages, and made `prestige.md` honest about the current state: backend route is live, prestige display is live, but a concrete shipped iOS prestige action flow is not clearly verified in the current tree
+- **Inventory refresh:** updated current counts to `5146` in-scope files and `308 in-scope wiki markdown files / 307 wiki pages`
+- **Verification:** live file existence checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 243 API reference runtime and admin surface parity
+
+Closed the next API truth-sync block:
+- **Created:** `[[block-243-api-reference-runtime-and-admin-surface-parity]]`
+- **Files audited:** `docs/03_backend_and_api/API_REFERENCE.md`, live backend routes for `shop/buy-gold`, `session-summary`, Gold Mine bonus/session flows, backend admin config/referrals/matchmaking/minigame-sessions routes, and adjacent admin-local route files under `admin/src/app/api`
+- **Fixes:** corrected `shop/buy-gold` from fake IAP wording to gem-to-gold exchange, expanded Gold Mine coverage to the live aggregate and per-slot bonus routes, corrected backend/admin-local method shapes, and replaced the stale `NOT IMPLEMENTED` graveyard with an explicit note about admin-local APIs and server-action-owned dashboard surfaces
+- **Inventory refresh:** updated current counts to `5147` in-scope files and `309 in-scope wiki markdown files / 308 wiki pages`
+- **Verification:** live route existence/method checks plus `git diff --check`
+
+## [2026-04-19] audit | Block 244 feature map and UI plan residual boundary sync
+
+Closed the next small residual wording block:
+- **Created:** `[[block-244-feature-map-and-ui-plan-residual-boundary-sync]]`
+- **Files audited:** `wiki/features/stash.md`, `wiki/features/achievements.md`, `docs/07_ui_ux/STRIKE_REVEAL_SHAPE_B_PLAN.md`, plus the adjacent live admin page/client files under `items/` and `achievements/`
+- **Fixes:** narrowed the remaining broad admin directory shorthand in `stash.md`, added the achievements page route beside the existing editor references, and replaced the old “snapshot tests (if present)” QA step with the current truth that this flow uses manual screenshots because no dedicated `HexboundUI` snapshot target is checked in today
+- **Inventory refresh:** updated current counts to `5148` in-scope files and `310 in-scope wiki markdown files / 309 wiki pages`
+- **Verification:** live file existence checks, repository search for snapshot-target absence, plus `git diff --check`
+
+## [2026-04-19] audit | Block 245 project overview feature-flag model parity
+
+Closed the next tiny source-of-truth wording tail:
+- **Created:** `[[block-245-project-overview-feature-flag-model-parity]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `admin/src/lib/feature-flags.ts`, `admin/src/actions/feature-flags.ts`
+- **Fixes:** replaced the old `FeatureFlag = A/B test toggles, segments` shorthand with the current live truth: environment-scoped rollout rules plus percentage/segment/targeted override support, without implying a full experimentation suite
+- **Inventory refresh:** updated current counts to `5149` in-scope files and `311 in-scope wiki markdown files / 310 wiki pages`
+- **Verification:** live model review plus `git diff --check`
+
+## [2026-04-19] audit | Block 246 admin capabilities freshness metadata sync
+
+Closed the next small metadata-sync tail:
+- **Created:** `[[block-246-admin-capabilities-freshness-metadata-sync]]`
+- **Files audited:** `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, adjacent source-of-truth index context
+- **Fixes:** updated the stale `2026-04-16` freshness stamp on `ADMIN_CAPABILITIES.md` so the doc header now matches the 2026-04-19 audit wave that actually rewrote the live admin surface map
+- **Inventory refresh:** updated current counts to `5150` in-scope files and `312 in-scope wiki markdown files / 311 wiki pages`
+- **Verification:** header check plus `git diff --check`
 
 ## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
 

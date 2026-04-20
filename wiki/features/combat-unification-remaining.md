@@ -87,15 +87,19 @@ These also still point at `AppRoute.combat` but each has its own caveat:
 - `DungeonRushViewModel.swift:195` — covered by TODO #1 above.
 - `GuildHallViewModel.swift:593` — covered by TODO #2 above.
 
-## Pre-existing drift (not ours)
+## Prisma drift (resolved 2026-04-19)
 
-`scripts/check_schema_drift.py` currently reports:
-```
-MISSING COLUMNS (1):
-  ✗ characters.active_slot_count  (model Character)
-```
+The earlier note about `characters.active_slot_count` drift is no longer current.
 
-This predates the 2026-04-19 session. Fix in a separate migration: either add the column via `ALTER TABLE IF NOT EXISTS` or remove it from `schema.prisma` if the code no longer needs it.
+- `20260419_character_active_slot_count` is now recorded in Prisma history.
+- The shared database referenced by `backend/.env` now has a reconstructed `_prisma_migrations` table with all repo migrations recorded as applied.
+- Follow-up schema reconcile aligned `schema.prisma` with the actual legacy Postgres shape (timestamps, named indexes, FK actions, `updated_at` defaults) instead of replaying risky historical SQL.
+- Current verification:
+  - `backend: npm run db:migrate:status` → `Database schema is up to date!`
+  - `backend: npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --exit-code` → `No difference detected.`
+  - `python3 scripts/check_schema_drift.py` → pass
+
+There is no remaining Prisma drift blocker for the combat-unification follow-up work tracked on this page.
 
 ## Status toggles / kill switch
 

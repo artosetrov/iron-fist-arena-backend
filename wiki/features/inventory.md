@@ -76,7 +76,11 @@ Each character owns a per-character EquipmentInventory (weapons/armor/accessorie
 
 ## Admin
 
-- `admin/src/app/(dashboard)/items/` — item catalog editor (stats, rarity, drop chance)
+- `admin/src/app/(dashboard)/items/page.tsx` — item catalog list/search surface
+- `admin/src/app/(dashboard)/items/items-client.tsx` — live item CRUD list and preview entry
+- `admin/src/app/(dashboard)/items/[id]/edit/page.tsx` — edit route
+- `admin/src/app/(dashboard)/items/new/page.tsx` — create route
+- `admin/src/app/(dashboard)/items/_components/item-editor-client.tsx` — item editor form
 
 ## Docs
 
@@ -94,7 +98,9 @@ Each character owns a per-character EquipmentInventory (weapons/armor/accessorie
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/inventory/*` (if present)
+- `backend/tests/api/inventory-equip.test.ts`
+- `backend/tests/api/inventory-unequip.test.ts`
+- `backend/tests/api/inventory-sell.test.ts`
 
 ## Related features
 

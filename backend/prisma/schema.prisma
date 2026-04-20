@@ -114,7 +114,7 @@ enum CosmeticType {
 }
 
 model GuildChallenge {
-  id            String    @id @default(uuid())
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   title         String
   description   String
   goalType      String    @map("goal_type")   // "pvp_wins", "gold_earned", "dungeons_cleared"
@@ -122,26 +122,26 @@ model GuildChallenge {
   currentProgress Int     @default(0) @map("current_progress")
   goldReward    Int       @map("gold_reward")
   gemReward     Int       @default(0) @map("gem_reward")
-  startAt       DateTime  @map("start_at")
-  endAt         DateTime  @map("end_at")
+  startAt       DateTime  @db.Timestamptz(6) @map("start_at")
+  endAt         DateTime  @db.Timestamptz(6) @map("end_at")
   completed     Boolean   @default(false)
   claimed       Boolean   @default(false)
-  createdAt     DateTime  @default(now()) @map("created_at")
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
 
-  @@index([startAt, endAt])
+  @@index([startAt, endAt], map: "idx_guild_challenges_dates")
   @@map("guild_challenges")
 }
 
 model MilestoneClaim {
-  id             String   @id @default(uuid())
+  id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   characterId    String   @map("character_id")
   milestoneLevel Int      @map("milestone_level")
-  claimedAt      DateTime @default(now()) @map("claimed_at")
+  claimedAt      DateTime @default(now()) @db.Timestamptz(6) @map("claimed_at")
 
-  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([characterId, milestoneLevel])
-  @@index([characterId])
+  @@index([characterId], map: "idx_milestone_claims_character")
   @@map("milestone_claims")
 }
 
@@ -154,7 +154,7 @@ model ReferralRewardClaim {
   referrerCharacter Character @relation("referral_reward_referrer", fields: [referrerCharacterId], references: [id], onDelete: Cascade)
   inviteeCharacter  Character @relation("referral_reward_invitee", fields: [inviteeCharacterId], references: [id], onDelete: Cascade)
 
-  @@unique([referrerCharacterId, inviteeCharacterId])
+  @@unique([referrerCharacterId, inviteeCharacterId], map: "referral_reward_claims_referrer_character_id_invitee_character_")
   @@index([referrerCharacterId])
   @@index([inviteeCharacterId])
   @@map("referral_reward_claims")
@@ -258,7 +258,7 @@ model User {
   premiumGemClaimDate DateTime? @map("premium_gem_claim_date")
   role          String    @default("player")
   createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   lastLogin     DateTime? @map("last_login")
   isBanned      Boolean   @default(false) @map("is_banned")
   banReason     String?   @map("ban_reason")
@@ -301,7 +301,7 @@ model PremiumSubscription {
   status                String    @default("active") @map("status") // active | grace_period | expired | refunded
   latestReceipt         String?   @map("latest_receipt") // opaque receipt blob for re-verification
   createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -397,7 +397,7 @@ model Character {
   shaftProgress     Int       @default(0) @map("shaft_progress")
   shaftTotal        Int       @default(5) @map("shaft_total")
   createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
   lastPlayed        DateTime? @map("last_played")
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -490,7 +490,7 @@ model Item {
   itemClass       String?   @map("item_class")
   upgradeConfig   Json?     @map("upgrade_config")
   createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
   equipment       EquipmentInventory[]
   dungeonDrops    DungeonDrop[]
@@ -580,7 +580,7 @@ model PvpMatch {
   seasonNumber  Int?      @map("season_number")
   isRevenge     Boolean   @default(false) @map("is_revenge")
   playedAt      DateTime  @default(now()) @map("played_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Interactive Combat v1 (additive, nullable — old pvp flow ignores these)
   status                 String?   @default("completed") @map("status")
@@ -598,7 +598,7 @@ model PvpMatch {
   botKey             String?  @map("bot_key")
 
   player1       Character  @relation("player1", fields: [player1Id], references: [id])
-  player2       Character? @relation("player2", fields: [player2Id], references: [id])
+  player2       Character? @relation("player2", fields: [player2Id], references: [id], onDelete: Restrict)
   winner        Character? @relation("winner", fields: [winnerId], references: [id])
   loser         Character? @relation("loser", fields: [loserId], references: [id])
 
@@ -611,6 +611,7 @@ model PvpMatch {
   @@index([player2Id, playedAt(sort: Desc)])
   @@index([winnerId])
   @@index([playedAt(sort: Desc)])
+  @@index([status], map: "pvp_matches_status_idx")
   @@index([opponentType, status])
   @@map("pvp_matches")
 }
@@ -740,7 +741,7 @@ model Season {
   startAt   DateTime  @map("start_at")
   endAt     DateTime  @map("end_at")
   createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
   battlePasses      BattlePass[]
   battlePassRewards BattlePassReward[]
@@ -761,7 +762,7 @@ model DailyQuest {
   completed   Boolean   @default(false)
   day         String    // "YYYY-MM-DD"
   createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
@@ -1106,7 +1107,7 @@ model AchievementDefinition {
   active       Boolean  @default(true)
   sortOrder    Int      @default(0) @map("sort_order")
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("achievement_definitions")
 }
@@ -1124,7 +1125,7 @@ model QuestDefinition {
   rewardGems  Int       @default(0) @map("reward_gems")
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@map("quest_definitions")
 }
@@ -1144,7 +1145,7 @@ model FeatureFlag {
   tags        String[]  @default([])
   createdBy   String?   @map("created_by")
   createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@index([isActive])
   @@index([key, isActive])
@@ -1345,8 +1346,8 @@ model CharacterActiveSlot {
   slotIndex       Int             @map("slot_index")        // 0, 1, 2
   equippedAt      DateTime        @default(now()) @map("equipped_at")
 
-  character       Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  node            PassiveNode?    @relation(fields: [nodeId], references: [id])
+  character       Character       @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  node            PassiveNode?    @relation(fields: [nodeId], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
   @@unique([characterId, slotIndex])
   @@index([characterId])
@@ -1495,7 +1496,7 @@ model ShopOffer {
   endsAt        DateTime? @map("ends_at")
   createdBy     String?   @map("created_by")
   createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
   purchases     ShopOfferPurchase[]
 
@@ -1577,7 +1578,7 @@ model DirectMessage {
   quickId     String?  @map("quick_id")
   isRead      Boolean  @default(false) @map("is_read")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
   expiresAt   DateTime @map("expires_at")
 
   sender      Character @relation("sent_messages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -1600,7 +1601,7 @@ model Challenge {
   message         String?         @db.VarChar(100)
   goldWager       Int             @default(0) @map("gold_wager")
   createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at")
   expiresAt       DateTime        @map("expires_at")
   respondedAt     DateTime?       @map("responded_at")
   completedAt     DateTime?       @map("completed_at")

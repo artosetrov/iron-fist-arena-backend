@@ -106,7 +106,10 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 
 ## Admin
 
-- `admin/src/app/` — PvP match monitoring, rating distribution, player search
+- `admin/src/app/(dashboard)/matches/page.tsx` — PvP match monitoring and rating-delta review
+- `admin/src/app/(dashboard)/players/page.tsx` — player search / account review entry point
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — adjacent player drill-down with purchases, bans, and character review
+- `admin/src/app/(dashboard)/economy/page.tsx` — adjacent economy review surface with PvP/balance panels
 
 ## Docs
 
@@ -157,7 +160,11 @@ None of these touch resolution. Crit/block/dodge decisions still come from `/pvp
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/` — combat simulator unit tests
+- `backend/tests/api/pvp-resolve.test.ts`
+- `backend/tests/api/pvp-prepare-bot-ticket.test.ts`
+- `backend/tests/api/pvp-history.test.ts`
+- `backend/tests/api/social-challenges.test.ts` — adjacent challenge/PvP integration coverage
+- `backend/tests/lib/bot-ticket.test.ts`
 - Seed: admin has opponent seed + rating distribution tools
 
 ## Related features

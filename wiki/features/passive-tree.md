@@ -87,7 +87,9 @@ Players allocate talent points into a node-based passive tree for permanent stat
 
 ## Admin
 
-- `admin/src/app/(dashboard)/passives/` — tree editor (nodes, connections, effects)
+- `admin/src/app/(dashboard)/passives/page.tsx` — passive-node and connection editor
+- `admin/src/app/(dashboard)/passives/passives-client.tsx` — live node / connection CRUD surface
+- `admin/src/app/(dashboard)/skills/page.tsx` — adjacent active-skill catalog editor
 
 ## Docs
 
@@ -105,7 +107,10 @@ Players allocate talent points into a node-based passive tree for permanent stat
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/passive-tree/*` (if present)
+- No dedicated passive-tree backend test file is checked in today
+- Adjacent active-slot / combat coverage lives in:
+  - `backend/tests/api/pvp-prepare-bot-ticket.test.ts`
+  - `backend/tests/api/pvp-resolve.test.ts`
 
 ## Related features
 

@@ -75,7 +75,10 @@ Players select a dungeon, enter a room, fight enemies round-by-round, progress t
 
 ## Admin
 
-- `admin/src/app/(dashboard)/dungeons/` — dungeon editor, room config, drop rate tuning
+- `admin/src/app/(dashboard)/dungeons/page.tsx` — dungeon list/search/create surface
+- `admin/src/app/(dashboard)/dungeons/dungeons-client.tsx` — live dungeon list UI
+- `admin/src/app/(dashboard)/dungeons/[id]/page.tsx` — editor route
+- `admin/src/app/(dashboard)/dungeons/[id]/dungeon-editor.tsx` — live dungeon editor
 
 ## Docs
 
@@ -93,7 +96,7 @@ Players select a dungeon, enter a room, fight enemies round-by-round, progress t
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/dungeons/*` (if present)
+- No dedicated classic-dungeons backend test file is checked in today
 
 ## Related features
 

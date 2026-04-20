@@ -75,7 +75,9 @@ New players go through a scripted tutorial: NPC hints → equip an item → scri
 
 ## Admin
 
-- `admin/src/app/(dashboard)/players/` — admin can reset a character's tutorial flags for QA
+- No dedicated tutorial-reset admin tool is checked in today
+- `admin/src/app/(dashboard)/players/page.tsx` — adjacent account/character lookup for QA
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — adjacent character detail review surface
 
 ## Docs
 
@@ -94,7 +96,10 @@ New players go through a scripted tutorial: NPC hints → equip an item → scri
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/tutorial/*` (if present)
+- `backend/tests/api/tutorial-quest.test.ts`
+- `backend/tests/api/tutorial-scripted-fight-contracts.test.ts`
+- `backend/tests/api/tutorial-referral.test.ts`
+- `backend/tests/lib/tutorial-referral-rewards.test.ts`
 
 ## Related features
 

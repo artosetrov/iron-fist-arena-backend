@@ -152,6 +152,20 @@ If behavior/schema/API/screens changed, check:
 - Schema change → `docs/04_database/SCHEMA_REFERENCE.md`
 - API change → `docs/03_backend_and_api/API_REFERENCE.md`
 - New rule discovered → `CLAUDE.md`
+- **Balance constant added/changed in `backend/src/lib/game/balance.ts`** → run `npm run docs:balance` and commit the regenerated `docs/06_game_systems/BALANCE_CONSTANTS_AUTO.md` in the same change. CI `npm run docs:balance:check` is blocking — failing twice in one day (2026-04-19, commits `049dd2f` + `3630a15`) means this belongs on the preflight checklist.
+
+### 6b. CI Workflow Path Filters (if `.github/workflows/*.yml` changed)
+
+When any workflow file under `.github/workflows/` is modified, verify every `paths:` / `paths-ignore:` entry resolves to a real file or directory in the repo. A stale trigger path silently disables the workflow — CI goes green because nothing ran, not because the check passed.
+
+**Check:**
+```bash
+# For each path glob in the changed workflow, confirm it maps to something real
+awk '/paths:/,/^$/' .github/workflows/ci.yml | grep -E '^\s+-' | sed 's/^\s*-\s*//; s/^["'\''"]//; s/["'\''"]$//'
+# Then ls each one
+```
+
+**Incident (2026-04-19, commit `40617f0`):** `.github/workflows/ci.yml` still triggered on `docs/04_BALANCE/**` after the folder was renamed to `docs/06_game_systems/`. The `docs:balance:check` job simply never ran on balance doc edits until the path was fixed.
 
 ### 7. Assets (if new images added)
 

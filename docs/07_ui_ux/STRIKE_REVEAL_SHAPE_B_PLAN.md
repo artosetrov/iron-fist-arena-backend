@@ -674,7 +674,7 @@ Manual QA (before merge of each phase):
 2. **Short-match OUTPLAYED.** Force a finishing-blow OUTPLAYED on round 1. Ensure verdict band + finishing-blow marker coexist in the header.
 3. **Talent-fired OUTPLAYED.** Round with ally active firing + OUTPLAYED. Confirm card height stays within `maxListHeight + 300`, no ScrollView weirdness.
 4. **Rapid rounds.** 3 rounds in 10 seconds with tap-to-skip on each. Verify flash does not leak between rounds (`task(id: triggerId)` cancels correctly).
-5. **Screenshot diff.** Run `xcodebuild test -scheme HexboundUI` snapshot tests (if present) — otherwise capture screenshots of all 4 verdicts + `OUTPLAYED + crit` + `OUTPLAYED + talent` for visual review.
+5. **Screenshot diff.** No dedicated `HexboundUI` snapshot-test target is checked in today, so capture screenshots of all 4 verdicts + `OUTPLAYED + crit` + `OUTPLAYED + talent` for visual review instead of relying on a nonexistent snapshot suite.
 
 Playtest gate before Phase 5 consideration:
 

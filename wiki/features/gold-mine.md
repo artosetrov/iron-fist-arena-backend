@@ -90,7 +90,10 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ## Admin
 
-- `admin/src/app/` (minigames/gold-mine tuning) — shaft catalog tuning, rate override
+- No dedicated Gold Mine admin page is checked in today
+- `admin/src/app/(dashboard)/economy/page.tsx` — adjacent economy review surface
+- `admin/src/app/(dashboard)/config/page.tsx` — adjacent live-config tuning surface
+- `admin/src/app/(dashboard)/minigame-sessions/page.tsx` — recent minigame session review surface
 
 ## Docs
 
@@ -108,7 +111,7 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/` — mine-related tests if present
+- No dedicated Gold Mine backend test file is checked in today
 - Seed: admin has shaft catalog seeder
 
 ## Related features

@@ -90,7 +90,8 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 ## Admin
 
 - `admin/src/app/login/page.tsx` — admin email/password sign-in surface gated to `admin` / `moderator` / `developer`
-- `admin/src/app/(dashboard)/players/` — live player lookup and account-adjacent review/actions
+- `admin/src/app/(dashboard)/players/page.tsx` — live player lookup and account-adjacent review/actions
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — player/account drill-down for bans, grants, inventory reset, and character review
 - `admin/src/app/(dashboard)/settings/page.tsx` — admin-only settings surface with admin-user roster
 - `admin/src/app/api/settings/role/route.ts` — fixed-role mutation route (`admin` only)
 
@@ -124,7 +125,16 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/auth/*` (if present)
+- `backend/tests/api/auth-guest.test.ts`
+- `backend/tests/api/auth-guest-login.test.ts`
+- `backend/tests/api/auth-register.test.ts`
+- `backend/tests/api/auth-login.test.ts`
+- `backend/tests/api/auth-forgot-password.test.ts`
+- `backend/tests/api/auth-google-apple.test.ts`
+- `backend/tests/api/auth-upgrade-guest.test.ts`
+- `backend/tests/api/auth-upgrade-guest-oauth.test.ts`
+- `backend/tests/api/auth-link-account.test.ts`
+- `backend/tests/api/auth-sync-user.test.ts`
 
 ## Related features
 

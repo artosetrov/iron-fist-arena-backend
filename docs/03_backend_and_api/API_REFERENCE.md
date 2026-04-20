@@ -1,5 +1,5 @@
 # API Reference (Source of Truth)
-*Derived from backend routes. Updated: 2026-03-29*
+*Derived from backend routes. Updated: 2026-04-19*
 
 ## Auth (`/api/auth/*`)
 
@@ -158,7 +158,7 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 | GET | /shop/offers | Yes | Active offers |
 | POST | /shop/buy | Yes | Purchase item |
 | POST | /shop/buy-gems | Yes | Buy gems (IAP) |
-| POST | /shop/buy-gold | Yes | Buy gold (IAP) |
+| POST | /shop/buy-gold | Yes | Exchange gems for gold |
 | POST | /shop/buy-consumable | Yes | Buy potion |
 | POST | /shop/upgrade | Yes | Upgrade equipment |
 | POST | /shop/repair | Yes | Restore durability |
@@ -198,8 +198,12 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 | POST | /minigames/gold-mine/start | Yes | Begin mining |
 | GET | /minigames/gold-mine/status | Yes | Slot status |
 | POST | /minigames/gold-mine/collect | Yes | Claim finished |
+| POST | /minigames/gold-mine/collect-all | Yes | Collect all ready slots |
 | POST | /minigames/gold-mine/buy-slot | Yes | Add slot |
 | POST | /minigames/gold-mine/boost | Yes | Speed up |
+| POST | /minigames/gold-mine/minigame-bonus | Yes | Finalize aggregate bonus minigame |
+| POST | /minigames/gold-mine/slot-minigame/start | Yes | Open per-slot bonus session |
+| POST | /minigames/gold-mine/slot-minigame/submit | Yes | Finalize per-slot bonus session |
 
 ## Shell Game
 
@@ -326,7 +330,7 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | /session-summary | Yes | Session stats (matches, gold, XP, items earned in last 30min) |
+| GET | /session-summary | Yes | Recent 30-minute session snapshot (PvP, gold, XP, items, quests) |
 
 ## Assets
 
@@ -349,20 +353,21 @@ All endpoints below require `admin` role. Admin operations are split between two
 | POST | /admin/unban | Unban user (expects `{user_id}`) |
 | GET | /admin/matches | Browse PvP matches |
 | GET | /admin/achievements | View/search achievements |
-| POST | /admin/achievements | Create/update achievement |
-| GET | /admin/skills | View/search skills |
-| POST | /admin/skills | Create/update skill |
-| GET | /admin/passives | View passive tree |
-| POST | /admin/passives | Create/update passive |
-| POST | /admin/passives/connections | Manage passive connections |
+| GET/POST/PUT/DELETE | /admin/skills | View/search/update skills |
+| GET/POST/PUT/DELETE | /admin/passives | View/search/update passive nodes |
+| GET/POST/DELETE | /admin/passives/connections | Manage passive connections |
 | GET | /admin/characters | Character lookup |
-| GET | /admin/design-tokens | Get UI theme tokens |
 | POST | /admin/design-tokens | Update UI tokens |
 | POST | /admin/events | Create/send events |
 | POST | /admin/seasons | Create/manage season |
+| GET/PUT/POST/DELETE | /admin/config | Read/update/seed/delete shared config keys |
+| POST | /admin/config/restore | Restore config snapshot payload |
 | GET/POST | /admin/hub-layout | Manage hub building positions |
 | GET/POST | /admin/dungeon-map-layout | Manage dungeon node positions |
 | GET | /admin/iap-products | Review live IAP catalog flags |
+| GET | /admin/referrals | Review referral reward claims |
+| GET | /admin/matchmaking | Review rating-distribution health |
+| GET | /admin/minigame-sessions | Review recent minigame sessions |
 | POST | /admin/item-balance/config | Update balance config |
 | GET | /admin/item-balance/power-scores | Calculate item power scores |
 | GET | /admin/item-balance/profiles | Get balance profiles |
@@ -382,28 +387,42 @@ Current analytics note: the repo does not currently expose a dedicated backend a
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET/POST | /api/items | CRUD items |
-| GET/POST | /api/events | CRUD events |
-| GET/POST | /api/seasons | CRUD seasons |
+| GET/POST/PUT/DELETE | /api/items | CRUD items |
+| GET/POST/PATCH/DELETE | /api/events | CRUD events |
+| POST/PUT/DELETE | /api/seasons | CRUD seasons |
 | GET/POST | /api/dungeons | CRUD dungeons |
-| GET | /api/dungeons/[id] | Get dungeon by ID |
+| GET/PUT/DELETE | /api/dungeons/[id] | Get/update/delete dungeon by ID |
 | GET/POST | /api/dungeon-map-layout | Manage dungeon layout |
-| GET/POST | /api/admin/item-balance/* | Balance configuration suite |
+| GET/POST/PUT/DELETE | /api/admin/skills | Admin skill CRUD proxy |
+| GET/POST/PUT/DELETE | /api/admin/passives | Admin passive CRUD proxy |
+| GET/POST/DELETE | /api/admin/passives/connections | Passive connection CRUD proxy |
+| GET | /api/admin/iap-products | IAP products catalog proxy |
+| GET/POST/PUT | /api/admin/item-balance/config | Balance config proxy |
+| GET/PUT | /api/admin/item-balance/profiles | Balance profiles proxy |
+| POST | /api/admin/item-balance/suggest | Generate balance suggestions |
+| POST | /api/admin/item-balance/apply-suggestions | Apply balance suggestions |
+| POST | /api/admin/item-balance/validate | Validate balance config |
+| POST | /api/admin/item-balance/simulate/combat | Run combat simulation |
+| POST | /api/admin/item-balance/simulate/item-impact | Run item impact simulation |
+| POST | /api/admin/item-balance/simulate/matchups | Run matchup simulation |
 | POST | /api/upload | Upload assets (images) |
-| POST | /api/settings/role | Manage admin roles |
+| PUT | /api/settings/role | Manage admin roles |
 | POST | /api/auth/login | Admin login |
 | POST | /api/auth/logout | Admin logout |
 
-### NOT IMPLEMENTED
+### Admin surface boundary
 
-The following endpoints are documented in legacy docs but do not exist:
-- `POST /admin/users/[id]/grant` — Grant gold/gems/items (not implemented)
-- `POST /admin/users/[id]/reset` — Reset inventory (not implemented)
-- `GET/POST /admin/consumables` — CRUD consumables (not implemented)
-- `GET/POST /admin/appearances` — CRUD cosmetics (not implemented)
-- `GET/POST /admin/mail` — Broadcast/segment mail (not implemented)
-- `POST /admin/push/campaign` — Create push campaign (not implemented)
-- `GET/POST /admin/feature-flags` — Toggle features (not implemented)
-- `GET/POST /admin/config` — Manage game config (not implemented)
-- `POST /admin/config/snapshot` — Save/rollback config (not implemented)
-- `GET /admin/balance/simulate` — Run balance sims (not implemented)
+Not every live admin screen maps 1:1 to a dedicated backend route family in this file.
+
+Several real admin capabilities today are implemented through a mix of:
+
+- backend-owned `/api/admin/*` routes above
+- admin app local API routes under `/admin/src/app/api/*`
+- admin app server actions / direct Prisma-backed reads
+
+That is why live screens such as mail broadcasting, feature flags, consumables, appearances, daily-login rewards, snapshots, and parts of config/liveops review do exist in the shipped admin dashboard even though they are not all represented here as standalone backend route families.
+
+For screen-level truth, use:
+
+- `docs/05_admin_panel/ADMIN_CAPABILITIES.md`
+- `wiki/features/*`

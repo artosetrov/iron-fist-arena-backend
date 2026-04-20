@@ -81,7 +81,9 @@ Player-facing store: buy consumables and gear with gold, buy currency with real 
 - `admin/src/app/(dashboard)/iap-products/iap-products-client.tsx` — filterable catalog table for enabled/disabled SKUs
 - `admin/src/app/api/admin/iap-products/route.ts` — admin proxy route used by the page
 - `backend/src/app/api/admin/iap-products/route.ts` — backend source for the admin catalog view
-- `admin/src/app/` — broader shop tuning: item prices, offer schedules, contraband rotation, IAP reconciliation
+- `admin/src/app/(dashboard)/items/page.tsx` — item-price/catalog surface
+- `admin/src/app/(dashboard)/economy/page.tsx` — adjacent monetization/economy review surface
+- `admin/src/app/(dashboard)/config/page.tsx` — adjacent live-config tuning surface
 
 ## Docs
 
@@ -99,7 +101,8 @@ Player-facing store: buy consumables and gear with gold, buy currency with real 
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/` — shop/IAP tests
+- `backend/tests/api/shop-buy.test.ts`
+- No dedicated IAP / contraband backend test file is checked in today
 - Seed: admin shop catalog seeder
 
 ## Related features

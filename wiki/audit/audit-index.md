@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5068
+- In-scope files: 5146
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -27,7 +27,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 005 | [[block-005-claude-figma-design-system-skills]] — `.claude` Figma, design-system, Code Connect, and helper-script files | Fixed; Figma state/config revalidation pending |
 | 006 | [[block-006-project-scripts]] — project scripts for guards, asset pipelines, Git helpers, and Figma token sync | Fixed; audio/Git/generated-artifact policy decisions pending |
 | 007 | [[block-007-backend-root-prisma-foundation]] — backend root config, Prisma schema foundation, seed/repair scripts, and passive-tree bootstrap SQL | Fixed; schema typing and seed orchestration follow-up pending |
-| 008 | [[block-008-prisma-migrations-baseline-early-deltas]] — Prisma migration baseline, early delta chain, and audit-created migration fixes | Fixed; data-migration policy and native-type review pending |
+| 008 | [[block-008-prisma-migrations-baseline-early-deltas]] — Prisma migration baseline, early delta chain, and audit-created migration fixes | Fixed; data-migration policy pending |
 | 009 | [[block-009-prisma-migrations-onboarding-gold-and-w3d5]] — Prisma migrations for onboarding, account-level gold, activity caps, guest restore, and W3.D5 premium/weekly changes | Fixed; tutorial-state simplification and migration-scope cleanup pending |
 | 010 | [[block-010-prisma-migrations-hotfixes-stash-interactive-premium]] — Prisma migrations for Gold Mine hotfix cleanup, stash/contraband persistence, interactive combat, premium subscriptions, and stamina-cap changes | Fixed; manual-first migration policy and drift-repair scope cleanup pending |
 | 011 | [[block-011-backend-passives-interactive-combat-runtime]] — Backend passives APIs, active-slot runtime, and interactive PvP match start/strike flows | Fixed; Prisma stale-client cleanup and pricing-policy docs still pending |
@@ -256,6 +256,16 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 234 | [[block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync]] — the leaderboard and Dungeon Rush feature maps now point at the real adjacent admin review pages instead of phantom dedicated admin routes or room-catalog tooling | Fixed |
 | 235 | [[block-235-feature-maps-minigames-and-social-runtime-boundary-sync]] — the minigames and social feature maps now point at the real view-model/admin/helper/test ownership instead of speculative shared services, broader guild helpers, or moderation-console wording | Fixed |
 | 236 | [[block-236-inventory-summary-and-section-header-parity]] — the project inventory now matches current git-derived summary counts and no longer carries obviously stale section-header totals after the late cleanup wave | Fixed |
+| 237 | [[block-237-feature-maps-liveops-test-fixture-boundary-sync]] — the quests, battle-pass, mail, and events feature maps now describe the actual checked-in backend test surface instead of older `__tests__/* (if present)` placeholders | Fixed |
+| 238 | [[block-238-inventory-untracked-marker-parity-after-git-state-shift]] — the project inventory now reflects the current narrow untracked set after the git-state shift, removing stale `_(untracked)_` markers and adding the real untracked backend test file | Fixed |
+| 239 | [[block-239-feature-maps-auth-character-tutorial-progression-boundary-sync]] — the auth, tutorial, characters, stamina, and prestige feature maps now point at the real backend test files and real adjacent admin surfaces instead of placeholder `__tests__/*` notes and phantom admin trees | Fixed |
+| 240 | [[block-240-feature-maps-runtime-test-and-admin-surface-sync]] — the remaining runtime-heavy feature maps now point at the real backend test files and precise live admin pages instead of broad directory shorthand and leftover `__tests__/*` placeholders | Fixed |
+| 241 | [[block-241-feature-map-pvp-combat-test-and-admin-boundary-sync]] — the PvP combat feature map now points at the real backend PvP tests and the precise live admin review surfaces instead of a generic `__tests__` placeholder and broad `admin/src/app/` wording | Fixed |
+| 242 | [[block-242-source-of-truth-ownership-and-residual-surface-wording-sync]] — source-of-truth ownership and the last small feature-map wording tails now reflect the current repo instead of `[TBD]` owners, broad admin shorthand, and over-claimed prestige client parity | Fixed |
+| 243 | [[block-243-api-reference-runtime-and-admin-surface-parity]] — `API_REFERENCE.md` now matches the live shop, Gold Mine, backend-admin, and admin-local route surfaces instead of carrying stale IAP wording, incomplete minigame coverage, and a misleading `NOT IMPLEMENTED` graveyard | Fixed |
+| 244 | [[block-244-feature-map-and-ui-plan-residual-boundary-sync]] — the remaining stash/achievements shorthand and Strike Reveal “if present” QA wording now point at the current repo instead of broader directory notes and a nonexistent snapshot-test target | Fixed |
+| 245 | [[block-245-project-overview-feature-flag-model-parity]] — `PROJECT_OVERVIEW.md` now describes `FeatureFlag` as the live rollout/targeting model instead of collapsing it back into A/B-testing shorthand | Fixed |
+| 246 | [[block-246-admin-capabilities-freshness-metadata-sync]] — `ADMIN_CAPABILITIES.md` now carries the same 2026-04-19 freshness stamp as the audit wave that rewrote its live admin surface map | Fixed |
 
 ## Status Legend
 

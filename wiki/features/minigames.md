@@ -83,8 +83,11 @@ Tavern building surfaces three minigames: Shell Game (guess-the-shell betting), 
 
 ## Admin
 
-- `admin/src/app/(dashboard)/economy/` — adjust reward distributions / bet tiers via config
-- `admin/src/app/(dashboard)/config/` — feature flags and event overrides for minigames
+- `admin/src/app/(dashboard)/economy/page.tsx` — adjacent economy review surface for minigame payout impact
+- `admin/src/app/(dashboard)/economy/economy-client.tsx` — live economy review UI
+- `admin/src/app/(dashboard)/config/page.tsx` — adjacent live-config surface for minigame-related knobs and overrides
+- `admin/src/app/(dashboard)/config/config-client.tsx` — config editor UI
+- `admin/src/app/(dashboard)/minigame-sessions/page.tsx` — recent minigame session review surface
 
 ## Docs
 

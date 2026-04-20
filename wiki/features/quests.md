@@ -65,7 +65,8 @@ Daily-rotated quest set (e.g. "win 3 PvP, clear 2 dungeons") with progress track
 
 ## Admin
 
-- `admin/src/app/(dashboard)/quests/` — quest definition editor (type, target, reward)
+- `admin/src/app/(dashboard)/quests/page.tsx` — quest admin page
+- `admin/src/app/(dashboard)/quests/quests-client.tsx` — live quest definition editor
 
 ## Docs
 
@@ -85,7 +86,8 @@ Daily-rotated quest set (e.g. "win 3 PvP, clear 2 dungeons") with progress track
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/quests/*` (if present)
+- `backend/tests/api/tutorial-quest.test.ts` — tutorial-quest coverage for the adjacent quest/tutorial seam
+- No broad dedicated `quests/*` backend suite is checked in today; daily-quest behavior is otherwise covered indirectly through route and runtime integrations
 
 ## Related features
 

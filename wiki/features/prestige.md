@@ -14,8 +14,8 @@ At max level, players prestige: reset level + XP + passive allocations; keep a p
 ## Entry points
 
 - **iOS display:** Prestige level rendered on `IntegratedCharacterCard` / `CharacterDisplay` — see shared profile components
-- **Trigger UI:** Prestige button / modal appears at max level (exact screen depends on build — search `HeroDetailView` / `CharacterProfileView`)
-- **Player action:** Hit max level → prestige CTA → confirm → ceremony
+- **Trigger UI:** No dedicated shipped prestige CTA view could be verified in the current iOS tree; the live repo clearly renders prestige badges, while any actual prestige-action flow remains backend-owned today
+- **Player action:** Backend route supports prestige once max-level conditions are met; a concrete iOS invocation surface is not clearly checked in today
 
 ## Backend
 
@@ -41,11 +41,11 @@ At max level, players prestige: reset level + XP + passive allocations; keep a p
 
 - `Hexbound/Hexbound/Views/Components/IntegratedCharacterCard.swift` — displays prestige badge
 - `Hexbound/Hexbound/Views/Components/CharacterDisplay.swift` — shared display component
-- Prestige confirmation modal lives in Hero/Profile flow (search for `prestige` CTA in those views)
+- No dedicated prestige confirmation view or modal file could be verified in the current iOS tree
 
 ### Services
 
-- No dedicated service — `APIClient` call to `/api/prestige` + character refresh
+- No dedicated iOS service wrapper or verified `/api/prestige` call-site is checked in today
 
 ### Cache
 
@@ -53,7 +53,9 @@ At max level, players prestige: reset level + XP + passive allocations; keep a p
 
 ## Admin
 
-- `admin/src/app/(dashboard)/characters/` — admin can manually adjust prestige level
+- No dedicated prestige admin editor is checked in today
+- `admin/src/app/(dashboard)/players/[id]/page.tsx` — adjacent character detail review where current prestige level is visible
+- `admin/src/app/(dashboard)/balance/page.tsx` — adjacent tuning surface for prestige-related balance knobs
 
 ## Docs
 
@@ -63,6 +65,7 @@ At max level, players prestige: reset level + XP + passive allocations; keep a p
 
 ## Notable gotchas
 
+- **Backend route is live, client surface is not obvious.** `/api/prestige` exists server-side, but the current iOS tree does not expose a clearly named prestige CTA/service path. Treat prestige as backend-capable with display-level iOS parity, not as a fully mapped client flow until a concrete caller is reintroduced.
 - **Destructive action.** Prestige wipes level, XP, allocated passives. Must gate with explicit confirmation modal — no double-tap path.
 - **Atomic transaction.** Reset + grant + achievement fire must be in one transaction; partial = broken character (orphaned CharacterPassive rows, etc.).
 - **Achievement hook.** `progression` category achievements fire on prestige (`updateMultipleAchievements()` called inside route).
@@ -72,7 +75,8 @@ At max level, players prestige: reset level + XP + passive allocations; keep a p
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/prestige/*` (if present)
+- `backend/tests/api/character-progression-derived-stats.test.ts` — adjacent progression/prestige stat-math coverage
+- No dedicated prestige backend test file is checked in today
 
 ## Related features
 

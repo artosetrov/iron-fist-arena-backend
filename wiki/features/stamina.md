@@ -76,7 +76,9 @@ Stamina potions are a separate delivery path — handled by [[inventory]] (`Cons
 
 ## Admin
 
-- `admin/src/app/(dashboard)/characters/` — admin can manually set stamina values and reset refill counters
+- No dedicated per-character stamina editor is checked in today
+- `admin/src/app/(dashboard)/config/page.tsx` — live tuning surface for stamina and refill config keys
+- `admin/src/app/(dashboard)/balance/page.tsx` — adjacent balance review surface
 
 ## Docs
 
@@ -95,7 +97,9 @@ Stamina potions are a separate delivery path — handled by [[inventory]] (`Cons
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/stamina/*` (if present)
+- `backend/tests/api/stamina-refill.test.ts`
+- `backend/tests/lib/stamina.test.ts`
+- `backend/tests/lib/stamina-refill-dr.test.ts`
 
 ## Related features
 

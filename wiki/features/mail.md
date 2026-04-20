@@ -66,7 +66,8 @@ System and admin broadcast mail lands in each player's inbox; some carry attache
 
 ## Admin
 
-- `admin/src/app/(dashboard)/mail/` — compose & broadcast mail, attach rewards, target segments
+- `admin/src/app/(dashboard)/mail/page.tsx` — mail admin page
+- `admin/src/app/(dashboard)/mail/mail-client.tsx` — compose / segment / reward attachment surface
 
 ## Docs
 
@@ -83,7 +84,8 @@ System and admin broadcast mail lands in each player's inbox; some carry attache
 
 ## Tests / fixtures
 
-- `backend/src/__tests__/mail/*` (if present)
+- `backend/tests/api/mail-list.test.ts` — inbox-list contract coverage
+- No broader dedicated `mail/*` backend suite is checked in today beyond the focused inbox route coverage
 
 ## Related features
 

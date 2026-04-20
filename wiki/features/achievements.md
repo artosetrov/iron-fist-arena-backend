@@ -68,6 +68,7 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 
 ## Admin
 
+- `admin/src/app/(dashboard)/achievements/page.tsx` — achievements admin route
 - `admin/src/app/(dashboard)/achievements/achievements-client.tsx` — definition editor (title, target, reward, category, and cosmetic `rewardId` for title/frame rewards)
 - `admin/src/actions/achievement-definitions.ts` — server actions
 - `admin/src/lib/achievement-definitions.ts` — shared logic
