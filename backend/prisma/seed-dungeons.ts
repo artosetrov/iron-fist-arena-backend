@@ -2,6 +2,13 @@
 // seed-dungeons.ts — Seed 7 new GDD dungeons (after existing 3)
 // Run: npx tsx prisma/seed-dungeons.ts
 // =============================================================================
+//
+// Source of truth: this file. Mirrored by
+//   backend/prisma/migrations/20260421_seed_dungeons/migration.sql
+// which is regenerated from this module via scripts/gen_dungeons_sql.py.
+// When editing NEW_DUNGEONS or ABILITY_CATALOG below, re-run:
+//   python3 scripts/gen_dungeons_sql.py > backend/prisma/migrations/20260421_seed_dungeons/migration.sql
+// and commit both changes together. See gatekeeper/SKILL.md §6c.
 
 import { PrismaClient } from '@prisma/client';
 

@@ -321,7 +321,11 @@
 - [[block-244-feature-map-and-ui-plan-residual-boundary-sync]] — the remaining stash/achievements shorthand and Strike Reveal “if present” QA wording now point at the current repo instead of broader directory notes and a nonexistent snapshot-test target
 - [[block-245-project-overview-feature-flag-model-parity]] — `PROJECT_OVERVIEW.md` now describes `FeatureFlag` as the live rollout/targeting model instead of collapsing it back into A/B-testing shorthand
 - [[block-246-admin-capabilities-freshness-metadata-sync]] — `ADMIN_CAPABILITIES.md` now carries the same 2026-04-19 freshness stamp as the audit wave that rewrote its live admin surface map
+- [[block-247-active-doc-freshness-metadata-sync]] — the remaining active operations/UI docs now carry current freshness metadata instead of looking older than the audit wave that already revalidated their content
+- [[block-248-inventory-marker-parity-after-tracked-state-rollforward]] — the inventory summary and `_untracked_` markers now match the latest git rollforward where blocks `237–246` became tracked and only the newest audit pages remain outside version control
+- [[block-249-schema-reference-count-parity]] — `SCHEMA_REFERENCE.md` now reports the live Prisma schema counts instead of undercounting the current field surface in its header summary
+- [[block-250-rules-doc-freshness-and-count-parity]] — the active rules docs now carry current freshness metadata, and `DEVELOPMENT_RULES.md` no longer hardcodes stale content-size counts in a structural design section
 
 ---
 
-*312 in-scope wiki markdown files | 311 wiki pages (13 systems, 15 decisions, 3 entities, 246 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-19*
+*316 in-scope wiki markdown files | 315 wiki pages (13 systems, 15 decisions, 3 entities, 250 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-20*

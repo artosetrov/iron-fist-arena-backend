@@ -2347,6 +2347,42 @@ Closed the next small metadata-sync tail:
 - **Inventory refresh:** updated current counts to `5150` in-scope files and `312 in-scope wiki markdown files / 311 wiki pages`
 - **Verification:** header check plus `git diff --check`
 
+## [2026-04-20] audit | Block 247 active doc freshness metadata sync
+
+Closed the next active-doc metadata tail:
+- **Created:** `[[block-247-active-doc-freshness-metadata-sync]]`
+- **Files audited:** `docs/10_operations/GIT_WORKFLOW.md`, `docs/10_operations/DATABASE_MIGRATIONS.md`, `docs/10_operations/FIGMA_HANDOFF.md`, `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`, `docs/10_operations/UI_PR_CHECKLIST.md`, `docs/07_ui_ux/SCREEN_INVENTORY.md`
+- **Fixes:** updated stale `2026-04-16` freshness stamps on already-audited active operations/UI docs so their metadata now matches the current audit wave
+- **Inventory refresh:** updated current counts to `5151` in-scope files and `313 in-scope wiki markdown files / 312 wiki pages`
+- **Verification:** freshness-header checks plus `git diff --check`
+
+## [2026-04-20] audit | Block 248 inventory marker parity after tracked-state rollforward
+
+Closed the next git-state inventory sync block:
+- **Created:** `[[block-248-inventory-marker-parity-after-tracked-state-rollforward]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `git ls-files`, `git ls-files --others --exclude-standard`, `git status --short`
+- **Fixes:** refreshed tracked/untracked/in-scope counts after the latest rollforward, removed stale `_untracked_` markers from blocks `237–246`, and kept the remaining true untracked marker set aligned with the current repo state
+- **Inventory refresh:** updated current counts to `5157` in-scope files and `314 in-scope wiki markdown files / 313 wiki pages`
+- **Verification:** git-state checks plus `git diff --check`
+
+## [2026-04-20] audit | Block 249 schema reference count parity
+
+Closed the next database-doc summary drift block:
+- **Created:** `[[block-249-schema-reference-count-parity]]`
+- **Files audited:** `docs/04_database/SCHEMA_REFERENCE.md`, `backend/prisma/schema.prisma`
+- **Fixes:** updated the schema-reference header from the stale `830 fields` summary to the live verified Prisma counts: `65 models`, `19 enums`, `839 fields`
+- **Inventory refresh:** updated current counts to `5158` in-scope files and `315 in-scope wiki markdown files / 314 wiki pages`
+- **Verification:** direct schema count pass plus `git diff --check`
+
+## [2026-04-20] audit | Block 250 rules doc freshness and count parity
+
+Closed the next active-rules doc cleanup block:
+- **Created:** `[[block-250-rules-doc-freshness-and-count-parity]]`
+- **Files audited:** `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md`, `docs/09_rules_and_guidelines/UI_UX_PRINCIPLES.md`
+- **Fixes:** updated stale `2026-03-21` freshness metadata on the active rules docs and replaced the old count-heavy content summary in `DEVELOPMENT_RULES.md` with a role-based description that will not immediately drift
+- **Inventory refresh:** updated current counts to `5159` in-scope files and `316 in-scope wiki markdown files / 315 wiki pages`
+- **Verification:** header checks plus `git diff --check`
+
 ## [2026-04-19] lesson | xcodebuild stale DerivedData masquerades as real compile errors
 
 Mid-session `xcodebuild ... build` failed with linker `Undefined symbols: Hexbound.BossInfo.init(id:…isRealBoss:tagline:) + default argument 8` from `DungeonService.o`, and a separate pass reported `TalentsTabView.swift:100` cascade — `"no dynamic member 'unlockPremiumSlot' using key path from root type 'PassiveTreeViewModel'"` + `"referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Bindable<PassiveTreeViewModel>'"` + `"cannot call value of non-function type 'Binding<Subject>'"`. Both methods/members were present in source — `BossInfo` had the expected memberwise init with `tagline: String? = nil`, and `PassiveTreeViewModel.unlockPremiumSlot()` existed at line 405 with backend route + service + model already wired. A clean-then-build (`xcodebuild ... clean build`) passed with zero code changes.

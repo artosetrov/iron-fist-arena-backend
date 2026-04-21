@@ -1,6 +1,6 @@
 # Hexbound — Git Workflow
 
-*Source of truth: this file + actual git config + `.github/workflows/ci.yml`. Updated: 2026-04-16*
+*Source of truth: this file + actual git config + `.github/workflows/ci.yml`. Updated: 2026-04-20*
 
 ---
 

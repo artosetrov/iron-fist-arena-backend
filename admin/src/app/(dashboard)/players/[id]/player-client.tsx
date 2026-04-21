@@ -86,8 +86,10 @@ type Player = {
 type Match = {
   id: string
   player1Id: string
-  player2Id: string
+  // Nullable for bot / dungeon matches — see pvp/resolve/route.ts.
+  player2Id: string | null
   winnerId: string | null
+  loserId: string | null
   player1RatingBefore: number
   player1RatingAfter: number
   player2RatingBefore: number
@@ -99,7 +101,7 @@ type Match = {
   turnsTaken: number
   playedAt: string
   player1: { characterName: string }
-  player2: { characterName: string }
+  player2: { characterName: string } | null
 }
 
 type Purchase = {
@@ -505,7 +507,12 @@ export function PlayerDetailClient({
                   {matchHistory.map((match) => {
                     const charIds = player.characters.map((c) => c.id)
                     const isPlayer1 = charIds.includes(match.player1Id)
-                    const isWinner = match.winnerId && charIds.includes(match.winnerId)
+                    // Bot / dungeon matches have null winnerId on losses and
+                    // null loserId on wins — use loserId to disambiguate a
+                    // loss from a draw so the UI doesn't silently collapse
+                    // bot losses into "Draw".
+                    const isWinner = !!match.winnerId && charIds.includes(match.winnerId)
+                    const isLoser  = !!match.loserId  && charIds.includes(match.loserId)
                     const ratingBefore = isPlayer1 ? match.player1RatingBefore : match.player2RatingBefore
                     const ratingAfter = isPlayer1 ? match.player1RatingAfter : match.player2RatingAfter
                     const ratingDiff = ratingAfter - ratingBefore
@@ -515,7 +522,9 @@ export function PlayerDetailClient({
                         <td className="px-4 py-3">
                           <span className="font-medium">{match.player1.characterName}</span>
                           <span className="text-muted-foreground mx-1">vs</span>
-                          <span className="font-medium">{match.player2.characterName}</span>
+                          <span className="font-medium">
+                            {match.player2?.characterName ?? '—'}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
@@ -526,7 +535,7 @@ export function PlayerDetailClient({
                         <td className="px-4 py-3">
                           {isWinner ? (
                             <Badge variant="success">Win</Badge>
-                          ) : match.winnerId ? (
+                          ) : isLoser ? (
                             <Badge variant="destructive">Loss</Badge>
                           ) : (
                             <Badge variant="secondary">Draw</Badge>

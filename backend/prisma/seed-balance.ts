@@ -1,6 +1,12 @@
 // =============================================================================
 // seed-balance.ts — Seed item balance configuration into GameConfig + ItemBalanceProfile
 // =============================================================================
+//
+// Source of truth: this file. Mirrored by
+//   backend/prisma/migrations/20260421_seed_balance_constants/migration.sql
+// which is an idempotent SQL copy used for prod / staging snapshot-restore
+// recovery. When editing BALANCE_CONFIGS or ITEM_BALANCE_PROFILES below,
+// update the .sql in the same commit. See gatekeeper/SKILL.md §6c.
 
 import { PrismaClient } from '@prisma/client'
 

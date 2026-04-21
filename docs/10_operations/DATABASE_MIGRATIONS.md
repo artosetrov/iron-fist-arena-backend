@@ -1,6 +1,6 @@
 # Hexbound — Database Migrations
 
-*Source of truth: this file + `backend/prisma/` + current deploy/build scripts. Updated: 2026-04-16*
+*Source of truth: this file + `backend/prisma/` + current deploy/build scripts. Updated: 2026-04-20*
 
 ---
 

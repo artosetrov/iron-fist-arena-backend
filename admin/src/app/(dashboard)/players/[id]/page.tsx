@@ -19,6 +19,7 @@ async function getMatchHistory(characterIds: string[]) {
       player1Id: true,
       player2Id: true,
       winnerId: true,
+      loserId: true,
       player1RatingBefore: true,
       player1RatingAfter: true,
       player2RatingBefore: true,

@@ -1,6 +1,6 @@
 # Hexbound — Development Rules
 
-*Canonical rules document. Agent System Rules v3. Updated: 2026-03-21*
+*Canonical rules document. Agent System Rules v3. Updated: 2026-04-20*
 
 ---
 
@@ -358,7 +358,7 @@ When designing or modifying any system, always think in these three layers:
 **Hexbound mapping:**
 - Parameters: STR, AGI, VIT, END, INT, WIS, LUK, CHA, HP, armor, magicResist, critChance, dodgeChance, ELO, gold, gems, stamina, XP, battlePassXP
 - Rules: Damage pipeline (12 steps), XP curve ($100N + 20N^2$), armor formula ($\text{dmg} \times 100/(100+\text{armor})$), ELO formula, drop chances, gold scaling
-- Content: 4 classes, 5 origins, 80+ skills, 200+ items, 150+ passive nodes, dungeons, bosses, achievements, quests, battle pass rewards
+- Content: classes, origins, skills, items, passive nodes, dungeons, bosses, achievements, quests, and battle-pass rewards
 
 ---
 

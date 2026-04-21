@@ -741,19 +741,24 @@ async function resolveBotFight(
       data: { gold: { increment: goldReward } },
     })
 
-    // Bot fight PvpMatch: self-reference for player2 since bot has no DB record.
-    // winnerId/loserId both point to attacker (the only real character).
-    // matchType='bot' distinguishes these from real fights.
+    // Bot fight PvpMatch: player2Id is null because the bot has no DB record
+    // (matchType='bot' + goldReward/xpReward carry the opponent semantics).
+    // winnerId/loserId are conditioned on the outcome — previously both
+    // pointed at attacker.id which polluted stats (a loss looked like a win
+    // and vice versa). See feedback_bot_synthetic_ids_fk.md (2026-04-20).
+    //
+    // Downstream consumers (admin/matches UI, player-client, pvp/history,
+    // session-summary, achievements) all handle null winner/loser correctly.
     const pvpMatch = await tx.pvpMatch.create({
       data: {
         player1Id: attacker.id,
-        player2Id: attacker.id,
+        player2Id: null,
         player1RatingBefore: attacker.pvpRating,
         player1RatingAfter: attackerNewRating,
         player2RatingBefore: 1000,
         player2RatingAfter: 1000,
-        winnerId: attacker.id,
-        loserId: attacker.id,
+        winnerId: attackerWon ? attacker.id : null,
+        loserId:  attackerWon ? null          : attacker.id,
         combatLog: JSON.parse(JSON.stringify(combatResult.turns)),
         turnsTaken: combatResult.totalTurns,
         goldReward,

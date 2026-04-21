@@ -1,5 +1,5 @@
 # Database Schema Reference (Source of Truth)
-*Derived from Prisma schema. Updated: 2026-04-17 — 65 models, 19 enums, 830 fields.*
+*Derived from Prisma schema. Updated: 2026-04-20 — 65 models, 19 enums, 839 fields.*
 
 ## Core User & Auth
 

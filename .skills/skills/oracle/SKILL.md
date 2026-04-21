@@ -308,6 +308,36 @@ Then null-check every call site.
 
 **Incident (2026-04-19, commit `ed3001d`):** `PvpMatch.player2Id` became nullable to support bot/boss matches. Admin `/matches` page dereferenced `match.player2.characterName` directly → admin build failed tsc. Fix was a small `match.player2?.characterName ?? '—'` patch, but the issue was caught only by tsc, not by gatekeeper preflight — running the grep earlier would have caught it before push.
 
+---
+
+**11d. FK-safe split for synthetic opponent ids (bots, dungeon bosses).**
+When an endpoint persists a "winner / loser" (or any attacker/defender) pair to a table whose `*_id` column has a foreign-key constraint on `characters.id`, the id written to the DB MUST be a real `characters.id`. Bot and dungeon-boss opponents live only in the `opponentSnapshot` JSON — their `id` is synthetic (`bot-...`, `boss-...`) and has no row in `characters`, so any direct write triggers the FK constraint.
+
+**Rule:** keep two id pairs when persisting combat results:
+- `winnerId` / `loserId` — synthetic-OK, used only in the JSON response to iOS (which compares by equality)
+- `winnerCharacterId` / `loserCharacterId` — FK-safe, `null` when the side is a non-PvP synthetic opponent — used in the Prisma `update` / `create`
+
+```ts
+const winnerId = attackerWon ? attacker.id : defenderProxy.id            // response
+const loserId  = attackerWon ? defenderProxy.id : attacker.id            // response
+const winnerCharacterId = attackerWon ? attacker.id : (isPvp && defender ? defender.id : null)  // DB
+const loserCharacterId  = attackerWon ? (isPvp && defender ? defender.id : null) : attacker.id  // DB
+
+await prisma.pvpMatch.update({
+  data: { winnerId: winnerCharacterId, loserId: loserCharacterId, ... }
+})
+```
+
+**Incident (2026-04-20, commit `f27e3d6`):** `/api/pvp/match/complete` wrote `defenderProxy.id` to `pvp_matches.winner_id` / `loser_id` for bot / dungeon-boss opponents. Every bot fight ended with a 500 "Failed to complete match" after the last round. Prod required manual `UPDATE pvp_matches SET status='abandoned'` on two stuck `in_progress` rows via Supabase MCP.
+
+**Grep check** — any route that updates a `pvp_matches` / `pve_matches` / similar table with both a real character id and a synthetic-possible id:
+```bash
+grep -rn "winnerId\|loserId\|winner_id\|loser_id" backend/src/app/api --include="*.ts"
+# For each hit on a Prisma create/update, confirm the value comes from a FK-safe variable, not directly from a *Proxy object.
+```
+
+Related memory: `feedback_bot_synthetic_ids_fk.md`. Related rule: **11c** (nullable FK columns need null-checks everywhere). If you add a new `isPvp === false` branch to a combat route, audit the Prisma write sites FIRST.
+
 ### 12. Deploy Awareness
 
 If changes touch admin/:

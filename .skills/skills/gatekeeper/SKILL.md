@@ -167,6 +167,55 @@ awk '/paths:/,/^$/' .github/workflows/ci.yml | grep -E '^\s+-' | sed 's/^\s*-\s*
 
 **Incident (2026-04-19, commit `40617f0`):** `.github/workflows/ci.yml` still triggered on `docs/04_BALANCE/**` after the folder was renamed to `docs/06_game_systems/`. The `docs:balance:check` job simply never ran on balance doc edits until the path was fixed.
 
+### 6c. Post-Restore Static-Catalog Audit (if DB was restored from snapshot)
+
+Snapshot restores have silently wiped seed-only "static catalog" tables **four** times now:
+
+| Date | Table | Symptom |
+|---|---|---|
+| 2026-04-11 | Gold Mine config rows | prod 500s on `/gold-mine/*` |
+| 2026-04-13 | Stash config rows | Stash screen empty, blocked release |
+| 2026-04-19 | `user_roles` (Degon admin role) | Admin panel silently locked out |
+| 2026-04-20 | `appearance_skins` | "Choose Your Appearance" step dead-locked; Next button permanently disabled |
+
+**Root cause pattern:** static catalogs populated by hand or by a one-off SQL script are NOT in any idempotent seed that runs after restore — the snapshot is the only copy, and an older snapshot doesn't have them.
+
+**Rule:** every static-catalog table must have an idempotent seed backed by BOTH (a) a `.sql` migration for prod / staging with `ON CONFLICT (...) DO NOTHING` or equivalent, AND (b) a TypeScript seed under `backend/prisma/seed-*.ts` for local dev. Source of truth (PNG files, JSON catalog, etc.) must be referenced in a comment at the top of both files.
+
+**Post-restore checklist (run AFTER any snapshot-based DB restore):**
+```bash
+# 1. Row counts for known-at-risk catalogs — all must be > 0
+psql "$DATABASE_URL" -c "SELECT 'appearance_skins' AS t, count(*) FROM appearance_skins
+  UNION ALL SELECT 'game_config (item_balance.*)', count(*) FROM game_config WHERE category='item_balance'
+  UNION ALL SELECT 'item_balance_profiles', count(*) FROM item_balance_profiles
+  UNION ALL SELECT 'seasons', count(*) FROM seasons
+  UNION ALL SELECT 'battle_pass_rewards', count(*) FROM battle_pass_rewards
+  UNION ALL SELECT 'dungeons', count(*) FROM dungeons
+  UNION ALL SELECT 'dungeon_bosses', count(*) FROM dungeon_bosses
+  UNION ALL SELECT 'boss_abilities', count(*) FROM boss_abilities
+  UNION ALL SELECT 'dungeon_drops', count(*) FROM dungeon_drops;"
+
+# 2. Admin-role spot check — at least one user must still have role='admin'
+psql "$DATABASE_URL" -c "SELECT count(*) FROM users WHERE role='admin';"
+
+# 3. Re-run idempotent seeds defensively (all are safe to re-run):
+psql "$DATABASE_URL" -f backend/prisma/migrations/20260420_seed_appearance_skins/migration.sql
+psql "$DATABASE_URL" -f backend/prisma/migrations/20260421_seed_balance_constants/migration.sql
+psql "$DATABASE_URL" -f backend/prisma/migrations/20260421_seed_dungeons/migration.sql
+psql "$DATABASE_URL" -f backend/prisma/migrations/20260421_seed_battle_pass_season/migration.sql
+psql "$DATABASE_URL" -f backend/prisma/migrations/20260421_seed_dungeon_drops/migration.sql
+# ... plus whichever other seeds were flagged by step 1
+
+# 4. Re-apply admin roles (per-user state, not a catalog):
+psql "$DATABASE_URL" -f scripts/restore-admin-roles.sql
+```
+
+**When adding a new static-catalog table** — it MUST land with an idempotent `.sql` migration AND a `seed-*.ts`, both labelled with "source of truth" pointer. Do NOT rely on ad-hoc `INSERT` scripts, MCP one-shots, or admin-UI entry.
+
+**Admin-role re-apply:** `scripts/restore-admin-roles.sql` is the canonical post-restore admin re-promotion. When a new admin is granted in prod, add their email to that script in the same commit — git history is the source of truth for "who is admin", not Supabase row state.
+
+Related memories: `feedback_snapshot_restore_admin_role.md`, this week's Appearance Skins incident (2026-04-20).
+
 ### 7. Assets (if new images added)
 
 - Image in `.imageset` folder inside `Assets.xcassets`

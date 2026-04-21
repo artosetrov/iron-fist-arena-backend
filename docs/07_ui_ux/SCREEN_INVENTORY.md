@@ -1,6 +1,6 @@
 # Hexbound — Screen Inventory (Source of Truth)
 
-*Derived from iOS app code. Updated: 2026-04-16*
+*Derived from iOS app code. Updated: 2026-04-20*
 
 This page is a coded screen map of the iOS app. Use it together with `wiki/`, `AppRouter`, and the live screen files when validating current navigation or design coverage.
 
@@ -212,7 +212,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 
 ## Figma Screen Coverage (Snapshot Gap Analysis)
 
-*Updated: 2026-04-16*
+*Updated: 2026-04-20*
 
 The lists below are useful as a design-gap working snapshot, but they should be revalidated against the current Figma file and live app navigation before they are treated as release truth.
 

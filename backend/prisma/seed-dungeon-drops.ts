@@ -2,6 +2,18 @@
 // seed-dungeon-drops.ts — Populate drop tables for all dungeons
 // Run: npx tsx prisma/seed-dungeon-drops.ts
 // =============================================================================
+//
+// Source of truth: this file. Mirrored by
+//   backend/prisma/migrations/20260421_seed_dungeon_drops/migration.sql
+// which is an idempotent SQL copy used for prod / staging snapshot-restore
+// recovery. When editing DUNGEON_DROPS, update the .sql in the same commit.
+// See gatekeeper/SKILL.md §6c.
+//
+// Difference to be aware of: the TS seed `deleteMany`s per dungeon before
+// re-inserting — a clean rewrite safe for bootstrap / controlled repair.
+// The .sql mirror uses WHERE NOT EXISTS keyed on (dungeon_id, item_id) so
+// it will NOT duplicate or overwrite existing drops on re-run. Use the TS
+// seed for a clean rewrite; use the .sql for gap-fill after a snapshot-restore.
 
 import { PrismaClient } from '@prisma/client';
 

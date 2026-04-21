@@ -2,6 +2,18 @@
 // seed-battle-pass.ts — Seed Season + BattlePassReward data
 // Run: npx tsx prisma/seed-battle-pass.ts
 // =============================================================================
+//
+// Source of truth: this file. Mirrored by
+//   backend/prisma/migrations/20260421_seed_battle_pass_season/migration.sql
+// which is an idempotent SQL copy used for prod / staging snapshot-restore
+// recovery. When editing the per-level reward formulas, regenerate the .sql
+// in the same commit. See gatekeeper/SKILL.md §6c.
+//
+// Difference to be aware of: the TS seed `deleteMany`s the season before
+// inserting (clean-rewrite, operator-aware). The .sql mirror does NOT delete —
+// it uses ON CONFLICT (season_id, bp_level, is_premium) DO NOTHING so already-
+// tuned rows are preserved. Use the TS seed for a clean rewrite; use the .sql
+// for gap-fill after a snapshot-restore.
 
 import { PrismaClient } from '@prisma/client'
 import { BATTLE_PASS_MILESTONE_CATALOG_IDS } from './battle-pass-milestones'

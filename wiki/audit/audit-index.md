@@ -266,6 +266,10 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 244 | [[block-244-feature-map-and-ui-plan-residual-boundary-sync]] — the remaining stash/achievements shorthand and Strike Reveal “if present” QA wording now point at the current repo instead of broader directory notes and a nonexistent snapshot-test target | Fixed |
 | 245 | [[block-245-project-overview-feature-flag-model-parity]] — `PROJECT_OVERVIEW.md` now describes `FeatureFlag` as the live rollout/targeting model instead of collapsing it back into A/B-testing shorthand | Fixed |
 | 246 | [[block-246-admin-capabilities-freshness-metadata-sync]] — `ADMIN_CAPABILITIES.md` now carries the same 2026-04-19 freshness stamp as the audit wave that rewrote its live admin surface map | Fixed |
+| 247 | [[block-247-active-doc-freshness-metadata-sync]] — the remaining active operations/UI docs now carry current freshness metadata instead of looking older than the audit wave that already revalidated their content | Fixed |
+| 248 | [[block-248-inventory-marker-parity-after-tracked-state-rollforward]] — the inventory summary and `_untracked_` markers now match the latest git rollforward where blocks `237–246` became tracked and only the newest audit pages remain outside version control | Fixed |
+| 249 | [[block-249-schema-reference-count-parity]] — `SCHEMA_REFERENCE.md` now reports the live Prisma schema counts instead of undercounting the current field surface in its header summary | Fixed |
+| 250 | [[block-250-rules-doc-freshness-and-count-parity]] — the active rules docs now carry current freshness metadata, and `DEVELOPMENT_RULES.md` no longer hardcodes stale content-size counts in a structural design section | Fixed |
 
 ## Status Legend
 

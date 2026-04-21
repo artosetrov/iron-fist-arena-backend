@@ -1,6 +1,6 @@
 # UI Pull Request Checklist — Hexbound
 
-*Source of truth for UI review gates on Swift/iOS view work. Use together with `docs/rules/rules-swift.md`, `wiki/entities/design-system.md`, and the live theme/token files under `Hexbound/Hexbound/Theme/`. Updated: 2026-04-16*
+*Source of truth for UI review gates on Swift/iOS view work. Use together with `docs/rules/rules-swift.md`, `wiki/entities/design-system.md`, and the live theme/token files under `Hexbound/Hexbound/Theme/`. Updated: 2026-04-20*
 
 Use this checklist for every PR that touches Views, Theme, or any user-facing code.
 

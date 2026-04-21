@@ -26,6 +26,7 @@ async function getMatches() {
       player1Id: true,
       player2Id: true,
       winnerId: true,
+      loserId: true,
       player1RatingBefore: true,
       player1RatingAfter: true,
       player2RatingBefore: true,
@@ -159,10 +160,16 @@ export default async function MatchesPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {match.winnerId === match.player1Id ? (
+                          {/* Bot/dungeon matches have null player2Id + conditional winner/loser.
+                              Fall back to loserId to distinguish a P1 loss from a draw. */}
+                          {match.winnerId && match.winnerId === match.player1Id ? (
                             <span className="text-xs"><Badge variant="success">P1 Win</Badge></span>
-                          ) : match.winnerId === match.player2Id ? (
+                          ) : match.winnerId && match.winnerId === match.player2Id ? (
                             <span className="text-xs"><Badge variant="destructive">P2 Win</Badge></span>
+                          ) : match.loserId && match.loserId === match.player1Id ? (
+                            <span className="text-xs"><Badge variant="destructive">P2 Win</Badge></span>
+                          ) : match.loserId && match.loserId === match.player2Id ? (
+                            <span className="text-xs"><Badge variant="success">P1 Win</Badge></span>
                           ) : (
                             <Badge variant="secondary">Draw</Badge>
                           )}

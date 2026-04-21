@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-19
+updated: 2026-04-20
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5140
-- Untracked project-owned files: 10
-- In-scope files listed here: 5150
+- Tracked files: 5155
+- Untracked project-owned files: 4
+- In-scope files listed here: 5159
 
 ## Excluded Generated / Vendor Areas
 
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 18
 - sounds: 33
 - User: 1059
-- wiki: 317
+- wiki: 321
 
 ## File List By Block
 
@@ -5155,16 +5155,20 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-234-feature-maps-leaderboard-and-dungeon-rush-admin-boundary-sync.md
 - wiki/audit/block-235-feature-maps-minigames-and-social-runtime-boundary-sync.md
 - wiki/audit/block-236-inventory-summary-and-section-header-parity.md
-- wiki/audit/block-237-feature-maps-liveops-test-fixture-boundary-sync.md _(untracked)_
-- wiki/audit/block-238-inventory-untracked-marker-parity-after-git-state-shift.md _(untracked)_
-- wiki/audit/block-239-feature-maps-auth-character-tutorial-progression-boundary-sync.md _(untracked)_
-- wiki/audit/block-240-feature-maps-runtime-test-and-admin-surface-sync.md _(untracked)_
-- wiki/audit/block-241-feature-map-pvp-combat-test-and-admin-boundary-sync.md _(untracked)_
-- wiki/audit/block-242-source-of-truth-ownership-and-residual-surface-wording-sync.md _(untracked)_
-- wiki/audit/block-243-api-reference-runtime-and-admin-surface-parity.md _(untracked)_
-- wiki/audit/block-244-feature-map-and-ui-plan-residual-boundary-sync.md _(untracked)_
-- wiki/audit/block-245-project-overview-feature-flag-model-parity.md _(untracked)_
-- wiki/audit/block-246-admin-capabilities-freshness-metadata-sync.md _(untracked)_
+- wiki/audit/block-237-feature-maps-liveops-test-fixture-boundary-sync.md
+- wiki/audit/block-238-inventory-untracked-marker-parity-after-git-state-shift.md
+- wiki/audit/block-239-feature-maps-auth-character-tutorial-progression-boundary-sync.md
+- wiki/audit/block-240-feature-maps-runtime-test-and-admin-surface-sync.md
+- wiki/audit/block-241-feature-map-pvp-combat-test-and-admin-boundary-sync.md
+- wiki/audit/block-242-source-of-truth-ownership-and-residual-surface-wording-sync.md
+- wiki/audit/block-243-api-reference-runtime-and-admin-surface-parity.md
+- wiki/audit/block-244-feature-map-and-ui-plan-residual-boundary-sync.md
+- wiki/audit/block-245-project-overview-feature-flag-model-parity.md
+- wiki/audit/block-246-admin-capabilities-freshness-metadata-sync.md
+- wiki/audit/block-247-active-doc-freshness-metadata-sync.md _(untracked)_
+- wiki/audit/block-248-inventory-marker-parity-after-tracked-state-rollforward.md _(untracked)_
+- wiki/audit/block-249-schema-reference-count-parity.md _(untracked)_
+- wiki/audit/block-250-rules-doc-freshness-and-count-parity.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

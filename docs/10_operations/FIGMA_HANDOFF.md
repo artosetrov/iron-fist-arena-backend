@@ -1,6 +1,6 @@
 # Hexbound Figma Handoff
 
-*Source of truth: this file is a Figma handoff planning snapshot. For current screen coverage and design-system reality, also use `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`, `wiki/entities/screens.md`, `wiki/entities/design-system.md`, `Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift`, and the live admin design-system previews. Updated: 2026-04-16*
+*Source of truth: this file is a Figma handoff planning snapshot. For current screen coverage and design-system reality, also use `docs/10_operations/FIGMA_SCREEN_INVENTORY.md`, `wiki/entities/screens.md`, `wiki/entities/design-system.md`, `Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift`, and the live admin design-system previews. Updated: 2026-04-20*
 
 Дата подготовки: 2026-03-12
 
