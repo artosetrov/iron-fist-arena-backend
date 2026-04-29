@@ -17,7 +17,7 @@ Each character owns a per-character EquipmentInventory (weapons/armor/accessorie
   - `Hexbound/Hexbound/Views/Hero/HeroInventoryTab.swift` — inventory tab of hero screen
   - `Hexbound/Hexbound/Views/Inventory/ItemDetailSheet.swift` — item tap sheet (3 contexts: Inventory / Shop / Loot)
   - `Hexbound/Hexbound/Views/Inventory/ItemDetailSections.swift`, `ItemDetailActions.swift` — sheet subcomponents
-  - `Hexbound/Hexbound/Views/Inventory/ItemCardView.swift` — unified item cell (see memory `itemcard_unified_refactor`)
+  - `Hexbound/Hexbound/Views/Inventory/ItemCardView.swift` — unified item cell used across inventory / shop / loot contexts
 - **Player action:** Hero screen → Inventory tab → tap item → equip / unequip / sell / use
 
 ## Backend
@@ -92,9 +92,9 @@ Each character owns a per-character EquipmentInventory (weapons/armor/accessorie
 - **Server-authoritative stat calc.** `EquipmentInventory.rolledStats` + `upgradeLevel` + set bonuses resolved server-side. Client displays.
 - **Class restriction.** `Item.classRestriction` must match `Character.characterClass` at equip time — mismatch = 400.
 - **Unique per consumableType.** `ConsumableInventory` has `@@unique([characterId, consumableType])` — stacking logic uses `quantity++` not insert.
-- **Optimistic UI pattern.** Equip / use / sell must update UI instantly, rollback on API failure (see memory `feedback_optimistic_ui_everywhere`).
+- **Optimistic UI pattern.** Equip / use / sell must update UI instantly, rollback on API failure.
 - **`ItemCardView` is the only cell.** Do NOT re-implement item cells per screen — ItemCard handles 9 Figma variants (Common→Legendary × Inventory/Shop/Loot context).
-- **Flat response shape.** Shop endpoints (and any mutation returning currency) must return flat `{ gold, gems, ... }` — nested `character` breaks `ShopService.updateCharacter` (see memory `feedback_flat_response_shape`).
+- **Flat response shape.** Shop endpoints (and any mutation returning currency) must return flat `{ gold, gems, ... }` — nested `character` breaks `ShopService.updateCharacter`.
 
 ## Tests / fixtures
 

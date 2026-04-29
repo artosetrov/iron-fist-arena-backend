@@ -108,7 +108,7 @@ Each player owns a Character with class (warrior/rogue/mage/tank), origin (human
 - **Name uniqueness.** `check-name` must run before create — server re-checks at create time (race condition possible).
 - **Stat allocation is server-authoritative.** Client NEVER computes derived stats — only displays what backend returns.
 - **Respec cost.** Respec burns gold/gems — scale is in `balance.ts`, increases per respec.
-- **Appearance fallback chain.** `AvatarImageView` deterministicSeed → class-pool skin → class-icon (see memory `feature_avatar_pool_fallback`).
+- **Appearance fallback chain.** `AvatarImageView` falls back in a deterministic order: `deterministicSeed` render → class-pool skin → class icon.
 - **Appearance skins are per-class.** Picking an off-class skin in editor = 400.
 - **Referral fields on Character.** `referralCode` + `referredBy` live on Character — see [[referral]].
 

@@ -8,7 +8,7 @@ Users have a single shared stash across all their characters (100 slots). Deposi
 
 ## Status
 
-- **Phase:** In production (shipped 2026-04-13; see memory `feedback_verify_prod_tables_before_release`)
+- **Phase:** In production (shipped 2026-04-13)
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -72,7 +72,9 @@ Users have a single shared stash across all their characters (100 slots). Deposi
 ## Docs
 
 - `docs/02_product_and_features/GAME_SYSTEMS.md` — stash overview
-- Memory: `feedback_verify_prod_tables_before_release` (Stash 04-13 incident — table not in prod Supabase at deploy time)
+- `wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md` — stash-table migration wave
+- `wiki/audit/block-012-backend-stash-contraband-premium-runtime.md` — stash runtime and concurrency audit
+- `wiki/audit/block-089-ios-stash-transfer-typed-contracts.md` — iOS stash transfer contract cleanup
 
 ## Notable gotchas
 
@@ -81,7 +83,7 @@ Users have a single shared stash across all their characters (100 slots). Deposi
 - **Preserve everything.** `upgradeLevel`, `durability`, `rolledStats` must survive the round-trip. Never regenerate. Never reset.
 - **100-slot cap is hard.** UI must preflight against cap; backend is the source of truth but client should block the action before the user picks an item.
 - **Not tradeable.** Stash is PLAYER-SCOPED. Not a player-to-player trade system. Do not add a recipient field.
-- **Prod-table rule.** When schema changed to add `StashItem`, table was missing in prod Supabase → 500s. Verify via MCP before deploy. See memory.
+- **Prod-table rule.** When schema changed to add `StashItem`, table was missing in prod Supabase → 500s. Verify via MCP before deploy.
 
 ## Tests / fixtures
 

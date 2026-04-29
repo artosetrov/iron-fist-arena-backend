@@ -116,7 +116,8 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 - `docs/06_game_systems/COMBAT.md` — canonical combat spec (damage, crit, ELO)
 - `docs/06_game_systems/BALANCE_CONSTANTS.md` — formula constants
 - `docs/03_backend_and_api/API_REFERENCE.md` — route reference
-- Interactive Combat phases: see memory `project_interactive_combat_phase1.md`, `project_interactive_combat_phase3_shipped.md`, `project_interactive_combat_phase3b_shipped.md`
+- `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md` — checked-in interactive-combat rollout/deferred-work plan
+- `wiki/features/combat-unification-remaining.md` — current remaining combat unification tails
 
 ## Victory Stars (UI flourish)
 
@@ -150,12 +151,12 @@ None of these touch resolution. Crit/block/dodge decisions still come from `/pvp
 ## Notable gotchas
 
 - **Server-authoritative only.** Client MUST NOT compute combat results, damage, or ratings. See CLAUDE.md architecture rules.
-- **UUID vs Int IDs.** PvpMatch ids are UUIDs — iOS must decode as `String`. Past TS `as number` cast crashed `/match/start` on 2026-04-14. See memory `feedback_uuid_vs_int_ids.md`.
-- **Matchmaking widened 2026-03-23**: ±10 level, ±80% gear score, 3-phase cascade fallback. See memory `project_matchmaking_widened.md`.
-- **Fight 404 fallback**: client falls back to classic when `/pvp/fight` 404s (shipped 2026-04-14). Memory `project_pvp_fight_routing_shipped.md`.
+- **UUID vs Int IDs.** PvpMatch ids are UUIDs — iOS must decode as `String`. A past `as number` assumption around `/match/start` broke this path.
+- **Matchmaking widened 2026-03-23.** Live search now uses the broader ±10 level / ±80% gear-score / 3-phase cascade fallback model; don't quietly narrow one axis without rechecking queue health.
+- **Fight 404 fallback.** Client still carries a classic fallback when `/pvp/fight` is unavailable; keep that compatibility path in mind when touching Arena routing.
 - **`/pvp/history` now skips snapshot-less rows with no resolved opponent relation.** Old bot/non-PvP residue with `player2Id = null` no longer crashes the whole history response.
 - **Interactive `strike` and `match/complete` now explicitly reject missing PvP opponents.** If an Interactive Combat v1 row is incomplete and `player2Id` is absent, both routes now return `409 Player-vs-player opponent missing` instead of falling into nullability/type drift.
-- **Prisma migration on `pvp_matches.status`**: must run ALTER TABLE via Supabase MCP before deploy. Past incident 2026-04-13 (Interactive Combat), memory `feedback_migration_mcp_apply_to_prod.md`.
+- **Prisma migration on `pvp_matches.status`.** Must run ALTER TABLE via Supabase MCP before deploy; Interactive Combat already paid this failure tax once.
 - **Schema field additions without migration** = prod 500s. 2026-04-11 Gold Mine incident pattern applies here too.
 
 ## Tests / fixtures

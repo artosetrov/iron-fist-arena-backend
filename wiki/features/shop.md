@@ -93,11 +93,11 @@ Player-facing store: buy consumables and gear with gold, buy currency with real 
 
 ## Notable gotchas
 
-- **Flat response shape.** Shop endpoints MUST return flat `{ gold, gems, ... }` — NOT nested `{ character: { gold, gems } }`. `ShopService.updateCharacter` assumes flat. See memory `feedback_flat_response_shape.md`.
-- **Optimistic UI.** Buy mutations update UI instantly, rollback on failure. Memory `feedback_optimistic_ui_everywhere.md`.
+- **Flat response shape.** Shop endpoints MUST return flat `{ gold, gems, ... }` — NOT nested `{ character: { gold, gems } }`. `ShopService.updateCharacter` assumes flat.
+- **Optimistic UI.** Buy mutations update UI instantly, rollback on failure.
 - **IAP receipt verification.** Backend must validate Apple receipt via shared `lib/iap`. Never trust client-reported gem amounts.
 - **IAP Products admin surface is read-only.** The page reflects `IAP_PRODUCTS` from `backend/src/lib/game/balance.ts`; changing SKU enablement/pricing still requires editing balance config/code and deploying.
-- **Premium Pass Phase 2** (2026-04-14) shares the IAP verify infrastructure — don't break one without checking the other. Memory `project_premium_pass_phase2.md`.
+- **Premium Pass Phase 2** (2026-04-14) shares the IAP verify infrastructure — don't break one without checking the other.
 
 ## Tests / fixtures
 

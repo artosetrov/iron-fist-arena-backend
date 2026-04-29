@@ -105,7 +105,7 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ## Notable gotchas
 
-- **2026-04-11 incident:** New fields added to `GoldMineSession` in `schema.prisma` without a migration file. Prisma Client generated locally against the new schema, but prod DB didn't have the columns → `PrismaClientKnownRequestError` 500s on every gold-mine endpoint. Fix: apply `ALTER TABLE` via Supabase MCP **before** the code deploy, or include the migration in the commit. See memory: `feedback_prisma_schema_without_migration.md`, `feedback_verify_prod_tables_before_release.md`, `feedback_migration_mcp_apply_to_prod.md`.
+- **2026-04-11 incident:** New fields added to `GoldMineSession` in `schema.prisma` without a migration file. Prisma Client generated locally against the new schema, but prod DB didn't have the columns → `PrismaClientKnownRequestError` 500s on every gold-mine endpoint. Fix: apply `ALTER TABLE` via Supabase MCP **before** the code deploy, or include the migration in the commit. This is now part of the project-wide manual-first migration rule.
 - Collect endpoint is **optimistic** on iOS — UI adds gold immediately, API runs in background, rollback on failure.
 - Shaft catalog changes require admin tuning + live-config reload.
 

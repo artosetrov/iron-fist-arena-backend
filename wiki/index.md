@@ -331,7 +331,12 @@
 - [[block-254-onboarding-spec-historical-boundary-sync]] — `ONBOARDING_SPEC.md` now reads as the historical planning snapshot it actually is, with live onboarding/tutorial authority handed back to the runtime feature maps and backend tutorial helpers
 - [[block-255-guild-system-spec-historical-boundary-sync]] — `GUILD_SYSTEM_SPEC.md` now reads as the broader historical guild draft it actually is, while `wiki/features/social.md` points back to the real draft file and the narrower shipped social runtime surfaces
 - [[block-256-active-skill-picker-spec-and-passive-tree-slot-parity]] — `ACTIVE_SKILL_PICKER_SPEC.md` now reads as picker rollout history instead of the live runtime spec, and the passive-tree feature map now reflects the shipped base-3 plus premium-fourth-slot model instead of older generic slot-count planning
+- [[block-257-building-unlock-schedule-runtime-parity]] — the iOS building unlock mirror now matches the live backend tutorial/progression cadence again, and the adjacent building-gating docs/tutorial map no longer preserve conflicting unlock-truth metadata
+- [[block-258-feature-map-game-systems-doc-reference-parity]] — the remaining feature maps no longer point at the deleted `docs/06_game_systems/GAME_SYSTEMS.md` path and now route readers back to the live overview or the correct historical docs
+- [[block-259-inventory-marker-parity-after-late-tracked-rollforward]] — the project inventory now matches the latest git rollforward again, removing stale `_untracked_` markers from restored admin routes, retro notes, and audit blocks `247–256` so only the newest audit pages remain outside version control
+- [[block-260-combat-feature-map-memory-boundary-sync]] — the combat feature maps now use checked-in rollout/deferred-work docs and plain runtime truth instead of depending on external memory-note references for Interactive Combat and PvP context
+- [[block-261-feature-map-memory-note-repo-truth-sync]] — the remaining feature maps now preserve migration/response-shape/optimistic-UI lessons directly or through checked-in audit blocks instead of leaning on external memory-note names
 
 ---
 
-*322 in-scope wiki markdown files | 321 wiki pages (13 systems, 15 decisions, 3 entities, 256 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-29*
+*327 in-scope wiki markdown files | 326 wiki pages (13 systems, 15 decisions, 3 entities, 261 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-29*

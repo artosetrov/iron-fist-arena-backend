@@ -10,9 +10,9 @@ updated: 2026-04-29
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5167
-- Untracked project-owned files: 18
-- In-scope files listed here: 5185
+- Tracked files: 5185
+- Untracked project-owned files: 5
+- In-scope files listed here: 5190
 
 ## Excluded Generated / Vendor Areas
 
@@ -546,10 +546,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/config/restore/route.ts
 - backend/src/app/api/admin/design-tokens/route.ts
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
-- backend/src/app/api/admin/economy/route.ts _(untracked)_
+- backend/src/app/api/admin/economy/route.ts
 - backend/src/app/api/admin/events/route.ts
 - backend/src/app/api/admin/hub-layout/route.ts
-- backend/src/app/api/admin/iap/route.ts _(untracked)_
+- backend/src/app/api/admin/iap/route.ts
 - backend/src/app/api/admin/iap-products/route.ts
 - backend/src/app/api/admin/item-balance/apply-suggestions/route.ts
 - backend/src/app/api/admin/item-balance/config/route.ts
@@ -566,7 +566,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/passives/route.ts
 - backend/src/app/api/admin/seasons/route.ts
 - backend/src/app/api/admin/skills/route.ts
-- backend/src/app/api/admin/stats/route.ts _(untracked)_
+- backend/src/app/api/admin/stats/route.ts
 - backend/src/app/api/admin/unban/route.ts
 - backend/src/app/api/admin/users/route.ts
 - backend/src/app/api/appearances/route.ts
@@ -1045,14 +1045,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-04-13.md
 - docs/retro/RETRO_2026-04-14.md
 - docs/retro/RETRO_2026-04-15.md
-- docs/retro/RETRO_2026-04-21.md _(untracked)_
-- docs/retro/RETRO_2026-04-22.md _(untracked)_
-- docs/retro/RETRO_2026-04-23.md _(untracked)_
-- docs/retro/RETRO_2026-04-24.md _(untracked)_
-- docs/retro/RETRO_2026-04-25.md _(untracked)_
-- docs/retro/RETRO_2026-04-26.md _(untracked)_
-- docs/retro/RETRO_2026-04-27.md _(untracked)_
-- docs/retro/RETRO_2026-04-28.md _(untracked)_
+- docs/retro/RETRO_2026-04-21.md
+- docs/retro/RETRO_2026-04-22.md
+- docs/retro/RETRO_2026-04-23.md
+- docs/retro/RETRO_2026-04-24.md
+- docs/retro/RETRO_2026-04-25.md
+- docs/retro/RETRO_2026-04-26.md
+- docs/retro/RETRO_2026-04-27.md
+- docs/retro/RETRO_2026-04-28.md
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -5176,16 +5176,21 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-244-feature-map-and-ui-plan-residual-boundary-sync.md
 - wiki/audit/block-245-project-overview-feature-flag-model-parity.md
 - wiki/audit/block-246-admin-capabilities-freshness-metadata-sync.md
-- wiki/audit/block-247-active-doc-freshness-metadata-sync.md _(untracked)_
-- wiki/audit/block-248-inventory-marker-parity-after-tracked-state-rollforward.md _(untracked)_
-- wiki/audit/block-249-schema-reference-count-parity.md _(untracked)_
-- wiki/audit/block-250-rules-doc-freshness-and-count-parity.md _(untracked)_
-- wiki/audit/block-251-economy-docs-v3-parity-and-monetization-transition-sync.md _(untracked)_
-- wiki/audit/block-252-audio-runtime-boundary-and-lore-freshness-sync.md _(untracked)_
-- wiki/audit/block-253-game-systems-overview-runtime-parity-and-count-de-brittling.md _(untracked)_
-- wiki/audit/block-254-onboarding-spec-historical-boundary-sync.md _(untracked)_
-- wiki/audit/block-255-guild-system-spec-historical-boundary-sync.md _(untracked)_
-- wiki/audit/block-256-active-skill-picker-spec-and-passive-tree-slot-parity.md _(untracked)_
+- wiki/audit/block-247-active-doc-freshness-metadata-sync.md
+- wiki/audit/block-248-inventory-marker-parity-after-tracked-state-rollforward.md
+- wiki/audit/block-249-schema-reference-count-parity.md
+- wiki/audit/block-250-rules-doc-freshness-and-count-parity.md
+- wiki/audit/block-251-economy-docs-v3-parity-and-monetization-transition-sync.md
+- wiki/audit/block-252-audio-runtime-boundary-and-lore-freshness-sync.md
+- wiki/audit/block-253-game-systems-overview-runtime-parity-and-count-de-brittling.md
+- wiki/audit/block-254-onboarding-spec-historical-boundary-sync.md
+- wiki/audit/block-255-guild-system-spec-historical-boundary-sync.md
+- wiki/audit/block-256-active-skill-picker-spec-and-passive-tree-slot-parity.md
+- wiki/audit/block-257-building-unlock-schedule-runtime-parity.md _(untracked)_
+- wiki/audit/block-258-feature-map-game-systems-doc-reference-parity.md _(untracked)_
+- wiki/audit/block-259-inventory-marker-parity-after-late-tracked-rollforward.md _(untracked)_
+- wiki/audit/block-260-combat-feature-map-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-261-feature-map-memory-note-repo-truth-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

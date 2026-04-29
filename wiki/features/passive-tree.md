@@ -104,7 +104,7 @@ Players allocate talent points into a node-based passive tree for permanent stat
 - **DB constraint ensures slot kind.** Active-slot row cannot hold skill+passive simultaneously — backend writers must choose one.
 - **Server-authoritative effects.** Client NEVER simulates passive effects in combat — backend computes.
 - **Active slot count is no longer the old generic “5-slot” plan.** The live shipped path is base 3 slots with an optional premium fourth slot unlock; treat broader slot-count planning notes in older docs as historical.
-- **Migration-before-deploy rule.** New nodes / connections added to schema → must apply migration via Supabase MCP BEFORE code deploy (see memory `feedback_migration_mcp_apply_to_prod`).
+- **Migration-before-deploy rule.** New nodes / connections added to schema → must apply migration via Supabase MCP BEFORE code deploy.
 
 ## Tests / fixtures
 

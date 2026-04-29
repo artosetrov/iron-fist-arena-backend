@@ -1,5 +1,40 @@
 # Hexbound Wiki — Log
 
+## [2026-04-29] docs | Combat feature-map memory boundary sync
+
+Closed the next combat source-of-truth tail.
+- **Interactive/PvP docs handoff:** `interactive-combat.md` and `pvp-combat.md` now point at checked-in rollout/deferred-work docs instead of external memory notes.
+- **Runtime truth preserved:** UUID ids, widened matchmaking, compatibility fallback routing, and migration-before-deploy rules are still documented, but now as plain repo truth.
+- **Net effect:** the combat feature-map layer no longer depends on memory-note names to explain the shipped Interactive Combat corridor.
+
+## [2026-04-29] docs | Feature-map memory note repo truth sync
+
+Closed the next non-combat memory-boundary tail in `wiki/features/*`.
+- **Checked-in audit handoff:** `stash.md` now points at the real stash migration/runtime/client audit blocks instead of a memory note.
+- **Rule cleanup:** `gold-mine`, `shop`, `inventory`, `characters`, and `passive-tree` keep their operational lessons but no longer need external memory-note references to make sense.
+- **Net effect:** feature maps again stand on repo-owned truth instead of mixed repo-plus-memory shorthand.
+
+## [2026-04-29] audit | Inventory marker parity after late tracked rollforward
+
+Closed the next git-state sync tail after the latest rollforward.
+- **Marker cleanup:** `wiki/audit/project-file-inventory.md` no longer claims restored backend admin routes, late retro notes, and audit blocks `247–256` are still untracked.
+- **Summary parity:** tracked/untracked/in-scope counts were refreshed from live `git ls-files` output instead of the older stale marker wave.
+- **Net effect:** only the genuinely newest audit pages remain marked `_untracked_`, so the inventory summary and per-file marker layer agree again.
+
+## [2026-04-29] runtime | Building unlock schedule parity restored
+
+Closed the next real client/runtime drift, not just a docs tail.
+- **Runtime fix:** `Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift` now mirrors the live backend `BUILDING_UNLOCK_LEVELS` cadence again, so hub lock overlays and level-up unlock pills match backend tutorial/progression truth.
+- **Boundary cleanup:** `docs/07_ui_ux/W2_D4_BUILDING_GATING_DESIGN.md` now carries a header that honestly marks it as a historical archived proposal instead of an approval-stage live plan.
+- **Feature-map sync:** `wiki/features/tutorial.md` now documents the mirrored unlock-table gotcha and points at real current/historical docs instead of the dead `docs/06_game_systems/GAME_SYSTEMS.md` path.
+
+## [2026-04-29] docs | Feature-map game-systems doc reference parity
+
+Closed the next feature-map source-of-truth tail.
+- **Dead path removed:** the remaining feature maps no longer point at the deleted `docs/06_game_systems/GAME_SYSTEMS.md`.
+- **Live overview restored:** `quests`, `events`, `minigames`, `dungeons`, `achievements`, and `daily-login` now route readers to `docs/02_product_and_features/GAME_SYSTEMS.md`.
+- **Tutorial narrowed:** `wiki/features/tutorial.md` now uses the live overview plus the checked-in historical onboarding/building-gating docs instead of pretending a second active systems overview still exists.
+
 ## [2026-04-29] docs | Active skill picker spec and passive-tree slot parity
 
 Reframed the active-skill picker spec so it stops pretending to be the current runtime contract.

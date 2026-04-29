@@ -77,12 +77,13 @@ Optional combat mode where the player slots up to N "active skills" before the f
 ## Docs
 
 - `docs/06_game_systems/COMBAT.md` — combat foundation
-- Memory: `project_interactive_combat_phase1.md`, `project_interactive_combat_phase3_shipped.md`, `project_interactive_combat_phase3b_shipped.md`, `project_interactive_combat_phase3_todo.md` (deferred items)
+- `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md` — checked-in rollout/deferred-work plan
+- `wiki/features/combat-unification-remaining.md` — current remaining unification tails around combat mode consolidation
 
 ## Notable gotchas
 
 - **Server-authoritative.** Clients must NEVER compute active-skill damage or cooldown ticks — server owns all of it.
-- **Migration-before-deploy rule.** `pvp_matches.status` column addition needed a production `ALTER TABLE` via Supabase MCP BEFORE the code deploy — shipping without it = 500s. Memory `feedback_migration_mcp_apply_to_prod.md` (3rd repeat of the same bug class).
+- **Migration-before-deploy rule.** `pvp_matches.status` column addition needed a production `ALTER TABLE` via Supabase MCP BEFORE the code deploy — shipping without it = 500s. Treat this as the same manual-first migration rule already documented by the interactive-combat/stash migration audit wave.
 - **5 active effect types** supported in Phase 3.B. Adding a 6th requires: catalog entry + backend resolver + iOS icon + HUD wiring.
 - **Opponent AI.** Opponent actives fire deterministically based on match seed — classic flow doesn't need to care, but interactive preview shows upcoming opp active.
 - **Fire banner** was shipped 2026-04-13 as part of 3.B — iOS UI highlights which active just fired that round.
