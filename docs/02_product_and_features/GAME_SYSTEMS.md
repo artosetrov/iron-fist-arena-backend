@@ -1,635 +1,323 @@
 # Game Systems Overview (Source of Truth)
 
-Complete reference for all game systems in Hexbound. Each system is server-authoritative — client displays what the server returns.
+*Updated: 2026-04-29 — runtime-parity rewrite; brittle numeric tables moved to canonical economy/balance docs*
+
+High-level map of the live gameplay systems in Hexbound.
+
+This file is intentionally **overview-first**. It describes what systems exist,
+how they relate, and where authority lives. Exact prices, reward tables,
+upgrade odds, and pacing numbers drift quickly and now belong in narrower
+source-of-truth docs:
+
+- `docs/02_product_and_features/ECONOMY.md`
+- `docs/06_game_systems/BALANCE_CONSTANTS.md`
+- `docs/06_game_systems/COMBAT.md`
+- `wiki/features/*.md`
+
+All player-facing systems below are **server-authoritative** unless explicitly
+noted otherwise.
+
+---
+
+## Core Runtime Principles
+
+- **Server-authoritative gameplay:** combat outcomes, reward grants, rating
+  changes, loot rolls, progression state, and live-economy transactions are
+  resolved on the backend.
+- **Thin client rendering:** iOS and admin render server-returned state,
+  trigger actions, and cache snapshots, but do not own canonical gameplay math.
+- **Config-backed liveops:** many knobs are adjustable through admin/config
+  surfaces, but the authoritative runtime still lives in backend routes and
+  helpers.
+- **Feature-map detail lives elsewhere:** use `wiki/features/*` when you need
+  exact routes, view models, Prisma models, or runtime gotchas for one feature.
 
 ---
 
 ## PvP Combat
 
-**The core gameplay loop.** Turn-based 1v1 battles with class-based strategies, stance system, and ELO-based ranking.
+PvP remains the core repeatable gameplay loop.
 
-### Core Mechanics
-- **Format**: Turn-based 1v1 (attack → counterattack → repeat)
-- **Duration**: Typical 3-8 turns per battle
-- **Pacing**: Minimal animations, 2-5 min per session
+- **Format:** 1v1 class-vs-class combat with shared combat math and reward
+  resolution.
+- **Modes:** the repo carries both classic resolve flows and the newer
+  interactive match lifecycle, with different entry points depending on the
+  surface.
+- **Tactical layer:** stance, active skills, passives, crit/dodge/block, and
+  fatigue-style pacing all feed into the same server-owned combat resolution.
+- **Rating:** PvP rank, matchmaking spread, revenge bonuses, and leaderboard
+  placement are all backend-owned and feed adjacent systems like achievements,
+  battle pass, and daily quests.
 
-### RNG & Seeding
-- **Server-seeded RNG**: All randomness (hit chance, crit, damage variance) calculated server-side
-- **Player cannot cheat**: Damage rolls, ability procs, critical hits are authoritative
-- **Reproducible results**: Battle replay uses same seed for consistency
+For formulas and combat-specific rules, see:
 
-### Stance System
-Four character stances, each affecting:
-- Damage output/defense ratio
-- Ability access and cooldowns
-- Stat modifiers (±10-20% per stat)
-
-Stance switching is tactical mid-battle strategy.
-
-### Classes & Balance
-| Class | Primary Stat | Role | Example Abilities |
-|-------|--------------|------|-------------------|
-| Warrior | STR | High damage, moderate defense | Slash, Power Attack, Provoke |
-| Rogue | AGI | High crit, high dodge, lower durability | Backstab, Evade, Poison |
-| Mage | INT | Crowd control, area damage, low durability | Fireball, Slow, Teleport |
-| Tank | VIT | High durability, crowd control, lower damage | Shield Bash, Taunt, Fortify |
-
-All classes equally viable — balance tuned for equal ELO distribution.
-
-### ELO Rating
-- **Rating Range**: 800 (Bronze) → 3000+ (Grandmaster)
-- **Win Gain**: +20-40 ELO (varies by opponent rating)
-- **Loss Penalty**: -10-40 ELO (lower penalty for stronger opponents)
-- **Matchmaking**: Soft match on ±300 rating, hard cap at ±800
-- **Decay**: Inactive 30+ days = -5 ELO/day (prevents stale leaderboard)
-
-### Revenge Mechanic
-- Player who lost to opponent gets +1.5× gold bonus on revenge win
-- Encourages rematches, adds narrative tension
-- No ELO bonus, only gold (prevents rating inflation)
-
-### Battle States
-- **Pending**: Waiting for opponent turn
-- **Victory**: Won battle, showing rewards
-- **Defeat**: Lost battle, showing opponent team
-- **Fled**: Player abandoned (counts as loss, -20 ELO penalty)
+- `docs/06_game_systems/COMBAT.md`
+- `wiki/features/pvp-combat.md`
+- `wiki/features/interactive-combat.md`
 
 ---
 
-## Dungeons
+## Dungeons and Dungeon Rush
 
-**Progression challenge mode.** Climb 10 floors, defeat monsters and bosses, collect loot.
+Hexbound ships two PvE progression flavors:
 
-### Progression System
-- **10 Floors**: Difficulty scales per floor
-- **4 Difficulties**: Normal, Hard, Heroic, Mythic
-- **Scaling**: Each difficulty increases enemy stats 10-25%, reward multiplier 1× → 2.5×
+- **Classic Dungeons:** structured runs with server-owned run state, room
+  progression, boss encounters, and end-of-run rewards.
+- **Dungeon Rush:** endless/minigame-adjacent run variant with shop pauses,
+  pressure scaling, and separate run-state rules.
 
-### Floor Mechanics
-- **Standard Floor**: 1-3 random monsters, gold/XP reward
-- **Boss Floor** (Floors 5, 10): Unique boss encounter, guaranteed item drop
-- **Loot Chance**: 30-60% per floor (increases per difficulty)
+Common principles:
 
-### Rewards
-| Floor | Normal | Hard | Heroic | Mythic |
-|-------|--------|------|--------|--------|
-| 1 | 50g, 20 XP | 75g, 30 XP | 100g, 40 XP | 150g, 60 XP |
-| 5 | 150g, 60 XP + item | 225g, 90 XP + item | 300g, 120 XP + item | 450g, 180 XP + item |
-| 10 | 300g, 150 XP + boss item | 450g, 225 XP + boss item | 600g, 300 XP + boss item | 900g, 450 XP + boss item |
+- run state is backend-owned
+- abandon/defeat/victory have distinct reward outcomes
+- boss reveals, reward ceremonies, and loot presentation are client surfaces on
+  top of server-returned results
 
-### Boss Encounters
-- **Unique stats**: +50% HP, +30% damage vs. normal mobs
-- **Special abilities**: Boss-exclusive skills (summons, AOE, debuffs)
-- **Guaranteed drop**: Floor 5 = common/uncommon, Floor 10 = rare/epic
-- **Difficulty scaling**: Mythic bosses have unique mechanics
+See:
 
-### Session Structure
-- Complete dungeon in single session or return to last floor
-- Save progress between floors
-- Can abandon dungeon (no penalty, just lose progress)
+- `wiki/features/dungeons.md`
+- `wiki/features/dungeon-rush.md`
 
 ---
 
-## Dungeon Rush
+## Skills and Passive Progression
 
-**Endless dungeon mode.** Continuous floors with exponential scaling, shop between fights, maximize rewards.
+Character buildcraft comes from two linked layers:
 
-### Progression
-- **Infinite floors**: Scaling indefinitely
-- **Exponential difficulty**: +15% stats per floor
-- **Exponential rewards**: Gold/XP multiplier increases per floor (1× → 3× → 10×)
+- **Active skills:** class-restricted learned abilities that bind into active
+  combat slots
+- **Passive tree:** node graph with unlock prerequisites, respec flows, and
+  permanent stat/combat modifiers
 
-### Shop Mechanics
-- **Between every floor**: Player stops at shop, buys consumables/equipment
-- **Limited inventory**: Must manage slots between floors
-- **Shop stock**: 4-6 random items, refreshes per floor
+Important runtime truth:
 
-### Reward Scaling
-| Floor | Gold | XP | Multiplier |
-|-------|------|-----|-----------|
-| 1 | 50g | 20 | 1× |
-| 5 | 75g | 30 | 1.5× |
-| 10 | 150g | 60 | 2.5× |
-| 15 | 225g | 100 | 4× |
-| 20 | 375g | 150 | 6× |
+- slot ownership and effect resolution are server-authoritative
+- iOS renders the tree, picker, and bind UX, but the backend validates unlocks,
+  respecs, and slot mutations
+- prestige and level progression feed the point economy around these systems
 
-### Session End
-- Player loses when defeated (no revives)
-- Total gold/XP split between current and offline storage
-- Rewards deposited on server, delivered on next login
+See:
+
+- `wiki/features/passive-tree.md`
+- `docs/06_game_systems/COMBAT.md`
+- `docs/06_game_systems/BALANCE_CONSTANTS.md`
 
 ---
 
-## Skills (Abilities)
+## Characters, Levels, and Prestige
 
-**Offensive and utility actions in combat.** Each class has 4 equippable skills with cooldowns and resource requirements.
+Progression revolves around a persistent character row with layered advancement:
 
-### Skill System
-- **4 Equip Slots**: Active slots for battle
-- **Class Restrictions**: Each skill locked to specific class(es)
-- **Cooldowns**: 1-5 turn recharge between uses
-- **Resource Cost**: Stamina/mana cost per cast (typically 10-25)
+- **levels and XP**
+- **stat-point allocation**
+- **passive-point allocation**
+- **gear growth**
+- **prestige carryover**
 
-### Skill Progression
-- **Upgradeable ranks**: Skill 1 → Skill 5 (max)
-- **Scaling**: Damage +10% per rank, cooldown -0.5 turns per 2 ranks
-- **Upgrade cost**: 50-500 gold per rank (scales with level)
+Live truth:
 
-### Skill Types
-| Type | Effect | Example |
-|------|--------|---------|
-| Attack | Direct damage, single target | Slash, Fireball, Backstab |
-| AOE | Damage multiple enemies | Power Attack, Inferno, Shrapnel |
-| Control | Disable/slow enemies | Stun, Root, Silence |
-| Support | Heal/buff self | Heal, Fortify, Evasion Buff |
-| Stance | Switch stance, gain bonuses | Defensive Stance, Berserk, Evasion |
+- level-up rewards and passive/stat point grants are backend-owned
+- prestige logic is live backend-side and affects long-term multiplier state
+- prestige presentation exists in shipped UI surfaces, while the concrete
+  prestige-action entry surface is narrower and more backend-driven than older
+  product docs implied
 
-### Cooldown Mechanics
-- Cooldowns tracked per turn (shared across stances)
-- Cooldown reduction stacks (passive bonuses, stat scaling)
-- Instant-cast skills have 0 cooldown
+See:
+
+- `wiki/features/characters.md`
+- `wiki/features/prestige.md`
+- `docs/06_game_systems/BALANCE_CONSTANTS.md`
 
 ---
 
-## Passives (Talent Tree)
+## Equipment, Inventory, and Stash
 
-**Permanent bonuses through node-based progression tree.** Connect nodes to unlock higher-tier passives.
+The gear loop includes:
 
-### Node System
-- **15+ node types**: +STR, +AGI, +Crit, +Defense, +HP Regen, +Cooldown Reduction, etc.
-- **Connections graph**: Each node has prerequisites (parent nodes)
-- **Respec available**: Reset entire tree for 100 gems (not gold)
+- equipment acquisition
+- rarity/rolled stat presentation
+- upgrades and durability
+- sell/use/equip/unequip flows
+- bag expansion
+- account-scoped stash storage
 
-### Progression Mechanics
-- **Node unlocking**: Spend points earned from leveling (1 point per level after L10)
-- **Path branching**: Multiple paths through tree enable different builds
-- **Synergy bonuses**: Connecting 3+ nodes of same type triggers combo bonus (+5-10% to all)
+Important live rules:
 
-### Passive Types
-| Category | Bonuses | Effect |
-|----------|---------|--------|
-| Stat Nodes | STR, AGI, VIT, END, INT, WIS, LUK, CHA | +1-5 per stat point |
-| Combat | Crit Chance, Crit Damage, Dodge, Defense | +1-3% per node |
-| Cooldown | Cooldown Reduction (CDR) | -10-20% cooldowns |
-| Sustain | HP Regen, Mana Regen, Stamina Regen | +2-5 per 5s |
-| Damage | Elemental Damage, Status Effect Chance | +5-10% per type |
+- effective item stats come from backend authority, including rolled stats and
+  upgrade-aware calculations
+- iOS and admin now consume typed snapshots rather than inventing local stat
+  math whenever possible
+- stash is a real account-level surface, not just overflow flavor text
 
-### Tree Structure
-- **Early nodes**: Easy to access, modest bonuses (all players unlock these)
-- **Mid nodes**: Require 10-20 points investment, better scaling
-- **Capstone nodes**: End-of-branch powerful bonuses (choose 1-2 as endgame)
+See:
+
+- `wiki/features/inventory.md`
+- `wiki/features/stash.md`
+- `wiki/features/shop.md`
 
 ---
 
-## Equipment & Inventory
+## Economy, Shop, and Monetization
 
-**Gear progression system with rarity tiers, stat rolling, and upgrade mechanics.**
+The live economy is now best thought of as an interconnected system rather than
+one giant table in this document.
 
-### Item Types (8 Categories)
-| Type | Slot | Quantity | Effect |
-|------|------|----------|--------|
-| Weapon | Main hand | 1 | +Damage, weapon ability |
-| Off-hand | Off hand | 1 | +Defense or secondary ability |
-| Helmet | Head | 1 | +VIT, +Defense |
-| Chest | Torso | 1 | +HP, +Defense (highest defense) |
-| Legs | Legs | 1 | +AGI, +Defense |
-| Gloves | Hands | 1 | +STR or AGI |
-| Boots | Feet | 1 | +AGI or SPEED |
-| Accessory | Finger/neck | 2 | Variable bonuses |
+Key surfaces:
 
-### Rarity Tiers
-| Rarity | Color | Stat Range | Upgrade Limit | Drop Chance |
-|--------|-------|------------|---------------|-------------|
-| Common | Gray | 1 stat | +3 | 40% |
-| Uncommon | Green | 2 stats | +5 | 35% |
-| Rare | Blue | 3 stats | +7 | 15% |
-| Epic | Purple | 4 stats | +9 | 8% |
-| Legendary | Orange | 5 stats + special | +10 | 2% |
+- **gold and gems**
+- **repair / upgrade / potion sinks**
+- **shop purchases and offers**
+- **contraband and special offers**
+- **battle pass premium purchase**
+- **IAP gem packs, mixed bundles, monthly card, premium transition**
 
-### Stat Rolling
-- **Random rolls on drop**: Each item drops with randomized stat values
-- **Stat roll range**: Varies per rarity (common = ±10%, legendary = ±5%)
-- **Reroll mechanic**: Pay 50-200 gold to reroll stats (future feature)
+Important live truth:
 
-### Durability System
-- **Durability loss**: Equipment loses 1 durability per battle
-- **Durability cap**: 100-500 depending on rarity
-- **Repair cost**: 10% of item's purchase price to restore to max
-- **Broken state**: Durability 0 = equipment disabled (can't equip)
-- **Repair All widget**: On Hero screen (INVENTORY tab), below equipment card. Shows damaged equipped item count, total repair cost, and Repair All button. Disabled when all items are fully repaired or player lacks gold. Only considers equipped items (`is_equipped = true`).
-- **Purpose**: Gold sink to prevent economy hoarding
+- Economy v3 is the current baseline
+- flat gold packs are legacy/disabled, replaced by mixed bundles
+- premium entitlement is in transition: legacy lifetime ownership still exists,
+  while the newer subscription path is present in backend/runtime plumbing
+- exact prices and sink ratios should be read from economy/balance docs, not
+  duplicated here
 
-### Upgrade System (+1 to +10)
-| Upgrade Level | Cost | Stat Bonus | Durability Penalty |
-|--------|------|------------|--------|
-| +0 | — | 0% | — |
-| +1 | 100g | +5% | -10 max |
-| +3 | 300g | +15% | -20 max |
-| +5 | 1000g | +25% | -30 max |
-| +7 | 3000g | +35% | -40 max |
-| +10 | 10000g | +50% | -50 max |
+See:
 
-- **Breakable on high upgrade**: +9/+10 can fail (10% lose upgrade)
-- **Repair required**: Upgraded gear costs more to repair
-
-### Inventory Management
-- **Base slots**: 8 (one item per type except accessories)
-- **Expandable to**: 28 total (20 gem investment)
-- **Overflow handling**: Excess items go to mail/storage
-- **Equipment swapping**: Can switch gear outside battle (in Hub/Armory)
+- `docs/02_product_and_features/ECONOMY.md`
+- `docs/06_game_systems/BALANCE_CONSTANTS.md`
+- `wiki/features/shop.md`
 
 ---
 
-## Shop
+## Gold Mine and Minigames
 
-**Equipment and consumable vendor.** Browse catalog, limited-time offers drive engagement.
+Hexbound includes several side-economy engagement loops:
 
-### Shop Inventory
-- **50+ items**: Mix of weapons, armor, consumables
-- **Rarity distribution**: Common (40%) → Uncommon (35%) → Rare (15%) → Epic (8%) → Legendary (2%)
-- **Price range**: 500g (common) → 5000g (legendary)
+- **Gold Mine:** idle accrual + collect flows + slot unlocks + bonus minigame
+- **Shell Game**
+- **Fortune Wheel**
+- **Tavern-hosted minigame surfaces**
 
-### Consumables
-| Consumable | Effect | Price | Use |
-|------------|--------|-------|-----|
-| Health Potion | +50% HP | 50g | Heal between battles |
-| Stamina Potion | Full stamina restore | 100g | Mid-session recovery |
-| Stat Scroll | +10% STR for 1 battle | 75g | Temporary boost |
-| Revive Token | Revive in dungeon | 200g | Dungeon-only safety |
+Live truth:
 
-### Limited-Time Offers
-- **Daily Deal**: 1-2 items at 30% off, refreshes daily
-- **Flash Sale**: 4-6 items at 20% off, 6-hour window
-- **Bundle Offers**: 3-5 items bundled at 25% discount (themed: warrior gear, mage gear, etc.)
-- **Purpose**: Drive impulse purchases, create daily login reason
+- Gold Mine is production runtime, not a concept stub
+- payout/bonus/slot rules are backend-owned
+- reward ceremony behavior has been normalized across several client flows, so
+  currency payouts increasingly use the shared modal language instead of ad hoc
+  toasts
 
-### Shop Mechanics
-- **Sell equipment**: Players can sell equipped/unequipped gear (50% buy-back value)
-- **Unlimited stock**: No item scarcity (not gacha-based)
-- **Price transparency**: All prices visible, no RNG cost
+See:
+
+- `wiki/features/gold-mine.md`
+- `wiki/features/minigames.md`
 
 ---
 
-## Gold Mine (Passive Income)
+## Daily Loops and Liveops Systems
 
-**Off-game passive gold generation.** Players set 4hr sessions while offline, return to collect.
+The retention layer is a set of connected systems, not isolated checklists:
 
-### Session Mechanics
-- **Base duration**: 4 hours per session
-- **Base yield**: 100-250 gold per session (randomized)
-- **Slots available**: 1 base, expandable to 4-5 (30 gems per slot)
+- **Daily Login:** live 7-day cycle with popup + calendar view
+- **Daily Quests:** rotating tracked objectives with bonus overlap and tutorial
+  interaction
+- **Battle Pass:** seasonal free/premium reward track with weekly challenge
+  feeds
+- **Achievements:** claimable long-tail progression goals
+- **Events:** time-boxed runtime modifiers and admin-managed event definitions
+- **Mail:** claim surface for rewards, admin messages, and compensation
+- **Referral:** invite flow with qualification rewards and backfill-aware repair
+  tooling
 
-### Gem Boost (10 gems)
-- **Effect**: Instantly complete 4hr session
-- **Yield**: Same as normal session (no bonus for gems)
-- **Purpose**: Convenience, not pay-to-win
+These systems frequently share reward infrastructure, progression hooks, and
+admin review/edit surfaces.
 
-### Chest Drop (10% chance)
-- **Triggers**: During any 4hr session
-- **Chest types**:
-  - Gold chest: +50 gold bonus
-  - Gem chest: 1-3 gems (rare engagement reward)
-  - Item chest: Guaranteed equipment drop
+See:
 
-### Session Queue
-- **Multiple concurrent sessions**: Can start sessions on different slots
-- **Stacking**: Sessions don't block each other
-- **Offline collection**: Returns online to full rewards
-
-### Stamina Economics
-- Gold Mine doesn't cost stamina (true passive)
-- Encourages players to engage daily (rewards offline play)
-- Revenue driver (encourages slot expansion)
+- `wiki/features/daily-login.md`
+- `wiki/features/quests.md`
+- `wiki/features/battle-pass.md`
+- `wiki/features/achievements.md`
+- `wiki/features/events.md`
+- `wiki/features/mail.md`
+- `wiki/features/referral.md`
 
 ---
 
-## Shell Game (Gambling Mechanic)
+## Leaderboards, Social, and Cosmetics
 
-**Simple RNG gambling minigame.** Cup-shell game with fair payouts.
+Meta and identity systems sit around the core loop:
 
-### Mechanics
-- **3 cups**: Hide gold under one cup, shuffle, player picks
-- **50/50 odds**: Fair 2/3 win chance if random (no house edge)
-- **Bet range**: 50-1000 gold
-- **Payout**: 2× bet on win (100g bet = 200g return)
+- **leaderboard and profile drill-downs**
+- **friends / messages / challenges / guild hall social surfaces**
+- **titles, frames, skins, and other cosmetic progression**
 
-### Loss Prevention
-- **Daily limit**: 5 plays/day (prevents gambling addiction)
-- **Minimum bet**: 50 gold (prevents micro-losses)
-- **Transparency**: Animation shows which cup has gold (player chooses, not dealer)
+Important live truth:
 
-### RNG Implementation
-- **Server-seeded**: Result determined before reveal animation
-- **Player cannot cheat**: Selecting "wrong" cup always has wrong placement
-- **Fair distribution**: Long-term 50% win rate across all players
+- social exists as a real runtime surface, not a placeholder guild idea
+- leaderboard/admin review surfaces are narrower than some older docs implied
+- cosmetics are distributed through several systems, including battle pass,
+  achievements, shop, and events
 
-### Risk/Reward
-- **Risk**: Lose bet amount
-- **Reward**: +100% on win (doubles money)
-- **Psychology**: Quick gambles create engagement hooks (good/bad luck streaks)
+See:
+
+- `wiki/features/leaderboard.md`
+- `wiki/features/opponent-profile.md`
+- `wiki/features/social.md`
 
 ---
 
-## Daily Quests
+## Admin and Live Tuning Relationship
 
-**3 repeating quests per day.** Level-scaling, varied objectives, gold/XP/gem rewards.
+Admin is real and broad, but it should be described carefully:
 
-### Quest System
-- **3 per day**: Refreshes at 00:00 UTC
-- **Level-scaling**: Difficulty adjusts to player level (L5 vs L50 same quest type)
-- **Auto-complete**: Server tracks progress, quest completes automatically
+- many gameplay systems have live admin pages or review surfaces
+- not every imagined analytics, scheduling, simulation, or rollback feature is
+  present as a dedicated page
+- some systems expose CRUD/config editing directly, while others expose review
+  dashboards or seed flows only
 
-### Quest Types (7 Categories)
-| Type | Objective | Reward |
-|------|-----------|--------|
-| Defeat Enemies | Win 3 PvP battles | 50g + 20 XP + 1 gem |
-| Defeat Bosses | Complete Dungeon L5 on any difficulty | 100g + 50 XP + 2 gems |
-| Win Streak | Achieve 3+ consecutive PvP wins | 75g + 30 XP |
-| Stat Check | Reach 100 total STR (example) | 100g + 40 XP |
-| Equip Check | Equip rare+ item in 3 slots | 80g + 30 XP |
-| Skill Quest | Use ability 5 times in battle | 50g + 15 XP |
-| Daily Login | Log in (daily reminder) | 10g + 5 XP |
+When you need current admin truth, use:
 
-### Rewards
-- **Gold**: 50-100 per quest (varies by difficulty)
-- **XP**: 15-50 per quest (scales with level)
-- **Gems**: 1-2 per quest (only from harder quests)
-
-### Completion
-- **Auto-track**: Server logs all progress
-- **Claim on login**: Rewards show in inbox (not auto-claimed)
-- **Refusal allowed**: Skip quests without penalty
-
----
-
-## Daily Login
-
-**7-day reward cycle with streak tracking.** Encourages daily engagement.
-
-### Streak System
-- **7-day cycle**: Repeats after Day 7
-- **Streak tracking**: Consecutive days logging in
-- **Streak breaks**: Miss 1 day = reset to 0 (except prestige carries streak)
-- **Prestige preserve**: Prestige resets don't break login streak
-
-### Rewards by Day
-| Day | Reward | Value |
-|-----|--------|-------|
-| 1 | 50g | Common |
-| 2 | 75g | Common |
-| 3 | Equipment box (common) | Commons |
-| 4 | 100g | Common |
-| 5 | 150g + consumables | Good |
-| 6 | 200g + rare item box | Good |
-| 7 | 5 gems | Premium |
-
-### Payout Strategy
-- **Day 7 gem payoff**: Encourages 7-day habit (gem login tax prevents churn)
-- **Day 3/5/6 equipment**: Gear drops support new players
-- **Escalating gold**: Increasing amounts encourage daily habit
-
-### Bonus Streaks
-- **7-day streak bonus**: +25g + 1 gem when completing full cycle
-- **Prestige streak bonus**: +50% to all Day 7 rewards (5 gems → 7.5 gems)
-
----
-
-## Battle Pass
-
-**Seasonal progression track with cosmetic/reward progression.**
-
-### Structure
-- **Seasonal cadence**: 8-week seasons
-- **Level range**: 50-100 levels per season
-- **Dual tracks**: Free (all players) + Premium (500 gems)
-- **Crossover**: Some rewards share both tracks, others exclusive
-
-### Leveling
-- **XP source**: All activities grant battle pass XP (PvP, Dungeons, Daily Quests, Weekly Challenges)
-- **Level requirements**: 500 XP per level (scales to playtime)
-- **Typical playtime**: Casual 5-10 min/day = ~1 level/week, serious player = 1-2 levels/day
-
-### Weekly Challenges (W3.D5 — BAL-06)
-
-5 rotating challenge slots per ISO week. Pool lives in
-`backend/src/lib/game/weekly-challenges.ts` (9 templates across 7 goal types).
-Selection is **ISO-week-seeded and deterministic** — every player gets the
-same 5 slots per week, and the same week always resolves to the same pool
-subset regardless of when the character first materializes its row.
-
-| Slot codename | Goal type | Source touchpoints |
-|---|---|---|
-| **Gladiator** | `pvp_wins` | `/api/pvp/resolve` |
-| **Delver** | `dungeons_complete` | `/api/dungeon/complete`, `/api/dungeon-rush/*` |
-| **Spendthrift** | `gold_spent` | `/api/shop/buy`, `/api/shop/upgrade`, `/api/minigames/shell-game/start`, `/api/minigames/fortune-wheel/spin` |
-| **Blacksmith** | `item_upgrade` | `/api/shop/upgrade` |
-| **Alchemist** | `consumable_use` | `/api/inventory/use`, `/api/consumables/use` |
-| **Lucky Hand** | `shell_game_play` | `/api/minigames/shell-game/guess`, `/api/minigames/fortune-wheel/spin` |
-| **Prospector** | `gold_mine_collect` | `/api/minigames/gold-mine/collect` |
-
-**Progress wiring:** every relevant API route pairs its existing
-`updateDailyQuestProgress` call with `updateWeeklyChallengeProgress` inside a
-`Promise.all` — both helpers are atomic raw-SQL `UPDATE ... WHERE` operations
-so they don't stomp each other under concurrent fire. Rows materialize lazily
-on the first progress event of the week.
-
-**Reward scale:** weekly challenges award 2-4× the BP-XP of a daily quest
-(higher investment, less frequent completion). Completed challenges persist in
-`WeeklyChallengeProgress` with a `claimedAt` timestamp to drive the claim UI.
-
-### Reward Tracks
-| Track | Reward Pool | Cosmetics |
-|-------|------------|-----------|
-| Free | 50 gems + cosmetics | 5 skins, 3 frames |
-| Premium | 100 gems + cosmetics + rare items | 8 skins, 5 frames, 3 titles |
-
-### Premium Track (500 gems)
-- **Instant access**: Unlock all cosmetics retroactively on purchase
-- **Level skip**: Option to buy levels (future, likely 5 gems/level)
-- **Cosmetic exclusivity**: Premium items only on premium track
-
-### Cosmetics Progression
-- **Skin unlocks**: L1, L15, L30, L50, L75, L100 (progressive unlock)
-- **Frame unlocks**: L5, L25, L60 (cosmetic frames for avatar)
-- **Titles**: L10, L40, L80 (profile titles)
-
----
-
-## Achievements
-
-**18 lifetime objectives with progress tracking and claimable rewards.**
-
-### Categories
-| Category | Type | Count | Reward Surface |
-|----------|------|-------|----------------|
-| PvP | Combat + revenge achievements | 9 | Mixed currency / cosmetic grants |
-| Progression | Leveling + prestige milestones | 5 | Mixed currency / cosmetic grants |
-| Ranking | Rating milestones | 4 | Mixed currency / cosmetic grants |
-
-### Achievement Types
-- **One-time**: Win 100 battles (never repeats)
-- **Milestone**: Reach level 50 (triggers once per prestige)
-- **Tracker**: Collect 50 rare items (progress bar)
-
-### Reward Structure
-- **Claimable rewards**: Achievements are claimed from the achievements screen, not auto-granted
-- **Live reward surface**: `gold`, `gems`, `xp`, `title`, `frame`
-- **Persistence**: Achievement progress/claims stay on the character; prestige milestones are separate achievements, not a full reset cycle
-
----
-
-## Prestige System
-
-**High-level progression system: reset at L50, keep gear, gain stat bonuses.**
-
-### Reset Mechanics
-- **Trigger**: Reach level 50
-- **Reset action**: Manual prestige button (player chooses timing)
-- **Stat reset**: Levels → L1, XP → 0
-- **Gear retention**: All equipment kept (can equip immediately)
-- **Passive reset**: Tree reset to 0 points (100 gems to keep passives)
-
-### Prestige Bonuses
-- **Per prestige level**: +5% to gold earned, XP earned
-- **Prestige 1**: 1.05×, Prestige 2 = 1.10×, Prestige 5 = 1.25×
-- **Infinite scaling**: No prestige cap (encourages infinite progression)
-
-### Prestige Rewards
-- **1st prestige**: Title "Reborn" + 500g + 10 gems
-- **5th prestige**: Title "Legend" + 1000g + 50 gems
-- **10th prestige**: Title "Eternal" + 2000g + 100 gems (+ exclusive cosmetic)
-
-### Economy Effect
-- **Soft reset**: Players re-engage (new level grind)
-- **Stat scaling**: Prestige bonuses keep endgame rewarding
-- **Cosmetic milestone**: Titles show prestige to other players
-
----
-
-## Leaderboard
-
-**Global ranking by rating, level, or wealth.**
-
-### Leaderboard Types
-| Type | Metric | Audience | Decay |
-|------|--------|----------|-------|
-| Rating | ELO rating | Competitive | -5/day inactive 30+ days |
-| Level | Current level (resets per prestige) | Grinders | None |
-| Gold | Total gold earned lifetime | Economy | None |
-| Prestige | Highest prestige level | Long-term | None |
-
-### Display
-- **Top 100**: Shows top 100 players per leaderboard
-- **Your rank**: Shows player's position + nearby ranks (±5)
-- **Season resets**: Rating leaderboard resets each season (8 weeks)
-- **Other persist**: Level, gold, prestige persist across seasons
-
-### Rewards (Seasonal)
-| Rank | Reward |
-|------|--------|
-| #1 | 1000g + 100 gems + "Grandmaster" title |
-| #2-3 | 750g + 75 gems |
-| #4-10 | 500g + 50 gems |
-| #11-50 | 250g + 25 gems |
-| #51-100 | 100g + 10 gems |
-
----
-
-## Mail & Inbox
-
-**System messages, admin broadcasts, and reward attachment delivery.**
-
-### Message Types
-| Type | Sender | Content | TTL |
-|------|--------|---------|-----|
-| System | Server | Battle results, quest completion, level up | Auto-clear |
-| Admin | Admin | Announcements, patch notes, compensation | 30 days |
-| Rewards | Server | Achievements, daily login rewards, loot | 7 days |
-| Attachments | Attachments system | Gold, gems, equipment (claim within 30 days) | 30 days |
-
-### Attachment System
-- **Claim attachments**: Players manually claim rewards from mail
-- **Overflow**: Excess items go to mail if inventory full
-- **Expiration**: Unclaimed attachments auto-delete after 30 days
-- **Purpose**: Soft cap on free rewards, encourages daily login
-
-### Broadcast Messages
-- **Admin-only**: Patch notes, server maintenance, event announcements
-- **Global**: Visible to all players
-- **Dismissible**: Players can close (read notification)
-
----
-
-## Cosmetics
-
-**Non-power cosmetic items for visual differentiation.**
-
-### Categories
-| Type | Effect | Rarity | Cost |
-|------|--------|--------|------|
-| Skins | Avatar appearance | Common-Legendary | 200-1000g or Battle Pass |
-| Frames | Profile frame (avatar border) | Common-Rare | 100-500g |
-| Titles | Profile title text | Rare-Epic | 300-800g or Achievement |
-| Effects | Battle effects (victory animation) | Epic-Legendary | 500-1000g |
-
-### Origin-Based Skins
-- **Male Origin**: Warrior, Knight, Ranger, Wizard
-- **Female Origin**: Warrior, Knight, Ranger, Wizard
-- **Mythical Origin**: Angel, Demon, Dragon, Phoenix (legend-only, 1000g)
-
-### Cosmetic Acquisition
-- **Shop**: Browse all cosmetics for purchase
-- **Battle Pass**: Exclusive cosmetics, timed seasonal release
-- **Achievements**: Special skins for hard achievements (e.g., "Rank 1" skin)
-- **Events**: Limited-time cosmetics during events (exclusive pricing)
-
-### Cosmetic Pricing Philosophy
-- **Cosmetics = monetization gate** (gems preferred)
-- **Gold alternative**: Some cosmetics available for 500-1000g (long-term earn path)
-- **Premium exclusivity**: Premium-only cosmetics show whale status
-- **Fair access**: All gameplay cosmetics available to free players (slower grind)
-
----
-
-## Live Ops Integration Points
-
-### Event Structure (Examples)
-- **Boss event**: 2-week limited dungeon boss, exclusive loot
-- **PvP tournament**: Bracket-based ranking, leaderboard prizes
-- **Economy event**: 2× gold weekend, special shop offers
-- **Cosmetic event**: Limited-time skins, 7-day availability
-
-### Seasonal Calendar
-- **Season 1-4**: Battle pass cycles (8 weeks each)
-- **Boss events**: Every 2 weeks between seasons
-- **Holiday events**: New Year, Halloween, Holiday season
-
-### Engagement Hooks
-- **Daily login**: Persistent 7-day streak incentive
-- **Daily quests**: Auto-resets 3 varied quests
-- **Limited offers**: Flash sales, bundles (6-hour windows)
-- **FOMO cosmetics**: 7-day exclusive availability
-- **Prestige milestone**: Encourages long-term play
+- `docs/05_admin_panel/ADMIN_CAPABILITIES.md`
+- relevant `wiki/features/*.md` admin sections
 
 ---
 
 ## Server Authority Rules
 
-✓ **Client CANNOT calculate**:
-- Combat results (damage, crit, hit chance)
-- Reward amounts (gold, XP, items)
-- ELO rating changes
-- Economy values (prices, costs)
-- Balance formulas (stat scaling, upgrade multipliers)
+The client must not invent canonical gameplay outcomes.
 
-✓ **Client MUST display**:
-- Server-returned combat results
-- Server-returned reward amounts
-- Server-returned leaderboard rankings
-- Server-returned achievement progress
+### Client must not own
 
-✓ **Server responsibility**:
-- All RNG seeding
-- All balance calculations
-- All economy transactions
-- Anti-cheat detection
+- combat resolution
+- RNG outcomes
+- reward values
+- rating changes
+- authoritative economy math
+- progression grants
+- live slot/passive/equipment validation
+
+### Client should own
+
+- presentation
+- navigation
+- cached snapshots
+- local animation state
+- ceremony UX layered over authoritative payloads
+
+### Server should own
+
+- all balance formulas
+- progression transactions
+- entitlement checks
+- anti-cheat / integrity guards
+- persistent run and match state
+
+---
+
+## Where to Go Next
+
+- For **numbers and formulas**: `docs/02_product_and_features/ECONOMY.md`,
+  `docs/06_game_systems/BALANCE_CONSTANTS.md`, `docs/06_game_systems/COMBAT.md`
+- For **feature-by-feature runtime maps**: `wiki/features/*.md`
+- For **admin surface truth**: `docs/05_admin_panel/ADMIN_CAPABILITIES.md`
+- For **schema and model-level detail**: `docs/04_database/SCHEMA_REFERENCE.md`

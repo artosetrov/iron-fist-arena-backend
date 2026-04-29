@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput, type CharacterStats } from '@/lib/game/combat'
+import { getCombatConfig } from '@/lib/game/live-config'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import type { BodyZone } from '@/lib/game/balance'
 import { ConsumableType, Prisma } from '@prisma/client'
@@ -119,9 +120,26 @@ function isConsumableSlot(slot: ActiveSlotSnapshot): boolean {
   return slot.kind === 'consumable' || (!!slot.consumable_type && slot.node_id == null)
 }
 
+/**
+ * Cross-round buff state per side. Talents v2 (2026-04-29) introduced effects
+ * that persist beyond the round of their fire — currently only `aoe_stun` (Tank
+ * Quake ult) needs this. Optional everywhere; missing/old matches read as no
+ * active buffs. Decrement once per round in the advance step.
+ *
+ * Spec: docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §8
+ */
+interface ActiveBuffsState {
+  /** How many upcoming counter-strikes this side must skip (aoe_stun received). */
+  stunRoundsRemaining?: number
+}
+
 interface InteractiveActivesState {
   p1: ActiveSlotSnapshot[]
   p2: ActiveSlotSnapshot[]
+  /** Buffs OWNED by p1 (negative effects applied TO p1 by an opposing aoe_stun). */
+  p1_buffs?: ActiveBuffsState
+  /** Buffs OWNED by p2 (negative effects applied TO p2 by p1's aoe_stun). */
+  p2_buffs?: ActiveBuffsState
 }
 
 function removePlayerActiveSlot(
@@ -131,6 +149,10 @@ function removePlayerActiveSlot(
   return {
     p1: actives.p1.filter((slot) => slot.slot_index !== slotIndex),
     p2: actives.p2,
+    // Preserve buffs — losing them on a consumable-reconcile would mid-stun
+    // grant the opponent free counters, which is gameplay-incorrect.
+    p1_buffs: actives.p1_buffs,
+    p2_buffs: actives.p2_buffs,
   }
 }
 
@@ -184,14 +206,26 @@ function advanceActivesAfterRound(
 /**
  * AI picks one ready active for the opponent, prioritizing:
  *   1. execute — if player is in execute range (guaranteed kill)
- *   2. heal_self — if opponent is CRITICALLY low (≤ 0.35 HP) and not already
+ *   2. stealth — if player is below 0.5 HP (force-crit finisher)
+ *   3. heal_self — if opponent is CRITICALLY low (≤ 0.35 HP) and not already
  *      in execute range from the player
- *   3. burst_damage — if player is vulnerable (< 0.7 HP) OR opponent is
- *      healthy (> 0.7 HP) — i.e. good kill window or low-risk aggression
- *   4. shield_self — if opponent is below 0.5 HP AND player has a ready
+ *   4. burst_damage / aoe_damage — if player is vulnerable (< 0.7 HP) OR
+ *      opponent is healthy (> 0.7 HP) — i.e. good kill window or low-risk
+ *      aggression. aoe_damage is mathematically identical in 1v1.
+ *   5. shield_self — if opponent is below 0.5 HP AND player has a ready
  *      active that isn't already on cooldown (incoming heavy hit likely)
- *   5. burst_damage — fallback when nothing else fits but burst is ready
+ *   6. burst_damage / aoe_damage — fallback when nothing else fits but burst
+ *      is ready
  * Returns the chosen slot or null.
+ *
+ * Excluded from AI v1:
+ *   - stun_enemy / aoe_stun: AI moves SECOND, so stunning the player after
+ *     they already attacked has no in-round effect; carry-over value exists
+ *     but a 1-CD cost for low payoff is currently a worse pick than burst.
+ *   - cooldown_reset: opp acts after player. Resetting opp cooldowns matters
+ *     only if opp had multiple actives ready — at which point firing one of
+ *     them directly is strictly better. Skip for now; reconsider when AI gets
+ *     multi-round planning (Phase 5+).
  */
 function pickOpponentActive(
   opponentActives: ActiveSlotSnapshot[],
@@ -203,14 +237,15 @@ function pickOpponentActive(
 ): ActiveSlotSnapshot | null {
   // Phase 4.B: exclude consumable slots from AI. Consumables belong to a
   // specific player's inventory — the opponent-AI must not decrement the
-  // user's real potions. Also exclude stun_enemy for now: player-side stun is
-  // implemented as "skip the counter this round", but the AI acts second, so
-  // picking stun_enemy would currently be a no-op while still burning cooldown.
+  // user's real potions. Also exclude stun-family + cooldown_reset for
+  // reasons spelled out in the function header.
   const ready = opponentActives.filter(
     (a) =>
       a.cooldown_remaining === 0 &&
       a.action_type &&
       a.action_type !== 'stun_enemy' &&
+      a.action_type !== 'aoe_stun' &&
+      a.action_type !== 'cooldown_reset' &&
       !isConsumableSlot(a)
   )
   if (ready.length === 0) return null
@@ -221,6 +256,9 @@ function pickOpponentActive(
     (a) => a.cooldown_remaining === 0 && !!a.action_type
   )
 
+  const isBurstLike = (a: ActiveSlotSnapshot): boolean =>
+    a.action_type === 'burst_damage' || a.action_type === 'aoe_damage'
+
   // Tier 1 — execute (guaranteed kill)
   const execSlot = ready.find(
     (a) =>
@@ -229,26 +267,32 @@ function pickOpponentActive(
   )
   if (execSlot) return execSlot
 
-  // Tier 2 — emergency heal (save from certain death next round)
+  // Tier 2 — stealth as opportunistic finisher (force-crit ≥ ×CRIT_MULTIPLIER damage)
+  if (playerPct < 0.5) {
+    const stealth = ready.find((a) => a.action_type === 'stealth')
+    if (stealth) return stealth
+  }
+
+  // Tier 3 — emergency heal (save from certain death next round)
   if (oppPct <= 0.35) {
     const heal = ready.find((a) => a.action_type === 'heal_self')
     if (heal) return heal
   }
 
-  // Tier 3 — burst in kill window OR safe-aggressive window
+  // Tier 4 — burst / aoe_damage in kill window OR safe-aggressive window
   if (playerPct < 0.7 || oppPct > 0.7) {
-    const burst = ready.find((a) => a.action_type === 'burst_damage')
+    const burst = ready.find(isBurstLike)
     if (burst) return burst
   }
 
-  // Tier 4 — preemptive shield when opp is low AND player has a loaded active
+  // Tier 5 — preemptive shield when opp is low AND player has a loaded active
   if (oppPct <= 0.5 && playerHasReadyActive) {
     const shield = ready.find((a) => a.action_type === 'shield_self')
     if (shield) return shield
   }
 
-  // Tier 5 — fallback burst when all else fails but we have it ready
-  const burstFallback = ready.find((a) => a.action_type === 'burst_damage')
+  // Tier 6 — fallback burst/aoe when all else fails but it is ready
+  const burstFallback = ready.find(isBurstLike)
   if (burstFallback) return burstFallback
 
   // Final fallback — take any remaining non-stun talent to at least use the cooldown
@@ -402,18 +446,41 @@ export async function POST(req: NextRequest) {
     }
     const playerResult = await resolveSingleStrike(playerInput)
 
-    // --- Phase 3: mutate player result per fired active ---
-    // Full support for all 5 action_types. Cooldown is consumed for every fire.
+    // --- Phase 3 + Talents v2: mutate player result per fired active ---
+    // Full support for all 9 action_types. Cooldown is consumed for every fire.
+    //
+    // Carry-over state read from interactiveActives.{p1,p2}_buffs:
+    //   * p2.stunRoundsRemaining > 0 ⇒ opp must skip its counter THIS round
+    //     (consumed via opponentStunned, decremented at end-of-round)
+    //   * p1.stunRoundsRemaining is read for symmetry but currently never set
+    //     by the AI (see pickOpponentActive header). Reserved for human-vs-human PvP.
     let mutatedPlayerTurn = playerResult.turn
     let newDefenderHp = playerResult.newDefenderHp
     let playerActiveLabel: string | null = null
     let playerHasShield = false           // reduces next counter-strike damage
     let playerExtraHeal = 0               // from heal_self active
-    let opponentStunned = false           // stun_enemy suppresses counter this round
+    const incomingP2Stun = actives.p2_buffs?.stunRoundsRemaining ?? 0
+    const incomingP1Stun = actives.p1_buffs?.stunRoundsRemaining ?? 0
+    let opponentStunned = incomingP2Stun > 0   // stun_enemy/aoe_stun suppresses counter this round
+    let newP2StunRoundsRemaining = incomingP2Stun  // mutated below if aoe_stun fires
+    const newP1StunRoundsRemaining = incomingP1Stun  // unchanged in v1 (AI doesn't aoe_stun)
+
+    // Pre-fetch crit multiplier only when stealth is firing — avoids the
+    // round-trip on every strike for an effect <1% of rounds will use.
+    let stealthCritMultiplier = 2.0
+    if (firedPlayerActive?.action_type === 'stealth') {
+      const cfg = await getCombatConfig()
+      stealthCritMultiplier = Math.max(1, cfg.CRIT_MULTIPLIER ?? 2.0)
+    }
+
     if (firedPlayerActive) {
       playerActiveLabel = firedPlayerActive.action_type
       switch (firedPlayerActive.action_type) {
-        case 'burst_damage': {
+        case 'burst_damage':
+        case 'aoe_damage': {
+          // aoe_damage is a 1v1 alias of burst_damage (Talents v2 §8). Same
+          // math, distinct VFX/label on the client. If/when multi-target combat
+          // ships, this case forks but the contract stays additive.
           const originalDmg = playerResult.turn.damage
           const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
           const delta = boosted - originalDmg
@@ -438,7 +505,38 @@ export async function POST(req: NextRequest) {
           break
         }
         case 'stun_enemy': {
+          // Single-round stun. Does NOT touch newP2StunRoundsRemaining — that
+          // counter is for aoe_stun's multi-round persistence.
           opponentStunned = true
+          break
+        }
+        case 'stealth': {
+          // Force-crit on the player's CURRENT-round attack. If RNG already
+          // rolled crit, no extra damage; otherwise rebuild with CRIT_MULTIPLIER.
+          // Talents v2 §8 spec uses "next attack auto-crits"; in this round-based
+          // engine the slot fires before the strike resolves on the same round,
+          // so "next" = "this".
+          if (!playerResult.turn.isCrit) {
+            const baseDmg = mutatedPlayerTurn.damage
+            const boostedDmg = Math.round(baseDmg * stealthCritMultiplier)
+            const delta = boostedDmg - baseDmg
+            mutatedPlayerTurn = { ...mutatedPlayerTurn, damage: boostedDmg, isCrit: true }
+            newDefenderHp = Math.max(0, newDefenderHp - delta)
+          }
+          break
+        }
+        case 'cooldown_reset': {
+          // No on-strike effect. Post-round mutation handled in advance step:
+          // resets cooldown_remaining=0 for OTHER non-consumable p1 slots.
+          break
+        }
+        case 'aoe_stun': {
+          // Multi-round opponent stun. magnitude = number of rounds opp skips
+          // counter (default 2). End-of-round decrement removes one round.
+          // Spec: docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §8 (Tank Quake).
+          const rounds = Math.max(1, Math.floor(firedPlayerActive.magnitude || 2))
+          opponentStunned = true
+          newP2StunRoundsRemaining = rounds
           break
         }
       }
@@ -494,20 +592,45 @@ export async function POST(req: NextRequest) {
       oppResult = await resolveSingleStrike(oppInput)
       // Apply opponent's offensive actives to counter-strike damage
       let oppDamage = oppResult.turn.damage
-      if (firedOppActive?.action_type === 'burst_damage') {
+      let oppForcedCrit = false  // Talents v2: stealth force-crits opp counter
+      if (
+        firedOppActive?.action_type === 'burst_damage' ||
+        firedOppActive?.action_type === 'aoe_damage'
+      ) {
+        // aoe_damage = burst_damage in 1v1 (Talents v2 §8 alias)
         oppDamage = applyBurstDamage(oppDamage, firedOppActive.magnitude)
       } else if (
         firedOppActive?.action_type === 'execute' &&
         shouldExecute(attackerAfterHeal, attackerRow.maxHp, firedOppActive.magnitude)
       ) {
         oppDamage = attackerAfterHeal  // finishing blow
+      } else if (firedOppActive?.action_type === 'stealth') {
+        // Force-crit on opp counter-strike. Mirrors player stealth.
+        if (!oppResult.turn.isCrit) {
+          const cfg = await getCombatConfig()
+          const critMul = Math.max(1, cfg.CRIT_MULTIPLIER ?? 2.0)
+          oppDamage = Math.round(oppDamage * critMul)
+          oppForcedCrit = true
+        }
       }
+      // NOTE: aoe_stun / stun_enemy fired by opp would target player. In v1 the
+      // AI never picks them (see pickOpponentActive filter), and player attacks
+      // FIRST in this round, so an opp-applied stun has no in-round effect — it
+      // would only impact the NEXT round's player main attack. Cross-round
+      // application requires gating the player attack on incomingP1Stun, which
+      // is reserved for human-vs-human PvP. See newP1StunRoundsRemaining usage.
+
       // Player's shield reduces incoming opponent damage
       if (playerHasShield) {
         oppDamage = applyShield(oppDamage, firedPlayerActive?.magnitude ?? 0)
       }
-      const mutatedOppTurn = oppDamage !== oppResult.turn.damage
-        ? { ...oppResult.turn, damage: oppDamage }
+      const oppDamageChanged = oppDamage !== oppResult.turn.damage
+      const mutatedOppTurn = oppDamageChanged || oppForcedCrit
+        ? {
+            ...oppResult.turn,
+            damage: oppDamage,
+            ...(oppForcedCrit ? { isCrit: true } : {}),
+          }
         : oppResult.turn
       const finalAttackerHp = Math.max(0, attackerAfterHeal - oppDamage)
       oppResult = { ...oppResult, turn: mutatedOppTurn, newDefenderHp: finalAttackerHp }
@@ -542,19 +665,48 @@ export async function POST(req: NextRequest) {
       opponent_active: firedOppActive?.slot_index ?? null,
     }
 
-    // --- Phase 3: update actives state (set fired cooldown OR consumed flag, tick all others) ---
+    // --- Phase 3 + Talents v2: update actives state ---
     //   Talent fires → set cooldown_remaining = cooldown_max.
     //   Consumable fires → set consumed = true.
     //   All OTHER slots tick down by 1 at end of round.
-    const updatedP1 = advanceActivesAfterRound(
+    //   cooldown_reset (Mage Rewind ult) → zero-out cooldowns on the firing
+    //     side's OTHER non-consumable slots (the fired slot itself stays at
+    //     full cooldown so it can't chain-reset every round).
+    const advancedP1 = advanceActivesAfterRound(
       actives.p1,
       firedPlayerActive?.slot_index ?? null,
     )
-    const updatedP2 = advanceActivesAfterRound(
+    const advancedP2 = advanceActivesAfterRound(
       actives.p2,
       firedOppActive?.slot_index ?? null,
     )
-    const newActives: InteractiveActivesState = { p1: updatedP1, p2: updatedP2 }
+    const updatedP1 =
+      firedPlayerActive?.action_type === 'cooldown_reset'
+        ? advancedP1.map((slot) =>
+            slot.slot_index === firedPlayerActive!.slot_index || isConsumableSlot(slot)
+              ? slot
+              : { ...slot, cooldown_remaining: 0 },
+          )
+        : advancedP1
+    const updatedP2 =
+      firedOppActive?.action_type === 'cooldown_reset'
+        ? advancedP2.map((slot) =>
+            slot.slot_index === firedOppActive!.slot_index || isConsumableSlot(slot)
+              ? slot
+              : { ...slot, cooldown_remaining: 0 },
+          )
+        : advancedP2
+
+    // End-of-round stun decrement. aoe_stun fired this round set
+    // newP{1,2}StunRoundsRemaining = magnitude (e.g. 2). The current round
+    // already consumed one round of stun (counter was suppressed), so we
+    // decrement by 1. Pre-existing stun carry-over decrements the same way.
+    const newActives: InteractiveActivesState = {
+      p1: updatedP1,
+      p2: updatedP2,
+      p1_buffs: { stunRoundsRemaining: Math.max(0, newP1StunRoundsRemaining - 1) },
+      p2_buffs: { stunRoundsRemaining: Math.max(0, newP2StunRoundsRemaining - 1) },
+    }
 
     // Persist round in a single transaction:
     //   1. If a consumable fired, lock + decrement its inventory row.

@@ -325,7 +325,13 @@
 - [[block-248-inventory-marker-parity-after-tracked-state-rollforward]] — the inventory summary and `_untracked_` markers now match the latest git rollforward where blocks `237–246` became tracked and only the newest audit pages remain outside version control
 - [[block-249-schema-reference-count-parity]] — `SCHEMA_REFERENCE.md` now reports the live Prisma schema counts instead of undercounting the current field surface in its header summary
 - [[block-250-rules-doc-freshness-and-count-parity]] — the active rules docs now carry current freshness metadata, and `DEVELOPMENT_RULES.md` no longer hardcodes stale content-size counts in a structural design section
+- [[block-251-economy-docs-v3-parity-and-monetization-transition-sync]] — the active economy docs now match live v3 gem sinks, monetization transition reality, and balance narrative constants instead of preserving older hybrid v2/v3 numbers and stale premium wording
+- [[block-252-audio-runtime-boundary-and-lore-freshness-sync]] — the active audio/lore product docs now match the shipped audio runtime, current Settings controls, and already-live Guild Hall foundation instead of preserving a no-audio-yet snapshot and pre-guild wording
+- [[block-253-game-systems-overview-runtime-parity-and-count-de-brittling]] — `GAME_SYSTEMS.md` is now a durable live overview again, with stale numeric tables removed and exact system constants delegated back to the narrower economy, balance, combat, and feature-map source-of-truth docs
+- [[block-254-onboarding-spec-historical-boundary-sync]] — `ONBOARDING_SPEC.md` now reads as the historical planning snapshot it actually is, with live onboarding/tutorial authority handed back to the runtime feature maps and backend tutorial helpers
+- [[block-255-guild-system-spec-historical-boundary-sync]] — `GUILD_SYSTEM_SPEC.md` now reads as the broader historical guild draft it actually is, while `wiki/features/social.md` points back to the real draft file and the narrower shipped social runtime surfaces
+- [[block-256-active-skill-picker-spec-and-passive-tree-slot-parity]] — `ACTIVE_SKILL_PICKER_SPEC.md` now reads as picker rollout history instead of the live runtime spec, and the passive-tree feature map now reflects the shipped base-3 plus premium-fourth-slot model instead of older generic slot-count planning
 
 ---
 
-*316 in-scope wiki markdown files | 315 wiki pages (13 systems, 15 decisions, 3 entities, 250 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-20*
+*322 in-scope wiki markdown files | 321 wiki pages (13 systems, 15 decisions, 3 entities, 256 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + generated README + index/log | Last updated: 2026-04-29*

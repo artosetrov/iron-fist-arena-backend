@@ -1,8 +1,30 @@
 # Hexbound — Audio Design
 
-*Sound, music, and SFX design reference. Updated: 2026-03-21*
+*Sound, music, and SFX design reference. Updated: 2026-04-29*
 
-**Status:** Planning / pre-production. No audio assets exist yet.
+**Status:** Hybrid reference. The repo already ships bundled `sounds/` assets plus
+live `AudioManager`, `SFXManager`, `SFXCatalog`, and `AmbientManager` runtime
+surfaces. This doc remains the tone/coverage reference and still contains a few
+forward-looking sections for planned expansion.
+
+---
+
+## Current Runtime Snapshot
+
+- **BGM runtime exists today** via `Hexbound/Hexbound/Persistence/AudioManager.swift`
+- **SFX runtime exists today** via `Hexbound/Hexbound/Persistence/SFXManager.swift`
+  and `Hexbound/Hexbound/Persistence/SFXCatalog.swift`
+- **Ambient zone audio exists today** via `Hexbound/Hexbound/Persistence/AmbientManager.swift`
+- **Bundled assets exist today** under `sounds/music/` and `sounds/sfx/`
+- **Player-facing settings currently live** on the iOS Settings screen:
+  - Sound Effects toggle
+  - Music toggle
+  - Music Volume slider
+  - SFX Volume slider
+- **Haptic runtime exists** via `HapticManager`, but there is no dedicated
+  player-facing haptics toggle on the current Settings screen
+- **Audio session behavior today** uses `AVAudioSession` playback mode with
+  `.mixWithOthers`
 
 ---
 
@@ -97,20 +119,23 @@ Hexbound's audio should reinforce the grimdark dark fantasy atmosphere without d
 
 ### Implementation
 
-- Use AVAudioEngine or native SwiftUI audio APIs
-- SFX triggered by combat engine events (damage dealt, dodge, crit, etc.)
-- Music managed by a singleton AudioManager service
-- Preload combat SFX during battle init (not on-demand)
-- Respect system silent mode / ringer switch
+- Current runtime uses `AVAudioPlayer`-backed managers (`AudioManager`,
+  `SFXManager`, `AmbientManager`) rather than a blank future audio scaffold
+- SFX are triggered from live view / combat surfaces and mapped through
+  `SFXCatalog`
+- Music is already managed by the singleton `AudioManager`
+- Ambient loops are already managed per zone by `AmbientManager`
+- Preloading and richer transition polish remain an implementation-quality
+  target, not a claim that every surface is fully authored today
 
-### Player Controls (Settings Screen)
+### Player Controls (Current live Settings surface)
 
 | Setting | Default | Range |
 |---------|---------|-------|
-| Master Volume | 80% | 0-100% |
-| Music Volume | 50% | 0-100% |
-| SFX Volume | 80% | 0-100% |
-| Haptic Feedback | On | On/Off |
+| Sound Effects | On | On/Off |
+| Music | On | On/Off |
+| Music Volume | 20% | 0-100% |
+| SFX Volume | 20% | 0-100% |
 
 ---
 
@@ -130,7 +155,7 @@ Mobile-specific — use UIImpactFeedbackGenerator for physical feel:
 
 ---
 
-## Asset Sourcing Strategy
+## Asset Sourcing Strategy (historical / planning appendix)
 
 ### Options (in priority order)
 
@@ -154,7 +179,7 @@ Mobile-specific — use UIImpactFeedbackGenerator for physical feel:
 
 - **Combat engine events** → trigger combat SFX (requires event hooks in `combat.ts` response)
 - **UI state changes** → trigger UI SFX (requires AudioManager in SwiftUI views)
-- **Settings screen** → volume controls (requires new settings keys in `GameConfig`)
+- **Settings screen** → volume controls already live through `SettingsManager`, `SettingsViewModel`, and `SettingsDetailView`
 - **Art Style Guide** → audio tone must match visual tone (grimdark, not heroic)
 
 ---

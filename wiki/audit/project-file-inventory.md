@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-20
+updated: 2026-04-29
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5155
-- Untracked project-owned files: 4
-- In-scope files listed here: 5159
+- Tracked files: 5167
+- Untracked project-owned files: 18
+- In-scope files listed here: 5185
 
 ## Excluded Generated / Vendor Areas
 
@@ -33,19 +33,19 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills: 17
 - [root]: 3
 - admin: 224
-- backend: 389
+- backend: 398
 - Buildings: 21
-- docs: 184
+- docs: 195
 - figma-assets: 333
 - graphify-out: 869
 - Hexbound: 1515
 - onboarding-assets: 10
 - prototypes: 10
-- qa-reports: 4
-- scripts: 18
+- qa-reports: 6
+- scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 321
+- wiki: 327
 
 ## File List By Block
 
@@ -473,7 +473,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (389)
+### backend (398)
 
 - backend/.env.example
 - backend/.gitignore
@@ -546,8 +546,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/config/restore/route.ts
 - backend/src/app/api/admin/design-tokens/route.ts
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
+- backend/src/app/api/admin/economy/route.ts _(untracked)_
 - backend/src/app/api/admin/events/route.ts
 - backend/src/app/api/admin/hub-layout/route.ts
+- backend/src/app/api/admin/iap/route.ts _(untracked)_
 - backend/src/app/api/admin/iap-products/route.ts
 - backend/src/app/api/admin/item-balance/apply-suggestions/route.ts
 - backend/src/app/api/admin/item-balance/config/route.ts
@@ -564,6 +566,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/passives/route.ts
 - backend/src/app/api/admin/seasons/route.ts
 - backend/src/app/api/admin/skills/route.ts
+- backend/src/app/api/admin/stats/route.ts _(untracked)_
 - backend/src/app/api/admin/unban/route.ts
 - backend/src/app/api/admin/users/route.ts
 - backend/src/app/api/appearances/route.ts
@@ -877,7 +880,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (184)
+### docs (195)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -1042,6 +1045,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-04-13.md
 - docs/retro/RETRO_2026-04-14.md
 - docs/retro/RETRO_2026-04-15.md
+- docs/retro/RETRO_2026-04-21.md _(untracked)_
+- docs/retro/RETRO_2026-04-22.md _(untracked)_
+- docs/retro/RETRO_2026-04-23.md _(untracked)_
+- docs/retro/RETRO_2026-04-24.md _(untracked)_
+- docs/retro/RETRO_2026-04-25.md _(untracked)_
+- docs/retro/RETRO_2026-04-26.md _(untracked)_
+- docs/retro/RETRO_2026-04-27.md _(untracked)_
+- docs/retro/RETRO_2026-04-28.md _(untracked)_
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -3787,14 +3798,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - prototypes/strike-reveal-compact.html
 - prototypes/strike-reveal-integration.html
 
-### qa-reports (4)
+### qa-reports (6)
 
 - qa-reports/QA_FIX_PLAN_2026-04-11.md
 - qa-reports/QA_REPORT_2026-04-09.md
 - qa-reports/QA_REPORT_2026-04-10.md
 - qa-reports/QA_REPORT_2026-04-12.md
 
-### scripts (18)
+### scripts (20)
 
 - scripts/check_ios_backend_drift.sh
 - scripts/check_schema_drift.py
@@ -4910,7 +4921,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (309)
+### wiki (327)
 
 - wiki/_generated/README.md
 - wiki/_generated/api-routes.json
@@ -5169,6 +5180,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-248-inventory-marker-parity-after-tracked-state-rollforward.md _(untracked)_
 - wiki/audit/block-249-schema-reference-count-parity.md _(untracked)_
 - wiki/audit/block-250-rules-doc-freshness-and-count-parity.md _(untracked)_
+- wiki/audit/block-251-economy-docs-v3-parity-and-monetization-transition-sync.md _(untracked)_
+- wiki/audit/block-252-audio-runtime-boundary-and-lore-freshness-sync.md _(untracked)_
+- wiki/audit/block-253-game-systems-overview-runtime-parity-and-count-de-brittling.md _(untracked)_
+- wiki/audit/block-254-onboarding-spec-historical-boundary-sync.md _(untracked)_
+- wiki/audit/block-255-guild-system-spec-historical-boundary-sync.md _(untracked)_
+- wiki/audit/block-256-active-skill-picker-spec-and-passive-tree-slot-parity.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

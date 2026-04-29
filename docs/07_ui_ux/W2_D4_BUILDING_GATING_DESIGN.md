@@ -1,11 +1,19 @@
 # W2.D4 — Building Gating: Progressive Hub Disclosure
 
 **Дата:** 2026-04-10
-**Статус:** 📝 DESIGN DOC — awaiting approval
+**Статус:** 📚 HISTORICAL DESIGN DOC — archived proposal
 **План:** `QA_FIX_PLAN_2026-04-10.md` W2.D4 — «Gate buildings behind soft level unlocks»
 **Связанные доки:** `W2_D1_REALITY_CHECK.md`, `W2_D2_LORE_AUDIT.md`, `W2_D3_SCRIPTED_FIGHT_DESIGN.md`
 
 > **Status boundary:** historical design proposal for one building-gating iteration. Keep it as rationale, not as the current unlock schedule or shipped hub-gating contract without rechecking live code and current feature maps.
+>
+> **Live runtime note (2026-04-29):** current shipped unlock behavior is
+> mirrored by:
+> - `backend/src/lib/game/tutorial.ts::BUILDING_UNLOCK_LEVELS`
+> - `Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift::BuildingUnlockConfig`
+>
+> The live schedule no longer exactly matches every proposed table below. This
+> document is retained as design rationale and tradeoff history.
 
 ---
 

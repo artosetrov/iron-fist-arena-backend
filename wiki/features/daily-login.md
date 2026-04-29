@@ -66,7 +66,7 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 ## Docs
 
 - `docs/02_product_and_features/ECONOMY.md` — daily-login rewards are a gold/gem source
-- `docs/06_game_systems/GAME_SYSTEMS.md` — retention systems
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level retention/engagement systems overview
 
 ## Notable gotchas
 

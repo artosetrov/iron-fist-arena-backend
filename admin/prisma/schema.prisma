@@ -220,8 +220,13 @@ enum TalentSlotAction {
   burst_damage       // +magnitude% damage on next strike
   heal_self          // restore magnitude% of max HP
   shield_self        // absorb magnitude × currentMaxHp damage on next incoming strike
-  stun_enemy         // enemy skips next strike
+  stun_enemy         // enemy skips next strike (1 round)
   execute            // multiplier damage if enemy HP < magnitude threshold
+  // Talents v2 ultimates (2026-04-29) — see docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §8
+  stealth            // next attack auto-crits (Rogue Vanish ult, CD 60s)
+  aoe_damage         // alias of burst_damage with distinct VFX (Mage Cataclysm, CD 90s)
+  cooldown_reset     // reset cooldown_remaining=0 for OTHER talent slots (Mage Rewind, CD 180s)
+  aoe_stun           // stun opponent for `magnitude` rounds, default 2 (Tank Quake, CD 120s)
 }
 
 enum PassiveBonusType {

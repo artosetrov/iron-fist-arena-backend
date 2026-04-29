@@ -212,6 +212,8 @@ psql "$DATABASE_URL" -f scripts/restore-admin-roles.sql
 
 **When adding a new static-catalog table** — it MUST land with an idempotent `.sql` migration AND a `seed-*.ts`, both labelled with "source of truth" pointer. Do NOT rely on ad-hoc `INSERT` scripts, MCP one-shots, or admin-UI entry.
 
+**Large catalogs — use a generator, not hand-maintenance.** When the SQL mirror would exceed ~500 lines, or when the TS source has nested structure (lookup tables, per-row computed fields, ability catalogs), do NOT hand-maintain both the `.ts` and the `.sql`. Instead add `scripts/gen_<table>_sql.py` (or `.ts`) that reads the TS source and emits the idempotent SQL. The `.ts` is the source of truth; the `.sql` is regenerated on every edit. Header comment of the seed-*.ts must spell out the regen command (see `seed-dungeons.ts` referencing `python3 scripts/gen_dungeons_sql.py > backend/prisma/migrations/20260421_seed_dungeons/migration.sql`). Reason: 2026-04-21 dungeons seed was 765 lines / 7 dungeons × 70 bosses × ~250 abilities — drift between two hand-written copies was guaranteed.
+
 **Admin-role re-apply:** `scripts/restore-admin-roles.sql` is the canonical post-restore admin re-promotion. When a new admin is granted in prod, add their email to that script in the same commit — git history is the source of truth for "who is admin", not Supabase row state.
 
 Related memories: `feedback_snapshot_restore_admin_role.md`, this week's Appearance Skins incident (2026-04-20).

@@ -91,7 +91,7 @@ Tavern building surfaces three minigames: Shell Game (guess-the-shell betting), 
 
 ## Docs
 
-- `docs/06_game_systems/GAME_SYSTEMS.md` — minigame overview
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level minigame/side-loop overview
 - `docs/02_product_and_features/ECONOMY.md` — sinks and payouts for shell/wheel
 
 ## Notable gotchas

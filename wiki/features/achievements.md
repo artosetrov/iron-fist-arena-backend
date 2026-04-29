@@ -75,7 +75,7 @@ Players earn achievements across PvP / Progression / Ranking categories; progres
 
 ## Docs
 
-- `docs/06_game_systems/GAME_SYSTEMS.md` — Achievement system overview
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level achievement/progression overview
 - `wiki/systems/achievements.md` — legacy wiki entry
 - `CLAUDE.md` → "Achievement System (CRITICAL)" section — canonical rules
 

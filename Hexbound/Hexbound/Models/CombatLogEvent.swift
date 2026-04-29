@@ -138,9 +138,12 @@ enum CombatLogEvent: Identifiable, Sendable, Equatable {
         case .dodged, .missed: return .neutral
         case .talentFired(_, _, let action, _):
             switch action {
-            case .healSelf:   return .heal
-            case .shieldSelf: return .shield
-            case .burstDamage, .stunEnemy, .execute:
+            case .healSelf:                                    return .heal
+            case .shieldSelf:                                  return .shield
+            case .burstDamage, .stunEnemy, .execute,
+                 .stealth, .aoeDamage, .cooldownReset, .aoeStun:
+                // Damage/CC/utility ults all fall under generic .talent for
+                // log-icon purposes; the specific FX comes from talentAsset.
                 return .talent
             }
         }
@@ -173,11 +176,17 @@ enum CombatLogEvent: Identifiable, Sendable, Equatable {
 
     private static func talentAsset(_ action: TalentSlotAction) -> String {
         switch action {
-        case .burstDamage: return "fx-magical-burst"
-        case .healSelf:    return "fx-heal-divine"
-        case .shieldSelf:  return "fx-block-hexshield"
-        case .stunEnemy:   return "fx-true-lightning"
-        case .execute:     return "fx-physical-explosion"
+        case .burstDamage:   return "fx-magical-burst"
+        case .healSelf:      return "fx-heal-divine"
+        case .shieldSelf:    return "fx-block-hexshield"
+        case .stunEnemy:     return "fx-true-lightning"
+        case .execute:       return "fx-physical-explosion"
+        // Talents v2 — reuse closest visual fits until dedicated FX assets ship.
+        // TODO(canvas): commission Vanish/Cataclysm/Rewind/Quake VFX.
+        case .stealth:       return "fx-magical-burst"      // crit-burst stand-in
+        case .aoeDamage:     return "fx-physical-explosion" // explosion fits AoE theme
+        case .cooldownReset: return "fx-heal-divine"        // soft pulse stand-in
+        case .aoeStun:       return "fx-true-lightning"     // lightning = shockwave
         }
     }
 

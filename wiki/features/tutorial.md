@@ -82,7 +82,8 @@ New players go through a scripted tutorial: NPC hints → equip an item → scri
 ## Docs
 
 - `docs/02_product_and_features/GAME_SYSTEMS.md` — tutorial overview + funnel
-- `docs/06_game_systems/GAME_SYSTEMS.md` — step definitions
+- `docs/02_product_and_features/ONBOARDING_SPEC.md` — historical onboarding/tutorial rollout plan
+- `docs/07_ui_ux/W2_D4_BUILDING_GATING_DESIGN.md` — historical hub-building unlock rationale
 
 ## Notable gotchas
 
@@ -90,6 +91,7 @@ New players go through a scripted tutorial: NPC hints → equip an item → scri
 - **Scripted fight ≠ real PvP.** Uses `/api/tutorial/scripted-fight/*`, NOT `/api/pvp/fight`. Opponent is fixed; result is scripted win. Does NOT count towards PvP stats or ELO.
 - **Skip bundle.** `/api/tutorial/skip` grants a starter bundle + flags `tutorialSkipped = true`. Gate this rewards path on server; client should not be able to skip and still unlock tutorial quests.
 - **Tutorial quests separate.** `TutorialQuest` ≠ `DailyQuest` — separate table, separate endpoints. Do NOT conflate with [[quests]].
+- **Building unlock cadence has a mirrored client table.** Backend `BUILDING_UNLOCK_LEVELS` in `backend/src/lib/game/tutorial.ts` is the live authority; iOS `BuildingUnlockConfig` mirrors it for hub lock overlays and local unlock ceremonies. Keep both schedules aligned or the City hub and level-up unlock pills drift out of sync.
 - **Referral bind window.** Referral code can be entered during tutorial (`/api/tutorial/referral`). After tutorial completes, the window closes — see [[referral]] for the full rule.
 - **Analytics split.** Tutorial funnel logging lives in `backend/src/lib/game/tutorial-analytics.ts` and currently emits 8 structured JSON events; this is separate from the 7-event provider-agnostic core contract in `backend/src/lib/analytics.ts`.
 - **Reset path.** `tutorialCompleted` + `tutorialStep` reset is admin-only. In-game replay of tutorial is NOT supported.

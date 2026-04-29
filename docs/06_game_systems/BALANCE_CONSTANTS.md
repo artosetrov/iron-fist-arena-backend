@@ -1,7 +1,7 @@
 # Game Balance Constants (Curated Narrative)
 
 *Derived from backend: `src/lib/game/balance.ts`, `live-config.ts`, `loot.ts`, `gold-mine.ts`*
-*Updated: 2026-04-13 — Economy v3 (see `ECONOMY_AUDIT_2026-04-13.md` + `ECONOMY_RULES.md`)*
+*Updated: 2026-04-29 — Economy v3 parity sync (see `ECONOMY_AUDIT_2026-04-13.md` + `ECONOMY_RULES.md`)*
 
 > **Economy v3 highlights** (shipping in C1–C5):
 > - `LEVEL_REWARD_SCALE: 0.02 → 0.04` — doubles level-scaled reward growth to match cost scaling (R3).
@@ -21,8 +21,8 @@
 > - Stamina cap `120 → 180` (R8.cap) — pure buff for existing players; migration `20260414_stamina_cap_180` applied to prod. 24h overnight regen at 1/8min.
 > - Bundle extras: Adventurer's Bundle I/II/III now grant Protection Scrolls + Legendary Shards alongside currencies. Routes to user's most-recent character. `ConsumableType` enum extended (migration `20260414_consumable_type_extras`).
 >
-> **Target (still deferred — single-domain):**
-> - Premium Pass StoreKit subscription Phase 2 — see `PREMIUM_PASS_MIGRATION.md`. Full auto-renewable subscription + server-side validation; ADR in place, execution pending StoreKit config work.
+> **Storefront transition still partial:**
+> - Premium Pass backend/runtime plumbing ships (`premium_pass_monthly`, receipt verification, Apple webhook updates, `PremiumSubscription` rows), but the dedicated iOS storefront/copy transition is not fully complete yet. See `PREMIUM_PASS_MIGRATION.md`.
 
 > **⚠️ SSoT for raw numbers:** [`BALANCE_CONSTANTS_AUTO.md`](BALANCE_CONSTANTS_AUTO.md) — auto-generated from `backend/src/lib/game/balance.ts` via `npm run docs:balance`. Every constant, table, and formula below that lives in `balance.ts` is mirrored there and drift-checked in pre-commit.
 >
@@ -102,7 +102,7 @@ Leveled Reward = Base × (1 + (level - 1) × 0.04)
 | **First Win of Day** | 2.0× | First PvP win daily | No |
 | **Revenge Win** | 1.5× | Beat player who beat you | No |
 | **Win Streak** | Variable | See below | Yes |
-| **CHA Bonus** | Tiered (see below) | Hard cap +125% | Yes |
+| **CHA Bonus** | Tiered (see below) | Hard cap +80% | Yes |
 | **Loss Streak Recovery** | Variable | See below | Yes |
 
 ### Win Streak Bonuses
@@ -112,17 +112,17 @@ Gold reward multiplier based on consecutive wins:
 | Streak | Multiplier | Threshold |
 |--------|-----------|-----------|
 | 0–2 | 0% | No bonus |
-| 3 | +20% | 3-win streak |
-| 4 | +20% | Streak continues |
-| 5 | +50% | Significant milestone |
-| 6–7 | +50% | Sustained streak |
-| 8+ | +100% | Doubling rewards |
+| 3 | +15% | 3-win streak |
+| 4 | +15% | Streak continues |
+| 5 | +30% | Significant milestone |
+| 6–7 | +30% | Sustained streak |
+| 8+ | +50% | Top bucket |
 
-**Example (200 base gold, 3-win streak, CHA 30):**
-- Level scaling: 200 × 1.0 = 200
-- Streak bonus: 200 × 1.20 = 240
-- CHA bonus: 240 × 1.75 = 420 gold
-- **Total: 420 gold**
+**Example (150 base gold, 3-win streak, CHA 30):**
+- Base PvP win: 150
+- Streak bonus: 150 × 1.15 = 172.5
+- CHA bonus cap at 30 CHA: +75%
+- Rough total before any premium multiplier: ~301 gold
 
 ### Loss Streak Recovery Bonuses
 
@@ -131,9 +131,9 @@ When a losing streak is broken by a win, bonus gold is awarded:
 | Streak | Multiplier | Threshold |
 |--------|-----------|-----------|
 | 0–2 | 0% | No bonus |
-| 3–4 | +30% | Breaking 3+ loss streak |
-| 5–6 | +50% | Significant recovery |
-| 7+ | +80% | Major comeback bonus |
+| 3–4 | +20% | Breaking 3+ loss streak |
+| 5–6 | +35% | Significant recovery |
+| 7+ | +50% | Major comeback bonus |
 
 ### CHA Gold Bonus (Diminishing Returns)
 
@@ -141,17 +141,17 @@ Charisma gold bonus uses tiered diminishing returns with a hard cap:
 
 ```
 CHA 0-30:  +2.5% per point (max +75%)
-CHA 31-60: +1.0% per point (max +105% cumulative)
-CHA 61+:   +0.5% per point (hard cap +125%)
+CHA 31-60: +1.0% per point
+CHA 61+:   +0.5% per point, hard-capped at +80%
 ```
 
 **Calculation:**
 - CHA 25 → +62.5% gold (25 × 2.5%)
 - CHA 30 → +75% gold (cap for tier 1)
-- CHA 50 → +95% gold (75% + 20 × 1.0%)
-- CHA 60 → +105% gold (75% + 30 × 1.0%)
-- CHA 100 → +125% gold (75% + 30% + 40 × 0.5% = 125%, at hard cap)
-- Hard cap: +125% regardless of CHA value
+- CHA 35 → +80% gold (cap reached)
+- CHA 50 → still +80% gold
+- CHA 100 → still +80% gold
+- Hard cap: +80% regardless of CHA value
 
 ---
 
@@ -274,10 +274,10 @@ Equipment can be upgraded from +0 to +10:
 | +6 | 80% | 1.25 |
 | +7 | 60% | 1.67 |
 | +8 | 40% | 2.5 |
-| +9 | 25% | 4 |
-| +10 | 15% | 6.7 |
+| +9 | 30% | 3.33 |
+| +10 | 20% | 5 |
 
-**Expected cost to +10:** ~6.7 upgrade attempts (expensive!)
+**High-end note:** +9/+10 are intentionally still expensive, but Economy v3 swaps some raw failure tax for downgrade risk so Protection Scrolls become a real decision instead of a dead SKU.
 
 ---
 
@@ -327,10 +327,10 @@ Premium currency sinks:
 |--------|------|-------|
 | Stamina Refill | 50 gems | Instant full stamina (1st of day); diminishing curve 50 / 80 / 140 / 240 for 1st–4th refill — see R8.refill |
 | Extra PvP Combat | 50 gems | +5 stamina immediately |
-| Upgrade Protection | 50 gems | Prevents downgrade on failed +6+ upgrade |
-| Battle Pass Premium | 500 gems | Unlocks premium track (100 levels) |
+| Upgrade Protection | 40 gems | Prevents downgrade on failed +9/+10 upgrade |
+| Battle Pass Premium | 700 gems | Unlocks premium track (100 levels) |
 | Gold Mine Slot (buy) | 50 gems | Unlock 3rd mining slot |
-| Gold Mine Boost | 10 gems | Speed up current slot by 2 hours |
+| Gold Mine Boost | 15 gems | One-time boost that doubles the current slot payout |
 | Passive Respec | 50 gems | Full passive tree reset |
 
 ### Gem Income
@@ -361,8 +361,8 @@ Players earn free gems from:
 
 | Cost | Effect |
 |------|--------|
-| 10 gems | Speed up slot by 2 hours (reduces remaining time) |
-| Multiple boosts | Can stack (e.g., 2 boosts = 4 hours faster) |
+| 15 gems | Doubles the active slot's pending gold and gem reward once |
+| Multiple boosts | No — one boost per active session |
 
 ---
 
@@ -373,12 +373,12 @@ Players earn free gems from:
 | Property | Value | Details |
 |----------|-------|---------|
 | Base Slots | 28 | Starting inventory |
-| Max Slots | 100 | Hard cap |
+| Max Slots | 58 | Derived hard cap = 28 + (3 × 10) |
 | Expansion Amount | 10 slots per upgrade | +10 per purchase |
 | Expansion Cost | 5000 gold per upgrade | Increases with levels |
 | Max Expansions | 3 | 28 + (3 × 10) = 58 max |
 
-**Actual Max:** 28 + 30 = 58 slots (not 100)
+**Actual Max:** 58 slots (derived from base + expansions; there is no separate higher ceiling)
 
 ---
 
@@ -410,26 +410,24 @@ Flat gold packs are **disabled for new purchases** in Economy v3. Rationale: gem
 
 Mixed-currency bundles that convert better than pure gem packs but include consumables/progression items instead of flat gold. See R10.3.
 
-| SKU | Gems | Gold | Extras (Phase 2) | Price |
+| SKU | Gems | Gold | Extras | Price |
 |-----|------|------|--------|-------|
-| adventurer_bundle_I | 600 | 3,000 | 3× Protection Scroll | $4.99 |
-| adventurer_bundle_II | 1,400 | 10,000 | 5× Protection Scroll | $9.99 |
-| adventurer_bundle_III | 3,200 | 20,000 | 2× Legendary Shard | $19.99 |
+| adventurer_bundle_I | 600 | 3,000 | 1× Protection Scroll | $4.99 |
+| adventurer_bundle_II | 1,400 | 10,000 | 3× Protection Scroll, 1× Legendary Shard | $9.99 |
+| adventurer_bundle_III | 3,200 | 20,000 | 5× Protection Scroll, 5× Legendary Shards | $19.99 |
 
-> **Phase 2 note:** Bundles ship currency-only in initial v3 release. Extras (Protection Scrolls, Legendary Shards) are delivered in a follow-up PR that:
-> 1. Adds `protection_scroll` + `legendary_shard` to `ConsumableType` enum (Prisma migration).
-> 2. Decides character routing (likely user-level Stash so they survive character switching).
-> 3. Extends `IapProduct` with `items?: Array<{itemId, quantity}>` and grant logic in `verify-receipt`.
-> Until then, bundles' currency-portion economics already justify the price (per gem rates: bundle I = $0.0083/gem effective with the gold thrown in vs $0.0091 on `gems_medium`).
+Bundle extras now route to the user's most-recently updated character.
 
 ### Special Products
 
 | SKU | Gems | Gold | Premium | Monthly Card | Price | Status |
 |-----|------|------|---------|-------------|-------|--------|
+| starter_bundle | 200 | 3,000 | No | No | $2.99 | Active |
 | monthly_gem_card | 50 | 0 | No | **Yes** | $4.99 | Active |
-| premium_forever | 0 | 0 | **Yes** | No | $9.99 | **Disabled (new sales)** — grandfathered for existing owners; replaced by Premium Pass (30-day subscription, R11). See `PREMIUM_PASS_MIGRATION.md` ADR. |
+| premium_forever | 0 | 0 | **Yes** | No | $9.99 | **Disabled (new sales)** — grandfathered for existing owners |
+| premium_pass_monthly | 0 | 0 | **30-day entitlement** | No | $4.99 | Backend/runtime-ready successor; storefront transition still partial |
 
-**Monthly Gem Card:** 50 instant gems + 10 gems/day for 30 days (500 total)
+**Monthly Gem Card:** 50 instant gems + 10 gems/day for 30 days (350 total)
 
 ---
 
@@ -490,7 +488,7 @@ BP XP for Level N = 100 + N × 50
 | Track | Levels | Cost | Contents |
 |-------|--------|------|----------|
 | Free | 50 | Free | Cosmetics, consumables, 5 gems |
-| Premium | +100 | 500 gems | Rare items, 100+ gems, cosmetics |
+| Premium | +100 | 700 gems | Rare items, 100+ gems, cosmetics |
 | Total | 150 | — | Full seasonal reward set |
 
 ---
@@ -566,13 +564,13 @@ Sorting: closest `ratingDiff` first, then closest `levelDiff`, then closest `gea
 
 ```
 Training: 5 stamina
-Free PvP: 0 stamina (×5 per day)
+Free PvP: 0 stamina (×3 per day)
 PvP: 10 stamina
 Dungeon Easy: 15 stamina
 Dungeon Normal: 20 stamina
 Dungeon Hard: 25 stamina
 Boss: 40 stamina
-Max Stamina: 120 (regenerates 1 pt every 8 min)
+Max Stamina: 180 (regenerates 1 pt every 8 min)
 ```
 
 ---
@@ -585,9 +583,9 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 - Avg per match: 100 gold
 
 **PvP (Level 50, no bonuses):**
-- Win: 150 × 1.98 = 297 gold
-- Loss: 50 × 1.98 = 99 gold
-- Avg per match: 198 gold
+- Win: 150 × 2.96 = 444 gold
+- Loss: 50 × 2.96 = 148 gold
+- Avg per match: 296 gold
 
 **Training (Level 1):**
 - Win: 30 gold
@@ -603,10 +601,10 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 
 ### Free-to-Play Paths
 
-1. **Stamina Passive:** 8 minutes = 1 stamina (120 max)
-2. **Gold Grinding:** 50–300 gold per match (PvP/Training)
+1. **Stamina Passive:** 8 minutes = 1 stamina (180 max)
+2. **Gold Grinding:** 50–444 gold per PvP result before streak/CHA/premium bonuses
 3. **Loot Farming:** 5–75% drop chance per difficulty
-4. **Daily Rewards:** 1700 gold + 250 stamina/week
+4. **Daily Rewards:** 950 gold + 250 stamina + 25 gems/week
 5. **Gold Mine:** 40–100 gold per 4 hours (Economy v2)
 
 ### Pay-to-Accelerate Options
@@ -615,7 +613,7 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 2. **Extra PvP:** 50 gems = +5 stamina immediately
 3. **Inventory Expansion:** 5000 gold = +10 slots (tradeable in time)
 4. **Skill Upgrades:** 1000–3000 gold per rank
-5. **Monthly Card:** $4.99 = 50 + 300 gems over 30 days
+5. **Monthly Card:** $4.99 = 350 total gems over 30 days
 
 **Fair Play Guarantee:** No pay-to-win stat advantages; only acceleration/cosmetics.
 

@@ -168,31 +168,44 @@ struct PremiumSlotUnlockResponse: Codable {
 
 /// Mirrors backend `TalentSlotAction` enum.
 enum TalentSlotAction: String, Codable, Hashable, CaseIterable {
-    case burstDamage  = "burst_damage"
-    case healSelf     = "heal_self"
-    case shieldSelf   = "shield_self"
-    case stunEnemy    = "stun_enemy"
+    case burstDamage    = "burst_damage"
+    case healSelf       = "heal_self"
+    case shieldSelf     = "shield_self"
+    case stunEnemy      = "stun_enemy"
     case execute
+    // Talents v2 ultimates (2026-04-29) — see SKILL_TREE_DESIGN_V2.md §8
+    case stealth        = "stealth"          // Rogue Vanish — next attack auto-crits
+    case aoeDamage      = "aoe_damage"       // Mage Cataclysm — alias of burst_damage in 1v1
+    case cooldownReset  = "cooldown_reset"   // Mage Rewind — zeros other slot cooldowns
+    case aoeStun        = "aoe_stun"         // Tank Quake — multi-round opponent stun
 
     /// Compact label for combat HUD.
     var shortLabel: String {
         switch self {
-        case .burstDamage: return "Burst"
-        case .healSelf:    return "Heal"
-        case .shieldSelf:  return "Shield"
-        case .stunEnemy:   return "Stun"
-        case .execute:     return "Execute"
+        case .burstDamage:   return "Burst"
+        case .healSelf:      return "Heal"
+        case .shieldSelf:    return "Shield"
+        case .stunEnemy:     return "Stun"
+        case .execute:       return "Execute"
+        case .stealth:       return "Vanish"
+        case .aoeDamage:     return "Cataclysm"
+        case .cooldownReset: return "Rewind"
+        case .aoeStun:       return "Quake"
         }
     }
 
     /// SF Symbol fallback for when the node has no icon asset.
     var sfSymbol: String {
         switch self {
-        case .burstDamage: return "bolt.fill"
-        case .healSelf:    return "cross.case.fill"
-        case .shieldSelf:  return "shield.lefthalf.filled"
-        case .stunEnemy:   return "hand.raised.fill"
-        case .execute:     return "scope"
+        case .burstDamage:   return "bolt.fill"
+        case .healSelf:      return "cross.case.fill"
+        case .shieldSelf:    return "shield.lefthalf.filled"
+        case .stunEnemy:     return "hand.raised.fill"
+        case .execute:       return "scope"
+        case .stealth:       return "eye.slash.fill"
+        case .aoeDamage:     return "flame.fill"
+        case .cooldownReset: return "clock.arrow.circlepath"
+        case .aoeStun:       return "bolt.horizontal.fill"
         }
     }
 }

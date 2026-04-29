@@ -1,5 +1,9 @@
-# Economy System — Economy v2 (Source of Truth)
-*Updated: 2026-04-10 — W3.D3 sink-ratio rebalance applied*
+# Economy System — Live Economy v3 (Source of Truth)
+*Updated: 2026-04-29 — v3 monetization and gem-sink parity sync applied*
+
+> Historical Economy v2 / W3.D3 milestone notes remain below for context. Live
+> raw constants come from `backend/src/lib/game/balance.ts` and
+> `docs/06_game_systems/BALANCE_CONSTANTS_AUTO.md`.
 
 ## Currencies
 
@@ -103,10 +107,10 @@ Pattern combines **LoL First Win of the Day** (hard bonus window), **RAID: Shado
 | Stamina Refill (2nd of day) | 80 | 1.6× — diminishing returns (Economy v3) |
 | Stamina Refill (3rd of day) | 140 | 2.8× — diminishing returns (Economy v3) |
 | Stamina Refill (4th of day) | 240 | 4.8× — final refill, then hard cap (Economy v3) |
-| Upgrade Protection Scroll | 50 | Prevents downgrade on failed +6 and above |
-| Battle Pass Premium | 500 | Premium cosmetic/reward track |
+| Upgrade Protection Scroll | 40 | Prevents downgrade on failed +9/+10 upgrades |
+| Battle Pass Premium | 700 | Premium cosmetic/reward track |
 | Gold Mine Slot Unlock | 50 | Additional mining slot |
-| Gold Mine Boost | 10 | Instant 4hr session completion |
+| Gold Mine Boost | 15 | One-time boost that doubles the current slot payout |
 | Passive Respec | 50 | Passive tree reset |
 
 ##### Stamina Refill Diminishing Returns (W3.D4)
@@ -137,25 +141,51 @@ keeps acceleration available without turning gems into unlimited stamina.
 | Huge | 2500 | $19.99 | 125 |
 | Mega | 6500 | $49.99 | 130 |
 
-### Gold Packs
+### ~~Gold Packs (disabled in Economy v3)~~
 
-| Pack | Gold | Price |
-|------|------|-------|
-| 500g | 500 | $0.99 |
-| 1200g | 1200 | $1.99 |
-| 3500g | 3500 | $4.99 |
-| 8000g | 8000 | $9.99 |
-| 20000g | 20000 | $19.99 |
+Flat gold packs are disabled for new purchases. They remain in the catalog only
+as legacy SKUs/receipt history and were replaced by mixed-currency bundles.
+
+| SKU | Status |
+|-----|--------|
+| `gold_500` | Disabled |
+| `gold_1200` | Disabled |
+| `gold_3500` | Disabled |
+| `gold_8000` | Disabled |
+| `gold_20000` | Disabled |
+
+### Adventurer's Bundles
+
+Mixed-currency bundles replace direct gold sales and now ship their bonus items
+to the user's most-recently updated character.
+
+| Bundle | Gems | Gold | Extras | Price |
+|--------|------|------|--------|-------|
+| Adventurer's Bundle I | 600 | 3000 | 1× Protection Scroll | $4.99 |
+| Adventurer's Bundle II | 1400 | 10000 | 3× Protection Scroll, 1× Legendary Shard | $9.99 |
+| Adventurer's Bundle III | 3200 | 20000 | 5× Protection Scroll, 5× Legendary Shards | $19.99 |
 
 ### Subscription Products
 
 #### Monthly Gem Card ($4.99)
-- 50 gems instant + 10 gems/day × 30 days = 350 gems total (~341% value vs packs)
+- Active
+- 50 gems instant + 10 gems/day × 30 days = 350 gems total
 
 #### Starter Bundle ($2.99, one-time)
 - 200 gems + 3000 gold — best $/value in the game, creates habit
 
-#### Premium Forever ($9.99, one-time) — W3.D5 (IAP-02) expansion
+#### Premium Pass Monthly ($4.99, successor rollout)
+
+- Backend/runtime path exists as `premium_pass_monthly` + `PremiumSubscription`
+- 30-day premium entitlement window + 300 gems per renewal
+- Storefront transition is still mixed while older one-time-premium copy is
+  retired from the client surfaces
+
+#### Premium Forever ($9.99, legacy / grandfathered)
+
+Disabled for new sales. Existing owners keep the entitlement. Shared premium
+benefits currently come from either legacy Premium Forever ownership or an
+active Premium Pass subscription.
 
 Permanent account-wide benefit bundle. Stored on `User.premiumUntil` (far-future
 timestamp for the lifetime SKU). All math lives in `backend/src/lib/game/premium.ts`.
@@ -203,7 +233,7 @@ Simulator methodology notes:
 - **Deterministic** — seeded with `20260410`, locked in `tests/economy/sink-ratio.test.ts`.
 - **CI gate** — acceptance test requires casual ≥ 50%, active ≥ 55%, whale ≥ 60%, overall ≥ 55%, and every archetype must stay net-positive over 30 days (pressure, not impossibility).
 
-Every archetype sits comfortably inside the 55-80% Economy v2 band. Whale is at the top of the band as intended — the exponential upgrade curve is supposed to dominate their spend.
+Every archetype sits comfortably inside the 55-80% live target band. Whale is at the top of the band as intended — the exponential upgrade curve is supposed to dominate their spend.
 
 Run interactively:
 ```bash
@@ -212,7 +242,7 @@ cd backend && npx tsx scripts/simulate-economy.ts
 cd backend && npx tsx scripts/simulate-economy.ts --players 5000 --days 60 --seed 777
 ```
 
-### Key Economy v2 Changes (2026-04-09)
+### Historical Economy v2 Changes (2026-04-09)
 - Gold rewards reduced: PvP win 200→150, loss 70→50, training 50→30
 - Starting gold: 500→300
 - Free PvP per day: 5→3 (stamina-gated after)
@@ -223,7 +253,7 @@ cd backend && npx tsx scripts/simulate-economy.ts --players 5000 --days 60 --see
 - Daily login gold: Day 1 200→150, Day 3 500→300, Day 5 1000→500
 - Upgrade protection: 30→50 gems
 
-### W3.D3 Deltas (2026-04-10)
+### Historical W3.D3 Deltas (2026-04-10)
 - **Win streak cap**: +20/+50/+100% → +15/+30/+50% (Clash Royale / LoL parity)
 - **Loss streak recovery**: +30/+50/+80% → +20/+35/+50%
 - **CHA gold bonus hard cap**: 125% → 80% (CHA primary effect moved to miss-chance in W3.D1)
@@ -232,6 +262,14 @@ cd backend && npx tsx scripts/simulate-economy.ts --players 5000 --days 60 --see
 - **No new sink consumables** this day — Bless Weapon Scroll deferred to W4 to keep W3 combat hot path stable
 - **Simulator + CI gate** — `economy-simulator.ts` + `sink-ratio.test.ts` locks acceptance bands against future drift
 - **Helper coverage** — `tests/lib/balance-gold.test.ts` locks streak/CHA/repair/upgrade formulas (37 regression tests)
+
+### Later v3 Monetization Deltas (2026-04-13+)
+
+- **Upgrade protection**: 50 → 40 gems
+- **Battle Pass Premium**: 500 → 700 gems
+- **Gold Mine Boost**: 3 → 15 gems, and it functions as a one-time reward doubler rather than a timer skip
+- **Flat gold packs**: disabled for new purchases; Adventurer's Bundles replace them
+- **Premium Forever**: disabled for new sales; Premium Pass is the successor runtime path
 
 ---
 

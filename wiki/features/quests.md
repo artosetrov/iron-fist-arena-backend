@@ -70,7 +70,7 @@ Daily-rotated quest set (e.g. "win 3 PvP, clear 2 dungeons") with progress track
 
 ## Docs
 
-- `docs/06_game_systems/GAME_SYSTEMS.md` — quest system overview
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level quest/daily-goal role in the live progression loop
 - `CLAUDE.md` → Game Enums section (QuestType canonical list)
 
 ## Notable gotchas

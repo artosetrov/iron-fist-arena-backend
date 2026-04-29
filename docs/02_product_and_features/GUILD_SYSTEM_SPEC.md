@@ -1,12 +1,42 @@
-# Guild System — MVP Spec (v1)
+# Guild System — MVP Spec (Historical Draft v1)
 
-> **Статус**: DRAFT — обсуждение перед реализацией
+> **Статус**: Historical design draft | **Updated**: 2026-04-29
 > **Автор**: Claude + Artem
-> **Дата**: 2026-04-01
+> **Исходный draft**: 2026-04-01
+>
+> **Важно:** этот документ описывает планируемую полноценную guild-систему,
+> а не текущий shipped runtime.
+>
+> **Live repo today ships:**
+> - friends / allies
+> - direct messages / scrolls
+> - PvP challenges / duels
+> - Guild Hall UI host around those social primitives
+> - server-wide `GuildChallenge` weekly challenge helpers
+>
+> **It does NOT ship today as written here:**
+> - full guild entity hierarchy
+> - guild creation / join / kick economy
+> - weekly guild raid boss loop
+> - guild currency shop
+> - guild-wide passive buff ladder
+> - full guild chat moderation / governance model
+>
+> **Current source of truth for live social behavior:**
+> - `wiki/features/social.md`
+> - `backend/src/lib/game/social.ts`
+> - `backend/src/lib/game/challenges.ts`
+> - `backend/src/lib/game/guild-challenge.ts`
+> - `Hexbound/Hexbound/Views/Social/*`
+> - `admin/src/app/(dashboard)/social/page.tsx`
 
 ---
 
 ## Проблема
+
+Ниже сохранён именно design/proposal слой: why a fuller guild system might
+exist, what its loops could look like, and how it could differ from the current
+social stack. Не читать этот документ как актуальную runtime-спецификацию.
 
 Текущий Guild Hall — это контакт-лист (Allies) + личные сообщения (Scrolls) + 1v1 вызовы (Duels). По сути это Скайп, а не гильдия. Нет причины возвращаться каждый день, нет коллективной цели, нет социальной стикости.
 

@@ -105,27 +105,26 @@ struct BuildingLockOverlay: View {
 
 // MARK: - Building Unlock Config
 //
-// Client-side static config for the hub unlock schedule. The character
-// level is server-authoritative — this just controls UI visibility.
+// Client-side mirror for hub unlock visibility + local unlock ceremonies.
+// Character level remains server-authoritative; this table must stay aligned
+// with `backend/src/lib/game/tutorial.ts::BUILDING_UNLOCK_LEVELS`.
 //
-// W2.D4 — Front-loaded Epic Seven schedule (2/4/6/6/8/8/12). Arena
-// opens immediately after tutorial victory (the player is already
-// there). Rationale: dense early-game unlock cadence creates a constant
-// "what unlocks next?" anticipation loop during the first week of play.
-//
-// See: docs/07_ui_ux/W2_D4_UNLOCK_SCHEDULE.md
+// Important: the IDs here are hub/view IDs (`battlepass`, `ranks`,
+// `guild-hall`, `black-market`), while the backend tutorial helper uses its own
+// snake_case keys (`battle_pass`, `leaderboard`, `guild`, `black_market`).
+// Keep LEVELS aligned even though the key names differ.
 enum BuildingUnlockConfig {
     /// Maps CityBuilding.id → required character level
     static let levels: [String: Int] = [
-        "arena": 1,            // Entered during tutorial — always open
-        "shop": 2,             // First post-tutorial unlock (immediate hook)
-        "achievements": 4,     // Reward tracking kicks in
-        "dungeon": 6,          // PvE content gate
-        "gold-mine": 6,        // Passive income unlock (paired with dungeon)
-        "tavern": 8,           // Social / daily loop hook
-        "battlepass": 8,       // Long-term progression (paired with tavern)
-        "ranks": 12,           // Endgame competitive tier
-        "guild-hall": 99,      // Coming Soon — effectively locked ("SOON")
+        "arena": 1,            // tutorial baseline
+        "shop": 1,             // tutorial baseline
+        "achievements": 2,     // first post-tutorial reward loop
+        "dungeon": 4,          // first PvE branch
+        "gold-mine": 6,        // idle loop
+        "tavern": 6,           // minigame/social beat
+        "battlepass": 8,       // long-term progression
+        "ranks": 8,            // leaderboard layer
+        "guild-hall": 12,      // social hub
         "black-market": 99,    // Coming Soon — effectively locked ("SOON")
     ]
 

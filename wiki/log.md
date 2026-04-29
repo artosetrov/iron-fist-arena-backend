@@ -1,5 +1,47 @@
 # Hexbound Wiki — Log
 
+## [2026-04-29] docs | Active skill picker spec and passive-tree slot parity
+
+Reframed the active-skill picker spec so it stops pretending to be the current runtime contract.
+- **Boundary fix:** `ACTIVE_SKILL_PICKER_SPEC.md` now clearly reads as historical implementation/rollout history.
+- **Runtime truth restored:** the doc now hands authority back to the shipped picker/runtime files and active-slot backend routes.
+- **Feature-map drift fixed:** `wiki/features/passive-tree.md` no longer preserves the old generic 5-slot planning note; it now reflects the shipped base 3 + optional premium 4th slot model.
+
+## [2026-04-29] docs | Guild system spec historical boundary sync
+
+Reframed the checked-in guild design doc so it stops reading like a shipped system spec.
+- **Boundary fix:** `GUILD_SYSTEM_SPEC.md` now explicitly reads as a historical draft for a fuller future guild system, not the current runtime.
+- **Runtime truth restored:** the note now distinguishes the shipped social layer (friends, DMs, challenges, Guild Hall host UI, guild-challenge scaffolding) from the unshipped raid/currency/hierarchy plan.
+- **Feature-map cleanup:** `wiki/features/social.md` now points at the actual checked-in draft file instead of the old memory reference.
+
+## [2026-04-29] docs | Onboarding spec historical boundary sync
+
+Reframed `ONBOARDING_SPEC.md` so it stops competing with the shipped onboarding/tutorial runtime.
+- **Boundary fix:** the document now explicitly reads as a historical planning snapshot instead of an active runtime spec.
+- **Authority handoff:** live truth is routed back to `wiki/features/onboarding.md`, `wiki/features/tutorial.md`, `backend/src/lib/game/tutorial.ts`, and `/api/tutorial`.
+- **Drift reduction:** old unlock pacing, welcome-gift math, phase checklists, and analytics planning notes are no longer presented as canonical current behavior.
+
+## [2026-04-29] docs | Game systems overview runtime parity rewrite
+
+Rewrote `GAME_SYSTEMS.md` from a stale table-heavy snapshot into a durable live overview.
+- **Structural fix:** removed brittle reward, pricing, slot-count, and progression tables that had drifted away from the current runtime.
+- **Authority cleanup:** exact numbers now clearly belong to `ECONOMY.md`, `BALANCE_CONSTANTS.md`, `COMBAT.md`, and the `wiki/features/*` maps instead of competing with them from a broad overview doc.
+- **Progression truth:** prestige/client wording is now narrower and more honest about current shipped surfaces instead of implying a broader prestige CTA flow than the repo clearly shows today.
+
+## [2026-04-29] docs | Audio/runtime boundary + lore freshness sync
+
+Synced the remaining active product-doc boundary around audio and world-building.
+- **Audio truth restored:** `AUDIO_DESIGN.md` no longer claims the project has no audio assets or runtime. It now acknowledges the shipped `sounds/` bundle, `AudioManager`, `AmbientManager`, `SFXCatalog`, and the live Settings audio controls.
+- **Boundary cleanup:** the same audio doc now frames its sourcing/budget content as planning appendix instead of pretending the whole layer is still pre-production.
+- **Lore freshness:** `WORLD_AND_LORE.md` now carries current freshness metadata and stops talking about guild lore as something for “when guilds are added,” because Guild Hall/social already exist as live surfaces.
+
+## [2026-04-29] docs | Economy v3 parity sync across active product/balance docs
+
+Synced the active economy docs back to live v3 behavior after the narrative layer drifted away from `balance.ts`.
+- **Product doc parity:** `ECONOMY.md` now presents the system as live Economy v3, marks flat gold packs as disabled, adds Adventurer's Bundles, fixes live gem sinks (`Upgrade Protection 40`, `Battle Pass Premium 700`, `Gold Mine Boost 15`), and frames Premium Forever vs Premium Pass as the real transition state instead of a stale one-product story.
+- **Narrative constants parity:** `BALANCE_CONSTANTS.md` now matches live streak caps, CHA cap, `+9/+10` upgrade chances, Gold Mine boost semantics, inventory cap, monetization summary values, and Monthly Gem Card total instead of contradicting its own v3 highlights.
+- **Verification sources:** `backend/src/lib/game/balance.ts`, `backend/src/app/api/minigames/gold-mine/boost/route.ts`, `backend/src/lib/game/premium.ts`, and the current iOS premium storefront copy in `Hexbound/Hexbound/Views/Shop/PremiumPurchaseView.swift`.
+
 ## [2026-04-19] ops | Prisma migration history + live schema parity restored
 
 Finished the legacy Prisma adoption/reconcile pass for the shared Supabase database referenced by `backend/.env`.

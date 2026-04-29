@@ -83,7 +83,7 @@ Players select a dungeon, enter a room, fight enemies round-by-round, progress t
 ## Docs
 
 - `docs/06_game_systems/COMBAT.md` — shared combat foundation
-- `docs/06_game_systems/GAME_SYSTEMS.md` — PvE progression
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level PvE progression overview
 
 ## Notable gotchas
 

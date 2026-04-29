@@ -56,7 +56,7 @@ Admin-scheduled time-windowed events deliver banners, modifiers, and rewards; ac
 
 ## Docs
 
-- `docs/06_game_systems/GAME_SYSTEMS.md` — live events overview
+- `docs/02_product_and_features/GAME_SYSTEMS.md` — high-level liveops/event role in the runtime
 - `docs/05_admin_panel/ADMIN_CAPABILITIES.md` — event scheduling
 
 ## Notable gotchas

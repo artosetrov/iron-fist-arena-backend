@@ -1,10 +1,32 @@
-# Active Skill Picker — Full Spec & Implementation Plan
+# Active Skill Picker — Historical Spec & Implementation Snapshot
 
-> Status: **Draft** · Owner: Artem · Target: Interactive Combat v1 — Phase 4
-> Historical note: the exploratory `active-skills-picker-prototype.html` was removed during later repository cleanup; treat this spec plus the shipped native picker implementation as the current reference.
-> Depends on: Interactive Combat v1 Phase 1, Phase 3, Phase 3.B (all shipped 2026-04-13)
+> Status: **Historical implementation snapshot** | **Updated:** 2026-04-29
+> Owner: Artem
+>
+> This document captures the original rollout/spec thinking for the active-skill
+> picker and combat-slot consumable support. It is no longer the canonical live
+> contract.
+>
+> **Live source of truth now lives in:**
+> - `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift`
+> - `Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift`
+> - `Hexbound/Hexbound/Services/PassiveTreeService.swift`
+> - `backend/src/app/api/passives/active-slots/route.ts`
+> - `backend/src/app/api/passives/active-slots/batch/route.ts`
+> - `backend/src/app/api/passives/active-slots/unlock-premium/route.ts`
+> - `wiki/features/passive-tree.md`
+>
+> **Important drift note:** the live picker has moved past the original “3-slot
+> Phase 4” framing. Current shipped behavior includes slot-aware replacement
+> flows, inline potion buy support, and an optional premium fourth active slot.
+> Read this file as design/implementation history plus rationale, not as the
+> single current runtime spec.
 
 ## 1. Problem & Goal
+
+The sections below preserve the original problem framing and rollout intent.
+Where they conflict with shipped runtime details, the live files listed above
+win.
 
 ### Current state (2026-04-13)
 - Players equip activatable talents via **TalentDetailSheet** (one-at-a-time, per talent).
@@ -284,6 +306,9 @@ Rationale: removing the context switch ("go to Shop, buy, come back") is a measu
 
 ## 8. Implementation Plan
 
+> Historical rollout checklist. Do not treat these phases, migration steps, or
+> ship tasks as the current delivery tracker.
+
 ### Phase 4.A — Backend foundation (2–3 days)
 1. **Migration** `20260414_active_slot_consumables` — apply via **Supabase MCP `apply_migration` to prod BEFORE code deploy** per `feedback_migration_mcp_apply_to_prod.md`.
 2. **Prisma schema** — update `CharacterActiveSlot`, regen client, copy schema to `admin/prisma/schema.prisma`.
@@ -334,6 +359,9 @@ Rationale: removing the context switch ("go to Shop, buy, come back") is a measu
 ### Total: ~7–10 working days
 
 ## 9. Telemetry / Success Metrics
+
+> Historical launch-plan telemetry section. Current analytics coverage should be
+> verified against the live code paths, not assumed from this rollout plan.
 
 Events to emit (via existing analytics pipeline):
 - `loadout_saved` — props: `{ slot_count, has_consumable, consumable_type?, talent_node_ids[] }`

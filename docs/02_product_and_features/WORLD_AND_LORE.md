@@ -1,6 +1,6 @@
 # Hexbound — World, Lore & Narrative
 
-*Setting, tone, and world-building reference. Updated: 2026-03-21*
+*Setting, tone, and world-building reference. Updated: 2026-04-29*
 
 ---
 
@@ -150,6 +150,6 @@ If narrative content is ever prioritized, these hooks are ready:
 3. **Dungeon lore progression** — Deeper floors reveal more about the world's past
 4. **Boss backstories** — Each boss was once something else before The Hex
 5. **Legendary item stories** — Rarest items have multi-paragraph origin stories
-6. **Guild lore** — When guilds are added, they can have lore-based factions
+6. **Guild lore** — Guild Hall / social surfaces already exist; deeper faction lore can be layered onto that live foundation later
 
 These require zero system changes — they're pure content additions.

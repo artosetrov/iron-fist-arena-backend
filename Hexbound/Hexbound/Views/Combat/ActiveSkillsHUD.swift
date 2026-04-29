@@ -200,11 +200,16 @@ struct ActiveFireStyle {
 
     static func forAction(_ action: TalentSlotAction) -> ActiveFireStyle {
         switch action {
-        case .burstDamage: return .init(label: "STRIKE",   icon: "bolt.fill",              color: DarkFantasyTheme.danger)
-        case .healSelf:    return .init(label: "RECOVERY", icon: "cross.case.fill",        color: DarkFantasyTheme.success)
-        case .shieldSelf:  return .init(label: "GUARD",    icon: "shield.lefthalf.filled", color: DarkFantasyTheme.info)
-        case .stunEnemy:   return .init(label: "CONTROL",  icon: "bolt.slash.fill",        color: DarkFantasyTheme.gold)
-        case .execute:     return .init(label: "FINISHER", icon: "scope",                  color: DarkFantasyTheme.danger)
+        case .burstDamage:   return .init(label: "STRIKE",    icon: "bolt.fill",                color: DarkFantasyTheme.danger)
+        case .healSelf:      return .init(label: "RECOVERY",  icon: "cross.case.fill",          color: DarkFantasyTheme.success)
+        case .shieldSelf:    return .init(label: "GUARD",     icon: "shield.lefthalf.filled",   color: DarkFantasyTheme.info)
+        case .stunEnemy:     return .init(label: "CONTROL",   icon: "bolt.slash.fill",          color: DarkFantasyTheme.gold)
+        case .execute:       return .init(label: "FINISHER",  icon: "scope",                    color: DarkFantasyTheme.danger)
+        // Talents v2 ultimates (2026-04-29)
+        case .stealth:       return .init(label: "VANISH",    icon: "eye.slash.fill",           color: DarkFantasyTheme.gold)
+        case .aoeDamage:     return .init(label: "CATACLYSM", icon: "flame.fill",               color: DarkFantasyTheme.danger)
+        case .cooldownReset: return .init(label: "REWIND",    icon: "clock.arrow.circlepath",   color: DarkFantasyTheme.info)
+        case .aoeStun:       return .init(label: "QUAKE",     icon: "bolt.horizontal.fill",     color: DarkFantasyTheme.gold)
         }
     }
 }

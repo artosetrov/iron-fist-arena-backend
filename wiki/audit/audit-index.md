@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-04-19
+updated: 2026-04-29
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5146
+- In-scope files: 5184
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -270,6 +270,12 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 248 | [[block-248-inventory-marker-parity-after-tracked-state-rollforward]] — the inventory summary and `_untracked_` markers now match the latest git rollforward where blocks `237–246` became tracked and only the newest audit pages remain outside version control | Fixed |
 | 249 | [[block-249-schema-reference-count-parity]] — `SCHEMA_REFERENCE.md` now reports the live Prisma schema counts instead of undercounting the current field surface in its header summary | Fixed |
 | 250 | [[block-250-rules-doc-freshness-and-count-parity]] — the active rules docs now carry current freshness metadata, and `DEVELOPMENT_RULES.md` no longer hardcodes stale content-size counts in a structural design section | Fixed |
+| 251 | [[block-251-economy-docs-v3-parity-and-monetization-transition-sync]] — the active economy docs now match live v3 gem sinks, monetization transition reality, and balance narrative constants instead of preserving older v2/v3 hybrid numbers and stale premium wording | Fixed |
+| 252 | [[block-252-audio-runtime-boundary-and-lore-freshness-sync]] — the active audio/lore product docs now match the shipped audio runtime, current Settings controls, and already-live Guild Hall foundation instead of preserving a no-audio-yet snapshot and pre-guild wording | Fixed |
+| 253 | [[block-253-game-systems-overview-runtime-parity-and-count-de-brittling]] — `GAME_SYSTEMS.md` is now a durable live overview again, with stale numeric tables removed and exact system constants delegated back to the narrower economy, balance, combat, and feature-map source-of-truth docs | Fixed |
+| 254 | [[block-254-onboarding-spec-historical-boundary-sync]] — `ONBOARDING_SPEC.md` now reads as the historical planning snapshot it actually is, with live onboarding/tutorial authority handed back to the runtime feature maps and backend tutorial helpers | Fixed |
+| 255 | [[block-255-guild-system-spec-historical-boundary-sync]] — `GUILD_SYSTEM_SPEC.md` now reads as the broader historical guild draft it actually is, while `wiki/features/social.md` points back to the real draft file and the narrower shipped social runtime surfaces | Fixed |
+| 256 | [[block-256-active-skill-picker-spec-and-passive-tree-slot-parity]] — `ACTIVE_SKILL_PICKER_SPEC.md` now reads as picker rollout history instead of the live runtime spec, and the passive-tree feature map now reflects the shipped base-3 plus premium-fourth-slot model instead of older generic slot-count planning | Fixed |
 
 ## Status Legend
 

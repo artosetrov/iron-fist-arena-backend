@@ -1075,11 +1075,17 @@ final class InteractiveBattleViewModel {
         guard let raw = labelRaw, let action = TalentSlotAction(rawValue: raw) else { return }
         let sfx: SFX
         switch action {
-        case .burstDamage: sfx = .hitCritical
-        case .healSelf:    sfx = .combatHeal
-        case .shieldSelf:  sfx = .combatShield
-        case .stunEnemy:   sfx = .combatBuff
-        case .execute:     sfx = .combatDeath
+        case .burstDamage:   sfx = .hitCritical
+        case .healSelf:      sfx = .combatHeal
+        case .shieldSelf:    sfx = .combatShield
+        case .stunEnemy:     sfx = .combatBuff
+        case .execute:       sfx = .combatDeath
+        // Talents v2 — reuse closest existing SFX until dedicated audio ships.
+        // TODO(audio): commission Vanish/Cataclysm/Rewind/Quake stings.
+        case .stealth:       sfx = .hitCritical   // crit-pop fits Vanish auto-crit
+        case .aoeDamage:     sfx = .hitCritical   // big boom stand-in for Cataclysm
+        case .cooldownReset: sfx = .combatBuff    // utility chime for Rewind
+        case .aoeStun:       sfx = .combatBuff    // shockwave-ish until Quake SFX
         }
         SFXManager.shared.play(sfx)
     }

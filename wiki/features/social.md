@@ -8,7 +8,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 
 ## Status
 
-- **Phase:** Friends + challenges + DMs in production. Guild drafted 2026-04-01 (see memory `project_guild_system_spec`).
+- **Phase:** Friends + challenges + DMs in production. Broader guild-system expansion still lives as a historical draft in `docs/02_product_and_features/GUILD_SYSTEM_SPEC.md`.
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -82,14 +82,14 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 ## Docs
 
 - `docs/02_product_and_features/GAME_SYSTEMS.md` — social systems overview
-- Memory: `project_guild_system_spec` (guild draft 2026-04-01)
+- `docs/02_product_and_features/GUILD_SYSTEM_SPEC.md` — historical draft for a fuller future guild system, not a live runtime spec
 
 ## Notable gotchas
 
 - **Shared opponent profile.** Challenge / Message / AddFriend buttons on the Opponent Profile card work everywhere — leaderboard, arena, mail. Do NOT re-implement.
 - **Friendship is pair-keyed.** Always store canonical `(charA, charB)` order OR handle both orderings in query.
 - **Challenge expires.** `Challenge.expiresAt` — server cleans up; don't trust unexpired state cached on client.
-- **Guild spec in flux.** Full guild system (chat, rank, bank) is still design phase. Today: Guild Hall UI exists; underlying features mostly social primitives.
+- **Guild draft is broader than runtime.** Full guild entity / raid / bank / buff systems remain design-layer material. Today the shipped Guild Hall is mainly a host for social primitives plus adjacent guild-challenge scaffolding.
 - **DMs separate from mail.** `DirectMessage` (player-to-player) vs `MailRecipient` (system broadcast). Don't conflate. See [[mail]].
 - **Rate limits.** Friend requests and challenges need rate limits to prevent spam.
 - **Admin social surface is review-only today.** The dashboard shows recent friendships/messages/challenges, but it is not a live moderation console with mute/ban/clear-message actions.

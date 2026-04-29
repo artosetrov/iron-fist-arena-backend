@@ -1,9 +1,34 @@
-# Hexbound — Onboarding & Tutorial Spec
+# Hexbound — Onboarding & Tutorial Spec (Historical Planning Snapshot)
 
-> **Статус:** Implemented v2.0 | **Дата:** 2026-04-07
-> **Зависимости:** TutorialManager.swift, TutorialOverlayView.swift, TutorialQuestBanner.swift, BuildingLockOverlay.swift, ReferralSectionView.swift, backend /api/tutorial/*
+> **Статус:** Historical planning snapshot | **Updated:** 2026-04-29
+> **Boundary:** this file is no longer the canonical source for exact welcome-gift
+> values, building unlock levels, tutorial quest unlock schedule, or rollout
+> phases.
+>
+> **Live source of truth now lives in:**
+> - `wiki/features/onboarding.md`
+> - `wiki/features/tutorial.md`
+> - `backend/src/lib/game/tutorial.ts`
+> - `backend/src/app/api/tutorial/route.ts`
+> - `Hexbound/Hexbound/Views/Auth/*`
+> - `Hexbound/Hexbound/Tutorial/TutorialManager.swift`
+>
+> **Why this matters:** onboarding and tutorial are both shipped, but the runtime
+> has evolved since this design pass. Several concrete values below are now
+> historical proposal material rather than live truth, including:
+> - building unlock schedule
+> - tutorial quest unlock levels
+> - first-session economy table
+> - MVP/Phase implementation checklists
+>
+> Read this document as the earlier design intent and UX framing, not as the
+> authoritative runtime contract.
 
 ## Философия
+
+Ниже сохранён исходный planning layer: narrative framing, tutorial beats, and
+rollout intent. For the live repo, prefer the feature maps and backend tutorial
+helpers listed above.
 
 Три слоя, включающиеся последовательно:
 
@@ -456,6 +481,9 @@ Step 1: [Spotlight на Shell Game]
 
 ## Часть 7: Приоритизация реализации
 
+> Historical implementation checklist. Do not treat this section as the current
+> rollout tracker for the shipped onboarding/tutorial runtime.
+
 ### Phase 1: MVP (1-2 недели)
 
 - [ ] Welcome Gift (backend + iOS)
@@ -487,6 +515,9 @@ Step 1: [Spotlight на Shell Game]
 ---
 
 ## Часть 8: Аналитика
+
+> Historical / planning analytics layer. The current tutorial funnel split is
+> documented in `wiki/features/tutorial.md` and `backend/src/lib/game/tutorial-analytics.ts`.
 
 ### Ключевые события для трекинга
 
