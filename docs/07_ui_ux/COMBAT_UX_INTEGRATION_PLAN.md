@@ -277,21 +277,52 @@ No database migration is involved — no need to touch Supabase. This refactor i
 
 ---
 
-## 8. Open questions for Artem
+## 8. Decisions (locked 2026-04-29)
 
-Flag these before starting PR-1:
+### D-1 · Ranked rewards display
 
-1. Should ranked rewards show **numeric rank delta** (+24 / -18) or **new total rank**?
-   → Prototype currently uses delta. Confirm preference.
+**Decision:** show **delta + new total**. Delta is primary (large, gold/danger color), new total is secondary line under it (smaller, muted).
 
-2. Do we want to keep the **collapsible full round-by-round log** inside END (from `BattleSummaryView`) or drop it entirely for the cleaner "rewards > stats" hierarchy?
-   → Plan assumes keep-as-secondary. Confirm.
+**Format example:**
+```
++24 RANK
+1248
+```
 
-3. Should the round strip in CHOOSE say `ROUND 3 · BEST OF 7` or just `ROUND 3`?
-   → Prototype uses `ROUND 3 · BEST OF 7`. Confirm.
+**Why:** delta-only loses context — players don't know if they're climbing or recovering from a streak. Total-only loses celebration — the +24 is the dopamine. Both is the standard in LoL post-game, Marvel Snap, Hearthstone — and costs zero extra layout space. Deviates from prototype-as-built (delta only).
 
-4. Should the objectives block surface at all in Defeat, or only on win?
-   → Prototype shows objectives in both. Confirm.
+### D-2 · Round-by-round log in END
 
-5. For the `SKIP` button in CHOOSE: fire-and-forget submit with null zones, OR show a one-tap confirmation micro-sheet?
-   → Prototype assumes confirmation. Confirm.
+**Decision:** keep, collapsed by default, single tap to expand. Existing `BattleSummaryView` internals retained, mounted as a secondary reveal under stats block.
+
+**Why:** power-users analyze losses ("why did I die round 7") — keeps retention loop intact. Collapsed default keeps "rewards > stats" hierarchy clean. Matches plan's assumption.
+
+### D-3 · Round strip format
+
+**Decision:** `ROUND 3 / 15`. Drop "BEST OF" wording entirely.
+
+**Why:** Hexbound is a hard-capped 15-round duel, not a best-of-N format. "BEST OF 7" is misleading — it implies first-to-4-wins semantics that don't exist in the engine (`MAX_ROUNDS = 15` in `pvp/strike/route.ts`). `3 / 15` is honest, lets the player gauge pacing, and reads in any locale. Deviates from prototype.
+
+### D-4 · Objectives block in Defeat
+
+**Decision:** show **only objectives whose progress changed this match**. If nothing progressed (e.g., daily was already completed before the match), hide the entire block. Same rule applies to Victory and Draw.
+
+**Why:** showing a static "0 / 3" objective list after a loss feels punitive and adds nothing. Showing "Play 3 PvP matches → 2/3 (+1)" after a loss preserves retention — players still feel forward motion. The filter is: render row iff `delta > 0` OR `justCompleted`. Deviates from prototype's "always show in both", refines it to "show what's relevant".
+
+### D-5 · SKIP behavior in CHOOSE
+
+**Decision:** **confirmation micro-sheet**. Tap SKIP → bottom sheet with single sentence "Skip this round? You won't attack." → two buttons SKIP / CANCEL. Tap-outside dismisses.
+
+**Why:** SKIP is destructive (forfeit your offensive turn). On mobile, SKIP and STRIKE chips can be ~thumb-distance apart — fat-finger risk is real. Confirmation costs ~400 ms on intentional skip, prevents 100% of accidental skips. Standard pattern in fighting games / MOBAs for any "I waive my action" input. Matches prototype.
+
+### Cross-cutting impact on existing V2 code
+
+The V2 phase views are placeholder scaffolds today (per project memory). Decisions D-1, D-3, D-4 require small spec updates inside:
+
+- `Hexbound/Views/Combat/V2/CombatV2EndComponents.swift` — add total-rank line below delta in `RewardsBlock`; add `delta > 0` filter in `ObjectivesBlock`.
+- `Hexbound/Views/Combat/V2/CombatV2ChoosePhase.swift` — round strip uses `\(currentRound) / \(MAX_ROUNDS)` instead of "BEST OF" wording.
+- `Hexbound/Views/Combat/V2/CombatV2EndPhase.swift` — `BattleStatsBlock` mounts collapsed by default (D-2 already aligned with plan).
+
+D-5 (Skip confirmation) is already wired per prototype.
+
+Implement these as part of PR-3 / PR-5 — no new PRs needed. Mark each PR description with the D-N references it satisfies.
