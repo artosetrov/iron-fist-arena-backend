@@ -88,7 +88,8 @@ VALUES
   (gen_random_uuid(), 'rogue.key.envenom',       'Envenom',        '+10% Damage Reduction (poison stun)','damage_reduction'::"PassiveBonusType",   NULL, 10, 3,  800,  80, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poisons apply 1s stun on tick
 
   -- Ultimates (tier 4, single-rank, cost 5, isActivatable) ------------------
-  (gen_random_uuid(), 'rogue.ult.vanish',         'Vanish',         '+15% Damage. Active: Fade.',         'percent_damage'::"PassiveBonusType",     NULL, 15, 4, 450, 20, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'stealth'::"TalentSlotAction",     60,    1),
+  -- Balance pass 2026-04-29: CD 60→75 (was shortest in game while passive only +15%; aligned with Champion/Shadow Reaper)
+  (gen_random_uuid(), 'rogue.ult.vanish',         'Vanish',         '+15% Damage. Active: Fade.',         'percent_damage'::"PassiveBonusType",     NULL, 15, 4, 450, 20, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'stealth'::"TalentSlotAction",     75,    1),
   (gen_random_uuid(), 'rogue.ult.shadow_reaper',  'Shadow Reaper',  '+30% Damage. Active: Reap.',         'percent_damage'::"PassiveBonusType",     NULL, 30, 4, 750, 20, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'burst_damage'::"TalentSlotAction",75, 0.8);
 
 -- ---------------------------------------------------------------------------

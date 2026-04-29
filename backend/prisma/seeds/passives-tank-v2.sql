@@ -73,7 +73,8 @@ VALUES
 
   -- Ultimates (tier 4, single-rank, cost 5, isActivatable) ------------------
   (gen_random_uuid(), 'tank.ult.fortress',      'Fortress',       '+25% Max HP. Active: Bastion.','percent_hp'::"PassiveBonusType",        NULL, 25, 4, 450, 20, 5, 'tank'::"CharacterClass", FALSE, TRUE, TRUE, 'shield_self'::"TalentSlotAction", 90,  0.7),
-  (gen_random_uuid(), 'tank.ult.earthshatter',  'Earthshatter',   '+30% Damage. Active: Quake.', 'percent_damage'::"PassiveBonusType",     NULL, 30, 4, 750, 20, 5, 'tank'::"CharacterClass", FALSE, TRUE, TRUE, 'aoe_stun'::"TalentSlotAction",   120,  2);
+  -- Balance pass 2026-04-29: aoe_stun 2→1 rounds (2 rounds = ~25%-of-match silence + OP combo with +30% passive)
+  (gen_random_uuid(), 'tank.ult.earthshatter',  'Earthshatter',   '+30% Damage. Active: Quake.', 'percent_damage'::"PassiveBonusType",     NULL, 30, 4, 750, 20, 5, 'tank'::"CharacterClass", FALSE, TRUE, TRUE, 'aoe_stun'::"TalentSlotAction",   120,  1);
 
 WITH n AS (SELECT id, node_key FROM passive_nodes WHERE node_key LIKE 'tank.%')
 INSERT INTO passive_connections (id, from_id, to_id)
