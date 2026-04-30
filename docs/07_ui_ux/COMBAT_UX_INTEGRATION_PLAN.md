@@ -2,7 +2,7 @@
 
 **Status:** Draft. Execute only after Artem approves `COMBAT_UX_REFACTOR_3_STATE.md` and the prototype `prototypes/combat-3-state-flow.html`.
 **Date:** 2026-04-19
-**Guiding rule (memory: `feedback_review_before_code.md`):** no implementation until design approved.
+**Guiding rule:** no implementation until design approved.
 
 The idea of this doc is **"не что не слобать"** — safe landing for a refactor that touches the live interactive battle.
 
@@ -14,12 +14,12 @@ The idea of this doc is **"не что не слобать"** — safe landing f
 2. `InteractiveBattleRouteView` wrapper — unchanged (it wires VM → AppRouter terminals).
 3. VFX anchor preferences — `DuelHeader` mounted outside the state switch, so anchor coordinates stay identical.
 4. `CombatDetailView` legacy path — not touched.
-5. `project.pbxproj` — every new `.swift` file added to 4 sections (`PBXBuildFile`, `PBXFileReference`, `PBXGroup.children`, `PBXSourcesBuildPhase.files`) with **random hex IDs** (memory: `feedback_pbxproj_unique_ids.md`).
-6. No scale animations anywhere (memory: `feedback_no_scale_animations.md`). Opacity / width / Y-translate only.
+5. `project.pbxproj` — every new `.swift` file added to 4 sections (`PBXBuildFile`, `PBXFileReference`, `PBXGroup.children`, `PBXSourcesBuildPhase.files`) with unique random hex IDs.
+6. No scale animations anywhere. Opacity / width / Y-translate only.
 7. DarkFantasyTheme tokens only — no raw `Color(hex:)` (memory: `reference_darkfantasytheme_color_tokens.md`).
-8. Reusability first — never duplicate UI (memory: `feedback_reusability_first_rule.md`).
-9. English-only copy in any artifact (memory: `feedback_english_only.md`).
-10. Never git commit from sandbox — use `.git-trigger` for git-watcher on Mac (memory: `feedback_deploy_via_tmp_clone.md`).
+8. Reusability first — never duplicate UI.
+9. English-only copy in any artifact.
+10. Follow the repo's current git/release workflow from `docs/10_operations/`; this plan is not a git-ops source of truth.
 
 ---
 
@@ -27,7 +27,7 @@ The idea of this doc is **"не что не слобать"** — safe landing f
 
 **Name:** `combatUXV2`
 **Default:** `false`
-**Location:** `AppState` or `RemoteConfig`, same pattern used for prior combat flags (ref: `project_pvp_fight_routing_shipped.md` — the `locallyDisable` flag precedent).
+**Location:** `AppState` or `RemoteConfig`, same pattern used for earlier combat feature flags and local rollout toggles.
 
 **Gate point:** `InteractiveBattleRouteView.body`
 
@@ -157,7 +157,7 @@ Each PR must be independently shippable (flag off → no behaviour change).
 - Remove feature flag from config.
 - Run `python3 scripts/check_schema_drift.py` (no-op, safety net).
 
-**Per memory `feedback_check_all_callers.md`:** before deleting each file, `grep -rn` for its type/file name across the whole repo (backend, admin, tests, Figma Code Connect maps). Confirm zero references outside the retired path.
+Before deleting each file, `grep -rn` for its type/file name across the whole repo (backend, admin, tests, Figma Code Connect maps). Confirm zero references outside the retired path.
 
 ---
 
@@ -315,14 +315,49 @@ No database migration is involved — no need to touch Supabase. This refactor i
 
 **Why:** SKIP is destructive (forfeit your offensive turn). On mobile, SKIP and STRIKE chips can be ~thumb-distance apart — fat-finger risk is real. Confirmation costs ~400 ms on intentional skip, prevents 100% of accidental skips. Standard pattern in fighting games / MOBAs for any "I waive my action" input. Matches prototype.
 
-### Cross-cutting impact on existing V2 code
+### Cross-cutting impact on existing V2 code (status updated 2026-04-29)
 
-The V2 phase views are placeholder scaffolds today (per project memory). Decisions D-1, D-3, D-4 require small spec updates inside:
+Inspection of the shipped V2 scaffold revealed it is much more complete than
+the original plan assumed — `CHOOSE`, `RESOLVE` and `END` phases are all
+production-shaped, not placeholders. The decisions break down as follows:
 
-- `Hexbound/Views/Combat/V2/CombatV2EndComponents.swift` — add total-rank line below delta in `RewardsBlock`; add `delta > 0` filter in `ObjectivesBlock`.
-- `Hexbound/Views/Combat/V2/CombatV2ChoosePhase.swift` — round strip uses `\(currentRound) / \(MAX_ROUNDS)` instead of "BEST OF" wording.
-- `Hexbound/Views/Combat/V2/CombatV2EndPhase.swift` — `BattleStatsBlock` mounts collapsed by default (D-2 already aligned with plan).
+- **D-3 (round strip)** — APPLIED to `Hexbound/Views/Combat/V2/CombatV2SharedComponents.swift`.
+  `CombatV2RoundStrip` now renders `ROUND N / 15` instead of the prior
+  `ROUND N · BEST OF M`. Caller (`CombatV2ChoosePhase`) unchanged; the param
+  name `bestOf` was kept for source compatibility but its semantics became
+  the maxRounds cap.
 
-D-5 (Skip confirmation) is already wired per prototype.
+- **D-5 (skip confirmation)** — APPLIED to `Hexbound/Views/Combat/V2/CombatV2ChoosePhase.swift`.
+  SKIP now opens a native `confirmationDialog("Skip this round?", …)` with a
+  destructive "Skip Round" + "Cancel" pair and an explanation line. Direct
+  `vm.skipAndSubmit()` is no longer reachable from a single tap.
 
-Implement these as part of PR-3 / PR-5 — no new PRs needed. Mark each PR description with the D-N references it satisfies.
+- **D-2 (round-by-round log in END)** — already satisfied **stronger** than the
+  decision required: `CombatV2EndPhase` does NOT inline the log at all. The
+  full chronological log lives on the downstream `CombatResultDetailView`
+  behind a "Battle Log" tap-through. Player gets a one-tap CONTINUE in END
+  and an opt-in deep dive after — cleaner than the collapsed-inline pattern
+  the decision proposed. No code change needed.
+
+- **D-1 (rewards delta + new total)** — APPLIED 2026-04-29.
+  `pvp/match/complete/route.ts` response now ships `rating_before` +
+  `rating_after` inside `result`, sourced from `attacker.pvpRating` (pre-match
+  snapshot) and the already-computed `attackerNewRating`. iOS
+  `CombatResultInfo` decodes both fields; `CombatV2RewardsBlock` rating tile
+  now renders the absolute new total as a secondary line under the delta
+  ("+24 / 1248"). Backward-compatible: `ratingAfter` is `Int?` on iOS, and
+  the secondary line is dropped entirely on responses from a pre-D-1
+  backend, so the tile gracefully degrades to delta-only.
+
+- **D-4 (objectives by delta>0)** — RECLASSIFIED. The shipped
+  `CombatV2ObjectivesBlock` is a victory-stars block (3 stars: Claim Victory,
+  Stay Above 50% HP, Land a Critical Hit), not a daily-quests progress
+  block. The decision was written assuming a daily-quest surface that does
+  not exist in END today. The current victory-stars behavior — always render
+  the row, ungilded for unearned stars — is correct for that surface and
+  needs no filtering. If we later want a daily-objectives strip in END,
+  that's a separate spec.
+
+PR-3 / PR-5 of the plan can therefore close on D-3 + D-5 + the D-2 stronger
+implementation. D-1 is the only remaining item, owned by a narrow follow-up
+PR that touches backend match-complete + iOS decode together.

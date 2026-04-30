@@ -14,7 +14,7 @@
 --   On prod: only safe before any player has unlocked a rogue.v2 node.
 --
 -- Active ultimates (require migration 20260429_talent_action_v2_ults applied):
---   * rogue.ult.vanish        → stealth      magnitude 1   CD 60
+--   * rogue.ult.vanish        → stealth      magnitude 1   CD 75
 --   * rogue.ult.shadow_reaper → burst_damage magnitude 0.8 CD 75
 --
 -- Known spec-vs-schema gaps (Phase 1.5 follow-up, mirror Warrior gap list):

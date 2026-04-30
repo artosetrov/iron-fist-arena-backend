@@ -189,9 +189,9 @@ export const DAILY_LOGIN_REWARDS = [
 | Day | balance.ts | docs/BALANCE_CONSTANTS.md | Что видно в игре | Статус |
 |-----|-----------|---------------------------|-------------------|--------|
 | 1   | 150 gold  | 150 gold (?)              | 200 gold          | 🔴 DRIFT |
-| 3   | 300 gold  | ?                         | ? (не дошёл)      | TBD |
-| 5   | 500 gold  | ?                         | ? (не дошёл)      | TBD |
-| 7   | 25 gems   | ?                         | ? (не дошёл)      | TBD |
+| 3   | 300 gold  | ?                         | ? (не дошёл)      | Не проверено в этой сессии |
+| 5   | 500 gold  | ?                         | ? (не дошёл)      | Не проверено в этой сессии |
+| 7   | 25 gems   | ?                         | ? (не дошёл)      | Не проверено в этой сессии |
 
 **Исправление:**
 1. Одномоментный скрипт синхронизации: `balance.ts` → live-config → DB.
@@ -555,7 +555,7 @@ gems_mega: { gems: 6500, price: 49.99 }  // $0.0077/gem (22% discount)
 **Исправление:** привязать токены к `UIFont.preferredFont(forTextStyle: .body).pointSize` через scaling factor. Это одна из немногих технических долгов дизайн-системы.
 
 #### 🟡 MED DS-03 — «Never use font(size:)» рецидив [CODE]
-Из памяти (`feedback_no_custom_font_sizes.md`): это **повторяющийся bug**. Значит автоматический scanner должен быть жёстче и работать в CI. В `CLAUDE.md` уже есть CDO verification grep:
+Это **повторяющийся bug**. Значит автоматический scanner должен быть жёстче и работать в CI. В `CLAUDE.md` уже есть CDO verification grep:
 
 ```bash
 grep -rn 'DarkFantasyTheme\.\(largeTitleFont\|titleFont\|...\)'

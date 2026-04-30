@@ -1,5 +1,92 @@
 # Hexbound Wiki — Log
 
+## [2026-04-29] docs | Historical doc TBD wording sync
+
+Closed the last literal `TBD` tail in the checked-in historical UI/QA layer.
+- **Motion audit cleaned:** `MOTION_AND_JUICE_AUDIT.md` now uses explicit baseline wording for season-end and reward-delivery beats instead of bare placeholders.
+- **QA table cleaned:** `QA_PLAYTHROUGH_2026-04-10.md` now says "not verified in this session" where the playthrough simply never reached those days.
+- **Inventory refresh:** updated current counts to `5211` in-scope files and `340 in-scope wiki markdown files / 339 wiki pages`
+
+## [2026-04-29] docs | Audit-trail memory-token residual scrub
+
+Closed the tiny but annoying last token tail in the audit layer itself.
+- **Audit/log wording cleaned:** `wiki/log.md`, `block-263`, `block-264`, and `block-271` no longer spell the retired external token strings literally while describing the cleanup work.
+- **Net effect:** repo-wide searches for those old memory-token patterns now stay quiet inside checked-in docs/wiki too.
+- **Inventory refresh:** updated current counts to `5210` in-scope files and `339 in-scope wiki markdown files / 338 wiki pages`
+
+## [2026-04-29] docs | Retro 2026-04-13, 2026-04-19, and 2026-04-20 memory-boundary sync
+
+Closed the next retro-doc shorthand tail.
+- **Later retros cleaned:** `RETRO_2026-04-13.md`, `RETRO_2026-04-19.md`, and `RETRO_2026-04-20.md` no longer lean on external memory-note filenames for PvP routing, watcher staging, Talents v2 provenance, or synthetic-opponent FK lessons.
+- **Repo-owned truth restored:** the same lessons now stand on checked-in runtime/docs context already present in the repo.
+- **Inventory refresh:** updated current counts to `5209` in-scope files and `338 in-scope wiki markdown files / 337 wiki pages`
+
+## [2026-04-29] docs | Retro 2026-04-10 and 2026-04-11 memory-boundary sync
+
+Closed the next pair of retro-journal memory tails.
+- **Early retros cleaned:** `RETRO_2026-04-10.md` and `RETRO_2026-04-11.md` no longer depend on external memory-note names for `IntegratedCharacterCard`, git-watcher workflow, or recurring init-preservation lessons.
+- **Meaning preserved:** the same engineering lessons remain, but now read as self-contained checked-in prose instead of off-repo breadcrumbs.
+- **Inventory refresh:** updated current counts to `5209` in-scope files and `338 in-scope wiki markdown files / 337 wiki pages`
+
+## [2026-04-29] docs | UI playtest and badge-plan memory-boundary sync
+
+Closed one more tiny historical-doc tail.
+- **Playtest cleanup:** `QA_PLAYTHROUGH_2026-04-10.md` now states its repeated font-size/scanner lesson directly instead of through an external memory-note name.
+- **Badge plan cleanup:** `W2_D5_BADGE_PRIORITY_DESIGN.md` now carries its no-scale motion rule as plain checked-in guidance.
+
+## [2026-04-29] docs | UI review doc memory-boundary sync
+
+Closed the next pair of historical review-doc shorthand tails.
+- **W2/W3 review cleanup:** `W2_D1_REVIEW.md` and `W3_D1_REVIEW.md` now express their review-before-code rule directly in checked-in prose.
+- **Net effect:** the review docs keep their historical decision-making frame without leaning on external memory-note names.
+
+## [2026-04-29] docs | Gold Mine plan memory-boundary sync
+
+Closed the next historical Gold Mine planning tail.
+- **Plan cleanup:** `GOLD_MINE_MINIGAME_PLAN.md` no longer leans on off-repo note names for response-shape, init-preservation, or pbxproj reminders.
+- **Meaning preserved:** the implementation cautions still exist, but now stand as checked-in project guidance.
+
+## [2026-04-29] docs | UI historical plan memory-boundary sync
+
+Closed the next small cluster of UI historical-doc shorthand.
+- **Strike Reveal cleanup:** `STRIKE_REVEAL_SHAPE_B_PLAN.md` now carries its motion, pbxproj, caller-scan, and token rules as checked-in prose instead of memory-note labels.
+- **Daily Login + card review cleanup:** `DAILY_LOGIN_CAROUSEL_REVIEW.md` and `INTEGRATED_CARD_UNIFICATION.md` now preserve their reusability/no-scale reasoning without external note references.
+- **Net effect:** this UI historical-doc layer is more self-contained and less dependent on repo-external memory breadcrumbs.
+
+## [2026-04-29] docs | Building gating historical boundary sync
+
+Closed the next small but real archival tail.
+- **Historical proposal cleaned:** `W2_D4_BUILDING_GATING_DESIGN.md` no longer depends on an external no-scale note or an off-repo guild-spec memory pointer.
+- **Checked-in handoff restored:** Guild Hall readiness now points back to the checked-in guild spec and the shipped social/runtime question instead of memory shorthand.
+
+## [2026-04-29] docs | Talents v2 and Interactive Combat plan boundary sync
+
+Closed the next design-doc/runtime parity seam around passives and combat plans.
+- **Talents v2 parity:** `SKILL_TREE_DESIGN_V2.md` now acknowledges the 2026-04-29 shipped ult/runtime deltas directly, and two Talents v2 seed comments now match the live Vanish/Earthshatter values.
+- **Historical combat-plan clarity:** `INTERACTIVE_COMBAT_PLAN.md` still keeps the old RPS branch for design history, but it no longer opens by presenting that superseded model as the active direction.
+- **Net effect:** the talents/combat design layer now matches the current shipped zone-combat + 9-action-type reality more honestly.
+
+## [2026-04-29] docs | Active Skill Picker memory-boundary sync
+
+Closed the next historical-spec tail around talents and slot binding.
+- **Spec cleanup:** `ACTIVE_SKILL_PICKER_SPEC.md` no longer depends on external notes for optimistic-save behavior, migration-before-deploy guidance, or shipped-phase provenance.
+- **Repo-owned references restored:** the historical picker spec now points back to checked-in feature maps and audit blocks instead of off-repo breadcrumbs.
+- **Companion parity:** `wiki/systems/passive-tree.md` now matches the shipped Talents v2 ult labels/cooldowns, and `block-262` itself no longer ends on an external memory pointer.
+
+## [2026-04-29] docs | Combat historical doc memory-boundary sync
+
+Closed the next checked-in combat-doc truth tail.
+- **Historical combat plans cleaned:** `COMBAT_UX_REFACTOR_3_STATE.md`, `COMBAT_UX_INTEGRATION_PLAN.md`, `COMBAT_V3_IMPLEMENTATION_PLAN.md`, and `COMBAT_UX_IMPLEMENTATION_PLAN.md` no longer rely on external memory-note names for animation policy, pbxproj hygiene, caller scans, or publish/process reminders.
+- **Repo-owned wording restored:** the same rules now live as plain checked-in guidance, and git/release references point back to `docs/10_operations/` instead of sandbox-era instructions.
+- **Net effect:** the retained combat UX planning docs stand on repo truth again instead of half-repo, half-memory shorthand.
+
+## [2026-04-29] talents | Talents v2 enum/tree/runtime wave synced into wiki truth
+
+Recorded the already-landed Talents v2 production wave across the live wiki surfaces.
+- **Audit trail visible:** `block-262` is now reflected in the main index/log/inventory layer instead of living only in `audit-index`.
+- **Runtime truth captured:** the block documents the 9-value `TalentSlotAction` enum, the seeded Rogue/Mage/Tank trees, the strike-resolver handlers, and the Combat V2 decision lock.
+- **Systems parity:** passive-tree system notes now match the shipped Rogue/Mage/Tank ult labels and cooldowns.
+
 ## [2026-04-29] docs | Combat feature-map memory boundary sync
 
 Closed the next combat source-of-truth tail.

@@ -10,9 +10,9 @@ updated: 2026-04-29
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5185
-- Untracked project-owned files: 5
-- In-scope files listed here: 5190
+- Tracked files: 5194
+- Untracked project-owned files: 17
+- In-scope files listed here: 5211
 
 ## Excluded Generated / Vendor Areas
 
@@ -31,9 +31,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .cursor: 10
 - .github: 2
 - .skills: 17
-- [root]: 3
+- [root]: 4
 - admin: 224
-- backend: 398
+- backend: 401
 - Buildings: 21
 - docs: 195
 - figma-assets: 333
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 327
+- wiki: 340
 
 ## File List By Block
 
@@ -221,11 +221,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills/skills/oracle/SKILL.md
 - .skills/skills/wiki-sync/SKILL.md
 
-### [root] (3)
+### [root] (4)
 
 - .gitignore
 - .mcp.json
 - CLAUDE.md
+- .git-trigger _(untracked)_
 - COMBAT_UX_AUDIT.md _(deleted in working tree)_
 - COMBAT_UX_IMPLEMENTATION_PLAN.md _(deleted in working tree)_
 - COMBAT_V3_IMPLEMENTATION_PLAN.md _(deleted in working tree)_
@@ -473,7 +474,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (398)
+### backend (401)
 
 - backend/.env.example
 - backend/.gitignore
@@ -531,6 +532,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/seed.ts
 - backend/prisma/seeds/passive-tree-activatable.sql
 - backend/prisma/seeds/passive-tree.sql
+- backend/prisma/seeds/seed-passives-v2.ts _(untracked)_
 - backend/scripts/audit-inventory-overflow.ts
 - backend/scripts/find-tutorial-seed.ts
 - backend/scripts/fix-zero-prices.ts
@@ -769,6 +771,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/npc-bots.ts
 - backend/src/lib/game/passives.ts
 - backend/src/lib/game/premium.ts
+- backend/src/lib/game/active-handlers.ts _(untracked)_
 - backend/src/lib/game/active-slots.ts
 - backend/src/lib/game/achievement-claims.ts
 - backend/src/lib/game/reward-grants.ts
@@ -831,6 +834,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/stamina-refill.test.ts
 - backend/tests/helpers/next-request.ts
 - backend/tests/lib/achievement-catalog.test.ts
+- backend/tests/lib/active-handlers.test.ts _(untracked)_
 - backend/tests/lib/feature-flags.test.ts
 - backend/tests/economy/sink-ratio.test.ts
 - backend/tests/lib/balance-gold.test.ts
@@ -4921,7 +4925,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (327)
+### wiki (336)
 
 - wiki/_generated/README.md
 - wiki/_generated/api-routes.json
@@ -5186,11 +5190,24 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-254-onboarding-spec-historical-boundary-sync.md
 - wiki/audit/block-255-guild-system-spec-historical-boundary-sync.md
 - wiki/audit/block-256-active-skill-picker-spec-and-passive-tree-slot-parity.md
-- wiki/audit/block-257-building-unlock-schedule-runtime-parity.md _(untracked)_
-- wiki/audit/block-258-feature-map-game-systems-doc-reference-parity.md _(untracked)_
-- wiki/audit/block-259-inventory-marker-parity-after-late-tracked-rollforward.md _(untracked)_
-- wiki/audit/block-260-combat-feature-map-memory-boundary-sync.md _(untracked)_
-- wiki/audit/block-261-feature-map-memory-note-repo-truth-sync.md _(untracked)_
+- wiki/audit/block-257-building-unlock-schedule-runtime-parity.md
+- wiki/audit/block-258-feature-map-game-systems-doc-reference-parity.md
+- wiki/audit/block-259-inventory-marker-parity-after-late-tracked-rollforward.md
+- wiki/audit/block-260-combat-feature-map-memory-boundary-sync.md
+- wiki/audit/block-261-feature-map-memory-note-repo-truth-sync.md
+- wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees.md
+- wiki/audit/block-263-combat-historical-doc-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-264-active-skill-picker-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-265-talents-v2-and-interactive-combat-plan-boundary-sync.md _(untracked)_
+- wiki/audit/block-266-building-gating-historical-boundary-sync.md _(untracked)_
+- wiki/audit/block-267-ui-historical-plan-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-268-gold-mine-plan-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-269-ui-review-doc-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-270-ui-playtest-and-badge-plan-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-271-retro-2026-04-10-and-11-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-272-retro-2026-04-13-19-20-memory-boundary-sync.md _(untracked)_
+- wiki/audit/block-273-audit-trail-memory-token-residual-scrub.md _(untracked)_
+- wiki/audit/block-274-historical-doc-tbd-wording-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

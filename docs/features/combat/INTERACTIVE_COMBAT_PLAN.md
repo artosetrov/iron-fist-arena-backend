@@ -5,7 +5,11 @@
 **Owner:** Artem
 **Scope:** Phase 1 (active talent slots) + Phase 2 (per-strike stance choice) — shipped together
 
-> **Status boundary:** historical interactive-combat design plan from `2026-04-13`. The document is still valuable as design rationale, but it is not the live implementation contract. Revalidate against the current backend interactive-combat routes, current iOS combat flows, and current `wiki/` audit pages before treating it as shipped truth.
+> **Status boundary:** historical interactive-combat design plan from
+> `2026-04-13`. The document is still valuable as design rationale, but it is
+> not the live implementation contract. Revalidate against the current backend
+> interactive-combat routes, current iOS combat flows, and current `wiki/`
+> audit pages before treating it as shipped truth.
 
 > **v2 revision headline:** the v1 "Attack / Defend / Counter" RPS model has been **replaced** with an interactive version of the existing **head / chest / legs zone stance system** (already in `combat.ts`). RPS was inventing a parallel layer that contradicted the shipped combat pipeline and `SKILL_TREE_DESIGN.md`. See **§13 Balance & Economy Alignment** for the full rationale.
 
@@ -15,8 +19,8 @@
 
 Battles become tactical: the player
 1. **Earmarks 3 active talents** in the passive tree (tree UI gains an "Equip as Active" slot mechanic).
-2. **Picks a stance** (Attack / Defend / Counter, RPS) before every strike during battle.
-3. Sees the opponent's stance revealed simultaneously; RPS resolves damage multiplier; active talents trigger via cooldown and slot buttons.
+2. **Picks attack and defense zones** (head / chest / legs) before every strike during battle.
+3. Sees the opponent's choices resolved simultaneously through the existing zone-combat math; active talents trigger via cooldown and slot buttons.
 
 Async-PvP stays async — opponent is a snapshot. The server resolves each strike, the opponent's stance is chosen by a deterministic AI from the snapshot (seed = battle_id + strike_index, so replays are stable).
 
@@ -106,6 +110,9 @@ Session lives ~60s (TTL sweep). If player ragequits, session resumes on next ope
 ---
 
 ## 3. RPS Rules (Stances)
+
+> Historical subsection preserved from the earlier pre-revision branch.
+> It was later superseded by the zone-based redesign documented in §13.2.
 
 | Attacker \ Defender | Attack        | Defend           | Counter          |
 |---|---|---|---|
@@ -582,7 +589,7 @@ The HTML prototype must demonstrate:
 - [x] Prediction-match banner (+15% def visualised)
 - [x] Timeout auto-pick using last-used zones
 - [x] End screen with gold/XP/ELO delta preview
-- [x] No scale animations (per memory rule `feedback_no_scale_animations`)
+- [x] No scale animations
 - [x] All colors from `DarkFantasyTheme` hex values (no ad-hoc palette)
 
 ### 14.6 Sequence diagram (strike)

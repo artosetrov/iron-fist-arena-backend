@@ -186,32 +186,32 @@ struct CombatV2AvatarTile: View {
     }
 }
 
-// MARK: - Round Strip (ROUND N · BEST OF M · state tag)
+// MARK: - Round Strip (ROUND N / M · state tag)
 //
 // A compact meta strip that sits above the active state panel. Left:
-// round number. Right: a short phase tag that always matches the
-// current UX state — never says "CHOOSE" during RESOLVE like V1 did.
+// round number out of total cap. Right: a short phase tag that always
+// matches the current UX state — never says "CHOOSE" during RESOLVE
+// like V1 did.
+//
+// Format `ROUND N / M` (D-3, locked 2026-04-29 in
+// `docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md` §8): the engine is a
+// hard-capped 15-round duel, NOT a best-of-N match. "BEST OF 7" wording
+// implied first-to-4-wins semantics that don't exist in the resolver.
+// `N / 15` is honest, lets the player gauge pacing, reads in any locale.
 
 struct CombatV2RoundStrip: View {
     let roundNumber: Int
+    /// The maxRounds cap (`InteractiveBattleViewModel.maxRounds`, currently 15).
+    /// Param name kept for source compatibility with earlier callers.
     let bestOf: Int
     let stateTag: String
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            Text("ROUND \(roundNumber)")
+            Text("ROUND \(roundNumber) / \(bestOf)")
                 .font(DarkFantasyTheme.badge)
                 .tracking(2)
                 .foregroundStyle(DarkFantasyTheme.gold)
-
-            Text("·")
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-            Text("BEST OF \(bestOf)")
-                .font(DarkFantasyTheme.badge)
-                .tracking(2)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Spacer(minLength: LayoutConstants.spaceSM)
 

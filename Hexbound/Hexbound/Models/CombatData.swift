@@ -122,6 +122,13 @@ struct CombatResultInfo: Codable {
     let xpReward: Int?
     let turnsTaken: Int?
     let ratingChange: Int?
+    /// Rating BEFORE the match. Combat V2 D-1 (shipped 2026-04-29) — used
+    /// alongside `ratingAfter` to render delta + total in the END screen
+    /// rewards block. `nil` on responses from a backend older than the D-1
+    /// rollout; the view falls back to delta-only in that case.
+    let ratingBefore: Int?
+    /// Rating AFTER the match. See `ratingBefore`.
+    let ratingAfter: Int?
     let firstWinBonus: Bool?
     let leveledUp: Bool?
     let newLevel: Int?

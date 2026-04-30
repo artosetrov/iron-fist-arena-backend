@@ -269,7 +269,7 @@ struct CriticalBadge: View {
 }
 ```
 
-**Opacity pulse only — NO scale animation** (per feedback memory `feedback_no_scale_animations.md`).
+**Opacity pulse only — NO scale animation.**
 
 ### `.info` treatment (gold static)
 

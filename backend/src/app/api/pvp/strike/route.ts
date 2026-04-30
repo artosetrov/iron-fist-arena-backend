@@ -5,6 +5,12 @@ import { rateLimit } from '@/lib/rate-limit'
 import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput, type CharacterStats } from '@/lib/game/combat'
 import { getCombatConfig } from '@/lib/game/live-config'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
+import {
+  applyBurstDamage,
+  applyShield,
+  healAmountFromActive,
+  shouldExecute,
+} from '@/lib/game/active-handlers'
 import type { BodyZone } from '@/lib/game/balance'
 import { ConsumableType, Prisma } from '@prisma/client'
 import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
@@ -156,33 +162,9 @@ function removePlayerActiveSlot(
   }
 }
 
-/**
- * Apply a single active's effect to an in-flight strike and return the modified
- * resolution inputs/outputs. v1 supports burst_damage fully; other action_types
- * are validated and cooldown-tracked but not yet applied (Phase 3.B TODO).
- */
-function applyBurstDamage(baseDamage: number, magnitude: number): number {
-  // magnitude stored as fraction (0.5 = +50%). Integer round to prevent decimals.
-  return Math.round(baseDamage * (1 + Math.max(0, magnitude)))
-}
-
-function applyShield(incomingDamage: number, magnitude: number): number {
-  // magnitude stored as damage-reduction fraction (0.5 = -50% incoming).
-  const reduced = Math.round(incomingDamage * Math.max(0, 1 - magnitude))
-  return Math.max(0, reduced)
-}
-
-function healAmountFromActive(maxHp: number, magnitude: number): number {
-  // magnitude = fraction of maxHp to heal (0.25 = 25%).
-  return Math.max(0, Math.round(maxHp * Math.max(0, magnitude)))
-}
-
-function shouldExecute(currentHp: number, maxHp: number, magnitude: number): boolean {
-  // magnitude = HP% threshold (0.2 = execute if defender ≤ 20% HP).
-  if (maxHp <= 0) return false
-  const pct = currentHp / maxHp
-  return pct > 0 && pct <= Math.max(0, magnitude)
-}
+// Pure handler math (`applyBurstDamage`, `applyShield`, `healAmountFromActive`,
+// `shouldExecute`) lives in `@/lib/game/active-handlers` so it can be unit-tested
+// in isolation. See `backend/tests/lib/active-handlers.test.ts`.
 
 function advanceActivesAfterRound(
   actives: ActiveSlotSnapshot[],

@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5184
+- In-scope files: 5211
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -281,6 +281,19 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 259 | [[block-259-inventory-marker-parity-after-late-tracked-rollforward]] — the project inventory now matches the latest git rollforward again, removing stale `_untracked_` markers from restored admin routes, retro notes, and audit blocks `247–256` so only the newest audit pages remain outside version control | Fixed |
 | 260 | [[block-260-combat-feature-map-memory-boundary-sync]] — the combat feature maps now use checked-in rollout/deferred-work docs and plain runtime truth instead of depending on external memory-note references for Interactive Combat and PvP context | Fixed |
 | 261 | [[block-261-feature-map-memory-note-repo-truth-sync]] — the remaining feature maps now preserve migration/response-shape/optimistic-UI lessons directly or through checked-in audit blocks instead of leaning on external memory-note names | Fixed |
+| 262 | [[block-262-talents-v2-ult-action-types-and-class-trees]] — Talents v2 enum extended to 9 action types (stealth/aoe_damage/cooldown_reset/aoe_stun), Rogue/Mage/Tank passive trees seeded to prod (60 nodes), strike resolver covers all 9 types incl. cross-round buff state, balance pass #1 applied, Combat V2 §8 questions closed (D-1..D-5) | Fixed |
+| 263 | [[block-263-combat-historical-doc-memory-boundary-sync]] — the remaining combat UX historical plans now preserve their animation/pbxproj/caller-scan/process rules directly in checked-in docs instead of depending on external memory-note names | Fixed |
+| 264 | [[block-264-active-skill-picker-memory-boundary-sync]] — the historical Active Skill Picker spec now points at repo-owned runtime and audit references instead of external notes for optimistic-save, migration safety, and shipped-phase provenance | Fixed |
+| 265 | [[block-265-talents-v2-and-interactive-combat-plan-boundary-sync]] — Talents v2 design docs and seed comments now match the shipped ult/runtime deltas more closely, and the historical Interactive Combat plan no longer opens by restating the superseded RPS model as active direction | Fixed |
+| 266 | [[block-266-building-gating-historical-boundary-sync]] — the archived building-gating proposal now uses checked-in references for motion and Guild Hall readiness instead of external memory-note names | Fixed |
+| 267 | [[block-267-ui-historical-plan-memory-boundary-sync]] — the remaining strike-reveal, daily-login carousel, and integrated-card historical UI docs now preserve their motion/reusability rationale directly in checked-in prose instead of external memory-note shorthand | Fixed |
+| 268 | [[block-268-gold-mine-plan-memory-boundary-sync]] — the historical Gold Mine mini-game plan now explains response-shape, init-preservation, and pbxproj guidance directly instead of through external memory-note names | Fixed |
+| 269 | [[block-269-ui-review-doc-memory-boundary-sync]] — the W2/W3 historical review docs now preserve their review-before-code discipline directly in checked-in prose instead of external memory-note shorthand | Fixed |
+| 270 | [[block-270-ui-playtest-and-badge-plan-memory-boundary-sync]] — the historical playtest and badge-priority docs now keep their font-size/no-scale lessons in checked-in prose instead of external memory-note names | Fixed |
+| 271 | [[block-271-retro-2026-04-10-and-11-memory-boundary-sync]] — the 2026-04-10 and 2026-04-11 retro journals now keep their git-watcher, card-unification, and init-preservation lessons in checked-in prose instead of external memory-note shorthand | Fixed |
+| 272 | [[block-272-retro-2026-04-13-19-20-memory-boundary-sync]] — the later retro journals now keep their PvP routing, git-watcher, Talents v2, and synthetic-id FK lessons in repo-owned prose instead of external memory-note pointers | Fixed |
+| 273 | [[block-273-audit-trail-memory-token-residual-scrub]] — the audit trail itself no longer spells the retired external memory-token strings literally while describing the cleanup, so repo-wide searches now stay quiet in checked-in docs/wiki too | Fixed |
+| 274 | [[block-274-historical-doc-tbd-wording-sync]] — the last literal `TBD` cells in the checked-in historical UI/QA docs now read as explicit baseline or not-verified-in-session wording instead of unfinished placeholders | Fixed |
 
 ## Status Legend
 

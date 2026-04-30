@@ -8,7 +8,7 @@
 --
 -- Active ultimates (require migration 20260429_talent_action_v2_ults applied):
 --   * tank.ult.fortress     → shield_self magnitude 0.70 CD 90
---   * tank.ult.earthshatter → aoe_stun    magnitude 2    CD 120
+--   * tank.ult.earthshatter → aoe_stun    magnitude 1    CD 120
 --
 -- PassiveBonusType proxies (spec effect → enum value):
 --   "threat generation"     → percent_damage     (no threat stat)

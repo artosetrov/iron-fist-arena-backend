@@ -2,8 +2,8 @@
 title: Passive Tree
 category: systems
 tags: [passives, talents, tree, progression, builds]
-sources: [Hexbound/Hexbound/Models/PassiveTree.swift, Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift]
-updated: 2026-04-14
+sources: [Hexbound/Hexbound/Models/PassiveTree.swift, Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift, backend/prisma/seeds/passives-warrior-v2.sql, backend/prisma/seeds/passives-rogue-v2.sql, backend/prisma/seeds/passives-mage-v2.sql, backend/prisma/seeds/passives-tank-v2.sql]
+updated: 2026-04-29
 ---
 
 # Passive Tree
@@ -24,10 +24,13 @@ Each node has:
 ## Active Abilities
 
 Some nodes grant active abilities (not just passives):
-- `activeActionType`: burst_damage / heal_self / shield_self / stun_enemy / execute
+- `activeActionType` — Postgres enum, 9 values total (5 base + 4 Talents v2 ults shipped 2026-04-29):
+  - **Base:** `burst_damage`, `heal_self`, `shield_self`, `stun_enemy` (1 round), `execute`
+  - **Talents v2 ults:** `stealth` (next attack auto-crits — Rogue Vanish, CD 75), `aoe_damage` (1v1 alias of burst with distinct VFX — Mage Meteor, CD 90), `cooldown_reset` (zero other non-consumable slots — Mage Timewarp, CD 180), `aoe_stun` (multi-round opp stun via `interactiveActives.{p1,p2}_buffs.stunRoundsRemaining` — Tank Earthshatter, CD 120)
 - `activeCooldown` — turns between uses
-- `activeMagnitude` — power of the ability
+- `activeMagnitude` — power of the ability (interpretation depends on action type — fraction for damage, rounds for `aoe_stun`)
 - **3 active slots** by default; a 4th premium slot can be unlocked for **100 gems** (POST `/api/passives/active-slots/unlock-premium`). Per-character count lives on `Character.activeSlotCount` (max 4)
+- See `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees` for the strike-resolver handler details and `docs/06_game_systems/SKILL_TREE_DESIGN_V2.md` §8 for the action-type spec.
 
 ## Unlock Rules
 

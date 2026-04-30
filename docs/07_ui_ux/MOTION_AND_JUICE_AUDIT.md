@@ -934,8 +934,8 @@ Content crossfade, 0.2s. Indicator bar — slide to new position (0.25s, spring)
 
 | Aspect | Current | Target | Treatment |
 |--------|---------|--------|-----------|
-| Season end | TBD | Closure + excitement | Summary screen: total battles, rank achieved, rewards earned — all animated tick-up → «NEW SEASON BEGINS» transition |
-| Rewards delivery | TBD | Gift opening | Season rewards presented as a «package» — tap to reveal each |
+| Season end | No dedicated ceremony | Closure + excitement | Summary screen: total battles, rank achieved, rewards earned — all animated tick-up → «NEW SEASON BEGINS» transition |
+| Rewards delivery | Plain reward handoff | Gift opening | Season rewards presented as a «package» — tap to reveal each |
 
 ---
 

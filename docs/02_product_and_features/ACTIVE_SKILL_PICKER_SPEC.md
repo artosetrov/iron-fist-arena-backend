@@ -67,7 +67,7 @@ The picker is a bottom sheet (`.sheet` / `PresentationDetent.large` in iOS) with
 - When `pending.length === 3`, all other rows get `.disabled` state (opacity 0.45, `title` tooltip "Loadout full").
 - When any consumable is in `pending`, all other consumable rows get `.disabled` with tooltip "Only one consumable per loadout". Talents remain toggleable.
 - Tapping a filled slot in the preview unequips it (slide `✕` appears on press-down). Remaining pending items keep their order.
-- **Save** is disabled unless `pending` differs from the committed `equipped`. On commit: optimistic UI, single backend call, rollback on failure (existing pattern per `feedback_optimistic_ui_everywhere.md`).
+- **Save** is disabled unless `pending` differs from the committed `equipped`. On commit: optimistic UI, single backend call, rollback on failure (same general iOS mutation pattern used across the live app).
 - **Cancel** / backdrop tap — discards `pending`.
 - **Clear all** — empties `pending` but does NOT close. User must Save (or Cancel) to commit / discard.
 
@@ -310,7 +310,7 @@ Rationale: removing the context switch ("go to Shop, buy, come back") is a measu
 > ship tasks as the current delivery tracker.
 
 ### Phase 4.A — Backend foundation (2–3 days)
-1. **Migration** `20260414_active_slot_consumables` — apply via **Supabase MCP `apply_migration` to prod BEFORE code deploy** per `feedback_migration_mcp_apply_to_prod.md`.
+1. **Migration** `20260414_active_slot_consumables` — apply to prod **before** the code deploy, following the same migration-before-deploy rule later reinforced by the interactive-combat audit wave.
 2. **Prisma schema** — update `CharacterActiveSlot`, regen client, copy schema to `admin/prisma/schema.prisma`.
 3. **New endpoint** `/api/passives/active-slots/batch` — validation rules per §5. Unit tests for all 5 validation cases.
 4. **Existing endpoints** — mark POST/DELETE deprecated (keep working), bump cache key `v3`.
@@ -402,9 +402,9 @@ If fire rate <30% → potions too weak or too scarce → raise heal % by 5pt or 
 ## 12. References
 
 - Historical prototype: removed later during repository cleanup; use this spec and the shipped native picker flow as the retained reference
-- Phase 1 shipped: `auto-memory/project_interactive_combat_phase1.md`
-- Phase 3.B shipped: `auto-memory/project_interactive_combat_phase3b_shipped.md`
-- Migration safety: `auto-memory/feedback_migration_mcp_apply_to_prod.md`
+- Shipped interactive-combat history: `wiki/features/interactive-combat.md`
+- Picker/runtime contract repairs: `wiki/audit/block-022-ios-active-skill-picker-passive-tree-contracts.md`
+- Migration safety pattern: `wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md`, `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees.md`
 - Schema drift checker: `scripts/check_schema_drift.py`
 - Figma rules: `docs/07_ui_ux/FIGMA_SCREEN_RULES.md`
 - Current `ActiveSlotsBar`: `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift`

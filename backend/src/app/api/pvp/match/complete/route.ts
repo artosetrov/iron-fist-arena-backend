@@ -655,6 +655,12 @@ export async function POST(req: NextRequest) {
         is_win: attackerWon, winner_id: winnerId,
         gold_reward: goldReward, xp_reward: xpReward,
         turns_taken: combat_log.length, rating_change: ratingChange,
+        // Combat V2 D-1 (2026-04-29): expose absolute rating bounds so the
+        // RewardsBlock can render delta + new total ("+24 / 1248") instead
+        // of delta-only. Always-present pair — bots also surface them so
+        // the iOS view doesn't need to branch on opponent type.
+        rating_before: attacker.pvpRating,
+        rating_after: attackerNewRating,
         first_win_bonus: firstWin,
         leveled_up: levelUpResult?.leveledUp ?? false,
         new_level: levelUpResult?.newLevel,

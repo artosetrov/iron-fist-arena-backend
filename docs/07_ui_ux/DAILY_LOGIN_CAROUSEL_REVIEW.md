@@ -50,7 +50,7 @@
 - **Achievements** — rewards на achievement-карточках
 - **Mail attachments**, **Quest rewards**, **Event rewards**
 
-Это ровно тот паттерн, который ты настоял (`feedback_reusability_first_rule`): не дублировать UI, а выжимать один компонент в несколько мест.
+Это ровно тот паттерн, который здесь и нужен: не дублировать UI, а выжимать один компонент в несколько мест.
 
 ### 4.1 Протокол `RewardDisplayable`
 
@@ -173,7 +173,7 @@ Spacing между карточками: `LayoutConstants.spaceSM` (8pt). Гор
 4. **Tap на claimed-карточку:** открывает sheet с `CLAIMED ✓` (CTA = "CLOSE").
 5. **Tap на locked-карточку:** открывает sheet с `LOCKED` overlay + CTA "COME BACK ON DAY X".
 
-Все переходы — opacity only (правило `feedback_no_scale_animations`). Никаких scale grow/shrink.
+Все переходы — opacity only. Никаких scale grow/shrink.
 
 ---
 

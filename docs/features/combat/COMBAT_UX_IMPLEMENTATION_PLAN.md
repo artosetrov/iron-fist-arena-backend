@@ -110,14 +110,14 @@ Extract into `Views/Combat/Cards/`:
 - `TimerRingStrikeButton.swift` + `TimerRingButtonStyle` — radial arc around `PrimaryButtonStyle`.
 - `FighterStatusChip.swift` — streak/gear pill.
 
-Register every file in `project.pbxproj` (4 sections each, random 24-char hex IDs per `feedback_pbxproj_unique_ids`).
+Register every file in `project.pbxproj` (4 sections each, unique random 24-char hex IDs).
 
 ### Phase 3 — Recompose `InteractiveBattleView` · ~1.5h
 - Delete `zoneBadgesRow`, `stanceSideLabel`, `ZoneBadge`, `PredictTimerBar` structs (moved or obsolete).
 - `InteractivePredictView` slims to: *Talents row → Attack picker → Defend picker → Status chip → SKIP + Strike(timer)* .
 - `InteractiveBattleView.body` becomes: *Duel header → Spacer → PredictPanel*.
 - Fire-banner routing: VM's `lastOpponentActiveFiredLabel` → enemy `DuelFighterCard`; `lastActiveFiredLabel` → player `DuelFighterCard`.
-- `prefers-reduced-motion` honoured: timer ring uses CA, not explicit scale; pulse on critical uses opacity only (`feedback_no_scale_animations`).
+- `prefers-reduced-motion` honoured: timer ring uses CA, not explicit scale; pulse on critical uses opacity only.
 
 ### Phase 4 — Enemy intent hint · ~1-2h (backend + client)
 - **Backend:** add `opponentIntentHint` to the `/pvp/match/start` or `/tick` response. V1 heuristic: last-round stance, or null if first round. V2 could factor class tendency. Feature-flag it.
@@ -146,7 +146,7 @@ Register every file in `project.pbxproj` (4 sections each, random 24-char hex ID
 | Enemy intent shipped before backend ready | Low | Med | Phase 4 is optional — ship Phases 0-3 without intent, add as a follow-up |
 | Tutorial flow regression | Med | High | `TutorialFightView` reuses `InteractiveBattleViewModel` + view — always smoke-test tutorial as part of Phase 5 |
 | Opponent-actives layout in enemy card squeezes HP bar | Med | Low | Lock card min-height via `LayoutConstants`; cap mini-slots at 3 |
-| Figma screens file drifts from Swift | High if sloppy | Med | Sync rule (`feedback_sync_figma_swift_always`) — every Swift PR must land Figma delta |
+| Figma screens file drifts from Swift | High if sloppy | Med | Keep Swift and the retained design artifacts synchronized whenever the visual branch changes |
 
 ## 7. Agents I'll route through
 

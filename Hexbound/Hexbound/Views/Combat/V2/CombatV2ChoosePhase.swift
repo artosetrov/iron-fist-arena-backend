@@ -43,6 +43,13 @@ struct CombatV2ChoosePhase: View {
     /// `true` when the server is resolving this round. Panel dims + disables.
     let locked: Bool
 
+    /// Drives the SKIP confirmation `confirmationDialog`. Per D-5
+    /// (`docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md` §8), SKIP is a
+    /// destructive action — fat-finger between SKIP and STRIKE on mobile
+    /// would forfeit the round. A 1-second confirmation sheet costs ~400 ms
+    /// on intentional skip and prevents 100% of accidental skips.
+    @State private var showSkipConfirmation = false
+
     var body: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             CombatV2RoundStrip(
@@ -179,8 +186,8 @@ struct CombatV2ChoosePhase: View {
     private var actionBar: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Button {
-                HapticManager.medium()
-                vm.skipAndSubmit()
+                HapticManager.selection()
+                showSkipConfirmation = true
             } label: {
                 Text("SKIP")
                     .font(DarkFantasyTheme.buttonLabelCompact)
@@ -188,6 +195,19 @@ struct CombatV2ChoosePhase: View {
             }
             .buttonStyle(SecondaryButtonStyle())
             .frame(maxWidth: .infinity)
+            .confirmationDialog(
+                "Skip this round?",
+                isPresented: $showSkipConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Skip Round", role: .destructive) {
+                    HapticManager.medium()
+                    vm.skipAndSubmit()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You won't attack this round. The opponent still gets their counter-strike.")
+            }
 
             TimerRingStrikeButton(
                 remainingFraction: timerFraction,

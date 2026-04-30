@@ -7,7 +7,7 @@
 - `COMBAT_SCREEN_REDESIGN.md` (Variant B visual direction, shipped in prototype form)
 - `STRIKE_REVEAL_SHAPE_B_PLAN.md` (round-reveal card shape)
 - `prototypes/combat-3-state-flow.html` (this refactor's interactive prototype)
-- Memory: `project_combat_ux_direction.md`, `project_interactive_combat_phase3b_shipped.md`
+- Checked-in runtime context: `wiki/features/interactive-combat.md`, `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`
 
 ---
 
@@ -430,13 +430,13 @@ Writes: `continue()` (routes to result screen via existing router).
 - `Views/Combat/End/BattleStatsBlock.swift`  (renamed from `BattleSummaryView` internals)
 - `Views/Combat/End/EndHeader.swift`
 
-All new files must be added to `project.pbxproj` in four places (`PBXBuildFile`, `PBXFileReference`, `PBXGroup.children`, `PBXSourcesBuildPhase.files`) with **random** hex IDs — see memory `feedback_pbxproj_unique_ids.md`.
+All new files must be added to `project.pbxproj` in four places (`PBXBuildFile`, `PBXFileReference`, `PBXGroup.children`, `PBXSourcesBuildPhase.files`) with unique random hex IDs.
 
 ### Retire (after cut-over)
 
 - `InteractiveRoundLogCard.swift` — fully replaced by `ResolvePhaseView`.
 - `YourChoiceButton.swift` — no longer used.
-- `CombatLogRow.swift` — replaced by `ResultRow`. *(Verify no other caller via grep before delete; per memory `feedback_check_all_callers.md`.)*
+- `CombatLogRow.swift` — replaced by `ResultRow`. *(Verify no other caller via repo-wide grep before delete.)*
 
 ---
 
@@ -449,7 +449,7 @@ All new files must be added to `project.pbxproj` in four places (`PBXBuildFile`,
 | RESOLVE    | END        | 250 ms freeze + 600 ms hold + 320 ms cross-fade | opacity only + verdict stamp fade | One-way, cannot interrupt |
 | ANY        | ERROR      | 120 ms   | opacity 0→1 error card        | Replaces body only; background stays |
 
-**No scale transforms anywhere.** Per memory `feedback_no_scale_animations.md`.
+**No scale transforms anywhere.** Opacity and position-only motion.
 
 ---
 

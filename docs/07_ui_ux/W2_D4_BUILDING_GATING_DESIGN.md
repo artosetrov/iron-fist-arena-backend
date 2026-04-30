@@ -232,7 +232,7 @@ t=1.7    CTA button appears (0.3s, with shimmer)
 t=2.0    Ready for user tap
 ```
 
-**No scale grow on title or CTA.** Только opacity + blur (из феедбекс мемори: `feedback_no_scale_animations.md`).
+**No scale grow on title or CTA.** Only opacity + blur.
 
 ### Структура файла
 
@@ -601,7 +601,7 @@ return {
 
 3. **Gold Mine balance**: Gold Mine на Lv4 (~8 мин) вместо Lv5 (~12 мин). Скорее дать игроку idle reward — хорошо, но не сломает ли это early-game economy (слишком много gold у нового игрока)? Вопрос к `hexbound-studio:vault` (Economy Designer).
 
-4. **Guild Hall на Lv12**: Сейчас Lv15, предложение Lv12. Guild system spec был draft в W1 (см. `project_guild_system_spec.md` memory). Готов ли guild system для Lv12 players или ещё не MVP? Если нет — оставить Lv15.
+4. **Guild Hall на Lv12**: Сейчас Lv15, предложение Lv12. Проверить против checked-in [GUILD_SYSTEM_SPEC.md](/Users/artosetrov/Documents/Cursor%20AI/PVP%20RPG/docs/02_product_and_features/GUILD_SYSTEM_SPEC.md) и живого social runtime: готов ли shipped Guild Hall/social слой к такому раннему unlock, или безопаснее оставить Lv15.
 
 5. **Server-side unlocks**: Согласен перевести unlock schedule в server constants? Это enables live-ops tuning без client release, но добавляет легкий coupling.
 

@@ -132,6 +132,7 @@ struct CombatV2RewardsBlock: View {
             rewardTile(
                 label: "GOLD",
                 value: formattedGold,
+                subValue: nil,
                 iconName: "coin",
                 systemFallback: "circle.hexagonpath.fill",
                 tint: DarkFantasyTheme.gold
@@ -139,13 +140,18 @@ struct CombatV2RewardsBlock: View {
             rewardTile(
                 label: "XP",
                 value: formattedXp,
+                subValue: nil,
                 iconName: nil,
                 systemFallback: "sparkles",
                 tint: DarkFantasyTheme.info
             )
+            // Combat V2 D-1 (2026-04-29): show rating delta + new total. Total
+            // line is `nil` on old backends that don't ship `rating_after`,
+            // so the tile gracefully degrades to delta-only there.
             rewardTile(
                 label: "RATING",
                 value: formattedRating,
+                subValue: formattedRatingTotal,
                 iconName: nil,
                 systemFallback: "chart.line.uptrend.xyaxis",
                 tint: ratingTint
@@ -157,6 +163,7 @@ struct CombatV2RewardsBlock: View {
     private func rewardTile(
         label: String,
         value: String,
+        subValue: String?,
         iconName: String?,
         systemFallback: String,
         tint: Color
@@ -182,6 +189,15 @@ struct CombatV2RewardsBlock: View {
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+
+            if let subValue {
+                Text(subValue)
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .contentTransition(.numericText())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
 
             Text(label)
                 .font(DarkFantasyTheme.badge)
@@ -286,6 +302,15 @@ struct CombatV2RewardsBlock: View {
         if delta > 0  { return "+\(delta)" }
         if delta < 0  { return "\(delta)" }
         return "±0"
+    }
+
+    /// Absolute rating after the match (D-1, 2026-04-29). Returns `nil` on
+    /// old backends that haven't yet shipped `rating_after` — the tile
+    /// drops the secondary line in that case rather than showing a stale
+    /// or guessed value.
+    private var formattedRatingTotal: String? {
+        guard let after = combatData?.result.ratingAfter else { return nil }
+        return "\(after)"
     }
 
     private var ratingTint: Color {

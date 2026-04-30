@@ -8,8 +8,8 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 ## Status
 
-- **Phase:** Phase 3.B shipped 2026-04-13 (5 active effects + opp AI firing + iOS fire banner). Phase 3 shipped 2026-04-13 (burst_damage firing + cooldown ticks + iOS HUD + opponent preview). Phase 1 shipped 2026-04-13 (Active Slot schema + CRUD + iOS UI).
-- **Last major change:** 2026-04-13 — Phase 3.B
+- **Phase:** Talents v2 ult action types shipped 2026-04-29 (`stealth` / `aoe_damage` / `cooldown_reset` / `aoe_stun` — see `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees`). Phase 3.B shipped 2026-04-13 (5 active effects + opp AI firing + iOS fire banner). Phase 3 shipped 2026-04-13 (burst_damage firing + cooldown ticks + iOS HUD + opponent preview). Phase 1 shipped 2026-04-13 (Active Slot schema + CRUD + iOS UI).
+- **Last major change:** 2026-04-29 — Talents v2 ult action types + cross-round buff state pattern (`interactiveActives.{p1,p2}_buffs`)
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -84,7 +84,8 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 - **Server-authoritative.** Clients must NEVER compute active-skill damage or cooldown ticks — server owns all of it.
 - **Migration-before-deploy rule.** `pvp_matches.status` column addition needed a production `ALTER TABLE` via Supabase MCP BEFORE the code deploy — shipping without it = 500s. Treat this as the same manual-first migration rule already documented by the interactive-combat/stash migration audit wave.
-- **5 active effect types** supported in Phase 3.B. Adding a 6th requires: catalog entry + backend resolver + iOS icon + HUD wiring.
+- **9 active effect types** supported as of Talents v2 (2026-04-29): `burst_damage`, `heal_self`, `shield_self`, `stun_enemy`, `execute`, `stealth`, `aoe_damage`, `cooldown_reset`, `aoe_stun`. Adding a 10th requires: enum migration via Supabase MCP **before** code deploy + resolver case + AI tier classification + iOS exhaustive-switch updates in 4 sites (`PassiveTree.swift`, `CombatLogEvent.swift`, `ActiveSkillsHUD.swift`, `InteractiveBattleViewModel.swift`). See `block-262`.
+- **Cross-round buff state.** `interactiveActives.{p1,p2}_buffs: ActiveBuffsState` holds effects that persist beyond the round of their fire. Currently used only by `aoe_stun` (`stunRoundsRemaining`); future cross-round effects (DoTs, charges, multi-round shields) attach the same way.
 - **Opponent AI.** Opponent actives fire deterministically based on match seed — classic flow doesn't need to care, but interactive preview shows upcoming opp active.
 - **Fire banner** was shipped 2026-04-13 as part of 3.B — iOS UI highlights which active just fired that round.
 

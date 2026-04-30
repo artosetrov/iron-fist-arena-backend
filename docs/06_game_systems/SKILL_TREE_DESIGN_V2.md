@@ -1,8 +1,17 @@
 # Skill Tree Design — v2
 
-Status: **ACTIVE** (2026-04-19)
+Status: **ACTIVE design reference with shipped deltas revalidated 2026-04-29**
 Supersedes: `SKILL_TREE_DESIGN.md` (v1 draft, 2026-04-13 — archived for reference only)
 Prototype: `prototypes/talents-horizontal.html`
+
+> **Status boundary:** this document still captures the current Talents v2
+> structure and content model, but some originally planned ultimate semantics
+> were normalized during the 2026-04-29 production landing. Treat the live
+> authority as:
+> - `backend/prisma/seeds/passives-{warrior,rogue,mage,tank}-v2.sql`
+> - `backend/src/app/api/pvp/strike/route.ts`
+> - `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees.md`
+> - `wiki/features/passive-tree.md`
 
 ## 0. Phase 0 Decisions (LOCKED)
 
@@ -224,7 +233,7 @@ Realistic L50 P0 build (59 SP): maxed Foundation (36) + one lane r3 (18) + 1 Key
 
 | id | name | prereq | passive | active skill (slot 04) |
 |----|------|--------|---------|------------------------|
-| `rogue.ult.vanish` | Vanish | `key.shadowstrike` | +`15%` damage after using stealth | **Fade** — `stealth` `4s` (next attack = auto-crit), cooldown `60s` |
+| `rogue.ult.vanish` | Vanish | `key.shadowstrike` | +`15%` damage after using stealth | **Fade** — `stealth` (next attack = auto-crit), cooldown `75s` |
 | `rogue.ult.shadow_reaper` | Shadow Reaper | `key.envenom` | +`30%` damage vs poisoned targets | **Reap** — `burst_damage` `80%` if target `< 30%` HP, cooldown `75s` |
 
 ---
@@ -336,23 +345,25 @@ Realistic L50 P0 build (59 SP): maxed Foundation (36) + one lane r3 (18) + 1 Key
 
 | id | name | prereq | passive | active skill (slot 04) |
 |----|------|--------|---------|------------------------|
-| `tank.ult.fortress` | Fortress | `key.aegis_wall` | +`25%` max HP | **Bastion** — `damage_reduction` `70%` for `4s` + taunt `3s`, cooldown `90s` |
-| `tank.ult.earthshatter` | Earthshatter | `key.taunt` | +`30%` cleave damage | **Quake** — `aoe_stun` `2s`, cooldown `120s` |
+| `tank.ult.fortress` | Fortress | `key.aegis_wall` | +`25%` max HP | **Bastion** — shipped as `shield_self` magnitude `0.70` (the live equivalent of the original Bastion damage-reduction intent), cooldown `90s` |
+| `tank.ult.earthshatter` | Earthshatter | `key.taunt` | +`30%` cleave damage | **Quake** — `aoe_stun` `1 round`, cooldown `120s` |
 
 ---
 
 ## 8. Active Skill Types Reference
 
-Existing `actionType` strings (per `feedback_migration_mcp_apply_to_prod` — verify in `backend/src/lib/game/active-skills.ts` before seed):
+Live `actionType` strings after the 2026-04-29 Talents v2 landing:
 
-- `burst_damage` — used by `warrior.ult.unleash`, `rogue.ult.shadow_reaper` ✓ (exists per Phase 3.B memory)
-- `damage_reduction` — used by `warrior.ult.champion`, `tank.ult.fortress` ✓ (exists per Phase 3.B)
-- `stealth` — used by `rogue.ult.vanish` ⚠ **new** (engineering needed)
-- `aoe_damage` — used by `mage.ult.meteor` ⚠ **new**
-- `cooldown_reset` — used by `mage.ult.timewarp` ⚠ **new**
-- `aoe_stun` — used by `tank.ult.earthshatter` ⚠ **new**
+- `burst_damage` — used by `warrior.ult.unleash`, `rogue.ult.shadow_reaper`
+- `shield_self` — used by `warrior.ult.champion`, `tank.ult.fortress`
+- `stealth` — used by `rogue.ult.vanish` (shipped 2026-04-29)
+- `aoe_damage` — used by `mage.ult.meteor` (shipped 2026-04-29)
+- `cooldown_reset` — used by `mage.ult.timewarp` (shipped 2026-04-29)
+- `aoe_stun` — used by `tank.ult.earthshatter` (shipped 2026-04-29)
 
-4 new `actionType` handlers needed in the strike-resolver before Ultimates can ship. Track as a sub-issue in task #7.
+The four Talents v2 handlers (`stealth`, `aoe_damage`, `cooldown_reset`,
+`aoe_stun`) are already shipped in the strike resolver; see `block-262` for
+the exact runtime behavior and cross-round buff-state pattern.
 
 ## 9. Backend Contract Changes
 
@@ -388,7 +399,7 @@ Live config:
 - [ ] `TalentMinimap` — viewport-indicator overlay
 - [ ] `Assets.xcassets/Talents/bg_warrior.png` (+ rogue/mage/tank) — `2800×1200` @2x
 - [ ] `ActiveSlotCellView` — extend to surface Ultimate's granted active skill
-- [ ] `pbxproj` — register all new files with random unique IDs (per `feedback_pbxproj_unique_ids.md`)
+- [ ] `pbxproj` — register all new files with random unique IDs
 
 ## 11. QA Gates (before `talents_v2_enabled` flag flips to 100%)
 

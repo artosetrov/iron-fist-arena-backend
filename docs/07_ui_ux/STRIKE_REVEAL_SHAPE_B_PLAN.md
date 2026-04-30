@@ -26,7 +26,7 @@ Treat this document as a mixed implementation record plus remaining design plan,
 
 ## TL;DR
 
-Augment the existing `InteractiveRoundLogCard` with four new elements — a verdict band, a clash-chip strip, a screen-level verdict flash, and portrait winner/loser states — so that each resolved round explicitly frames the rock-paper-scissors read outcome. Ship in four phases. No backend changes required. No scale animations anywhere (per `feedback_no_scale_animations`). All new tokens use `DarkFantasyTheme`.
+Augment the existing `InteractiveRoundLogCard` with four new elements — a verdict band, a clash-chip strip, a screen-level verdict flash, and portrait winner/loser states — so that each resolved round explicitly frames the attack/defense read outcome. Ship in four phases. No backend changes required. No scale animations anywhere. All new tokens use `DarkFantasyTheme`.
 
 ## Goals and non-goals
 
@@ -223,7 +223,7 @@ Each phase is a single PR. Phase N does not depend on Phase N+1 except where not
 | `Hexbound/Hexbound/Models/RoundExchange.swift` | Add `verdict: RoundVerdict` field; derive in `build(...)` |
 | `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift` | Add `CombatVerdictFlash` overlay at end of root `ZStack` (after existing VFX) |
 
-**Xcode project:** 2 new files require `project.pbxproj` entries in `PBXBuildFile`, `PBXFileReference`, correct `PBXGroup.children` (`Models` and `Views/Combat/VFX` groups), and `PBXSourcesBuildPhase.files`. Generate IDs via `openssl rand -hex 12` per `feedback_pbxproj_unique_ids`.
+**Xcode project:** 2 new files require `project.pbxproj` entries in `PBXBuildFile`, `PBXFileReference`, correct `PBXGroup.children` (`Models` and `Views/Combat/VFX` groups), and `PBXSourcesBuildPhase.files`. Generate IDs via `openssl rand -hex 12`.
 
 **CombatVerdictFlash specification:**
 
@@ -279,7 +279,7 @@ Total flash lifetime: 700 ms. Peak opacity reached at 220 ms. Fades to 0 by 700 
 - `DarkFantasyTheme.success` — exists. Verify.
 - `DarkFantasyTheme.danger` — exists. Verify.
 
-Open `Hexbound/Hexbound/DesignSystem/DarkFantasyTheme.swift` and grep for each name before writing the enum — do not assume. (Reference memory: `feedback_no_custom_font_sizes` — only static tokens.)
+Open `Hexbound/Hexbound/DesignSystem/DarkFantasyTheme.swift` and grep for each name before writing the enum — do not assume. Use only checked-in static tokens.
 
 **Acceptance criteria Phase 1:**
 
@@ -376,7 +376,7 @@ private struct RoundVerdictHeader: View {
 - `LayoutConstants.spaceSM` — padding token
 - `LayoutConstants.radiusLG` — already used by card
 
-Use Grep on `DarkFantasyTheme.swift` and `LayoutConstants.swift` for each name before adding. Per memory `feedback_no_custom_font_sizes`, no `.font(.system(size: ...))`.
+Use Grep on `DarkFantasyTheme.swift` and `LayoutConstants.swift` for each name before adding. No `.font(.system(size: ...))`.
 
 **Integration point:** `InteractiveRoundLogCard.body` at line 38:
 
@@ -531,7 +531,7 @@ private struct ZoneChip: View {
 
 **Tokens to verify:** `LayoutConstants.spaceXS`, `space2XS`, `radiusSM`, `DarkFantasyTheme.bgElevated`, `DarkFantasyTheme.textTertiary`, `DarkFantasyTheme.buttonLabelCompact`, `DarkFantasyTheme.badge`. Confirm in source.
 
-**Why chips live in `InteractiveRoundLogCard.swift` as private, not as shared components:** per `feedback_reusability_first_rule` reusability is #1. I argue for *deferred* extraction — if Phase 5 ever adds these chips to a spectator view or replay screen, promote `ZoneChip` to `Hexbound/Views/Components/`. Premature hoisting risks over-generalization for a single use site.
+**Why chips live in `InteractiveRoundLogCard.swift` as private, not as shared components:** I argue for *deferred* extraction — if Phase 5 ever adds these chips to a spectator view or replay screen, promote `ZoneChip` to `Hexbound/Views/Components/`. Premature hoisting risks over-generalization for a single use site.
 
 **Acceptance criteria Phase 3:**
 
@@ -545,7 +545,7 @@ private struct ZoneChip: View {
 
 **Ships:** Two things in one PR — (a) `DuelFighterCard` accepts the `outcomeRole` parameter and renders opacity 0.72 on loser / 16 pt gold shadow on winner during the reveal window, and (b) `OUTPLAYED` gets a one-shot card-border tween from `gold-dim` → `gold` → `gold-dim` over 1.2 s.
 
-**Risk level:** Medium. Touches `DuelFighterCard` which is the most-used combat view. Need to verify all call sites of `DuelFighterCard` per `feedback_check_all_callers`.
+**Risk level:** Medium. Touches `DuelFighterCard` which is the most-used combat view. Need to verify all call sites of `DuelFighterCard` before shipping.
 
 **Files modified:**
 
@@ -603,7 +603,7 @@ private var shadowRadius: CGFloat {
 
 **Callers of `DuelFighterCard` to verify before shipping:**
 
-Run `grep -rn "DuelFighterCard(" Hexbound/` and confirm every instance still compiles with the new `outcomeRole:` defaulting to nil. Zero-arg callers keep working. Per `feedback_check_all_callers`.
+Run `grep -rn "DuelFighterCard(" Hexbound/` and confirm every instance still compiles with the new `outcomeRole:` defaulting to nil. Zero-arg callers keep working.
 
 **Acceptance criteria Phase 4:**
 
@@ -627,11 +627,11 @@ Run `grep -rn "DuelFighterCard(" Hexbound/` and confirm every instance still com
 | `Views/Combat/InteractiveCombatComponents.swift` | — | — | — | edit |
 | `Hexbound.xcodeproj/project.pbxproj` | edit | — | — | — |
 
-pbxproj edits in Phase 1 only. Remaining phases modify files that already exist in the project. Phase 1 adds 2 new files — use `openssl rand -hex 12` for IDs per `feedback_pbxproj_unique_ids`.
+pbxproj edits in Phase 1 only. Remaining phases modify files that already exist in the project. Phase 1 adds 2 new files — use `openssl rand -hex 12` for IDs.
 
 ## Animation and timing reference
 
-All animations are opacity or box-shadow only. No scale, per `feedback_no_scale_animations`.
+All animations are opacity or box-shadow only. No scale.
 
 | Element | Property | Timing | Curve |
 |---------|----------|--------|-------|
@@ -648,7 +648,7 @@ Total per-round reveal budget stays at the existing `InteractiveBattleViewModel.
 
 ## Tokens to confirm before writing code
 
-Per `feedback_figma_ds_tokens_only` and `feedback_no_custom_font_sizes` — no raw hex, no `.font(.system(size:))`. Before each phase, confirm the token name exists in source:
+No raw hex and no `.font(.system(size:))`. Before each phase, confirm the token name exists in source:
 
 ```bash
 grep -n "static let gold" Hexbound/Hexbound/DesignSystem/DarkFantasyTheme.swift
@@ -700,7 +700,7 @@ No schema changes in any phase — Prisma sync check is a no-op.
 2. **`STRUCK` nomenclature collision.** Current log event `.strike` already exists in `CombatLogEvent.swift`. Using `STRUCK THROUGH` as the banner label avoids direct collision, but we should make sure neither QA nor support copy conflates `STRIKE` (the button) with `STRUCK` (the verdict). Narrative/Lore review before Phase 2.
 3. **Stacking with `ActiveFireBanner`.** Both the verdict band and the active-fire banner can surface on the same round. Spec'd order: verdict band is inside the log card (fixed position); active-fire banner floats above the fighter card (existing behavior). They occupy different layers. *But* the log card pulse on `OUTPLAYED` + simultaneous active-fire banner pulse = two simultaneous glow animations in peripheral vision. Need to verify this feels rich rather than noisy in playtest. If noisy, stagger active-fire banner by 200 ms.
 4. **Landscape / larger-width devices.** Plan specs chip layout at 320 pt width. iPad sizes unverified. If iPad is in scope, verify clash strip doesn't look empty/stretched at 768 pt.
-5. **Localization.** All verdict copy is English. Shape B locks in 4 strings — `OUTPLAYED`, `STRUCK THROUGH`, `HELD THE LINE`, `OUTREAD`. Per `feedback_english_only` we're English-only for now, but if localization lands later, these need to be `String(localized:)` wrapped — cheap to retrofit.
+5. **Localization.** All verdict copy is English. Shape B locks in 4 strings — `OUTPLAYED`, `STRUCK THROUGH`, `HELD THE LINE`, `OUTREAD`. If localization lands later, these need to be `String(localized:)` wrapped — cheap to retrofit.
 
 ## Out of scope (explicitly)
 

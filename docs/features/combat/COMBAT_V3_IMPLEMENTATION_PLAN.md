@@ -474,7 +474,7 @@ The phase machine itself does **not** change — `currentExchange` is an indepen
 
 ## 7. Animation contract
 
-**Rules (per `feedback_no_scale_animations`):**
+**Rules:**
 
 - NO `.scaleEffect` grow/shrink. Only opacity + translate.
 - Row stagger: `easeOut 0.35s` with 120ms delay per row, + 240ms delay before the "COUNTER" divider.
@@ -493,7 +493,7 @@ The phase machine itself does **not** change — `currentExchange` is an indepen
 | Opponent strike is `nil` (shouldn't happen server-side but possible in degraded mode) | Omit enemy section entirely — log shows only player side + divider skipped. |
 | Network error mid-strike (existing `.error` phase) | Log card never renders; picker stays visible; error banner owns the screen (no change). |
 | Player taps STRIKE twice fast | Existing `phase.isBusy` gate already prevents it — YOUR CHOICE button has `.disabled = true` as defensive redundancy. |
-| User force-quits during reveal | `timerTask` cancels in `onDisappear` at screen level (not log-card level — per `feedback_task_cancel_lifetime`). |
+| User force-quits during reveal | `timerTask` cancels in `onDisappear` at screen level (not log-card level). |
 | Talent fires but damage is 0 (stun) | Render talent row with `(stunned)` muted tag, no number. |
 | Both sides fire talents same round | Two talent rows, one in each section. |
 | Round result log overflows the swap area | `ScrollView` inside log card (max-height 300). Unlikely in practice — typical round = 2–4 rows. |
@@ -551,7 +551,7 @@ The phase machine itself does **not** change — `currentExchange` is an indepen
 
 ### Phase H — Commit
 1. Stage all 7 files + pbxproj + `InteractiveBattleView.swift` + VM + `ActiveSkillsHUD.swift` + `InteractivePredictView` tile changes + `ButtonStyles.swift` (LockedStanceButtonStyle).
-2. Commit via `.git-trigger` (NEVER direct commit from sandbox — `feedback_deploy_via_tmp_clone`).
+2. Publish through the repo's current git workflow after the implementation pass is verified.
 3. Commit message: `feat(combat): interactive round log + YOUR CHOICE morph (v3)`
 
 ---
@@ -601,7 +601,7 @@ One focused session, ~2–3h of coding + ~1h of in-simulator polish.
 - [ ] User approves this plan (pending)
 - [ ] Confirmed no backend changes in scope
 - [ ] Confirmed token list (§2.1) is accurate against `DarkFantasyTheme` (spot-checked: `.bgElevated` exists; `.goldDim` exists)
-- [ ] pbxproj ID generation procedure ready (`openssl rand -hex 12` per `feedback_pbxproj_unique_ids`)
+- [ ] pbxproj ID generation procedure ready (`openssl rand -hex 12` or another unique random 24-char hex generator)
 
 ---
 

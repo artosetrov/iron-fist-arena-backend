@@ -218,7 +218,7 @@ if (minigameUnlocked && result.slotsCollected > 0 && activeShaftKey) {
   };
 }
 
-// 5. Response (flat shape per feedback_flat_response_shape)
+// 5. Response (flat shape — keep parity with the current API contract style)
 return {
   gold: updatedChar.gold,
   gems: updatedChar.gems,
@@ -752,7 +752,7 @@ Add:
 - `collectAll(pickedShaftKey:)` — sends optional key, handles `needs_shaft_pick` response
 - `claimMinigameBonus(...)` — POSTs and updates `activeShaft`, returns `MinigameResult`
 
-**CRITICAL:** preserve the existing `init(appState:cache:)` at the top of the file (feedback_observable_init_preservation).
+**CRITICAL:** preserve the existing `init(appState:cache:)` at the top of the file.
 
 #### `Views/GoldMine/GoldMineDetailView.swift`
 
@@ -789,7 +789,7 @@ Nine new `.swift` files, each needs 4 entries:
 3. `PBXGroup` — add `{ID2}` to the correct group children array
 4. `PBXSourcesBuildPhase` — add `{ID1}` to files array
 
-Generate random hex IDs via `openssl rand -hex 12` (never sequential — `feedback_pbxproj_unique_ids`).
+Generate random hex IDs via `openssl rand -hex 12` (never sequential).
 
 Groups:
 - `Models/` — MinigameSession.swift, ShaftCatalog.swift
