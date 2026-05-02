@@ -3,7 +3,7 @@ title: PvP Rating (ELO)
 category: systems
 tags: [pvp, elo, rating, matchmaking, ranks]
 sources: [docs/06_game_systems/COMBAT.md, docs/06_game_systems/BALANCE_CONSTANTS.md]
-updated: 2026-04-14
+updated: 2026-04-29
 ---
 
 # PvP Rating System
@@ -39,6 +39,28 @@ ELO-based rating with calibration phase.
 - High K-factor during calibration (48) creates dramatic early swings — intentional, makes first 10 games exciting
 - Challenger requires both rating AND leaderboard position — prevents inactive high-rated players from holding title
 - Revenge multiplier (1.5×) encourages rematches without being exploitable (one revenge per loss)
+
+## Resolve API contract
+
+`/api/pvp/resolve` exposes the full rating delta on every result for both
+PvP and bot fights:
+
+- `rating_change` — signed delta applied to the attacker's rating.
+- `rating_before` — attacker's rating *before* the fight (= `attacker.pvpRating`).
+- `rating_after` — attacker's rating *after* the fight (= `attackerNewRating`).
+
+The absolute pair was added 2026-04-29 (Combat V2 D-1) so the iOS END-screen
+`RewardsBlock` can render *delta + new total* (`+24 / 1248`) instead of
+delta-only. Bot fights surface the pair too so the iOS view does not branch
+on opponent type.
+
+`rating_before` / `rating_after` are also stored on the `PvpMatch` record
+itself (`player1RatingBefore` / `player1RatingAfter` /
+`player2RatingBefore` / `player2RatingAfter`) — that pair is the source for
+PvP history responses and battle-mail rating cards. The resolve response
+just surfaces the attacker-perspective view of the same numbers.
+
+Plumbing audit: `block-275-backend-pvp-resolve-rating-bounds-parity`.
 
 ## See Also
 

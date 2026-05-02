@@ -24,12 +24,17 @@ struct TalentsSummaryCard: View {
     private let maxSlotsEver: Int = 4
 
     var body: some View {
+        // Compressed ~30pt vs. original to free vertical space for the
+        // 460pt talent canvas (so HERO header + tabs + summary + canvas +
+        // reset all fit one iPhone screen). Padding ratchets:
+        // outer spaceMS→spaceSM, divider/spRow vertical pads removed, slots
+        // capped at compact height.
         VStack(spacing: 0) {
             spRow
             divider
             activeSkillsRow
         }
-        .padding(LayoutConstants.spaceMS)
+        .padding(LayoutConstants.spaceSM)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -63,7 +68,6 @@ struct TalentsSummaryCard: View {
             Spacer()
             unlockedCountPill
         }
-        .padding(.vertical, LayoutConstants.spaceXS)
     }
 
     private var unlockedCountPill: some View {
@@ -96,13 +100,13 @@ struct TalentsSummaryCard: View {
         Rectangle()
             .fill(DarkFantasyTheme.borderSubtle)
             .frame(height: 1)
-            .padding(.vertical, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
     }
 
     // MARK: - Active skills row
 
     private var activeSkillsRow: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("ACTIVE SKILLS")
                     .font(DarkFantasyTheme.badge)

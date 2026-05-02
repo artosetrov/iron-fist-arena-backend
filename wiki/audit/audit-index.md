@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5211
+- In-scope files: 5215
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -294,6 +294,31 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 272 | [[block-272-retro-2026-04-13-19-20-memory-boundary-sync]] — the later retro journals now keep their PvP routing, git-watcher, Talents v2, and synthetic-id FK lessons in repo-owned prose instead of external memory-note pointers | Fixed |
 | 273 | [[block-273-audit-trail-memory-token-residual-scrub]] — the audit trail itself no longer spells the retired external memory-token strings literally while describing the cleanup, so repo-wide searches now stay quiet in checked-in docs/wiki too | Fixed |
 | 274 | [[block-274-historical-doc-tbd-wording-sync]] — the last literal `TBD` cells in the checked-in historical UI/QA docs now read as explicit baseline or not-verified-in-session wording instead of unfinished placeholders | Fixed |
+| 275 | [[block-275-backend-pvp-resolve-rating-bounds-parity]] — `/api/pvp/resolve` now emits `rating_before`/`rating_after` for both PvP and bot fights, and iOS plumbs the pair through `PvpResolveResultPayload` → `ResolveResult` → all 5 `CombatResultInfo` and 4 `ResolveResult` callsites so Combat V2 D-1 can render delta + new total | Fixed |
+| 276 | [[block-276-delete-orphan-qa-prototype-artifact]] — deleted the untracked `qa-reports/prototypes/talents-board-scroll-2026-04-29.html` orphan because it was not referenced by checked-in docs, wiki, or runtime surfaces | Fixed |
+| 277 | [[block-277-inventory-marker-parity-after-pvp-wave-rollforward]] — refreshed `project-file-inventory.md` after the late PvP/combat wiki rollforward so blocks `263–274` are no longer falsely marked untracked, the deleted QA prototype is gone, and the remaining untracked tail matches live git | Fixed |
+| 278 | [[block-278-social-docs-and-guild-hall-scrolls-parity]] — the social/Guild Hall docs now describe Scrolls as DM conversations and treat the older `docs/features/*social*` pages as secondary overviews under the live wiki feature map | Fixed |
+| 279 | [[block-279-ios-guild-hall-city-route-parity]] — the fallback hub building config no longer treats Guild Hall as a Coming Soon surface, so the city-map route now matches the live `AppRoute.guildHall` runtime and social feature map | Fixed |
+| 280 | [[block-280-screen-inventory-guild-hall-runtime-parity]] — the live iOS screen inventory no longer describes Guild Hall as a guild-management surface and now reflects the shipped allies/scrolls/duels social hub runtime | Fixed |
+| 281 | [[block-281-pre-release-audit-guild-hall-resolved-followup]] — the historical pre-release audit now preserves that Guild Hall was a dead-end at snapshot time while separating that release snapshot from the later repo fixes that followed | Fixed |
+| 282 | [[block-282-guild-hall-wave-verification-and-audit-trail-sync]] — the audit trail now records the completed `BUILD SUCCEEDED` verification for the Guild Hall city-route fix instead of leaving a stale “build in progress” note behind | Fixed |
+| 283 | [[block-283-ios-city-map-route-less-building-filter-parity]] — the normal iOS hub map now filters route-less placeholder buildings back out of the player-facing city map, so Black Market stays editor-only until it has a real route and the historical release audit no longer treats it as a current live dead-end | Fixed |
+| 284 | [[block-284-pre-release-audit-followup-temporal-wording-sync]] — the audit trail now makes it explicit that block 281 described an intermediate post-Guild-Hall state before block 283 hid Black Market from the normal hub too | Fixed |
+| 285 | [[block-285-ios-push-deep-link-route-parity]] — the iOS client now honors a bounded push deep-link route subset instead of logging and dropping the payload, and the admin/docs layer no longer suggests unsupported route examples like `events` | Fixed |
+| 286 | [[block-286-social-message-action-and-todo-inventory-parity]] — the Allies action menu no longer ships a fake “Message — Phase 2” stub, and the historical pre-release audit now describes the current bounded TODO set instead of a stale 6-file product-flow inventory | Fixed |
+| 287 | [[block-287-admin-dashboard-fairness-and-retention-analytics-parity]] — the admin home dashboard now derives matchmaking fairness from live PvP rating gaps and presents retention as pending instrumentation instead of fake `0%` placeholders | Fixed |
+| 288 | [[block-288-pre-release-audit-bounded-todo-followup]] — the historical pre-release audit now separates the remaining Talents v2 polish TODOs from the admin analytics instrumentation gap instead of lumping them together as one checked-in TODO bucket | Fixed |
+| 289 | [[block-289-runtime-comment-memory-boundary-sync]] — active Swift, backend, and Prisma migration comments now preserve animation/FK/apply-order lessons directly in checked-in prose instead of naming external memory-note files | Fixed |
+| 290 | [[block-290-retro-and-project-index-boundary-sync]] — the latest retro no longer depends on external memory-note names, and the top-level project index freshness stamp now matches the current audit wave | Fixed |
+| 291 | [[block-291-ios-route-less-placeholder-wording-boundary-sync]] — the remaining hub/tutorial/client-doc comments now describe `route = nil` as a bounded route-less editor/config placeholder model instead of a generic player-facing “Coming Soon” surface | Fixed |
+| 292 | [[block-292-delete-dead-guild-hall-duels-placeholder-helper]] — removed the orphan duels placeholder helper from the Guild Hall tab so the social UI no longer carries dead placeholder residue | Fixed |
+| 293 | [[block-293-enemy-portrait-resolver-memory-boundary-sync]] — the new shared combat enemy-portrait resolver now explains its single-source-of-truth role directly in checked-in prose instead of naming an external memory-note file | Fixed |
+| 294 | [[block-294-historical-review-and-retro-route-less-boundary-sync]] — the remaining historical review and retro notes now use the cleaned route-less placeholder language and repo-owned Combat V2 scaffold prose instead of older shorthand | Fixed |
+| 295 | [[block-295-audit-trail-token-and-placeholder-wording-scrub]] — the remaining external-note token residue and placeholder-helper wording in the audit trail and historical retro layer has been rewritten into repo-owned prose so repo-wide greps stay quiet again | Fixed |
+| 296 | [[block-296-inventory-and-audit-trail-self-reference-parity]] — the audit trail no longer reintroduces its own stale token strings while describing the cleanup, and the inventory now records the real untracked QA prototype plus the latest block/count rollforward | Fixed |
+| 297 | [[block-297-ios-enemy-portrait-resolver-mainactor-parity]] — the shared enemy portrait resolver and its combat call sites now match the `@MainActor` boundary of `GameDataCache`, fixing the real iOS combat compile break that remained after the cleanup wave | Fixed |
+| 298 | [[block-298-inventory-live-git-regeneration-parity]] — `project-file-inventory.md` now mirrors the live tracked/untracked git tree again through a full regeneration pass, closing the larger omission drift that had accumulated beyond simple top-count mismatches | Fixed |
+| 299 | [[block-299-ios-unavailable-route-copy-parity]] — the remaining live iOS route fallbacks now use honest unavailable-route copy instead of reviving the old generic `Coming Soon` wording in `AppRouter` and `CityMapView` | Fixed |
 
 ## Status Legend
 

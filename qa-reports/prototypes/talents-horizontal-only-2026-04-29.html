@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talents — Horizontal-Only Canvas · 2026-04-29</title>
+<style>
+:root {
+  --bg-deep:    #0e0a1f;
+  --bg-card:    #15102b;
+  --bg-board:   #1a1432;
+  --grid-line:  rgba(120, 100, 180, 0.10);
+  --node-bg:    #1f1838;
+  --node-border:           #3d3358;
+  --node-border-allocated: #d4a851;
+  --node-border-available: #6b5ba0;
+  --line:        rgba(120, 100, 180, 0.35);
+  --line-active: rgba(212, 168, 81, 0.65);
+  --gold:        #d4a851;
+  --gold-dim:    #8d7235;
+  --text:        #e8e2f5;
+  --text-muted:  #8c83a8;
+  --frame:       #2a2240;
+  --gem-purple:  #b07ad6;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", system-ui, sans-serif;
+  background: linear-gradient(180deg, #0a0617, #1a0e2e);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+}
+h1 {
+  text-align: center;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 6px;
+}
+.subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.row {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.col { display: flex; flex-direction: column; align-items: center; }
+.label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.label strong { color: var(--gold); font-weight: 600; }
+
+/* iPhone frame */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg-deep);
+  border: 1px solid var(--frame);
+  border-radius: 36px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+}
+
+/* Status bar */
+.status-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+  position: relative;
+  flex-shrink: 0;
+}
+.status-bar::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 100px;
+  height: 26px;
+  background: #000;
+  border-radius: 16px;
+}
+
+/* Hero header */
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px 10px;
+  flex-shrink: 0;
+}
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--frame);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 14px;
+}
+.hero-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  padding: 0 16px;
+  gap: 8px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--frame);
+  border-bottom: 1px solid var(--frame);
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 12px 4px;
+  color: var(--text-muted);
+  position: relative;
+}
+.tab.active { color: var(--gold); }
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--gold);
+}
+
+/* Summary card */
+.summary {
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--frame);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.sp-row { display: flex; justify-content: space-between; align-items: center; }
+.sp-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.sp-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-top: 2px;
+}
+.sp-badge {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--frame);
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sp-badge .star { color: var(--gold); margin-right: 4px; }
+.divider {
+  height: 1px;
+  background: var(--frame);
+  margin: 10px 0;
+}
+.skills-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.skills-row { display: flex; gap: 8px; }
+.skill-slot {
+  flex: 1;
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--frame);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+.skill-slot .num {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+.skill-slot .plus { font-size: 18px; opacity: 0.4; }
+.skill-slot.premium {
+  border: 1.5px solid var(--gem-purple);
+  color: var(--gem-purple);
+}
+.skill-slot .gem {
+  width: 10px; height: 10px;
+  background: linear-gradient(135deg, #b685dc, #6f4699);
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+/* Canvas — narrower height, horizontal-only scroll */
+.canvas-wrap {
+  margin: 12px 16px 0;
+  height: 392px; /* SHRUNK from 560 — fits viewport */
+  background: var(--bg-board);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border: 1px solid var(--frame);
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;     /* <-- NO vertical scroll */
+  position: relative;
+}
+.canvas-wrap::-webkit-scrollbar { height: 3px; }
+.canvas-wrap::-webkit-scrollbar-thumb {
+  background: var(--gold-dim);
+  border-radius: 2px;
+}
+.canvas {
+  position: relative;
+  height: 100%;        /* fills 392px exactly — no vertical scroll */
+  /* width set inline based on tree natural width */
+}
+.canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--gold-dim);
+  opacity: 0.45;
+}
+.corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+/* Nodes */
+.node {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--node-bg);
+  border: 1.5px solid var(--node-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.node.allocated {
+  border-color: var(--node-border-allocated);
+  background: linear-gradient(180deg, #2a2042, #1f1838);
+  box-shadow: 0 0 14px rgba(212, 168, 81, 0.25);
+  color: var(--gold);
+}
+.node.available { border-color: var(--node-border-available); color: #b3a8d6; }
+.node:active { transform: translate(-50%, -50%) scale(0.95); }
+.node svg.icon { width: 26px; height: 26px; }
+
+/* Reset row */
+.reset {
+  margin: 12px 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(220, 60, 80, 0.22);
+  background: rgba(220, 60, 80, 0.04);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.reset .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d34d62;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+.reset .right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.reset .gem {
+  width: 8px; height: 8px;
+  background: linear-gradient(135deg, #b685dc, #6f4699);
+  transform: rotate(45deg);
+}
+
+.notes {
+  max-width: 760px;
+  margin: 28px auto 0;
+  padding: 18px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--frame);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.notes h2 {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 10px;
+}
+.notes p { margin: 6px 0; }
+.notes p strong { color: var(--gold); }
+.notes code {
+  background: rgba(255,255,255,0.05);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.scroll-hint {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.55);
+  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--gold-dim);
+  pointer-events: none;
+  opacity: 0.85;
+}
+</style>
+</head>
+<body>
+
+<h1>Talents — Horizontal-Only Canvas</h1>
+<div class="subtitle">iPhone 14 (390 × 844) · canvas height 392pt · horizontal scroll only</div>
+
+<div class="row">
+  <div class="col">
+    <div class="label"><strong>Variant C</strong> · canvas fits screen, scrolls only horizontally</div>
+    <div class="phone" id="phone"></div>
+  </div>
+</div>
+
+<div class="notes">
+  <h2>Сводка</h2>
+  <p><strong>Что меняется:</strong></p>
+  <p>· canvas frame высота <code>560 → 392</code> pt — освобождает <code>168pt</code>, теперь вмещается весь TalentsTabView (header + tabs + summary + canvas + reset) в один экран iPhone, без внешнего скрола.</p>
+  <p>· canvas <code>overflow-y: hidden</code> + <code>overflow-x: auto</code> — вертикальный скрол структурно невозможен, только горизонтальный.</p>
+  <p>· Tree height вычисляется так чтобы ТОЧНО влезть в frame: <code>rowPitch = (frameHeight - 2 × padding) / (rowCount - 1)</code>. Для frame=392, padding=16, 6 рядов: rowPitch ≈ <code>72pt</code>. Ноды <code>64pt</code> с <code>8pt</code> зазором по вертикали.</p>
+  <p>· Tree width остаётся натуральным от <code>xMinGap=76 / minSameRowDx</code>. Для warrior с min dx=120bp: width ≈ <code>608pt</code> → горизонтальный скрол ~<code>240pt</code>.</p>
+  <p><strong>Trade-off:</strong> вертикальная плотность увеличивается (rowPitch с 80 → 72). Связи между рядами становятся короче, но всё ещё читаются — orthogonal routing остаётся.</p>
+  <p><strong>Открытый вопрос:</strong> при добавлении 7-го или 8-го ряда (если backend расширит дерево), rowPitch ужмётся до 60pt → ноды начнут касаться. Для текущей спеки 6 рядов запас есть.</p>
+</div>
+
+<script>
+// ==== Data: warrior, 23 nodes, real backend coordinates ====
+// Layout sized to fit a 392px height canvas with no vertical scroll.
+
+const NODE = {
+  // x, y in backend coords (1400×600 world canvas)
+  // status: allocated / available / locked
+  // archetype: foundation / berserk / crusader / execute / keystone / ultimate
+  warrior: [
+    // Foundation row (y=520) — 6 nodes
+    { kx: 120,  ky: 520, status:'allocated', icon:'shield' },
+    { kx: 300,  ky: 520, status:'available', icon:'shield' },
+    { kx: 480,  ky: 520, status:'locked',    icon:'shield' },
+    { kx: 680,  ky: 520, status:'available', icon:'eye' },
+    { kx: 880,  ky: 520, status:'locked',    icon:'sword' },
+    { kx: 1080, ky: 520, status:'locked',    icon:'drop' },
+    // Tier-2 row 1 (y=400) — 4 archetype anchors
+    { kx: 220,  ky: 400, status:'locked',    icon:'sword' },
+    { kx: 430,  ky: 400, status:'locked',    icon:'shield' },
+    { kx: 600,  ky: 400, status:'locked',    icon:'shield' },
+    { kx: 830,  ky: 400, status:'locked',    icon:'sword' },
+    // Tier-2 row 2 (y=290)
+    { kx: 220,  ky: 290, status:'locked',    icon:'eye' },
+    { kx: 430,  ky: 290, status:'locked',    icon:'sword' },
+    { kx: 600,  ky: 290, status:'locked',    icon:'heart' },
+    { kx: 830,  ky: 290, status:'locked',    icon:'eye' },
+    // Tier-2 row 3 (y=180)
+    { kx: 300,  ky: 180, status:'locked',    icon:'drop' },
+    { kx: 520,  ky: 180, status:'locked',    icon:'shield' },
+    { kx: 680,  ky: 180, status:'locked',    icon:'shield' },
+    { kx: 800,  ky: 180, status:'locked',    icon:'sword' },
+    // Keystone (y=80) — 3 nodes
+    { kx: 300,  ky: 80,  status:'locked',    icon:'crown' },
+    { kx: 600,  ky: 80,  status:'locked',    icon:'crown' },
+    { kx: 800,  ky: 80,  status:'locked',    icon:'crown' },
+    // Ultimate (y=20) — 2 nodes
+    { kx: 450,  ky: 20,  status:'locked',    icon:'star' },
+    { kx: 750,  ky: 20,  status:'locked',    icon:'star' },
+  ]
+};
+
+// Connections: subset of warrior backend topology
+const CONN = [
+  // Foundation horizontal chain
+  [0,1],[1,2],[2,3],[3,4],[4,5],
+  // Foundation → archetype anchors
+  [3,6],[4,6],[1,7],[2,7],[0,8],[5,9],[3,9],
+  // Cross-lane weak (same row y=400)
+  [6,7],[7,9],
+  // Within-lane vertical chains
+  [6,10],[7,11],[8,12],[9,13],
+  [10,14],[11,15],[12,16],[13,17],
+  // Tier-3 → Keystone
+  [14,18],[15,19],[16,19],[17,20],
+  // Keystone → Ultimate
+  [18,21],[19,22]
+];
+
+const ICON = {
+  shield: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 5 5.5 V12.5 C5 17 8 20.8 12 21.5 C16 20.8 19 17 19 12.5 V5.5 Z"/></svg>',
+  sword: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4 L20 4 L20 10 L9 21 L4 21 L4 16 Z"/></svg>',
+  eye:   '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12 C 4 7 8 5 12 5 C 16 5 20 7 22 12 C 20 17 16 19 12 19 C 8 19 4 17 2 12 Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  drop:  '<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 C 8 9 6 13 6 16 A 6 6 0 0 0 18 16 C 18 13 16 9 12 3 Z"/></svg>',
+  heart: '<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21 L4 13 A 5 5 0 0 1 12 7 A 5 5 0 0 1 20 13 Z"/></svg>',
+  crown: '<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18 L5 8 L9 12 L12 5 L15 12 L19 8 L21 18 Z M3 19 H21 V21 H3 Z"/></svg>',
+  star:  '<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 L14.2 9 L20.5 9.4 L15.7 13.6 L17.3 19.7 L12 16.3 L6.7 19.7 L8.3 13.6 L3.5 9.4 L9.8 9 Z"/></svg>',
+};
+
+// ==== Layout params (matches iOS plan) ====
+const NODE_SIZE = 64;
+const X_MIN_GAP = 76;
+const PADDING   = 16;
+const FRAME_HEIGHT = 392; // canvas frame
+const TREE_HEIGHT  = FRAME_HEIGHT - 2 * PADDING; // usable
+
+function buildPhone() {
+  const phone = document.getElementById('phone');
+  phone.innerHTML = `
+    <div class="status-bar">9:41</div>
+    <div class="hero-header">
+      <div class="icon-button">←</div>
+      <div class="hero-title">HERO</div>
+      <div class="icon-button">⚙</div>
+    </div>
+    <div class="tabs">
+      <div class="tab">INVENTORY</div>
+      <div class="tab">STATUS</div>
+      <div class="tab active">TALENTS</div>
+    </div>
+    <div class="summary">
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">SKILL POINTS</div>
+          <div class="sp-value">3 available</div>
+        </div>
+        <div class="sp-badge"><span class="star">✦</span>3 / 23</div>
+      </div>
+      <div class="divider"></div>
+      <div class="skills-label">ACTIVE SKILLS · 0 / 3 EQUIPPED</div>
+      <div class="skills-row">
+        <div class="skill-slot"><span class="num">01</span><span class="plus">+</span></div>
+        <div class="skill-slot"><span class="num">02</span><span class="plus">+</span></div>
+        <div class="skill-slot"><span class="num">03</span><span class="plus">+</span></div>
+        <div class="skill-slot premium"><span class="num">04</span><span class="gem"></span><span style="font-size:10px">100</span></div>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="canvas" id="canvas"></div>
+      <div class="scroll-hint">SWIPE →</div>
+    </div>
+    <div class="reset">
+      <div class="left"><span>↻</span><span>RESET TALENTS</span></div>
+      <div class="right"><span class="gem"></span><span>50 gems</span></div>
+    </div>
+  `;
+  buildCanvas();
+}
+
+function buildCanvas() {
+  const canvas = document.getElementById('canvas');
+  const nodes = NODE.warrior;
+
+  // Bounds + same-row min dx
+  const xs = nodes.map(n => n.kx);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  let minSameRowDx = Infinity;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      if (Math.abs(nodes[i].ky - nodes[j].ky) < 0.001) {
+        const dx = Math.abs(nodes[i].kx - nodes[j].kx);
+        if (dx > 0.001) minSameRowDx = Math.min(minSameRowDx, dx);
+      }
+    }
+  }
+  const xScale = X_MIN_GAP / minSameRowDx;
+
+  // Y row index from sorted unique Y's
+  const rowYs = [...new Set(nodes.map(n => n.ky))].sort((a, b) => a - b);
+  const rowCount = rowYs.length;
+  // rowPitch derived from frame height — guarantees full tree fits
+  const rowPitch = (TREE_HEIGHT) / (rowCount - 1);
+
+  const treeWidth = (maxX - minX) * xScale + 2 * PADDING;
+  canvas.style.width = treeWidth + 'px';
+
+  function pos(node) {
+    const rowIndex = rowYs.indexOf(node.ky);
+    return {
+      x: PADDING + (node.kx - minX) * xScale,
+      y: PADDING + rowIndex * rowPitch
+    };
+  }
+
+  // SVG layer for connections
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${treeWidth} ${FRAME_HEIGHT}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  canvas.appendChild(svg);
+
+  // Orthogonal connection paths
+  for (const [a, b] of CONN) {
+    const p1 = pos(nodes[a]);
+    const p2 = pos(nodes[b]);
+    const active = nodes[a].status === 'allocated' && nodes[b].status !== 'locked';
+    const dx = Math.abs(p2.x - p1.x), dy = Math.abs(p2.y - p1.y);
+    let d;
+    if (dx < 1 || dy < 1) {
+      d = `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`;
+    } else {
+      const midY = (p1.y + p2.y) / 2;
+      d = `M ${p1.x} ${p1.y} L ${p1.x} ${midY} L ${p2.x} ${midY} L ${p2.x} ${p2.y}`;
+    }
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', active ? 'var(--line-active)' : 'var(--line)');
+    path.setAttribute('stroke-width', active ? 2 : 1.4);
+    path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+  }
+
+  // Corners
+  ['tl','tr','bl','br'].forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'corner ' + c;
+    canvas.appendChild(div);
+  });
+
+  // Nodes
+  nodes.forEach(n => {
+    const p = pos(n);
+    const div = document.createElement('div');
+    div.className = 'node ' + n.status;
+    div.style.left = p.x + 'px';
+    div.style.top  = p.y + 'px';
+    div.innerHTML = ICON[n.icon] || ICON.shield;
+    canvas.appendChild(div);
+  });
+}
+
+buildPhone();
+
+// Auto-scroll hint: after 800ms, scroll the canvas a bit so the user
+// notices the horizontal scroll affordance, then back.
+setTimeout(() => {
+  const wrap = document.getElementById('canvasWrap');
+  wrap.scrollTo({ left: 60, behavior: 'smooth' });
+  setTimeout(() => wrap.scrollTo({ left: 0, behavior: 'smooth' }), 1200);
+}, 800);
+</script>
+
+</body>
+</html>

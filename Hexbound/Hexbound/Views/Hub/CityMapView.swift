@@ -107,7 +107,7 @@ struct CityMapView: View {
                                             )
                                         } else {
                                             appState.showToast(
-                                                "\(tapped.label) — Coming Soon",
+                                                "\(tapped.label) is not available right now",
                                                 type: .info
                                             )
                                         }
@@ -115,7 +115,7 @@ struct CityMapView: View {
                                         appState.mainPath.append(route)
                                     } else {
                                         appState.showToast(
-                                            "\(tapped.label) — Coming Soon",
+                                            "\(tapped.label) is not available right now",
                                             type: .info
                                         )
                                     }
@@ -194,9 +194,12 @@ struct CityMapView: View {
         }
     }
 
-    /// Buildings that are locked (not yet implemented / coming soon)
+    /// Buildings that are locked behind level progression.
+    /// Route-less placeholder surfaces stay editor-only and are filtered out
+    /// before the normal hub map renders.
     private func isBuildinglocked(_ building: CityBuilding) -> Bool {
-        // Always lock buildings without routes (Coming Soon)
+        // Defensive fallback: route-less placeholder surfaces should not appear
+        // in the normal hub, but treat them as locked if they ever slip through.
         if building.route == nil { return true }
         // Level-based unlock from tutorial system
         let characterLevel = appState.currentCharacter?.level ?? 1
@@ -204,8 +207,9 @@ struct CityMapView: View {
     }
 
     private func applyOverrides(_ overrides: [String: GameDataCache.BuildingOverride]) -> [CityBuilding] {
-        guard !overrides.isEmpty else { return defaultCityBuildings }
-        return defaultCityBuildings.map { building in
+        let base = defaultCityBuildings.filter { $0.route != nil }
+        guard !overrides.isEmpty else { return base }
+        return base.map { building in
             var b = building
             if let o = overrides[building.id] {
                 b.relativeX = o.x

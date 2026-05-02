@@ -9,7 +9,7 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 ## Status
 
 - **Phase:** In production
-- **Last major change:** 2026-04-19 — Interactive Combat UX polish: round strip, inline micro-log, auto-submit, long-press skip, BattleSummaryView stars. 2026-04-14 — Fight 404 → classic fallback shipped; UUID id decoding fix; Interactive Combat Phase 3.B shipped 2026-04-13
+- **Last major change:** 2026-04-29 — `/api/pvp/resolve` now emits absolute `rating_before`/`rating_after` for both PvP and bot fights (Combat V2 D-1), and iOS plumbs the pair through `PvpResolveResultPayload` → `ResolveResult` → `CombatResultInfo` so the END-screen `RewardsBlock` can render *delta + new total*. See `block-275-backend-pvp-resolve-rating-bounds-parity`. 2026-04-19 — Interactive Combat UX polish: round strip, inline micro-log, auto-submit, long-press skip, BattleSummaryView stars. 2026-04-14 — Fight 404 → classic fallback shipped; UUID id decoding fix; Interactive Combat Phase 3.B shipped 2026-04-13
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -31,7 +31,7 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 - `POST /match/start`           — `backend/src/app/api/pvp/match/start/route.ts` — start interactive match
 - `GET  /opponents`             — `backend/src/app/api/pvp/opponents/route.ts` — carousel opponent list
 - `POST /prepare`               — `backend/src/app/api/pvp/prepare/route.ts` — pre-fight state lock
-- `POST /resolve`               — `backend/src/app/api/pvp/resolve/route.ts` — final match resolution
+- `POST /resolve`               — `backend/src/app/api/pvp/resolve/route.ts` — final match resolution; emits `rating_change` plus absolute `rating_before` / `rating_after` for both PvP and bot fights (Combat V2 D-1, 2026-04-29)
 - `POST /revenge`               — `backend/src/app/api/pvp/revenge/route.ts` — rematch against recent opponent
 - `POST /strike`                — `backend/src/app/api/pvp/strike/route.ts` — single round in interactive combat
 
@@ -158,6 +158,7 @@ None of these touch resolution. Crit/block/dodge decisions still come from `/pvp
 - **Interactive `strike` and `match/complete` now explicitly reject missing PvP opponents.** If an Interactive Combat v1 row is incomplete and `player2Id` is absent, both routes now return `409 Player-vs-player opponent missing` instead of falling into nullability/type drift.
 - **Prisma migration on `pvp_matches.status`.** Must run ALTER TABLE via Supabase MCP before deploy; Interactive Combat already paid this failure tax once.
 - **Schema field additions without migration** = prod 500s. 2026-04-11 Gold Mine incident pattern applies here too.
+- **Codable memberwise-init blast radius.** Adding any field — even `Int?` — to a `Codable` struct without an explicit `init` breaks every direct constructor across the codebase, since Swift's auto-synthesized memberwise init requires every property to be passed. The 2026-04-29 `CombatResultInfo` rating-bounds addition surfaced two Xcode errors but actually broke 5 `CombatResultInfo` + 4 `ResolveResult` callsites. Always grep all callers when extending such structs (see `block-275-backend-pvp-resolve-rating-bounds-parity`).
 
 ## Tests / fixtures
 

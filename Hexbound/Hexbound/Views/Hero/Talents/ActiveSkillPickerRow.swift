@@ -71,6 +71,18 @@ struct ActiveSkillPickerRow: View {
         }
     }
 
+    /// Real asset key for a consumable (e.g. "health_potion_small"). Nil for
+    /// talents or when the catalog can't resolve the type — caller falls back
+    /// to `iconSymbol`.
+    private var consumableAssetKey: String? {
+        guard case .consumable(let meta) = mode else { return nil }
+        return ConsumableCatalog.resolvedImageKey(
+            consumableType: meta.consumableType,
+            catalogId: nil,
+            imageKey: nil
+        )
+    }
+
     private var iconTint: Color {
         switch mode {
         case .talent:
@@ -155,11 +167,18 @@ struct ActiveSkillPickerRow: View {
         ZStack {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgTertiary)
-            Image(systemName: iconSymbol)
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(iconTint)
-                .padding(LayoutConstants.spaceXS)
+            if let assetKey = consumableAssetKey {
+                Image(assetKey)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(LayoutConstants.spaceXS)
+            } else {
+                Image(systemName: iconSymbol)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(iconTint)
+                    .padding(LayoutConstants.spaceXS)
+            }
         }
         .frame(width: 44, height: 44)
         .overlay(
@@ -264,34 +283,18 @@ struct ActiveSkillPickerRow: View {
             guard let onBuy, canAffordBuy, !isBuying else { return }
             Task { await onBuy() }
         } label: {
-            HStack(spacing: LayoutConstants.spaceXS) {
-                if isBuying {
-                    ProgressView()
-                        .tint(DarkFantasyTheme.textOnGold)
-                        .scaleEffect(0.7)
-                } else {
+            if isBuying {
+                ProgressView()
+                    .tint(DarkFantasyTheme.textOnGold)
+            } else {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Text("BUY")
-                        .font(DarkFantasyTheme.badge)
-                        .foregroundStyle(canAffordBuy ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
                         .tracking(1)
                     Text("\(price)g")
-                        .font(DarkFantasyTheme.badge)
-                        .foregroundStyle(canAffordBuy ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
                 }
             }
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.spaceXS)
-            .background(
-                Capsule().fill(canAffordBuy ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
-            )
-            .overlay(
-                Capsule().stroke(
-                    canAffordBuy ? Color.clear : DarkFantasyTheme.borderSubtle,
-                    lineWidth: 1
-                )
-            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.compactPrimary)
         .disabled(!canAffordBuy || isBuying || onBuy == nil)
         .accessibilityLabel(canAffordBuy ? "Buy for \(price) gold" : "Not enough gold")
     }

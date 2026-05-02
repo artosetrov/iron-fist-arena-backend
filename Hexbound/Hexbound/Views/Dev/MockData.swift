@@ -83,6 +83,10 @@ enum MockData {
             xpReward: 280,
             turnsTaken: 5,
             ratingChange: 18,
+            // Combat V2 D-1 mock — non-nil so previews exercise the
+            // "delta + total" branch of RewardsBlock.
+            ratingBefore: 1230,
+            ratingAfter: 1248,
             firstWinBonus: true,
             leveledUp: false,
             newLevel: nil,
@@ -105,6 +109,8 @@ enum MockData {
         goldReward: 350,
         xpReward: 280,
         ratingChange: 18,
+        ratingBefore: 1230,
+        ratingAfter: 1248,
         firstWinBonus: true,
         leveledUp: false,
         newLevel: nil,

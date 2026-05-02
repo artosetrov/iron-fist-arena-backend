@@ -53,7 +53,7 @@ const REFERRAL_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/
 //   Lv 6 → Gold Mine (passive income, was Lv5) + Tavern (meta minigame, was Lv7)
 //   Lv 8 → Battle Pass (paid progression, was Lv10)
 //   Lv 12 → Guild Hall + Leaderboard (social layer, was Lv15)
-//   Lv 99 → Black Market (Coming Soon placeholder)
+//   Lv 99 → Black Market (route-less placeholder until a real runtime route ships)
 //
 // Keep this in sync with:
 //   - Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift (BuildingUnlockConfig)
@@ -68,7 +68,7 @@ export const BUILDING_UNLOCK_LEVELS: Record<string, number> = {
   battle_pass: 8,
   leaderboard: 8,
   guild: 12,
-  black_market: 99, // Coming Soon placeholder
+  black_market: 99, // route-less placeholder until a real runtime route ships
 }
 
 // ── Scripted tutorial fight rewards ───────────────────────────────────

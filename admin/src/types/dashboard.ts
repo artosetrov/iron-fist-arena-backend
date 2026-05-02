@@ -50,7 +50,7 @@ export interface PvpSnapshot {
   matchVolumeByDay: TimeSeriesPoint[]
   avgFightDuration: number
   totalMatchesToday: number
-  matchmakingFairness: number // 0-1 score
+  matchmakingFairness: number | null // derived from recent pre-match rating gaps when available
 }
 
 export interface PlayerSnapshot {
@@ -61,9 +61,9 @@ export interface PlayerSnapshot {
   registeredCount: number
   guestConversionRate: number
   registrationsByDay: TimeSeriesPoint[]
-  retentionD1: number
-  retentionD7: number
-  retentionD30: number
+  retentionD1: number | null
+  retentionD7: number | null
+  retentionD30: number | null
 }
 
 export interface SystemHealth {

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
-      node_key, name, description, bonus_type, bonus_stat,
+      node_key, name, description, flavor, bonus_type, bonus_stat,
       bonus_value, tier, position_x, position_y, cost,
       icon, class_restriction, is_start_node, is_active,
     } = body
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
         nodeKey: node_key,
         name,
         description: description ?? null,
+        flavor: flavor ?? null,
         bonusType: bonus_type,
         bonusStat: bonus_stat ?? null,
         bonusValue: bonus_value,
@@ -87,7 +88,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const dataMap: Record<string, string> = {
-      node_key: 'nodeKey', name: 'name', description: 'description',
+      node_key: 'nodeKey', name: 'name', description: 'description', flavor: 'flavor',
       bonus_type: 'bonusType', bonus_stat: 'bonusStat', bonus_value: 'bonusValue',
       tier: 'tier', position_x: 'positionX', position_y: 'positionY',
       cost: 'cost', icon: 'icon', class_restriction: 'classRestriction',

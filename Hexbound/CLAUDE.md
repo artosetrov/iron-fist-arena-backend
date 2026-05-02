@@ -249,7 +249,7 @@ Sticky title + tabs (OPPONENTS / REVENGE / HISTORY) above ScrollView. Refresh bu
 - Deep-link: `AppRoute.guildHallMessage(characterId:characterName:)`
 
 ### Hub Building System
-Config: `CityBuildingConfig.swift` → `defaultCityBuildings`. Set `route: nil` for Coming Soon.
+Config: `CityBuildingConfig.swift` → `defaultCityBuildings`. Set `route: nil` only for route-less editor/config placeholders that should stay hidden from the normal player-facing hub path until a real runtime route exists.
 - Badges: gold capsule in `badgeFor()` — arena (FREE N), achievements (N), battlepass (N), gold-mine (READY), guild-hall (N)
 - Badge color is always gold
 

@@ -34,6 +34,8 @@ export function PvpCharts({ pvp }: { pvp: PvpSnapshot }) {
     class: c.class.charAt(0).toUpperCase() + c.class.slice(1),
     winRate: Math.round(c.winRate * 10) / 10,
   }))
+  const fairnessKnown = pvp.matchmakingFairness != null
+  const fairnessValue = pvp.matchmakingFairness ?? 0
 
   return (
     <div className="space-y-4">
@@ -48,8 +50,13 @@ export function PvpCharts({ pvp }: { pvp: PvpSnapshot }) {
         </div>
         <div className="text-sm">
           <span className="text-muted-foreground">Fairness: </span>
-          <Badge className={`text-xs ${pvp.matchmakingFairness >= 0.7 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-            {(pvp.matchmakingFairness * 100).toFixed(0)}%
+          <Badge className={`text-xs ${fairnessKnown
+            ? fairnessValue >= 0.7
+              ? 'bg-green-500/20 text-green-400'
+              : 'bg-yellow-500/20 text-yellow-400'
+            : 'bg-zinc-500/20 text-zinc-300'
+          }`}>
+            {fairnessKnown ? `${(fairnessValue * 100).toFixed(0)}%` : 'N/A'}
           </Badge>
         </div>
       </div>

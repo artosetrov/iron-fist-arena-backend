@@ -28,8 +28,8 @@ struct HubEditorDetailView: View {
     private let imageAspect: CGFloat = 4096.0 / 1738.0
 
     /// Buildings with current server overrides applied.
-    /// Редактор показывает ВСЕ здания, включая Coming Soon (guild-hall, black-market),
-    /// чтобы их можно было позиционировать заранее.
+    /// Редактор показывает ВСЕ здания, включая route-less surfaces вроде
+    /// black-market, чтобы их можно было позиционировать заранее.
     private var buildings: [CityBuilding] {
         resolvedCityBuildings(from: cache, includeComingSoon: true)
     }

@@ -1,6 +1,6 @@
 # Hexbound — Project Overview (Source of Truth)
 
-*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-19.*
+*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-30.*
 
 ---
 
@@ -151,7 +151,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 ### Push Notifications
 - Broadcast/segment/user-targeted campaigns
 - Send logging (sent / failed) plus token counts
-- Optional route payload for in-app navigation
+- Optional bounded route payload for in-app navigation (safe screen-only subset)
 - Per-user opt-in via PushToken
 
 ### In-App Purchases (IAP)
@@ -413,7 +413,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Aggregate admin stats (users, characters, PvP match volume, average level)
 - Economy review (currency circulation, IAP gem totals, top holders)
 - IAP transaction review for verified purchases
-- Instrumentation groundwork via provider-agnostic analytics events and tutorial funnel logs; deeper retention/session analytics remain future work
+- Instrumentation groundwork via provider-agnostic analytics events and tutorial funnel logs; the live admin dashboard now derives matchmaking fairness from recent PvP rating gaps, while deeper retention/session analytics remain future work
 
 ### Admin Logs & Audit
 - Audit coverage exists across many high-risk/config/content mutations

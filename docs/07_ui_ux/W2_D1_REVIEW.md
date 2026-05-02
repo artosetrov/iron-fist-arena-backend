@@ -190,7 +190,7 @@ struct CityBuilding: Identifiable {
     let id: String
     let imageName: String
     let label: String
-    let route: AppRoute?         // nil = Coming Soon placeholder
+    let route: AppRoute?         // nil = route-less placeholder
     var relativeX, relativeY, relativeSize: CGFloat
     let glowColor: Color
     let fallbackIcon: String

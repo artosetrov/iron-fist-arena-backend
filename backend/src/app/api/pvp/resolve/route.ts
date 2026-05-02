@@ -526,6 +526,12 @@ export async function POST(req: NextRequest) {
         xp_reward: xpReward,
         turns_taken: combatResult.totalTurns,
         rating_change: ratingChange,
+        // Combat V2 D-1 (2026-04-29): expose absolute rating bounds so the
+        // RewardsBlock can render delta + new total ("+24 / 1248") instead
+        // of delta-only. Always-present pair — bots also surface them so
+        // the iOS view doesn't need to branch on opponent type.
+        rating_before: attacker.pvpRating,
+        rating_after: attackerNewRating,
         first_win_bonus: firstWin,
         leveled_up: levelUpResult?.leveledUp ?? false,
         new_level: levelUpResult?.newLevel,
@@ -744,8 +750,8 @@ async function resolveBotFight(
     // Bot fight PvpMatch: player2Id is null because the bot has no DB record
     // (matchType='bot' + goldReward/xpReward carry the opponent semantics).
     // winnerId/loserId are conditioned on the outcome — previously both
-    // pointed at attacker.id which polluted stats (a loss looked like a win
-    // and vice versa). See feedback_bot_synthetic_ids_fk.md (2026-04-20).
+    // pointed at attacker.id, which polluted downstream stats by making a
+    // bot loss look like a win. Keep bot rows FK-safe and outcome-truthful.
     //
     // Downstream consumers (admin/matches UI, player-client, pvp/history,
     // session-summary, achievements) all handle null winner/loser correctly.
@@ -831,6 +837,10 @@ async function resolveBotFight(
       xp_reward: xpReward,
       turns_taken: combatResult.totalTurns,
       rating_change: ratingChange,
+      // Combat V2 D-1 (2026-04-29): bots surface rating_before/rating_after
+      // too so the iOS RewardsBlock doesn't need to branch on opponent type.
+      rating_before: attacker.pvpRating,
+      rating_after: attackerNewRating,
       first_win_bonus: firstWin,
       leveled_up: levelUpResult?.leveledUp ?? false,
       new_level: levelUpResult?.newLevel,

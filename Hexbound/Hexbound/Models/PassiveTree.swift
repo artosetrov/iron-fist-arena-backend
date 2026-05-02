@@ -21,6 +21,10 @@ struct PassiveNode: Codable, Identifiable, Hashable {
     let nodeKey: String
     let name: String
     let description: String
+    /// Narrative prose shown below the effect chip in the talent detail modal.
+    /// Optional for forward-compat with older backends that don't return it
+    /// and for unconverted classes (Warrior/Mage/Rogue) where flavor is NULL.
+    let flavor: String?
     let bonusType: String        // e.g. "stat", "keystone", "ultimate"
     let bonusStat: String?       // e.g. "strength", "maxHp", "armor"
     let bonusValue: Double?

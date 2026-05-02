@@ -17,7 +17,7 @@ import SwiftUI
 // can reuse this overlay unchanged.
 struct BuildingLockOverlay: View {
     /// Required character level for unlock. `nil` renders the "SOON"
-    /// pill for buildings that have no route wired yet (Coming Soon).
+    /// pill for route-less placeholder surfaces that are still editor/config-only.
     let requiredLevel: Int?
 
     /// Scales the padlock + pill proportionally with the building
@@ -125,7 +125,7 @@ enum BuildingUnlockConfig {
         "battlepass": 8,       // long-term progression
         "ranks": 8,            // leaderboard layer
         "guild-hall": 12,      // social hub
-        "black-market": 99,    // Coming Soon — effectively locked ("SOON")
+        "black-market": 99,    // route-less placeholder — effectively locked ("SOON")
     ]
 
     /// Check if building is unlocked for given character level

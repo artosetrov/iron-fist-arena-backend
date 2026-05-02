@@ -182,10 +182,16 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 
 ### "Coming Soon" features visible in production:
 
+> Historical follow-up: at the time of this snapshot both Guild Hall and Black
+> Market behaved like dead-end buildings. The checked-in repo later fixed Guild
+> Hall routing and hid the route-less Black Market from the normal hub path;
+> Black Market now survives only as an editor/config placeholder until a real
+> runtime route exists.
+
 | ID | Severity | Issue | File | Fix |
 |----|----------|-------|------|-----|
-| SC-1 | **P2** | Guild Hall building visible но `route: nil` — тупик | `CityBuildingConfig.swift:111-120` | Скрыть или показать "Coming in v1.1" с датой |
-| SC-2 | **P2** | Black Market building visible но `route: nil` — тупик | `CityBuildingConfig.swift:122-131` | Скрыть или показать "Coming in v1.1" с датой |
+| SC-1 | **P2** | Guild Hall building was visible with `route: nil` at snapshot time — later fixed in repo | `CityBuildingConfig.swift:111-120` | Resolved later: Guild Hall now routes live; keep historical note for the original release snapshot |
+| SC-2 | **P2** | Black Market building was visible with `route: nil` at snapshot time — later hidden from the normal hub path | `CityBuildingConfig.swift:122-131`, `CityMapView.swift` | Resolved later in live hub runtime; keep as historical release note until Black Market itself ships |
 
 ---
 
@@ -211,7 +217,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 |----|----------|-------|------|-----|
 | TC-1 | **P0** | Secrets в git: Supabase keys, JWT secret, DB password (`[REDACTED]`), Vercel token, GitHub token | `backend/.env`, `admin/.env` | Немедленно: .env в .gitignore, rotate ALL credentials, revoke exposed tokens |
 | TC-2 | **P0** | Supabase anon key + project URL hardcoded в Swift binary | `AppConstants.swift:38-41` | Proxy все Supabase calls через backend API. Regenerate key после fix |
-| TC-3 | **P3** | 6 TODO comments в production code | `AppConstants.swift`, `AppDelegate.swift`, `BattlePassDetailView.swift`, `GuildHallDetailView.swift`, `LevelUpModalView.swift`, `HubView.swift` | Resolve или convert to tracked issues |
+| TC-3 | **P3** | Snapshot-time TODO inventory is stale; current checked-in TODOs are now mostly Talents v2 VFX/SFX commissioning notes, while the admin dashboard analytics gap is explicitly presented as pending instrumentation instead of fake live metrics | `CombatLogEvent.swift`, `InteractiveBattleViewModel.swift`, `admin/src/actions/dashboard.ts` | Keep explicit polish TODOs tracked, and keep dashboard analytics gaps labeled as instrumentation follow-up rather than placeholder live numbers |
 | TC-4 | **P4** | No client-side retry logic на registration failures | `RegisterViewModel.swift` | Добавить exponential backoff для network errors |
 
 ---
@@ -274,7 +280,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | AS-2 | **P0** | Gambling content not declared (Shell Game, Fortune Wheel, loot drops) | Задекларировать "Infrequent/Mild Simulated Gambling" в App Store Connect |
 | AS-3 | **P1** | Privacy Policy URL отсутствует | Создать и разместить на `hexboundapp.com/privacy`, добавить в Settings |
 | AS-4 | **P2** | IAP products (12 штук) не верифицированы в App Store Connect | Проверить что все `com.hexbound.*` ID существуют и в статусе "Ready to Submit" |
-| AS-5 | **P2** | "Coming Soon" buildings (Guild Hall, Black Market) — fake buttons | Скрыть или показать meaningful "Coming Soon" state |
+| AS-5 | **P2** | "Coming Soon" buildings were fake buttons at snapshot time; Guild Hall was later fixed and Black Market was later hidden from the normal hub | Preserve the note as historical release context; only re-open if route-less buildings become visible again |
 | AS-6 | ✅ | Apple Sign-In | Реализован полностью |
 | AS-7 | ✅ | Offline handling | OfflineBannerView + NetworkMonitor |
 | AS-8 | ✅ | Push notifications | Proper permission flow + server registration |
@@ -314,7 +320,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | 11 | Economy | Gold inflation risk (19% sink ratio) | Endgame economy collapse | 1-2 days (add cosmetic sinks) |
 | 12 | Balance | Mage damage 1.65x vs 1.3-1.5x other classes | Potential class imbalance | Monitor + hotfix ready |
 | 13 | PvP | Phase 4 matchmaking fallback dangerous on small pool | Level 50 vs Level 1 | 4h (add Tutorial Arena bracket) |
-| 14 | UX | Guild Hall + Black Market visible as "Coming Soon" dead ends | Frustration, fake buttons | 1h (hide or meaningful state) |
+| 14 | UX | Snapshot-time "Coming Soon" dead ends; Guild Hall was later fixed and Black Market was later removed from the normal hub path | Frustration from fake buttons | Later resolved in checked-in runtime |
 | 15 | Onboarding | Нет tutorial для character creation (class/race meaning) | New player confusion | 4h |
 | 16 | UX | Нет skip button для intro cinematic | Frustrated returning players | 1h |
 | 17 | App Store | 12 IAP products не верифицированы в App Store Connect | Purchases may not work | 1-2h (verify in ASC) |
@@ -329,7 +335,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | 21 | Auth | Password — только min 6 chars | Weak passwords | 30min |
 | 22 | Onboarding | Guest warning слишком мелкий | Players lose progress unknowingly | 30min |
 | 23 | Performance | HubView 1828+ lines — risk on older devices | Potential jank | Profile + refactor |
-| 24 | Code | 6 TODO comments в production code | Incomplete features | 1-2h per TODO |
+| 24 | Code | Snapshot-time TODO inventory drifted; the remaining checked-in TODOs are now mostly Talents v2 polish notes, while the dashboard retention gap is shown as pending instrumentation rather than a fake live metric | Lower than original audit implied | Keep bounded TODOs tracked and avoid stale flow-level TODOs |
 | 25 | Economy | Prestige respec cost (50 gems) при 0 resources | Bad prestige UX | 30min (add bonus) |
 | 26 | Onboarding | Cinematic force-close → restart from page 0 | Minor frustration | 30min |
 
@@ -355,7 +361,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 7. **Исправить mail rate limit** — 60 → 60_000 (ms)
 8. **Создать и разместить Privacy Policy** на hexboundapp.com/privacy
 9. **Добавить error/empty state на DailyLoginDetailView**
-10. **Скрыть или доработать Coming Soon buildings** (Guild Hall, Black Market)
+10. **Исторический follow-up:** Guild Hall was fixed later, and Black Market was later hidden from the normal hub until a real route exists
 11. **Verify all 12 IAP products** в App Store Connect
 12. **Добавить skip button** на intro cinematic
 13. **Добавить tooltip для character creation** (class/race descriptions)
@@ -364,7 +370,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 16. **Добавить cosmetic gold sinks** (skins 5k-15k gold)
 17. **Proxy Supabase calls через backend** — убрать hardcoded keys из binary
 18. **Добавить email regex validation** на registration
-19. **Resolve 6 TODO comments** или конвертировать в tracked issues
+19. **Keep the remaining bounded TODOs tracked** (mainly Talents v2 VFX/SFX polish) and keep dashboard analytics gaps labeled as pending instrumentation instead of placeholder live numbers
 20. **Profile HubView на iPhone SE** — убедиться нет jank
 
 ---

@@ -129,7 +129,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 | Leaderboard | `LeaderboardDetailView.swift` | rating, level, gold tabs | Global rankings (with `LeaderboardRowView` rows) |
 | Leaderboard Player Detail | `LeaderboardPlayerDetailSheet.swift` | default | Player profile sheet from leaderboard |
 | Inbox | `InboxDetailView.swift` | loading, list, empty, detail | Mail messages (with `InboxRowView` rows) |
-| Guild Hall | `GuildHallDetailView.swift` | default, loading | Guild management & social |
+| Guild Hall | `GuildHallDetailView.swift` | default, loading | Social hub: allies, scrolls, duels |
 
 ## Settings & Profile
 

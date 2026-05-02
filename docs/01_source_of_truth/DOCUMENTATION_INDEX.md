@@ -343,7 +343,7 @@ All rules are mirrored to `.cursor/rules/*.mdc` for Cursor AI auto-loading.
 
 Per-feature documentation with overview, key files, API, UI states:
 - `features/arena/ARENA_OVERVIEW.md` — PvP Arena, matchmaking, ELO, ranked battles
-- `features/guild-hall/GUILD_HALL_OVERVIEW.md` — Social hub: Allies, Scrolls, Duels
+- `features/guild-hall/GUILD_HALL_OVERVIEW.md` — Secondary Guild Hall overview; live source-of-truth is `wiki/features/social.md`
 - `features/shop/SHOP_OVERVIEW.md` — Item shop, offers, TOCTOU prevention
 - `features/dungeons/DUNGEONS_OVERVIEW.md` — PvE dungeons, Dungeon Rush, difficulties
 - `features/battle-pass/BATTLE_PASS_OVERVIEW.md` — Seasonal Battle Pass, free+premium tiers
@@ -353,7 +353,7 @@ Per-feature documentation with overview, key files, API, UI states:
 - `features/combat/COMBAT_OVERVIEW.md` — Turn-based combat engine, VFX, damage system
 - `features/gold-mine/GOLD_MINE_OVERVIEW.md` — Idle gold production, slots, boost
 - `features/minigames/MINIGAMES_OVERVIEW.md` — Shell Game, Fortune Wheel
-- `features/social/SOCIAL_OVERVIEW.md` — Social system (redirects to Guild Hall)
+- `features/social/SOCIAL_OVERVIEW.md` — Secondary social overview; live source-of-truth is `wiki/features/social.md`
 
 ### Templates (`docs/templates/`)
 

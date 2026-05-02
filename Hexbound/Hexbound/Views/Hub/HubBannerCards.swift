@@ -314,6 +314,7 @@ struct BattleInviteBanner: View {
                     xpReward: result.xpReward,
                     turnsTaken: result.totalTurns,
                     ratingChange: result.ratingChange,
+                    ratingBefore: nil, ratingAfter: nil,
                     firstWinBonus: nil, leveledUp: nil, newLevel: nil, statPointsAwarded: nil, passivePointsAwarded: nil
                 )
                 let combatData = CombatData(
@@ -335,6 +336,9 @@ struct BattleInviteBanner: View {
                     serverWinnerId: result.winnerId,
                     goldReward: result.goldReward, xpReward: result.xpReward,
                     ratingChange: result.ratingChange,
+                    // Challenge endpoint doesn't expose absolute rating bounds yet —
+                    // RewardsBlock falls back to delta-only on nil.
+                    ratingBefore: nil, ratingAfter: nil,
                     firstWinBonus: false, leveledUp: false,
                     newLevel: nil, statPointsAwarded: nil, passivePointsAwarded: nil,
                     loot: [],

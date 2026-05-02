@@ -130,8 +130,26 @@ final class PassiveTreeViewModel {
         let (t, c, s) = await (tree, character, slots)
 
         if let t {
-            nodes = t.nodes
-            connections = t.connections
+            // /api/passives/tree returns ALL nodes for ALL classes — backend
+            // doesn't filter by class. Without local filtering vm.nodes ends
+            // up with ~83 nodes from 4 classes that share (positionX, positionY)
+            // grid, which (a) stacks 4 nodes on each grid cell visually and
+            // (b) breaks the canvas's xScale derivation by introducing
+            // micro same-row dx values from cross-class neighbors.
+            //
+            // Keep nodes whose `classRestriction` matches THIS character's
+            // class, plus shared/legacy nodes with no class restriction.
+            let myClass = appState.currentCharacter?.characterClass.rawValue
+            let filteredNodes = t.nodes.filter { node in
+                guard let restriction = node.classRestriction else { return true }
+                return restriction == myClass
+            }
+            let allowedIds = Set(filteredNodes.map(\.id))
+            let filteredConnections = t.connections.filter {
+                allowedIds.contains($0.fromId) && allowedIds.contains($0.toId)
+            }
+            nodes = filteredNodes
+            connections = filteredConnections
             rebuildAdjacency()
         }
         if let c {

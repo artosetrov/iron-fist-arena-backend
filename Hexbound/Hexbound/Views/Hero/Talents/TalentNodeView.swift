@@ -45,8 +45,11 @@ struct TalentNodeView: View {
     /// Effective rank including staging — drives the pip strip's "bright" count.
     private var effectiveRank: Int { max(currentRank, stagedRank) }
 
-    // Square tile footprint — regular 44×44, keystone 54×54.
-    var size: CGFloat { isKeystone ? 54 : 44 }
+    // Square tile footprint — uniform 56×56. Sized down from 64 so 7 tier rows
+    // (foundation + 3 archetype tiers + keystone + ultimate) fit the 460pt
+    // canvas frame without vertical scrolling. Emphasis on keystones/ultimates
+    // is carried by stroke + glow, not size.
+    var size: CGFloat { 56 }
 
     // MARK: - Pulse for pending / unlockable
 

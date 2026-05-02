@@ -6,7 +6,7 @@ struct CityBuilding: Identifiable {
     let id: String
     let imageName: String        // asset name in xcassets
     let label: String            // banner text
-    let route: AppRoute?         // navigation target (nil = Coming Soon placeholder)
+    let route: AppRoute?         // navigation target (nil = route-less editor/config placeholder)
     var relativeX: CGFloat       // 0.0...1.0 position on terrain X
     var relativeY: CGFloat       // 0.0...1.0 position on terrain Y
     var relativeSize: CGFloat    // size relative to terrain height
@@ -111,7 +111,7 @@ let defaultCityBuildings: [CityBuilding] = [
         id: "guild-hall",
         imageName: "building-guild-hall",
         label: "GUILD HALL",
-        route: nil,
+        route: .guildHall,
         relativeX: 0.12,
         relativeY: 0.38,
         relativeSize: 0.24,
@@ -136,7 +136,8 @@ let defaultCityBuildings: [CityBuilding] = [
 @MainActor
 func resolvedCityBuildings(from cache: GameDataCache, includeComingSoon: Bool = false) -> [CityBuilding] {
     let overrides = cache.hubLayout
-    // В редакторе хаба показываем все здания (включая Coming Soon), чтобы их можно было позиционировать.
+    // В редакторе хаба показываем все здания, включая route-less surfaces
+    // вроде Black Market, чтобы их можно было позиционировать заранее.
     // В обычном хабе скрываем здания без route.
     let base = includeComingSoon
         ? defaultCityBuildings

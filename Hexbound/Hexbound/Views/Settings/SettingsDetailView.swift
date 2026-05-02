@@ -268,25 +268,6 @@ struct SettingsDetailView: View {
         settingsCard {
             sectionHeader("Developer Tools")
 
-            // MARK: Feature Flags
-            //
-            // `combatUXV2` gates the 3-state combat UX (CHOOSE / RESOLVE / END).
-            // Persisted via UserDefaults on `AppState` — the admin's choice
-            // survives relaunches. One-tap rollback: toggle off, legacy
-            // `InteractiveBattleView` resumes immediately.
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                toggleRow("Combat UX V2", isOn: Binding(
-                    get: { appState.combatUXV2 },
-                    set: { appState.combatUXV2 = $0 }
-                ))
-
-                Text("3-state CHOOSE / RESOLVE / END flow. Toggle off to revert to the legacy interactive battle screen.")
-                    .font(DarkFantasyTheme.caption)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.bottom, LayoutConstants.spaceXS)
-
             Button {
                 appState.mainPath.append(AppRoute.screenCatalog)
             } label: {

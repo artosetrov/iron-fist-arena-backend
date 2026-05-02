@@ -93,7 +93,7 @@ struct CharacterSelectionView: View {
                 case .register: AuthView(initialMode: .signup)
                 case .settings: SettingsDetailView()
                 case .currencyPurchase(let tab): CurrencyPurchaseView(initialTab: tab)
-                default: PlaceholderView()
+                default: UnavailableRouteView()
                 }
             }
         }

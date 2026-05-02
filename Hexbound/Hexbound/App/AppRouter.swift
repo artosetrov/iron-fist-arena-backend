@@ -97,7 +97,7 @@ enum AppRoute: Hashable, Codable {
     // Tutorial
     case tutorial
 
-    // Dev (routed to PlaceholderView in Release builds)
+    // Dev (routed to UnavailableRouteView in Release builds)
     case screenCatalog
     case designSystem
     case hubEditor
@@ -106,6 +106,57 @@ enum AppRoute: Hashable, Codable {
     case badgesCatalog
     case componentsCatalog
     case modalsCatalog
+}
+
+extension AppRoute {
+    /// Bounded push deep-link parser for string payloads sent by the admin
+    /// campaign tool. Only supports routes that can be opened without extra
+    /// typed payload like character IDs.
+    static func pushDeepLink(from rawRoute: String) -> AppRoute? {
+        let normalized = rawRoute
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "_", with: "-")
+
+        switch normalized {
+        case "hub":
+            return .hub
+        case "hero":
+            return .hero
+        case "arena":
+            return .arena
+        case "shop":
+            return .shop
+        case "guild-hall", "guildhall":
+            return .guildHall
+        case "tavern":
+            return .tavern
+        case "stash":
+            return .stash
+        case "shell-game", "shellgame":
+            return .shellGame
+        case "fortune-wheel", "fortunewheel":
+            return .fortuneWheel
+        case "gold-mine", "goldmine":
+            return .goldMine
+        case "dungeon-rush", "dungeonrush":
+            return .dungeonRush
+        case "inbox":
+            return .inbox
+        case "daily-quests", "dailyquests", "quests":
+            return .dailyQuests
+        case "achievements":
+            return .achievements
+        case "leaderboard", "ranks":
+            return .leaderboard
+        case "battle-pass", "battlepass":
+            return .battlePass
+        case "settings":
+            return .settings
+        default:
+            return nil
+        }
+    }
 }
 
 // MARK: - Bottom Tab
@@ -233,7 +284,7 @@ struct MainRouterView: View {
         #else
         case .screenCatalog, .designSystem, .hubEditor, .dungeonMapEditor,
              .cardsCatalog, .progressBarsCatalog, .badgesCatalog, .componentsCatalog, .modalsCatalog:
-            PlaceholderView()
+            UnavailableRouteView()
         #endif
         
         // Tutorial
@@ -241,7 +292,7 @@ struct MainRouterView: View {
 
         // Auth (should not reach here in MainRouter)
         case .login, .register, .onboarding, .characterSelection:
-            PlaceholderView()
+            UnavailableRouteView()
         }
     }
 }
@@ -269,7 +320,7 @@ struct AuthRouterView: View {
 
 // MARK: - Placeholder
 
-struct PlaceholderView: View {
+struct UnavailableRouteView: View {
     @Environment(AppState.self) private var appState
     
     var body: some View {
@@ -282,11 +333,11 @@ struct PlaceholderView: View {
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .modifier(BounceEffectModifier())
                 
-                Text("Coming Soon")
+                Text("Unavailable")
                     .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.gold)
-                
-                Text("This feature is under development")
+
+                Text("This screen isn't available right now.")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
@@ -338,4 +389,3 @@ private struct BounceEffectModifier: ViewModifier {
         }
     }
 }
-

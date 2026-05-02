@@ -33,6 +33,20 @@ function kpiStatus(key: string, _val: number, pct: number): 'normal' | 'warning'
   return 'normal'
 }
 
+function computeMatchmakingFairness(matches: Array<{ player1RatingBefore: number; player2RatingBefore: number }>): number | null {
+  if (matches.length === 0) return null
+
+  // Use recent pre-match rating gaps as a bounded proxy for pairing quality.
+  // A 0 gap maps to 1.0; 400+ ELO gap maps to 0.0.
+  const totalScore = matches.reduce((sum, match) => {
+    const gap = Math.abs(match.player1RatingBefore - match.player2RatingBefore)
+    const normalized = 1 - Math.min(gap, 400) / 400
+    return sum + normalized
+  }, 0)
+
+  return Math.round((totalScore / matches.length) * 1000) / 1000
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
@@ -52,6 +66,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     classWinData,
     ratingBuckets,
     last7Matches,
+    recentFairnessMatches,
     last7Regs,
     goldMineToday,
     avgMatchDuration,
@@ -98,6 +113,16 @@ export async function getDashboardData(): Promise<DashboardData> {
       SELECT DATE(played_at)::text as date, COUNT(*)::bigint as count
       FROM pvp_matches WHERE played_at >= ${sevenAgo}::timestamp
       GROUP BY DATE(played_at) ORDER BY date
+    `,
+    prisma.$queryRaw<{ player1RatingBefore: number; player2RatingBefore: number }[]>`
+      SELECT player1_rating_before AS "player1RatingBefore",
+             player2_rating_before AS "player2RatingBefore"
+      FROM pvp_matches
+      WHERE played_at >= ${sevenAgo}::timestamp
+        AND player2_id IS NOT NULL
+        AND (opponent_type = 'pvp' OR opponent_type IS NULL)
+      ORDER BY played_at DESC
+      LIMIT 500
     `,
     // Last 7 days registrations
     prisma.$queryRaw<{ date: string; count: bigint }[]>`
@@ -167,7 +192,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     matchVolumeByDay: last7Matches.map(m => ({ date: m.date, value: Number(m.count) })),
     avgFightDuration: Math.round(avgMatchDuration._avg.matchDuration ?? 0),
     totalMatchesToday: pvpToday,
-    matchmakingFairness: 0.75, // TODO: calculate from rating deltas
+    matchmakingFairness: computeMatchmakingFairness(recentFairnessMatches),
   }
 
   // ── Players ──
@@ -179,9 +204,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     registeredCount: registered,
     guestConversionRate: totalUsers > 0 ? Math.round((registered / totalUsers) * 1000) / 10 : 0,
     registrationsByDay: last7Regs.map(r => ({ date: r.date, value: Number(r.count) })),
-    retentionD1: 0, // TODO: requires login event tracking
-    retentionD7: 0,
-    retentionD30: 0,
+    retentionD1: null,
+    retentionD7: null,
+    retentionD30: null,
   }
 
   // ── Alerts ──

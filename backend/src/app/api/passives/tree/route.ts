@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // v3 — Talents v2: added rank_costs + max_rank per node
-    const cacheKey = 'passives:tree:v3'
+    // v4 — 2026-05-01: added `flavor` (narrative prose for the talent modal).
+    const cacheKey = 'passives:tree:v4'
     let tree = await cacheGet<CachedTree>(cacheKey)
 
     if (!tree) {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
           where: { isActive: true },
           orderBy: [{ tier: 'asc' }, { name: 'asc' }],
           select: {
-            id: true, nodeKey: true, name: true, description: true,
+            id: true, nodeKey: true, name: true, description: true, flavor: true,
             bonusType: true, bonusStat: true, bonusValue: true,
             tier: true, positionX: true, positionY: true, cost: true,
             icon: true, classRestriction: true, isStartNode: true,

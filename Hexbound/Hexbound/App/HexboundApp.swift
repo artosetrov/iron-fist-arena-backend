@@ -102,6 +102,9 @@ struct HexboundApp: App {
             .task {
                 // Wire push service into AppDelegate for token forwarding
                 appDelegate.pushService = pushService
+                appDelegate.routeHandler = { route in
+                    appState.handlePushRoute(route)
+                }
 
                 // Auth check with minimum 2s splash display
                 let splashStart = ContinuousClock.now
@@ -131,6 +134,7 @@ struct HexboundApp: App {
                     // Entering game — request push, check tutorial
                     Task { await pushService.requestPermissionAndRegister() }
                     checkFTUE()
+                    appState.consumePendingPushRouteIfNeeded()
                 } else if screen == .auth {
                     // Full logout — unregister push, clear cache
                     Task { await pushService.unregisterToken() }

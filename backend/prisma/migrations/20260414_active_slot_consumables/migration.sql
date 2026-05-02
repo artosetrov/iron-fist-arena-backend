@@ -12,7 +12,7 @@
 --     "max 1 consumable per loadout" rule at the DB level (belt + suspenders vs. the
 --     API guard).
 --
--- Apply order (per feedback_migration_mcp_apply_to_prod.md):
+-- Apply order:
 --   1. Run this against prod via Supabase MCP BEFORE deploying backend code.
 --   2. Then deploy backend.
 --   3. Then run `python3 scripts/check_schema_drift.py` from local → must pass.

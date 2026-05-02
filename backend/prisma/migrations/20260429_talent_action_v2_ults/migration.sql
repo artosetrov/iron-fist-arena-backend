@@ -13,7 +13,6 @@
 -- Reason: pvp/strike/route.ts will start sending these enum values; if the
 -- Postgres type doesn't accept them yet, every ult-firing strike returns 500.
 -- This bug bit us 3× before (Interactive Combat 04-13, Premium Pass, Stash).
--- See: feedback_migration_mcp_apply_to_prod.md.
 --
 -- Idempotent: IF NOT EXISTS guards make this safe to re-run on any environment.
 

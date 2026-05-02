@@ -186,11 +186,7 @@ struct ActiveSkillPickerSheet: View {
 
                 if let slot {
                     VStack(spacing: LayoutConstants.space2XS) {
-                        Image(systemName: previewSymbol(for: slot))
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(DarkFantasyTheme.gold)
-                            .frame(height: LayoutConstants.iconMD)
+                        previewIcon(for: slot)
                         Text(slot.name)
                             .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -229,12 +225,34 @@ struct ActiveSkillPickerSheet: View {
         .buttonStyle(.plain)
     }
 
-    private func previewSymbol(for slot: ActiveSlot) -> String {
+    @ViewBuilder
+    private func previewIcon(for slot: ActiveSlot) -> some View {
         switch slot.kind {
         case .talent:
-            return slot.activeActionType?.sfSymbol ?? "sparkles"
+            Image(systemName: slot.activeActionType?.sfSymbol ?? "sparkles")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(height: LayoutConstants.iconMD)
         case .consumable:
-            return "cross.vial.fill"
+            // Real potion asset (e.g. health_potion_small) when the catalog
+            // can resolve it; otherwise fall back to the SF symbol.
+            if let assetKey = ConsumableCatalog.resolvedImageKey(
+                consumableType: slot.consumableType,
+                catalogId: nil,
+                imageKey: slot.icon
+            ) {
+                Image(assetKey)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: LayoutConstants.iconMD)
+            } else {
+                Image(systemName: "cross.vial.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .frame(height: LayoutConstants.iconMD)
+            }
         }
     }
 

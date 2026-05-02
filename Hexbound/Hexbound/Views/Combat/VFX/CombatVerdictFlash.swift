@@ -3,9 +3,10 @@
 //  Hexbound
 //
 //  Screen-level radial flash keyed off the resolved-round verdict. Opacity
-//  only — no scale — per `feedback_no_scale_animations`. Fires once at the
-//  start of `.reveal` and fades out within ~700 ms so the log card + HP
-//  drain still read cleanly inside the 1.4 s reveal window.
+//  only — no scale. Project motion rule: screen emphasis should pulse or
+//  fade, not scale-grow. Fires once at the start of `.reveal` and fades out
+//  within ~700 ms so the log card + HP drain still read cleanly inside the
+//  1.4 s reveal window.
 //
 
 import SwiftUI

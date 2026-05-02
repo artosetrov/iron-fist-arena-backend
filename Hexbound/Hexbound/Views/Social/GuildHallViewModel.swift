@@ -563,6 +563,8 @@ class GuildHallViewModel {
                 xpReward: result.xpReward,
                 turnsTaken: result.totalTurns,
                 ratingChange: result.ratingChange,
+                ratingBefore: nil,
+                ratingAfter: nil,
                 firstWinBonus: nil,
                 leveledUp: nil,
                 newLevel: nil,
@@ -604,6 +606,10 @@ class GuildHallViewModel {
                 goldReward: result.goldReward,
                 xpReward: result.xpReward,
                 ratingChange: result.ratingChange,
+                // Guild challenge endpoint doesn't expose absolute rating bounds yet —
+                // RewardsBlock falls back to delta-only on nil.
+                ratingBefore: nil,
+                ratingAfter: nil,
                 firstWinBonus: false,
                 leveledUp: false,
                 newLevel: nil,

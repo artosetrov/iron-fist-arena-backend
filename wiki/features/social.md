@@ -17,7 +17,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
   - `Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift` — guild hub host
   - `Hexbound/Hexbound/Views/Social/GuildHallAlliesTab.swift` — friends/members
   - `Hexbound/Hexbound/Views/Social/GuildHallDuelsTab.swift` — challenge queue
-  - `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — guild-wide messaging/notes
+  - `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — direct-message conversations and thread view
 - **Shared entry:** Opponent Profile card (Challenge / Message / AddFriend buttons) reused from leaderboard / arena / mail
 - **Player action:** Hub → Guild Hall building OR Leaderboard row tap
 
@@ -57,7 +57,7 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 - `Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift` — host screen
 - `Hexbound/Hexbound/Views/Social/GuildHallAlliesTab.swift` — friend list + status
 - `Hexbound/Hexbound/Views/Social/GuildHallDuelsTab.swift` — challenge list
-- `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — guild feed / notes
+- `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — DM conversation list + thread UI
 
 ### ViewModel
 

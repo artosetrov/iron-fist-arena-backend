@@ -60,37 +60,37 @@ INSERT INTO passive_nodes
    is_activatable, active_action_type, active_cooldown, active_magnitude)
 VALUES
   -- Foundation (tier 1, y=520) ---------------------------------------------
-  (gen_random_uuid(), 'rogue.found.agility',    'Agility',    '+1%/+2%/+3% Dodge Chance',                  'flat_dodge_chance'::"PassiveBonusType",  NULL,  1, 1,  120, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
-  (gen_random_uuid(), 'rogue.found.precision',  'Precision',  '+1%/+2%/+3% Critical Strike Chance',        'flat_crit_chance'::"PassiveBonusType",   NULL,  1, 1,  300, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
-  (gen_random_uuid(), 'rogue.found.shadows',    'Shadows',    '+2%/+4%/+6% Cooldown Reduction',            'cooldown_reduction'::"PassiveBonusType", NULL,  2, 1,  480, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
-  (gen_random_uuid(), 'rogue.found.venom',      'Venom',      '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  680, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poison damage
-  (gen_random_uuid(), 'rogue.found.swiftness',  'Swiftness',  '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  880, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: attack speed
-  (gen_random_uuid(), 'rogue.found.cunning',    'Cunning',    '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1, 1080, 520, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: initiative
+  (gen_random_uuid(), 'rogue.found.agility',    'Agility',    '+1%/+2%/+3% Dodge Chance',                  'flat_dodge_chance'::"PassiveBonusType",  NULL,  1, 1,  0, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
+  (gen_random_uuid(), 'rogue.found.precision',  'Precision',  '+1%/+2%/+3% Critical Strike Chance',        'flat_crit_chance'::"PassiveBonusType",   NULL,  1, 1,  80, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
+  (gen_random_uuid(), 'rogue.found.shadows',    'Shadows',    '+2%/+4%/+6% Cooldown Reduction',            'cooldown_reduction'::"PassiveBonusType", NULL,  2, 1,  160, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
+  (gen_random_uuid(), 'rogue.found.venom',      'Venom',      '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  240, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poison damage
+  (gen_random_uuid(), 'rogue.found.swiftness',  'Swiftness',  '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  320, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: attack speed
+  (gen_random_uuid(), 'rogue.found.cunning',    'Cunning',    '+3%/+6%/+9% Damage',                        'percent_damage'::"PassiveBonusType",     NULL,  3, 1, 400, 0, 6, 'rogue'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: initiative
 
   -- Assassin lane (offense, tier 2) ----------------------------------------
-  (gen_random_uuid(), 'rogue.asn.backstab',     'Backstab',   '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  220, 400, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: first-strike damage
-  (gen_random_uuid(), 'rogue.asn.bleed',        'Bleed',      '+4%/+8%/+12% Damage',                       'percent_damage'::"PassiveBonusType",     NULL,  4, 2,  220, 290, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: bleed DoT chance on crit
-  (gen_random_uuid(), 'rogue.asn.deep_cut',     'Deep Cut',   '+4%/+8%/+12% Critical Strike Chance',       'flat_crit_chance'::"PassiveBonusType",   NULL,  4, 2,  300, 180, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: vs bleeding targets
+  (gen_random_uuid(), 'rogue.asn.backstab',     'Backstab',   '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  120, 80, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: first-strike damage
+  (gen_random_uuid(), 'rogue.asn.bleed',        'Bleed',      '+4%/+8%/+12% Damage',                       'percent_damage'::"PassiveBonusType",     NULL,  4, 2,  120, 160, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: bleed DoT chance on crit
+  (gen_random_uuid(), 'rogue.asn.deep_cut',     'Deep Cut',   '+4%/+8%/+12% Critical Strike Chance',       'flat_crit_chance'::"PassiveBonusType",   NULL,  4, 2,  120, 240, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: vs bleeding targets
 
   -- Duelist lane (balance, tier 2) -----------------------------------------
-  (gen_random_uuid(), 'rogue.duel.parry',       'Parry',      '+3%/+6%/+9% Dodge Chance',                  'flat_dodge_chance'::"PassiveBonusType",  NULL,  3, 2,  430, 400, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: parry chance
-  (gen_random_uuid(), 'rogue.duel.riposte',     'Riposte',    '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  430, 290, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: counter damage on parry
-  (gen_random_uuid(), 'rogue.duel.finesse',     'Finesse',    '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  600, 180, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: crit damage vs single target
+  (gen_random_uuid(), 'rogue.duel.parry',       'Parry',      '+3%/+6%/+9% Dodge Chance',                  'flat_dodge_chance'::"PassiveBonusType",  NULL,  3, 2,  200, 80, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: parry chance
+  (gen_random_uuid(), 'rogue.duel.riposte',     'Riposte',    '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  200, 160, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: counter damage on parry
+  (gen_random_uuid(), 'rogue.duel.finesse',     'Finesse',    '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  200, 240, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: crit damage vs single target
 
   -- Saboteur lane (defense grid / theme=attrition, tier 2) ------------------
-  (gen_random_uuid(), 'rogue.sab.toxin',        'Toxin',      '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  830, 400, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poison damage
-  (gen_random_uuid(), 'rogue.sab.paralyze',     'Paralyze',   '+3%/+6%/+9% Critical Strike Chance',        'flat_crit_chance'::"PassiveBonusType",   NULL,  3, 2,  830, 290, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: stun chance on crit
-  (gen_random_uuid(), 'rogue.sab.weaken',       'Weaken',     '+5%/+10%/+15% Damage Reduction',            'damage_reduction'::"PassiveBonusType",   NULL,  5, 2,  800, 180, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: enemy damage debuff
+  (gen_random_uuid(), 'rogue.sab.toxin',        'Toxin',      '+5%/+10%/+15% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  280, 80, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poison damage
+  (gen_random_uuid(), 'rogue.sab.paralyze',     'Paralyze',   '+3%/+6%/+9% Critical Strike Chance',        'flat_crit_chance'::"PassiveBonusType",   NULL,  3, 2,  280, 160, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: stun chance on crit
+  (gen_random_uuid(), 'rogue.sab.weaken',       'Weaken',     '+5%/+10%/+15% Damage Reduction',            'damage_reduction'::"PassiveBonusType",   NULL,  5, 2,  280, 240, 6, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: enemy damage debuff
 
   -- Keystones (tier 3, single-rank, cost 3) --------------------------------
-  (gen_random_uuid(), 'rogue.key.shadowstrike',  'Shadowstrike',   '+15% Damage (every 5th attack ×2)',  'percent_damage'::"PassiveBonusType",     NULL, 15, 3,  300,  80, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL),
-  (gen_random_uuid(), 'rogue.key.riposte_master','Riposte Master', '+20% Damage (counter melee 20%)',    'percent_damage'::"PassiveBonusType",     NULL, 20, 3,  600,  80, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: 20% counter melee
-  (gen_random_uuid(), 'rogue.key.envenom',       'Envenom',        '+10% Damage Reduction (poison stun)','damage_reduction'::"PassiveBonusType",   NULL, 10, 3,  800,  80, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poisons apply 1s stun on tick
+  (gen_random_uuid(), 'rogue.key.shadowstrike',  'Shadowstrike',   '+15% Damage (every 5th attack ×2)',  'percent_damage'::"PassiveBonusType",     NULL, 15, 3,  120, 320, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL),
+  (gen_random_uuid(), 'rogue.key.riposte_master','Riposte Master', '+20% Damage (counter melee 20%)',    'percent_damage'::"PassiveBonusType",     NULL, 20, 3,  200, 320, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: 20% counter melee
+  (gen_random_uuid(), 'rogue.key.envenom',       'Envenom',        '+10% Damage Reduction (poison stun)','damage_reduction'::"PassiveBonusType",   NULL, 10, 3,  280, 320, 3, 'rogue'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: poisons apply 1s stun on tick
 
   -- Ultimates (tier 4, single-rank, cost 5, isActivatable) ------------------
   -- Balance pass 2026-04-29: CD 60→75 (was shortest in game while passive only +15%; aligned with Champion/Shadow Reaper)
-  (gen_random_uuid(), 'rogue.ult.vanish',         'Vanish',         '+15% Damage. Active: Fade.',         'percent_damage'::"PassiveBonusType",     NULL, 15, 4, 450, 20, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'stealth'::"TalentSlotAction",     75,    1),
-  (gen_random_uuid(), 'rogue.ult.shadow_reaper',  'Shadow Reaper',  '+30% Damage. Active: Reap.',         'percent_damage'::"PassiveBonusType",     NULL, 30, 4, 750, 20, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'burst_damage'::"TalentSlotAction",75, 0.8);
+  (gen_random_uuid(), 'rogue.ult.vanish',         'Vanish',         '+15% Damage. Active: Fade.',         'percent_damage'::"PassiveBonusType",     NULL, 15, 4, 160, 400, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'stealth'::"TalentSlotAction",     75,    1),
+  (gen_random_uuid(), 'rogue.ult.shadow_reaper',  'Shadow Reaper',  '+30% Damage. Active: Reap.',         'percent_damage'::"PassiveBonusType",     NULL, 30, 4, 240, 400, 5, 'rogue'::"CharacterClass", FALSE, TRUE, TRUE, 'burst_damage'::"TalentSlotAction",75, 0.8);
 
 -- ---------------------------------------------------------------------------
 -- 3. Connections (20 edges)

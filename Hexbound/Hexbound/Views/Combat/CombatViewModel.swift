@@ -564,6 +564,11 @@ final class CombatViewModel {
                 xpReward: resolve.xpReward,
                 turnsTaken: combatData.result.turnsTaken,
                 ratingChange: resolve.ratingChange,
+                // Combat V2 D-1: server now exposes absolute rating bounds.
+                // Nil-safe — pre-D-1 backends still decode and the END
+                // RewardsBlock falls back to delta-only.
+                ratingBefore: resolve.ratingBefore,
+                ratingAfter: resolve.ratingAfter,
                 firstWinBonus: resolve.firstWinBonus,
                 leveledUp: resolve.leveledUp,
                 newLevel: resolve.newLevel,

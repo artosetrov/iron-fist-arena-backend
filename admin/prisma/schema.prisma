@@ -1274,6 +1274,7 @@ model PassiveNode {
   nodeKey          String           @unique @map("node_key")
   name             String
   description      String?
+  flavor           String?
   bonusType        PassiveBonusType @map("bonus_type")
   bonusStat        String?          @map("bonus_stat")
   bonusValue       Float            @map("bonus_value")

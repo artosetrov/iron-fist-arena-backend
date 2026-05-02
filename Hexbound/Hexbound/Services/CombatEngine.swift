@@ -728,6 +728,10 @@ final class CombatEngine {
             xpReward: nil,
             turnsTaken: turns.count,
             ratingChange: nil,
+            // Offline prediction has no server-side rating bounds —
+            // RewardsBlock falls back to delta-only on nil.
+            ratingBefore: nil,
+            ratingAfter: nil,
             firstWinBonus: nil,
             leveledUp: nil,
             newLevel: nil,

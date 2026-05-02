@@ -273,6 +273,11 @@ private struct PvpResolveResultPayload: Decodable {
     let goldReward: Int
     let xpReward: Int
     let ratingChange: Int
+    /// Combat V2 D-1 (2026-04-29). Optional so older builds against an older
+    /// backend still decode — `ResolveResult` propagates `nil` and the END
+    /// rewards block falls back to delta-only display.
+    let ratingBefore: Int?
+    let ratingAfter: Int?
     let firstWinBonus: Bool
     let leveledUp: Bool
     let newLevel: Int?
@@ -453,6 +458,8 @@ final class BattlePreloader {
                 goldReward: response.result.goldReward,
                 xpReward: response.result.xpReward,
                 ratingChange: response.result.ratingChange,
+                ratingBefore: response.result.ratingBefore,
+                ratingAfter: response.result.ratingAfter,
                 firstWinBonus: response.result.firstWinBonus,
                 leveledUp: response.result.leveledUp,
                 newLevel: response.result.newLevel,
@@ -501,6 +508,12 @@ struct ResolveResult {
     let goldReward: Int
     let xpReward: Int
     let ratingChange: Int
+    /// Absolute rating bounds (Combat V2 D-1, 2026-04-29). Nil for non-PvP
+    /// resolve paths (challenge / guild local-construction sites) and for
+    /// responses from a backend older than the D-1 rollout — RewardsBlock
+    /// falls back to delta-only in that case.
+    let ratingBefore: Int?
+    let ratingAfter: Int?
     let firstWinBonus: Bool
     let leveledUp: Bool
     let newLevel: Int?

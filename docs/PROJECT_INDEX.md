@@ -1,7 +1,7 @@
 # Hexbound — Project Index
 
 > **Навигационный слой верхнего уровня.** Используй этот файл как обзорный вход в `docs/`, а для текущего file-by-file состояния, audit coverage и ownership notes смотри `wiki/index.md`, `wiki/log.md`, и `wiki/audit/audit-index.md`.
-> Last updated: 2026-04-16
+> Last updated: 2026-05-01
 
 ---
 
@@ -110,7 +110,7 @@ scripts/                    ← Утилиты (git-watcher, deploy)
 | **Деплой** | `rules-deploy.md` | `DEPLOY.md`, `GIT_WORKFLOW.md` |
 | **Battle Pass** | `rules-economy.md` | `features/battle-pass/`, `GAME_SYSTEMS.md` |
 | **Daily login/quests** | `rules-economy.md` + `rules-swift.md` | `features/daily-systems/`, `GAME_SYSTEMS.md` |
-| **Social (Guild Hall)** | `rules-swift.md` + `rules-backend.md` | `features/guild-hall/`, `SOCIAL_FLOWS_UX_SPEC.md` |
+| **Social (Guild Hall)** | `rules-swift.md` + `rules-backend.md` | `wiki/features/social.md`, `features/guild-hall/`, `SOCIAL_FLOWS_UX_SPEC.md` |
 | **Achievements** | `rules-backend.md` | `features/achievements/`, `GAME_SYSTEMS.md` |
 | **Inventory/Equipment** | `rules-swift.md` + `rules-backend.md` | `features/inventory/`, `GAME_SYSTEMS.md` |
 
@@ -127,7 +127,7 @@ scripts/                    ← Утилиты (git-watcher, deploy)
 | **Rules** | [rules/](rules/) · [DEVELOPMENT_RULES](09_rules_and_guidelines/DEVELOPMENT_RULES.md) |
 | **Ops** | [DEPLOY](10_operations/DEPLOY.md) · [GIT_WORKFLOW](10_operations/GIT_WORKFLOW.md) · [RELEASE_IOS](10_operations/RELEASE_IOS.md) |
 | **Art** | [ART_STYLE_GUIDE](08_prompts/ART_STYLE_GUIDE.md) · [ASSET_PROMPTS](08_prompts/ASSET_PROMPTS_INDEX.md) |
-| **Features** | [arena](features/arena/) · [shop](features/shop/) · [dungeons](features/dungeons/) · [combat](features/combat/) · [inventory](features/inventory/) · [guild-hall](features/guild-hall/) · [battle-pass](features/battle-pass/) · [daily-systems](features/daily-systems/) · [achievements](features/achievements/) · [gold-mine](features/gold-mine/) · [minigames](features/minigames/) · [social](features/social/) |
+| **Features** | [arena](features/arena/) · [shop](features/shop/) · [dungeons](features/dungeons/) · [combat](features/combat/) · [inventory](features/inventory/) · [guild-hall](features/guild-hall/) · [battle-pass](features/battle-pass/) · [daily-systems](features/daily-systems/) · [achievements](features/achievements/) · [gold-mine](features/gold-mine/) · [minigames](features/minigames/) · [social](features/social/) + current file-by-file map in [wiki/features/social.md](../wiki/features/social.md) |
 | **Templates** | [templates/](templates/) — шаблоны для новых docs |
 
 ---

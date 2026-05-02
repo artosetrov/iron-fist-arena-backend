@@ -1,27 +1,30 @@
 # Feature: Social System
 
-> **Status:** Complete
-> **Owner:** Social systems
-> **Last updated:** 2026-03-26
-> **Source of truth:** See [`../guild-hall/GUILD_HALL_OVERVIEW.md`](../guild-hall/GUILD_HALL_OVERVIEW.md)
+> **Status boundary:** secondary feature note. Keep this file as a compact
+> overview only; the live source of truth is the checked-in wiki feature map.
+> **Last updated:** 2026-04-30
+> **Source of truth:** `/Users/artosetrov/Documents/Cursor AI/PVP RPG/wiki/features/social.md`
 
 ---
 
 ## Overview
 
-Социальная система реализована через **Guild Hall** — единый social hub.
+The shipped social system is centered on **Guild Hall** as a social hub, but
+the live runtime today is narrower than a full guild-management feature:
+friends, direct messages, PvP challenges, and adjacent guild-challenge
+scaffolding.
 
-Полная документация: [`../guild-hall/GUILD_HALL_OVERVIEW.md`](../guild-hall/GUILD_HALL_OVERVIEW.md)
+Secondary overview: [`../guild-hall/GUILD_HALL_OVERVIEW.md`](../guild-hall/GUILD_HALL_OVERVIEW.md)
 
 ## Subsystems
 
 - **Allies (Friends):** friend requests, online status, context menu actions
-- **Scrolls (Messages):** direct messaging, conversation threads, deep-links
+- **Scrolls (Messages):** direct-message conversations, conversation threads, deep-links
 - **Duels (Challenges):** send/accept/decline challenges, combat + rewards
 
 ## Additional UX Spec
 
-`docs/07_ui_ux/SOCIAL_FLOWS_UX_SPEC.md` — detailed UX flows for all social interactions
+`docs/07_ui_ux/SOCIAL_FLOWS_UX_SPEC.md` — historical UX proposal/spec for the broader social/guild direction
 
 ## Key Services
 

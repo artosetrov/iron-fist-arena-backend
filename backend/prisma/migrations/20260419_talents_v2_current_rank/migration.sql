@@ -9,8 +9,8 @@
 --     once purchased — their `PassiveNode.cost` is still the total SP outlay (3 or 5).
 --
 -- IF NOT EXISTS keeps this idempotent if prod already has the column applied out-of-band
--- via Supabase MCP (per feedback_migration_mcp_apply_to_prod — apply the DDL to prod
--- BEFORE deploying code that references current_rank).
+-- via Supabase MCP. Apply the DDL to prod BEFORE deploying code that
+-- references `current_rank`.
 
 ALTER TABLE "character_passives"
   ADD COLUMN IF NOT EXISTS "current_rank" INTEGER NOT NULL DEFAULT 1;

@@ -9,7 +9,8 @@
 //  control to the VM's `continueFromSummary()` — which in turn fires
 //  the existing `/match/complete` pipeline.
 //
-//  No scale animations — per project rule `feedback_no_scale_animations`.
+//  No scale animations. Project motion rule: emphasis should come from
+//  opacity/translation treatment rather than scale-grow UI.
 //
 //  The log here is NOT the stagger-animated card from `.reveal` —
 //  rounds render already-settled, ordered by round number, split by

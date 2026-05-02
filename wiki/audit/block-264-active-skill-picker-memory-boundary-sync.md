@@ -38,7 +38,7 @@ That left the doc half historical snapshot, half off-repo shorthand.
 ### `docs/02_product_and_features/ACTIVE_SKILL_PICKER_SPEC.md`
 
 - Rephrased the optimistic-save note as a direct description of the live iOS
-  mutation pattern, without depending on `feedback_optimistic_ui_everywhere`.
+  mutation pattern, without depending on an external optimistic-UI note.
 - Rewrote the migration step so it points at the project-wide
   migration-before-deploy rule directly instead of an external note.
 - Replaced the old off-repo rollout references with checked-in repo anchors:

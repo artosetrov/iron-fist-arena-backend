@@ -307,7 +307,14 @@ extension GuildHallDetailView {
                     }
 
                     Button {
-                        // TODO: Message — Phase 2
+                        appState.mainPath.append(
+                            AppRoute.guildHallMessage(
+                                characterId: friend.id,
+                                characterName: friend.characterName,
+                                avatar: friend.avatar,
+                                characterClass: friend.characterClass
+                            )
+                        )
                     } label: {
                         Label("Send Scroll", systemImage: "bubble.left.fill")
                     }

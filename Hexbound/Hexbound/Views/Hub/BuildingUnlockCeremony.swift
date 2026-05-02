@@ -32,8 +32,9 @@ struct UnlockCeremonyPayload: Equatable {
 // ring pulses behind the artwork. Mirrors what the player sees in the hub
 // so the "it was locked, now it's yours" moment reads instantly.
 //
-// Animation: opacity + filter-based reveal, NO scale transforms (per user
-// preference — see MEMORY `feedback_no_scale_animations`).
+// Animation: opacity + filter-based reveal, NO scale transforms. This follows
+// the project-wide motion preference that celebratory emphasis should read
+// through glow/opacity/filter changes rather than scale-grow beats.
 // Total duration: ~4.2s (fade-in → locked hold → reveal → hold → fade-out).
 struct UnlockCeremony: View {
     let payload: UnlockCeremonyPayload

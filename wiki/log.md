@@ -1,5 +1,230 @@
 # Hexbound Wiki — Log
 
+## [2026-05-01] audit | Block 299 iOS unavailable-route copy parity
+
+Closed the last generic live `Coming Soon` fallback wording in the iOS runtime.
+- **Created:** `[[block-299-ios-unavailable-route-copy-parity]]`
+- **Files audited:** `Hexbound/Hexbound/App/AppRouter.swift`, `Hexbound/Hexbound/Views/Auth/CharacterSelectionView.swift`, `Hexbound/Hexbound/Views/Hub/CityMapView.swift`
+- **Fixes:** renamed the shared fallback surface to `UnavailableRouteView`, replaced its generic `Coming Soon` copy with an honest unavailable-screen message, updated the auth fallback call site, and replaced the city-map fallback toasts with `is not available right now`
+- **Inventory refresh:** updated current counts to `5243` in-scope files and `365 in-scope wiki markdown files / 364 wiki pages`
+- **Verification:** repo-wide `Coming Soon` grep across live Swift surfaces, `xcodebuild ... build`, and `git diff --check`
+
+## [2026-05-01] audit | Block 298 inventory live git regeneration parity
+
+Closed the larger inventory drift that had grown past simple top-count fixes.
+- **Created:** `[[block-298-inventory-live-git-regeneration-parity]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `git ls-files`, `git ls-files --others --exclude-standard`, `Hexbound/Hexbound/Views/Combat/EnemyPortraitResolver.swift`, `docs/retro/RETRO_2026-04-30.md`, `docs/retro/RETRO_2026-05-01.md`, `qa-reports/2026-05-01_talent_modal_redesign.md`, `qa-reports/prototypes/talents-wow-style-2026-04-29.html`
+- **Fixes:** regenerated the inventory from the live tracked/untracked git tree, restored missing late-wave file entries across `backend`, `docs`, `Hexbound`, `qa-reports`, and `wiki`, and rolled the section/block totals forward so the inventory is a literal repo snapshot again
+- **Inventory refresh:** updated current counts to `5242` in-scope files and `364 in-scope wiki markdown files / 363 wiki pages`
+- **Verification:** git-state recounts plus `git diff --check`
+
+## [2026-05-01] audit | Block 297 iOS enemy portrait resolver MainActor parity
+
+Closed the real combat compile blocker that remained after the wording cleanup.
+- **Created:** `[[block-297-ios-enemy-portrait-resolver-mainactor-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Combat/EnemyPortraitResolver.swift`, `Hexbound/Hexbound/Views/Combat/CombatDetailView.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift`
+- **Fixes:** aligned the shared enemy portrait resolver and its adjacent combat helper methods with the `@MainActor` boundary of `GameDataCache`, removing the actor-isolation mismatch that was breaking the iOS combat build
+- **Inventory refresh:** updated current counts to `5237` in-scope files and `363 in-scope wiki markdown files / 362 wiki pages`
+- **Verification:** `xcodebuild ... clean build` followed by `xcodebuild ... build` — `BUILD SUCCEEDED`
+
+## [2026-05-01] audit | Block 296 inventory and audit-trail self-reference parity
+
+Closed the next tiny self-cleanup tail after block 295.
+- **Created:** `[[block-296-inventory-and-audit-trail-self-reference-parity]]`
+- **Files audited:** `wiki/audit/block-295-audit-trail-token-and-placeholder-wording-scrub.md`, `wiki/audit/audit-index.md`, `wiki/index.md`, `wiki/log.md`, `wiki/audit/project-file-inventory.md`, `qa-reports/prototypes/talents-horizontal-only-2026-04-29.html`
+- **Fixes:** rewrote block-295 and its linked summaries so they no longer reintroduce the very stale token strings they were cleaning up, and refreshed the inventory to include the real untracked QA prototype plus the latest count rollforward
+- **Inventory refresh:** updated current counts to `5236` in-scope files and `362 in-scope wiki markdown files / 361 wiki pages`
+- **Verification:** repo-wide grep, git-state check, and `git diff --check`
+
+## [2026-05-01] audit | Block 295 audit-trail token and placeholder wording scrub
+
+Closed the next tiny repo-truth polish pass inside the audit trail itself.
+- **Created:** `[[block-295-audit-trail-token-and-placeholder-wording-scrub]]`
+- **Files audited:** `wiki/audit/block-263-combat-historical-doc-memory-boundary-sync.md`, `wiki/audit/block-264-active-skill-picker-memory-boundary-sync.md`, `wiki/audit/block-292-delete-dead-guild-hall-duels-placeholder-helper.md`, `docs/retro/RETRO_2026-03-25.md`
+- **Fixes:** rewrote the last external-note token references and placeholder-helper wording inside audit/history prose, and updated the older retro note from generic old placeholder wording to the cleaned route-less placeholder language
+- **Inventory refresh:** updated current counts to `5234` in-scope files and `361 in-scope wiki markdown files / 360 wiki pages`
+- **Verification:** repo-wide grep plus `git diff --check`
+
+## [2026-05-01] audit | Block 294 historical review and retro route-less boundary sync
+
+Closed the adjacent historical wording tail after the route-less cleanup.
+- **Created:** `[[block-294-historical-review-and-retro-route-less-boundary-sync]]`
+- **Files audited:** `docs/07_ui_ux/W2_D1_REVIEW.md`, `docs/retro/RETRO_2026-05-01.md`
+- **Fixes:** updated the historical hub code excerpt to the cleaned route-less placeholder terminology and rewrote the latest retro worktree note so the Combat V2 scaffold-removal state stands on repo-owned prose instead of an external memory filename
+- **Inventory refresh:** updated current counts to `5233` in-scope files and `360 in-scope wiki markdown files / 359 wiki pages`
+- **Verification:** targeted grep plus `git diff --check`
+
+## [2026-05-01] audit | Block 293 enemy portrait resolver memory boundary sync
+
+Closed the tiny runtime comment tail in the new combat portrait helper.
+- **Created:** `[[block-293-enemy-portrait-resolver-memory-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Combat/EnemyPortraitResolver.swift`
+- **Fixes:** replaced the external memory-note filename in the resolver header with the direct repo-owned rule: keep enemy portrait lookup centralized here instead of duplicating heuristics across combat views
+- **Inventory refresh:** updated current counts to `5232` in-scope files and `359 in-scope wiki markdown files / 358 wiki pages`
+- **Verification:** targeted grep plus `git diff --check`
+
+## [2026-05-01] audit | Block 292 delete dead Guild Hall duels placeholder helper
+
+Closed the tiny dead-code placeholder tail in the social UI.
+- **Created:** `[[block-292-delete-dead-guild-hall-duels-placeholder-helper]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Social/GuildHallDuelsTab.swift`
+- **Fixes:** removed the orphan duels placeholder helper after verifying that the file no longer called it anywhere, so the duels tab no longer carries dead placeholder residue
+- **Inventory refresh:** updated current counts to `5231` in-scope files and `358 in-scope wiki markdown files / 357 wiki pages`
+- **Verification:** targeted call-site search plus `git diff --check`
+
+## [2026-05-01] audit | Block 291 iOS route-less placeholder wording boundary sync
+
+Closed the adjacent wording tail around route-less hub surfaces.
+- **Created:** `[[block-291-ios-route-less-placeholder-wording-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hub/CityBuildingConfig.swift`, `Hexbound/Hexbound/Views/Hub/CityBuildingView.swift`, `Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift`, `backend/src/lib/game/tutorial.ts`, `Hexbound/Hexbound/App/AppState.swift`, `Hexbound/CLAUDE.md`
+- **Fixes:** replaced the remaining generic “Coming Soon” wording with the real bounded model: `route = nil` means a route-less editor/config placeholder such as Black Market until a live runtime route exists
+- **Inventory refresh:** updated current counts to `5230` in-scope files and `357 in-scope wiki markdown files / 356 wiki pages`
+- **Verification:** targeted wording grep plus `git diff --check`
+
+## [2026-05-01] audit | Block 290 retro and project index boundary sync
+
+Closed the next tiny top-layer boundary tail.
+- **Created:** `[[block-290-retro-and-project-index-boundary-sync]]`
+- **Files audited:** `docs/retro/RETRO_2026-04-30.md`, `docs/PROJECT_INDEX.md`
+- **Fixes:** removed the last external memory-note names from the newest retro and refreshed the top-level project index timestamp so the entry layer no longer looks older than the source-of-truth wave it points to
+- **Inventory refresh:** updated current counts to `5227` in-scope files and `356 in-scope wiki markdown files / 355 wiki pages`
+- **Verification:** `git diff --check`
+
+## [2026-05-01] audit | Block 289 runtime comment memory boundary sync
+
+Closed the code-comment residual external-memory layer.
+- **Created:** `[[block-289-runtime-comment-memory-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Combat/CombatLogRow.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift`, `Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift`, `Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift`, `Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift`, `Hexbound/Hexbound/Views/Hub/CityBuildingLabel.swift`, `backend/src/app/api/pvp/resolve/route.ts`, `backend/prisma/migrations/20260414_active_slot_consumables/migration.sql`, `backend/prisma/migrations/20260419_talents_v2_current_rank/migration.sql`, `backend/prisma/migrations/20260429_talent_action_v2_ults/migration.sql`
+- **Fixes:** rewrote the remaining runtime and migration comments so animation rules, bot-match FK invariants, and Supabase-MCP-before-deploy migration ordering now live in checked-in prose instead of external memory-note filenames
+- **Inventory refresh:** updated current counts to `5227` in-scope files and `356 in-scope wiki markdown files / 355 wiki pages`
+- **Verification:** targeted `rg` over the touched files plus `git diff --check`
+
+## [2026-04-30] audit | Block 288 pre-release audit bounded TODO follow-up
+
+Closed the historical follow-up right after the dashboard analytics cleanup.
+- **Created:** `[[block-288-pre-release-audit-bounded-todo-followup]]`
+- **Files audited:** `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`, `[[block-286-social-message-action-and-todo-inventory-parity]]`, `[[block-287-admin-dashboard-fairness-and-retention-analytics-parity]]`
+- **Fixes:** separated the remaining Talents v2 VFX/SFX polish TODOs from the admin analytics instrumentation gap, so the historical release audit no longer lumps them together as one checked-in TODO bucket
+- **Inventory refresh:** updated current counts to `5224` in-scope files and `354 in-scope wiki markdown files / 353 wiki pages`
+- **Verification:** `git diff --check`
+
+## [2026-04-30] audit | Block 287 admin dashboard fairness and retention analytics parity
+
+Closed the remaining placeholder analytics drift in the admin dashboard.
+- **Created:** `[[block-287-admin-dashboard-fairness-and-retention-analytics-parity]]`
+- **Files audited:** `admin/src/actions/dashboard.ts`, `admin/src/components/dashboard/pvp-charts.tsx`, `admin/src/components/dashboard/player-charts.tsx`, `admin/src/types/dashboard.ts`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`
+- **Fixes:** replaced the hardcoded matchmaking fairness placeholder with a live rating-gap-derived score, converted retention tiles from fake `0%` values to typed pending instrumentation states, and synced the admin/source-of-truth docs to the narrower analytics reality
+- **Inventory refresh:** updated current counts to `5224` in-scope files and `354 in-scope wiki markdown files / 353 wiki pages`
+- **Verification:** `admin` `npx eslint ...`, `admin` `npm run build`, and `git diff --check`
+
+## [2026-04-30] audit | Block 286 social message action and TODO inventory parity
+
+Closed one stale social stub and one stale release-audit count in the same pass.
+- **Created:** `[[block-286-social-message-action-and-todo-inventory-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Social/GuildHallAlliesTab.swift`, `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`, `admin/src/actions/dashboard.ts`, `Hexbound/Hexbound/Models/CombatLogEvent.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleViewModel.swift`
+- **Fixes:** wired `Send Scroll` in the Allies action menu to the live `guildHallMessage` route instead of a dead Phase-2 TODO, and rewrote the old pre-release audit TODO rows so they describe the current smaller bounded TODO set instead of the stale 6-file product-flow inventory
+- **Inventory refresh:** updated current counts to `5222` in-scope files and `352 in-scope wiki markdown files / 351 wiki pages`
+- **Verification:** `xcodebuild` `BUILD SUCCEEDED` plus `git diff --check`
+
+## [2026-04-30] audit | Block 285 iOS push deep-link route parity
+
+Closed a real production TODO in the push/navigation corridor.
+- **Created:** `[[block-285-ios-push-deep-link-route-parity]]`
+- **Files audited:** `Hexbound/Hexbound/App/AppDelegate.swift`, `Hexbound/Hexbound/App/AppRouter.swift`, `Hexbound/Hexbound/App/AppState.swift`, `Hexbound/Hexbound/App/HexboundApp.swift`, `admin/src/app/(dashboard)/push/push-client.tsx`, `docs/03_backend_and_api/API_REFERENCE.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/01_source_of_truth/PROJECT_OVERVIEW.md`
+- **Fixes:** replaced the old push deep-link TODO with a bounded `AppRoute` parser + route queue/consume flow, so supported push routes now actually open in iOS; also removed the misleading `events` example from the admin sender and synced the route-contract docs to the supported subset
+- **Inventory refresh:** updated current counts to `5221` in-scope files and `351 in-scope wiki markdown files / 350 wiki pages`
+- **Verification:** `xcodebuild` `BUILD SUCCEEDED` plus `git diff --check`
+
+## [2026-04-30] audit | Block 284 pre-release audit follow-up temporal wording sync
+
+Closed the tiny audit-of-the-audit tail after the Black Market filter fix.
+- **Created:** `[[block-284-pre-release-audit-followup-temporal-wording-sync]]`
+- **Files audited:** `[[log]]`, `[[block-281-pre-release-audit-guild-hall-resolved-followup]]`, `[[block-283-ios-city-map-route-less-building-filter-parity]]`
+- **Fixes:** made the block-281 wording explicitly temporal, so the audit trail now reads as “this was the state at that point in the wave” instead of sounding like Black Market is still a current player-facing dead-end after block 283
+- **Inventory refresh:** updated current counts to `5220` in-scope files and `350 in-scope wiki markdown files / 349 wiki pages`
+- **Verification:** wording-only sync plus `git diff --check`
+
+## [2026-04-30] audit | Block 283 iOS city map route-less building filter parity
+
+Closed the next real hub/runtime drift right after the Guild Hall fix.
+- **Created:** `[[block-283-ios-city-map-route-less-building-filter-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hub/CityMapView.swift`, `Hexbound/Hexbound/Views/Hub/CityBuildingConfig.swift`, `Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift`, `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`
+- **Fixes:** changed the normal city-map override path so route-less placeholder buildings no longer leak into the player-facing hub; Black Market now stays editor/config-only until a real runtime route exists, and the historical pre-release audit was updated to reflect that later follow-up
+- **Inventory refresh:** updated current counts to `5219` in-scope files and `349 in-scope wiki markdown files / 348 wiki pages`
+- **Verification:** `xcodebuild` `BUILD SUCCEEDED` plus `git diff --check`
+
+## [2026-04-30] audit | Block 282 Guild Hall wave verification and audit-trail sync
+
+Closed the tiny but important audit-trail lie after the Guild Hall runtime fix landed.
+- **Created:** `[[block-282-guild-hall-wave-verification-and-audit-trail-sync]]`
+- **Files audited:** `[[block-279-ios-guild-hall-city-route-parity]]`, `[[log]]`, `Hexbound/Hexbound/Views/Hub/CityBuildingConfig.swift`
+- **Fixes:** replaced the stale “build in progress” note from the block-279 log trail with the real verification result: `xcodebuild` finished with `BUILD SUCCEEDED`
+- **Inventory refresh:** updated current counts to `5218` in-scope files and `348 in-scope wiki markdown files / 347 wiki pages`
+- **Verification:** verified the finished `xcodebuild` session plus `git diff --check`
+
+## [2026-04-30] audit | Block 281 pre-release audit Guild Hall resolved follow-up
+
+Closed the next historical/runtime drift around the old release audit.
+- **Created:** `[[block-281-pre-release-audit-guild-hall-resolved-followup]]`
+- **Files audited:** `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`, `[[block-279-ios-guild-hall-city-route-parity]]`, `Hexbound/Hexbound/Views/Hub/CityBuildingConfig.swift`
+- **Fixes:** annotated the old pre-release audit so it no longer reads as if Guild Hall is still a live dead-end today; at that point in the audit wave the note preserved the snapshot truth while recording that Guild Hall was fixed and Black Market was still the remaining checked-in placeholder before the later CityMap filter fix
+- **Inventory refresh:** updated current counts to `5217` in-scope files and `347 in-scope wiki markdown files / 346 wiki pages`
+- **Verification:** historical/runtime wording check plus `git diff --check`
+
+## [2026-04-30] audit | Block 280 screen inventory Guild Hall runtime parity
+
+Closed the next live source-of-truth drift in the iOS screen map.
+- **Created:** `[[block-280-screen-inventory-guild-hall-runtime-parity]]`
+- **Files audited:** `docs/07_ui_ux/SCREEN_INVENTORY.md`, `wiki/features/social.md`, `Hexbound/Hexbound/Views/Social/GuildHallDetailView.swift`, `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift`
+- **Fixes:** rewrote the live `Guild Hall` screen purpose from “Guild management & social” to the shipped runtime truth: social hub for allies, scrolls, and duels
+- **Inventory refresh:** updated current counts to `5216` in-scope files and `346 in-scope wiki markdown files / 345 wiki pages`
+- **Verification:** runtime/doc parity check plus `git diff --check`
+
+## [2026-04-30] audit | Block 279 iOS Guild Hall city route parity
+
+Closed a real iOS hub/runtime drift, not just a docs tail.
+- **Created:** `[[block-279-ios-guild-hall-city-route-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hub/CityBuildingConfig.swift`, `Hexbound/Hexbound/Views/Hub/HubEditorDetailView.swift`, `Hexbound/Hexbound/Views/Hub/CityMapView.swift`, `Hexbound/Hexbound/App/AppRouter.swift`, `wiki/features/social.md`
+- **Fixes:** changed `guild-hall` from `route: nil` to `route: .guildHall` in the fallback city-building config, and removed the stale “Coming Soon” wording around Guild Hall in the adjacent hub-editor comments
+- **Inventory refresh:** updated current counts to `5215` in-scope files and `345 in-scope wiki markdown files / 344 wiki pages`
+- **Verification:** `xcodebuild` finished with `BUILD SUCCEEDED` plus `git diff --check`
+
+## [2026-04-30] audit | Block 278 social docs and Guild Hall Scrolls parity
+
+Closed the next live docs/runtime drift in the social layer.
+- **Created:** `[[block-278-social-docs-and-guild-hall-scrolls-parity]]`
+- **Files audited:** `wiki/features/social.md`, `docs/features/guild-hall/GUILD_HALL_OVERVIEW.md`, `docs/features/social/SOCIAL_OVERVIEW.md`, `docs/PROJECT_INDEX.md`, `docs/01_source_of_truth/DOCUMENTATION_INDEX.md`, plus the live `GuildHallScrollsTab.swift` / `GuildHallViewModel.swift` / `Message.swift` runtime
+- **Fixes:** rewrote Scrolls from "guild-wide notes/feed" to the real DM conversation/thread model, and moved the older `docs/features/*social*` pages into an explicit secondary-overview role under `wiki/features/social.md`
+- **Inventory refresh:** updated current counts to `5214` in-scope files and `344 in-scope wiki markdown files / 343 wiki pages`
+- **Verification:** runtime/doc parity check plus `git diff --check`
+
+## [2026-04-30] audit | Block 277 inventory marker parity after PvP wave rollforward
+
+Closed the next inventory drift tail after the late Combat V2 / wiki rollforward.
+- **Created:** `[[block-277-inventory-marker-parity-after-pvp-wave-rollforward]]`
+- **Files audited:** `[[project-file-inventory]]`, live `git ls-files`, live `git ls-files --others --exclude-standard`, `git status --short`
+- **Fixes:** removed stale `_untracked_` markers from blocks `263–274`, removed the deleted QA prototype entry, removed the duplicate `block-275` line, and synced the remaining untracked tail to `block-275` / `block-276` / `block-277`
+- **Inventory refresh:** updated current counts to `5213` in-scope files and `343 in-scope wiki markdown files / 342 wiki pages`
+- **Verification:** git-state comparison plus `git diff --check`
+
+## [2026-04-30] audit | Block 276 delete orphan QA prototype artifact
+
+Closed the small non-audit untracked artifact tail.
+- **Created:** `[[block-276-delete-orphan-qa-prototype-artifact]]`
+- **Files audited:** `qa-reports/prototypes/talents-board-scroll-2026-04-29.html`, repo-wide reference search
+- **Fixes:** deleted the untracked talents-board scroll HTML prototype after confirming it had no checked-in docs/wiki/runtime references
+- **Inventory refresh:** updated current counts to `5212` in-scope files and `342 in-scope wiki markdown files / 341 wiki pages` at the moment of deletion, before the follow-up inventory sync block landed
+- **Verification:** repo search for inbound references plus `git diff --check`
+
+## [2026-04-29] audit | Block 275 PvP resolve rating bounds parity
+
+Closed the next live Combat V2 contract slice.
+- **Created:** `[[block-275-backend-pvp-resolve-rating-bounds-parity]]`
+- **Files audited:** `backend/src/app/api/pvp/resolve/route.ts`, `Hexbound/Hexbound/Models/CombatData.swift`, `Hexbound/Hexbound/Services/BattlePreloader.swift`, `Hexbound/Hexbound/Services/CombatEngine.swift`, `Hexbound/Hexbound/Views/Combat/CombatViewModel.swift`, `Hexbound/Hexbound/Views/Hub/HubBannerCards.swift`, `Hexbound/Hexbound/Views/Social/GuildHallViewModel.swift`, `Hexbound/Hexbound/Views/Dev/MockData.swift`, `docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md`
+- **Fixes:** `/api/pvp/resolve` now emits absolute `rating_before` / `rating_after` for both PvP and bot fights, and iOS now plumbs the pair end-to-end through `PvpResolveResultPayload` → `ResolveResult` → `CombatResultInfo` so Combat V2 D-1 can render delta + new total instead of delta-only.
+- **Inventory refresh:** updated current counts to `5212` in-scope files and `341 in-scope wiki markdown files / 340 wiki pages`
+- **Verification:** caller-grep audit across `CombatResultInfo(` and `ResolveResult(` plus `git diff --check`
+
 ## [2026-04-29] docs | Historical doc TBD wording sync
 
 Closed the last literal `TBD` tail in the checked-in historical UI/QA layer.

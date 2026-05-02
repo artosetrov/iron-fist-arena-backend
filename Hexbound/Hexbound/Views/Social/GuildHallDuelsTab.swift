@@ -526,26 +526,6 @@ extension GuildHallDetailView {
         return "\(seconds / 86400)d ago"
     }
 
-    func comingSoonPlaceholder(_ feature: String) -> some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: "scroll.fill")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-            Text("\(feature) — Coming Soon")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-            Text("This feature is being forged in the depths.")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, LayoutConstants.space2XL)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
     // Duel result sheet removed — challenge fights now use CombatDetailView → CombatResultDetailView flow.
 
 }

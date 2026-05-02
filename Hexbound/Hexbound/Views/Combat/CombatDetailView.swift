@@ -164,43 +164,20 @@ struct CombatDetailView: View {
         }
     }
 
-    // MARK: - Boss Portrait Lookup
+    // MARK: - Enemy Portrait Lookup
+    //
+    // Boss/rush portrait resolution lives in `EnemyPortraitResolver` so the
+    // interactive battle screen can render the same enemy art instead of
+    // falling back to a class icon. See `EnemyPortraitResolver.swift`.
 
-    /// Find the boss portraitImage by matching the fighter's name against all dungeon bosses.
+    @MainActor
     private func bossPortraitImage(for name: String) -> String? {
-        let lowered = name.lowercased()
-        // Search cached server dungeons first, then fallback
-        let dungeonSources: [DungeonInfo] = {
-            if let cached = cache.cachedDungeonList(), !cached.isEmpty {
-                return cached
-            }
-            return DungeonInfo.fallback
-        }()
-        for dungeon in dungeonSources {
-            if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
-                return boss.portraitImage
-            }
-        }
-        return nil
+        EnemyPortraitResolver.bossPortraitImage(for: name, cache: cache)
     }
 
-    // MARK: - Rush Enemy Portrait Lookup
-
-    /// Derive a rush enemy portrait asset from the fighter's name.
-    /// "Flame Sprite" → "rush-flame-sprite-portrait", with fallback to "-full" then nil.
+    @MainActor
     private func rushEnemyPortrait(for name: String) -> String? {
-        let slug = name
-            .lowercased()
-            .replacingOccurrences(of: " ", with: "-")
-            .replacingOccurrences(of: "'", with: "")
-            .replacingOccurrences(of: "of", with: "")
-            .replacingOccurrences(of: "--", with: "-")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-        let portrait = "rush-\(slug)-portrait"
-        if UIImage(named: portrait) != nil { return portrait }
-        let full = "rush-\(slug)-full"
-        if UIImage(named: full) != nil { return full }
-        return nil
+        EnemyPortraitResolver.rushEnemyPortrait(for: name)
     }
 
     // MARK: - Setup

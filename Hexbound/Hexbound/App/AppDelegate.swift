@@ -7,6 +7,17 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     /// Shared push service — set from HexboundApp so we can forward tokens.
     var pushService: PushNotificationService?
+    /// Main-router deep-link handler wired from HexboundApp once SwiftUI state exists.
+    var routeHandler: (@MainActor (AppRoute) -> Void)? {
+        didSet {
+            guard let routeHandler, let queuedRoute = pendingPushRoute else { return }
+            pendingPushRoute = nil
+            Task { @MainActor in
+                routeHandler(queuedRoute)
+            }
+        }
+    }
+    private var pendingPushRoute: AppRoute?
 
     func application(
         _ application: UIApplication,
@@ -62,7 +73,21 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             #if DEBUG
             print("[Push] Deep link route: \(route)")
             #endif
-            // TODO: Forward to AppRouter for deep linking
+            guard let parsedRoute = AppRoute.pushDeepLink(from: route) else {
+                #if DEBUG
+                print("[Push] Unsupported deep link route: \(route)")
+                #endif
+                completionHandler()
+                return
+            }
+
+            if let routeHandler {
+                Task { @MainActor in
+                    routeHandler(parsedRoute)
+                }
+            } else {
+                pendingPushRoute = parsedRoute
+            }
         }
 
         completionHandler()

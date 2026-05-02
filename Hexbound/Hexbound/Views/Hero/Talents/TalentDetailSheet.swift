@@ -62,47 +62,22 @@ struct TalentDetailSheet: View {
         }
     }
 
-    private var bonusText: String? {
-        guard let stat = node.bonusStat, let value = node.bonusValue else { return nil }
-        let sign = value >= 0 ? "+" : ""
-        let formatted: String
-        if value == floor(value) {
-            formatted = "\(sign)\(Int(value))"
-        } else {
-            formatted = "\(sign)\(String(format: "%.1f", value))"
-        }
-        return "\(formatted) \(statDisplayName(stat))"
-    }
-
-    private func statDisplayName(_ key: String) -> String {
-        switch key {
-        case "maxHp":       return "Max HP"
-        case "armor":       return "Armor"
-        case "magicResist": return "Magic Resist"
-        case "strength":    return "Strength"
-        case "dexterity":   return "Dexterity"
-        case "intelligence": return "Intelligence"
-        case "vitality":    return "Vitality"
-        case "critChance":  return "Crit Chance"
-        case "critDamage":  return "Crit Damage"
-        case "dodge":       return "Dodge"
-        case "lifesteal":   return "Lifesteal"
-        default:            return key.replacingOccurrences(of: "_", with: " ").capitalized
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
             header
 
-            if let bonus = bonusText {
-                bonusRow(bonus)
+            // Effect chip — canonical stat-effect string from `description`.
+            // Always rendered (no longer gated on `bonusStat`, which Tank-class
+            // proxy-bonus nodes intentionally leave NULL).
+            if !node.description.isEmpty {
+                effectChip(node.description)
             }
 
-            Text(node.description)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            // Flavor prose — narrative copy. Tank tree shipped 2026-05-01;
+            // other classes get content in follow-up passes (NULL → hidden).
+            if let flavor = node.flavor, !flavor.isEmpty {
+                flavorLine(flavor)
+            }
 
             if isRanked {
                 rankLadder
@@ -160,9 +135,13 @@ struct TalentDetailSheet: View {
         }
     }
 
-    // MARK: - Bonus row
+    // MARK: - Effect chip + flavor line
 
-    private func bonusRow(_ text: String) -> some View {
+    /// Effect chip — sparkles icon + the canonical effect string from
+    /// `node.description`. Always rendered when description is non-empty,
+    /// regardless of whether `bonusStat` is set (Tank proxy-bonuses leave
+    /// it NULL by design).
+    private func effectChip(_ text: String) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "sparkles")
                 .resizable()
@@ -172,6 +151,7 @@ struct TalentDetailSheet: View {
             Text(text)
                 .font(DarkFantasyTheme.uiLabel.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceSM)
@@ -184,6 +164,17 @@ struct TalentDetailSheet: View {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+    }
+
+    /// Flavor line — narrative prose (Tank tree shipped 2026-05-01). Italic
+    /// body, secondary text color. Pattern matches BossRevealOverlayView,
+    /// InboxRowView challenge messages, and DungeonInfoSheet flavor text.
+    private func flavorLine(_ text: String) -> some View {
+        Text(text)
+            .font(DarkFantasyTheme.body.italic())
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - CTA

@@ -348,6 +348,24 @@ If changes touch backend/:
 - But if schema.prisma changed → admin schema must be synced.
 - If `backend/src/lib/game/balance.ts` changed → run `npm run docs:balance` and commit `docs/06_game_systems/BALANCE_CONSTANTS_AUTO.md` in the same change. CI `docs:balance:check` blocks otherwise. (Two repeats on 2026-04-19, commits `049dd2f` + `3630a15`.)
 
+### 13. Pure-Function Game-Math Handlers (2026-04-29)
+
+When game-math (damage, heals, shields, drop chance, rating delta, etc.) lives inside a route handler with side effects, **extract it into a pure-function module under `backend/src/lib/game/`** and pin behavior with vitest. The route file keeps request shape, persistence, and AI selection; the helpers stay stateless and parameter-only.
+
+**Reference incident:** commit `6b1199` (2026-04-29) extracted `applyBurstDamage` / `applyShield` / `healAmountFromActive` / `shouldExecute` from `pvp/strike/route.ts` into `backend/src/lib/game/active-handlers.ts` + 131-line `tests/lib/active-handlers.test.ts`.
+
+**Defensive clamp rule (CRITICAL):** every game-math helper that takes a balance-driven `magnitude` (or any fraction sourced from a seed/admin config) MUST clamp the input at `Math.max(0, magnitude)` before using it. A negative magnitude leaking through `update_seed_consumable_items`-style scripts would otherwise flip the math:
+- `applyBurstDamage(d, -0.5)` → `0.5×d` instead of `1.5×d` (silent damage nerf, exploit if attacker can write the seed).
+- `applyShield(d, -0.5)` → `1.5×d` (turns a shield into damage amplifier — the dangerous case).
+- `healAmountFromActive(maxHp, -0.25)` → negative heal, then rounded → 0 (dropped).
+
+The clamp at the function boundary kills all three vectors at once and is cheap. **Without** unit-test coverage of the negative case, a balance-pass typo in a seed has no guardrail.
+
+**Review checklist:**
+- New game-math helper accepts `magnitude` / `fraction` / `multiplier` from external config? → must `Math.max(0, x)` at entry.
+- New helper has `> 0` HP/damage clamp on output? → confirms heal-from-shield and execute-on-zero invariants.
+- Helper added without a vitest? → flag — every new lib in `src/lib/game/` should have a peer in `tests/lib/`.
+
 ## Output Format
 
 ```

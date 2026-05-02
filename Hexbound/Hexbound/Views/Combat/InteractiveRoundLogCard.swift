@@ -11,8 +11,8 @@
 //  `task(id: exchange.id)` so it automatically cancels if the view
 //  disappears or if the VM swaps in a new `RoundExchange`.
 //
-//  NO scale animations — only opacity + translate (per project rule
-//  `feedback_no_scale_animations`).
+//  NO scale animations — only opacity + translate. Project motion rule:
+//  emphasis should stay filter/offset-driven rather than scale-driven.
 //
 
 import SwiftUI

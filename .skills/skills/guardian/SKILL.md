@@ -129,6 +129,34 @@ When a new case is added to an enum, search ALL `switch` statements on that enum
 
 If a modifier struct got a new parameter, search for ALL callers — both the `.modifier(Foo(...))` form and the `.foo(...)` extension. Direct struct initializers don't get default values from the extension.
 
+### 9. Destructive Action Confirmation (2026-04-29)
+
+Any button that **commits an irreversible loss** (skip a turn, forfeit a match, sell/destroy an item, leave a queue, etc.) must NOT call its destructive method directly from the tap closure. Wrap it in a SwiftUI `.confirmationDialog`.
+
+**Pattern (CORRECT):**
+```swift
+@State private var showSkipConfirmation = false
+
+Button {
+    HapticManager.selection()             // panel-opening cue, not commit cue
+    showSkipConfirmation = true
+} label: { Text("SKIP") }
+.confirmationDialog("Skip this round?",
+                    isPresented: $showSkipConfirmation,
+                    titleVisibility: .visible) {
+    Button("Skip", role: .destructive) { vm.skipAndSubmit() }
+    Button("Cancel", role: .cancel) { }
+}
+```
+
+**Anti-pattern:** `Button { vm.skipAndSubmit() }` directly. A fat-finger between SKIP and STRIKE on a phone forfeits the round with no recovery.
+
+**Haptic note:** use `HapticManager.selection()` for the trigger button (panel opening). Reserve `.medium()` / `.heavy()` for actions that *actually committed* — using `.medium()` on the trigger lies to the user about state.
+
+**Reference:** `CombatV2ChoosePhase.swift` SKIP confirmation, COMBAT_UX_INTEGRATION_PLAN §8 D-5 (commit `6b1199`, 2026-04-29).
+
+**Review trigger:** flag any `Button { ... }` whose tap closure includes `forfeit`, `skip`, `sell`, `destroy`, `delete`, `quit`, `leave`, or `cancelMatch` and has no surrounding `.confirmationDialog` / `.alert` modifier.
+
 ## Output Format
 
 For each file reviewed, produce:

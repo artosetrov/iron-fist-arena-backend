@@ -1,5 +1,5 @@
 # Admin Panel Capabilities (Source of Truth)
-*Derived from admin panel code. Updated: 2026-04-19*
+*Derived from admin panel code. Updated: 2026-04-30*
 
 This is a high-level capability map of the Next.js admin dashboard, organized by area of responsibility. Treat `wiki/` plus the audited route/action files as the live source of truth for current behavior and access control.
 
@@ -28,8 +28,8 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - KPI grid
 - Alerts list (only when alerts exist)
 - Economy charts
-- PvP & Balance charts
-- Player acquisition/activity charts
+- PvP & Balance charts, including a recent rating-gap-derived matchmaking fairness badge when PvP data exists
+- Player acquisition/activity charts, with retention slots left pending until dedicated return-event tracking is available
 - System Health badges
 - Quick links to core admin areas
 
@@ -724,6 +724,11 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Active token count
 
 **Current repo note:** the live push surface is a basic campaign sender. The current dashboard does **not** expose timezone scheduling, recurring campaigns, A/B messaging, rich media, delivered/open/click analytics, or cohort targeting like VIP / inactive / region / beta-tester segments.
+When a deep-link route is attached, the current iOS client supports only a
+bounded subset of route strings that can open without extra typed payloads:
+`inbox`, `shop`, `guild-hall`, `arena`, `battle-pass`, `daily-quests`,
+`achievements`, `leaderboard`, `tavern`, `stash`, `shell-game`,
+`fortune-wheel`, `gold-mine`, `dungeon-rush`, `settings`, `hero`, `hub`.
 
 ---
 

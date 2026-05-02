@@ -48,49 +48,13 @@ struct TalentsTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.25), value: vm.hasPendingChanges)
-        .sheet(item: sheetBinding()) { node in
-            TalentDetailSheet(
-                node: node,
-                isUnlocked: vm.isUnlocked(node),
-                isPending: vm.isPending(node),
-                isUnlockable: vm.isUnlockable(node),
-                pointsAvailable: vm.pointsAvailableAfterPending,
-                isMutating: vm.isMutating,
-                // Talents v2 — `onStage` advances the staged target rank by one
-                // (stageNextRank supports both locked→1 first unlocks and
-                // already-unlocked rank-ups). Keeps the sheet closed on the
-                // first tap for flat nodes; stays open for ranked nodes so
-                // the player can chain rank-ups.
-                onStage: {
-                    vm.stageNextRank(node)
-                    if node.maxRankResolved <= 1 { vm.selectedNode = nil }
-                },
-                onUnstage: {
-                    // For ranked nodes, peel a single staged rank. For flat
-                    // nodes this is equivalent to the old "clear pending".
-                    vm.unstageRankStep(node)
-                    if !vm.isPending(node) { vm.selectedNode = nil }
-                },
-                onClose: { vm.selectedNode = nil },
-                equippedSlotIndex: vm.equippedSlotIndex(for: node.id),
-                onEquip: {
-                    vm.beginEquipActive(node: node)
-                    vm.selectedNode = nil
-                },
-                onUnequip: {
-                    if let idx = vm.equippedSlotIndex(for: node.id) {
-                        vm.clearActive(slotIndex: idx)
-                    }
-                    vm.selectedNode = nil
-                },
-                currentRank: vm.committedRank(for: node.id),
-                maxRank: node.maxRankResolved,
-                pendingTargetRank: vm.pendingTargetRank(node),
-                nextRankCost: vm.nextRankCost(for: node)
-            )
-            .presentationDetents([.medium])
-            .presentationBackground(DarkFantasyTheme.bgSecondary)
+        // Talent detail — fitted overlay-card (replaces .sheet+.medium detent).
+        // Card hugs content vertically; backdrop tap dismisses; opacity-only
+        // transition per the project's no-scale-animation rule.
+        .overlay {
+            talentDetailOverlay
         }
+        .animation(.easeOut(duration: 0.2), value: vm.selectedNode?.id)
         .sheet(isPresented: $vm.showActiveSkillPicker) {
             ActiveSkillPickerSheet(vm: vm)
                 .presentationDetents([.large])
@@ -120,8 +84,13 @@ struct TalentsTabView: View {
 
     // MARK: - Canvas container
 
+    /// Horizontal-only scroll. After the 2026-05-01 lane-grid migration the
+    /// tree fits 400pt of vertical space comfortably: 5 row transitions × 64pt
+    /// rowPitch + 2 × 16pt padding = 352pt content, ~48pt slack for stroke
+    /// borders and lane bg. Foundation row (6 wide × 80bp) drives canvas width
+    /// ~392pt, so horizontal scroll is minimal on a 360pt iPhone.
     private var canvasContainer: some View {
-        ScrollView([.horizontal, .vertical], showsIndicators: true) {
+        ScrollView(.horizontal, showsIndicators: false) {
             TalentTreeCanvas(
                 nodes: vm.nodes,
                 connections: vm.connections,
@@ -134,10 +103,9 @@ struct TalentsTabView: View {
                     vm.selectedNode = node
                 }
             )
-            .padding(LayoutConstants.spaceMD)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 560)
+        .frame(height: 400)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .fill(DarkFantasyTheme.bgPrimary)
@@ -160,7 +128,7 @@ struct TalentsTabView: View {
                 .padding(.top, LayoutConstants.spaceSM)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 560)
+        .frame(height: 400)
     }
 
     private var emptyView: some View {
@@ -175,7 +143,7 @@ struct TalentsTabView: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 560)
+        .frame(height: 400)
     }
 
     // MARK: - Reset talents — inline rust-tinted row (prototype parity)
@@ -287,12 +255,64 @@ struct TalentsTabView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    // MARK: - Sheet binding
+    // MARK: - Talent detail overlay
 
-    private func sheetBinding() -> Binding<PassiveNode?> {
-        Binding(
-            get: { vm.selectedNode },
-            set: { vm.selectedNode = $0 }
-        )
+    /// Fitted overlay-card replacing the legacy .sheet(.medium) presentation.
+    /// Card sizes to its content (no half-screen empty area). The backdrop
+    /// fills the screen and dismisses on tap; the close × inside the sheet
+    /// still works. Animation is opacity-only — see `feedback_no_scale_animations`.
+    @ViewBuilder
+    private var talentDetailOverlay: some View {
+        if let node = vm.selectedNode {
+            ZStack {
+                Color.black.opacity(0.55)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { vm.selectedNode = nil }
+
+                TalentDetailSheet(
+                    node: node,
+                    isUnlocked: vm.isUnlocked(node),
+                    isPending: vm.isPending(node),
+                    isUnlockable: vm.isUnlockable(node),
+                    pointsAvailable: vm.pointsAvailableAfterPending,
+                    isMutating: vm.isMutating,
+                    // Talents v2 — `onStage` advances the staged target rank by
+                    // one (stageNextRank supports both locked→1 first unlocks
+                    // and already-unlocked rank-ups). Keeps the card closed on
+                    // first tap for flat nodes; stays open for ranked nodes so
+                    // the player can chain rank-ups.
+                    onStage: {
+                        vm.stageNextRank(node)
+                        if node.maxRankResolved <= 1 { vm.selectedNode = nil }
+                    },
+                    onUnstage: {
+                        // For ranked nodes, peel a single staged rank. For flat
+                        // nodes this is equivalent to the old "clear pending".
+                        vm.unstageRankStep(node)
+                        if !vm.isPending(node) { vm.selectedNode = nil }
+                    },
+                    onClose: { vm.selectedNode = nil },
+                    equippedSlotIndex: vm.equippedSlotIndex(for: node.id),
+                    onEquip: {
+                        vm.beginEquipActive(node: node)
+                        vm.selectedNode = nil
+                    },
+                    onUnequip: {
+                        if let idx = vm.equippedSlotIndex(for: node.id) {
+                            vm.clearActive(slotIndex: idx)
+                        }
+                        vm.selectedNode = nil
+                    },
+                    currentRank: vm.committedRank(for: node.id),
+                    maxRank: node.maxRankResolved,
+                    pendingTargetRank: vm.pendingTargetRank(node),
+                    nextRankCost: vm.nextRankCost(for: node)
+                )
+                .frame(maxWidth: 420)
+                .padding(.horizontal, LayoutConstants.spaceLG)
+            }
+            .transition(.opacity)
+        }
     }
 }

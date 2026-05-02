@@ -22,8 +22,7 @@ checked-in combat UX planning docs.
 
 The combat feature maps were already moved off external memory notes in
 `block-260`, but the historical implementation plans still depended on
-references like `feedback_no_scale_animations`,
-`feedback_pbxproj_unique_ids`, `project_pvp_fight_routing_shipped`, and
+references to old no-scale animation, pbxproj hygiene, PvP fight-routing, and
 other off-repo notes to explain their rules.
 
 That made the docs harder to trust in isolation and quietly reintroduced the

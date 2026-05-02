@@ -7,7 +7,8 @@
 //  An ally row flows left→right (icon tile on the left, text reads right),
 //  an enemy row flows right→left (text reads left, icon tile on the right).
 //  The row animates in with opacity + tiny horizontal offset — NEVER a
-//  scale/grow tween (per project rule `feedback_no_scale_animations`).
+//  scale/grow tween. Project motion rule: emphasis comes from opacity and
+//  translation, not from scaling UI elements.
 //
 //  Inputs (`CombatLogEvent`, `Duration`) are pure value types — no VM,
 //  no environment objects. Row is cheap and safe to stagger in a List.

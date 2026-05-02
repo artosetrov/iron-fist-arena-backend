@@ -82,6 +82,21 @@ For every interactive element, verify these states exist or are handled:
 - **Economy health**: Are prices visible? Is the value proposition clear?
 - **Progression clarity**: Can the player see how far they've come and how far to go?
 
+### Destructive Actions Need Confirmation (2026-04-29)
+
+Any tap that **forfeits progress, currency, or a turn** must require an explicit confirmation step — not a single primary tap. Mobile fat-finger between adjacent SKIP/STRIKE-style buttons would otherwise silently destroy the round.
+
+- Use SwiftUI `.confirmationDialog(...)` with a destructive role on the affirmative button.
+- Use `HapticManager.selection()` on the trigger, NOT `.medium()` — selection is a "you opened a panel" cue, medium implies "action committed".
+- Cost: ~400 ms on intentional skips. Benefit: prevents 100% of accidental skips.
+
+**Reference:** Combat V2 SKIP confirmation, `CombatV2ChoosePhase.swift`, COMBAT_UX_INTEGRATION_PLAN §8 D-5 (commit `6b1199`, 2026-04-29).
+
+**Audit checklist for each screen:**
+- Buttons that consume a turn, forfeit a match, sell/destroy an item, leave a queue, or revoke a daily reward → must have a confirmationDialog or comparable two-step gate.
+- Buttons placed adjacent to a primary positive action (SKIP next to STRIKE, CANCEL next to CONFIRM) → especially require this even if the action itself is mild, because adjacency raises mis-tap rate.
+- Confirmation dialog buttons should always have `.role(.destructive)` for the destructive option and `.cancel` for back-out, so VoiceOver announces "Skip, destructive button" rather than just "Skip".
+
 ### Accessibility
 
 - **Every Button needs `.accessibilityLabel()`.** Count buttons without labels — report the number. Icon-only buttons (arrows, close, toggles) are critical.

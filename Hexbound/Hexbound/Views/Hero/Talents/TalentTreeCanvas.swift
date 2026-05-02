@@ -2,10 +2,16 @@
 //  TalentTreeCanvas.swift
 //  Hexbound
 //
-//  Renders the passive-tree nodes + connections on a pannable/zoomable canvas.
-//  Node positions come from backend (PassiveNode.positionX/Y), auto-fitted to
-//  the container with padding. Uses SwiftUI Canvas for connections (solid, dashed),
-//  ZStack for tappable nodes.
+//  Renders the passive-tree nodes + connections. X is scaled so adjacent nodes
+//  in the same row keep a minimum on-screen gap (`xMinGap`) — this prevents
+//  overlap on dense rows but lets the canvas grow wider than the container,
+//  in which case the parent ScrollView pans horizontally. Y uses a constant
+//  row-index pitch (not derived from backend Y deltas) so rows stack uniformly
+//  regardless of how far apart their Y coords are in the backend's 1400×600
+//  world canvas.
+//
+//  Uses SwiftUI Canvas for connections (solid, dashed), ZStack for tappable
+//  nodes. Node positions come from backend (PassiveNode.positionX/Y).
 //
 
 import SwiftUI
@@ -23,52 +29,87 @@ struct TalentTreeCanvas: View {
     var stagedRank: (PassiveNode) -> Int = { _ in 0 }
     let onTap: (PassiveNode) -> Void
 
-    private let nodePadding: CGFloat = 36         // keep nodes from touching edges
-    private let minNeighborDistance: CGFloat = 64 // center-to-center px between closest nodes
+    private let nodePadding: CGFloat = 16
+    /// Minimum on-screen X gap between centers of two nodes in the same row.
+    /// Sized for the uniform 56pt node + 16pt breathing room.
+    private let xMinGap: CGFloat = 72
+    /// Vertical distance between adjacent tier rows. 56pt node + 8pt = 64pt;
+    /// drives a 7-row tree (foundation + 3 archetype tiers + keystone +
+    /// ultimate) to fit ~460pt frame: 6 transitions × 64 + 2 × 16 padding = 416.
+    private let rowPitch: CGFloat = 64
 
-    // MARK: - Bounding box of the tree in backend coordinates
+    // MARK: - Layout cache
+    //
+    // bounds, sortedYs, minSameRowXDelta were previously computed properties
+    // that re-ran on every body invalidation (selection, pulse, etc). For
+    // n≈23 nodes the O(n²) inner loop is ~250 comparisons per render — small
+    // but multiplied by SwiftUI's eager re-evaluation it adds up. CachedLayout
+    // does the work once per body call and is reused by every helper below.
 
-    private var bounds: (minX: Double, maxX: Double, minY: Double, maxY: Double) {
-        guard !nodes.isEmpty else { return (0, 1, 0, 1) }
-        let xs = nodes.map(\.positionX)
-        let ys = nodes.map(\.positionY)
-        return (xs.min() ?? 0, xs.max() ?? 1, ys.min() ?? 0, ys.max() ?? 1)
+    private struct CachedLayout {
+        let minX: Double
+        let xScale: CGFloat
+        let rowYs: [Double]      // sorted unique Y values (top → bottom on screen)
+        let canvasSize: CGSize
+
+        func position(
+            for node: PassiveNode,
+            padding: CGFloat,
+            rowPitch: CGFloat
+        ) -> CGPoint {
+            let rowIndex = rowYs.firstIndex(of: node.positionY) ?? 0
+            return CGPoint(
+                x: padding + CGFloat(node.positionX - minX) * xScale,
+                y: padding + CGFloat(rowIndex) * rowPitch
+            )
+        }
     }
 
-    private var minNodeDelta: Double {
-        var minDelta = Double.greatestFiniteMagnitude
+    private func makeLayout() -> CachedLayout {
+        guard !nodes.isEmpty else {
+            return CachedLayout(
+                minX: 0,
+                xScale: 1,
+                rowYs: [0],
+                canvasSize: CGSize(width: nodePadding * 2, height: nodePadding * 2)
+            )
+        }
+
+        // Bounds + unique-Y rows in one pass.
+        var minX = Double.greatestFiniteMagnitude
+        var maxX = -Double.greatestFiniteMagnitude
+        var ySet = Set<Double>()
+        for node in nodes {
+            if node.positionX < minX { minX = node.positionX }
+            if node.positionX > maxX { maxX = node.positionX }
+            ySet.insert(node.positionY)
+        }
+        let rowYs = ySet.sorted()
+
+        // Min same-row X delta — keep O(n²) but hoisted out of body.
+        var minSameRowDx = Double.greatestFiniteMagnitude
         for i in 0..<nodes.count {
             for j in (i + 1)..<nodes.count {
-                let dx = nodes[i].positionX - nodes[j].positionX
-                let dy = nodes[i].positionY - nodes[j].positionY
-                let d = (dx * dx + dy * dy).squareRoot()
-                if d > 0.001 { minDelta = min(minDelta, d) }
+                guard abs(nodes[i].positionY - nodes[j].positionY) < 0.001 else { continue }
+                let dx = abs(nodes[i].positionX - nodes[j].positionX)
+                if dx > 0.001 { minSameRowDx = min(minSameRowDx, dx) }
             }
         }
-        return minDelta == .greatestFiniteMagnitude ? 1 : minDelta
-    }
+        if minSameRowDx == Double.greatestFiniteMagnitude { minSameRowDx = 1 }
 
-    private var effectiveScale: CGFloat {
-        minNeighborDistance / CGFloat(minNodeDelta)
-    }
-
-    private var canvasSize: CGSize {
-        let b = bounds
-        let rangeX = CGFloat(max(b.maxX - b.minX, 1))
-        let rangeY = CGFloat(max(b.maxY - b.minY, 1))
-        let scale = effectiveScale
-        return CGSize(
-            width: rangeX * scale + nodePadding * 2,
-            height: rangeY * scale + nodePadding * 2
+        let xScale = xMinGap / CGFloat(minSameRowDx)
+        let xRange = CGFloat(max(maxX - minX, 1))
+        let rowCount = max(rowYs.count, 1)
+        let canvasSize = CGSize(
+            width: xRange * xScale + nodePadding * 2,
+            height: CGFloat(rowCount - 1) * rowPitch + nodePadding * 2
         )
-    }
 
-    private func screenPosition(for node: PassiveNode) -> CGPoint {
-        let b = bounds
-        let scale = effectiveScale
-        return CGPoint(
-            x: nodePadding + CGFloat(node.positionX - b.minX) * scale,
-            y: nodePadding + CGFloat(node.positionY - b.minY) * scale
+        return CachedLayout(
+            minX: minX,
+            xScale: xScale,
+            rowYs: rowYs,
+            canvasSize: canvasSize
         )
     }
 
@@ -106,6 +147,32 @@ struct TalentTreeCanvas: View {
         return .locked
     }
 
+    // MARK: - Connection routing (orthogonal "subway map" style)
+
+    /// Returns a stepped path between two points instead of a straight diagonal.
+    /// Same-row → straight horizontal; same-column → straight vertical;
+    /// diagonal → vertical → horizontal at the midpoint between source and
+    /// destination Y → vertical. The midpoint sits BETWEEN tier rows
+    /// (rowPitch is constant), so horizontal segments don't intersect node
+    /// rows. This gives the canvas a "circuit board" look that scales much
+    /// better visually than crisscrossing diagonals.
+    private func orthogonalPath(from p1: CGPoint, to p2: CGPoint) -> Path {
+        var path = Path()
+        path.move(to: p1)
+        let dx = abs(p2.x - p1.x)
+        let dy = abs(p2.y - p1.y)
+        // ~1pt tolerance — anything below counts as axis-aligned.
+        if dx < 1 || dy < 1 {
+            path.addLine(to: p2)
+            return path
+        }
+        let midY = (p1.y + p2.y) / 2
+        path.addLine(to: CGPoint(x: p1.x, y: midY))
+        path.addLine(to: CGPoint(x: p2.x, y: midY))
+        path.addLine(to: p2)
+        return path
+    }
+
     // MARK: - Animation for dashed unlockable lines
 
     @State private var dashPhase: CGFloat = 0
@@ -113,15 +180,24 @@ struct TalentTreeCanvas: View {
     // MARK: - Body
 
     var body: some View {
-        let size = canvasSize
+        let layout = makeLayout()
+        let size = layout.canvasSize
         let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        let pos: (PassiveNode) -> CGPoint = { node in
+            layout.position(for: node, padding: self.nodePadding, rowPitch: self.rowPitch)
+        }
 
         ZStack {
             // Background: radial gold glow on top of bgSecondary + noise grid overlay.
-            background
+            background(size: size)
+
+            // Lane tints — subtle vertical strips behind archetype columns. They
+            // only appear for tiers BELOW the foundation row (y > 0 in backend
+            // coords) so the foundation strip stays visually neutral.
+            laneBackgrounds(layout: layout, size: size)
 
             // Corner ornaments (decorative brackets)
-            cornerOrnaments
+            cornerOrnaments(size: size)
 
             // Solid connections — drawn in Canvas for perf
             Canvas { context, _ in
@@ -130,11 +206,9 @@ struct TalentTreeCanvas: View {
                           let to = nodeMap[conn.toId] else { continue }
                     let s = style(for: conn, nodeMap: nodeMap)
                     guard s == .unlockedSolid || s == .pendingSolid || s == .locked else { continue }
-                    let p1 = screenPosition(for: from)
-                    let p2 = screenPosition(for: to)
-                    var path = Path()
-                    path.move(to: p1)
-                    path.addLine(to: p2)
+                    let p1 = pos(from)
+                    let p2 = pos(to)
+                    let path = orthogonalPath(from: p1, to: p2)
                     let (color, width): (Color, CGFloat) = {
                         switch s {
                         case .unlockedSolid: return (DarkFantasyTheme.gold, 2.5)
@@ -155,11 +229,9 @@ struct TalentTreeCanvas: View {
                     guard let from = nodeMap[conn.fromId],
                           let to = nodeMap[conn.toId] else { continue }
                     guard style(for: conn, nodeMap: nodeMap) == .unlockableDash else { continue }
-                    let p1 = screenPosition(for: from)
-                    let p2 = screenPosition(for: to)
-                    var path = Path()
-                    path.move(to: p1)
-                    path.addLine(to: p2)
+                    let p1 = pos(from)
+                    let p2 = pos(to)
+                    let path = orthogonalPath(from: p1, to: p2)
                     context.stroke(
                         path,
                         with: .color(DarkFantasyTheme.gold.opacity(0.45)),
@@ -182,7 +254,7 @@ struct TalentTreeCanvas: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .position(screenPosition(for: node))
+                .position(pos(node))
             }
         }
         .frame(width: size.width, height: size.height)
@@ -196,9 +268,8 @@ struct TalentTreeCanvas: View {
 
     // MARK: - Background (radial glow + noise grid)
 
-    private var background: some View {
-        let size = canvasSize
-        return ZStack {
+    private func background(size: CGSize) -> some View {
+        ZStack {
             DarkFantasyTheme.bgSecondary
             // Top-center gold radial glow — pulls the eye to the keystone.
             RadialGradient(
@@ -215,11 +286,46 @@ struct TalentTreeCanvas: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
     }
 
-    private var cornerOrnaments: some View {
+    // MARK: - Lane backgrounds
+    //
+    // After the 2026-05-01 reposition migration, each archetype occupies one
+    // X column (warrior crus splits into 2 cols). Detect distinct X values
+    // among non-foundation nodes and draw subtle vertical tints behind them.
+    // Only spans Y above the foundation row (y > 0 in backend coords).
+
+    private func laneBackgrounds(layout: CachedLayout, size: CGSize) -> some View {
+        // Foundation = the single smallest Y row. Lanes start one row below it.
+        let foundationY = layout.rowYs.first ?? 0
+        let laneXs = Array(Set(
+            nodes
+                .filter { $0.positionY > foundationY }
+                .map(\.positionX)
+        )).sorted()
+
+        // Lane band stretches from row index 1 (top of archetypes) to bottom.
+        let bandTop = nodePadding + rowPitch * 1 - rowPitch / 2
+        let bandBottom = size.height - nodePadding / 2
+        let bandHeight = max(bandBottom - bandTop, 1)
+        let halfGap = xMinGap / 2
+
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(laneXs.enumerated()), id: \.offset) { _, x in
+                let centerX = nodePadding + CGFloat(x - layout.minX) * layout.xScale
+                Rectangle()
+                    .fill(DarkFantasyTheme.gold.opacity(0.04))
+                    .frame(width: xMinGap - 8, height: bandHeight)
+                    .position(x: centerX, y: bandTop + bandHeight / 2)
+            }
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .allowsHitTesting(false)
+    }
+
+    private func cornerOrnaments(size: CGSize) -> some View {
         ZStack {
             Rectangle()
                 .fill(Color.clear)
-                .frame(width: canvasSize.width, height: canvasSize.height)
+                .frame(width: size.width, height: size.height)
                 .overlay(alignment: .topLeading) { cornerBracket(rotation: 0) }
                 .overlay(alignment: .topTrailing) { cornerBracket(rotation: 90) }
                 .overlay(alignment: .bottomTrailing) { cornerBracket(rotation: 180) }

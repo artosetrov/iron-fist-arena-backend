@@ -63,6 +63,7 @@ final class AppState {
     var authPath = NavigationPath()
     var mainPath = NavigationPath()
     var selectedTab: HubTab = .hub
+    var pendingPushRoute: AppRoute?
 
     // MARK: - Combat
     var combatData: CombatData?
@@ -79,26 +80,6 @@ final class AppState {
     // `fight(opponentId:, forceClassic: true)` automatically.
     var interactiveCombatLocallyDisabled = false
     var pendingClassicFightOpponentId: String?
-
-    // MARK: - Interactive Combat v2 Feature Flag
-    //
-    // Gates the 3-state combat UX refactor (CHOOSE / RESOLVE / END).
-    // Default: `false` — renders the legacy `InteractiveBattleView`.
-    // When `true`, `InteractiveBattleRouteView` mounts `InteractiveBattleV2View`.
-    //
-    // Flipped from QA menu (admin) or forced on via launch flag in debug.
-    // Remote-config eligible — see docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md §1.
-    //
-    // One-tap rollback: flip to `false`; the legacy view resumes immediately
-    // with no other code changes. Backend Phase enum is unchanged — the V2
-    // layer only derives a `CombatUXState` from the existing phase machine.
-    //
-    // Persisted in UserDefaults so the admin's choice survives app restarts.
-    // Key: `combatUXV2`. Default read returns `false` if never set.
-    static let combatUXV2Key = "combatUXV2"
-    var combatUXV2: Bool = UserDefaults.standard.bool(forKey: AppState.combatUXV2Key) {
-        didSet { UserDefaults.standard.set(combatUXV2, forKey: AppState.combatUXV2Key) }
-    }
 
     // MARK: - Cache
     var cachedInventory: [Item]?
@@ -255,6 +236,22 @@ final class AppState {
         }
     }
 
+    // MARK: - Push Deep Links
+
+    func handlePushRoute(_ route: AppRoute) {
+        if currentScreen == .game {
+            mainPath.append(route)
+        } else {
+            pendingPushRoute = route
+        }
+    }
+
+    func consumePendingPushRouteIfNeeded() {
+        guard currentScreen == .game, let route = pendingPushRoute else { return }
+        pendingPushRoute = nil
+        mainPath.append(route)
+    }
+
     // MARK: - Session Expired Modal
     var showSessionExpiredModal = false
 
@@ -290,7 +287,7 @@ final class AppState {
 
     /// W2.D4 — queue building unlock ceremonies for any threshold crossed
     /// between `fromLevel` (exclusive) and `toLevel` (inclusive). Skips the
-    /// Lv99 "Coming Soon" buildings and dedupes against already-pending.
+    /// Lv99 route-less placeholder buildings and dedupes against already-pending.
     func enqueueBuildingUnlocks(fromLevel: Int, toLevel: Int) {
         guard toLevel > fromLevel else { return }
         var newUnlocks: [String] = []

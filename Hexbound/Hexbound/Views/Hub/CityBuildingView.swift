@@ -11,7 +11,8 @@ struct CityBuildingView: View {
     /// When true, only render the sprite (no label). Used for z-order separation.
     var spriteOnly: Bool = false
     var isLocked: Bool = false
-    /// Required level for unlock (shown as "LV.X" on lock overlay). Nil = "SOON".
+    /// Required level for unlock (shown as "LV.X" on lock overlay).
+    /// Nil means a route-less placeholder surface that renders as "SOON".
     var requiredLevel: Int? = nil
 
     @State private var isPressed = false

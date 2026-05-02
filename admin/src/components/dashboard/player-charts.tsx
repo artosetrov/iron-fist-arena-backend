@@ -21,7 +21,18 @@ const shortDate = (v: string) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function RetentionBadge({ label, value }: { label: string; value: number }) {
+function RetentionBadge({ label, value }: { label: string; value: number | null }) {
+  if (value == null) {
+    return (
+      <div className="text-center">
+        <p className="text-xs text-muted-foreground mb-1">{label}</p>
+        <Badge className="text-xs bg-zinc-500/20 text-zinc-300">
+          Pending
+        </Badge>
+      </div>
+    )
+  }
+
   let color = 'bg-green-500/20 text-green-400'
   if (value < 20) color = 'bg-red-500/20 text-red-400'
   else if (value < 40) color = 'bg-yellow-500/20 text-yellow-400'
@@ -83,7 +94,7 @@ export function PlayerCharts({ players }: { players: PlayerSnapshot }) {
           </ChartCard>
         </div>
 
-        <ChartCard title="Retention" description="Available after login event tracking is enabled">
+        <ChartCard title="Retention" description="Pending dedicated return-event tracking">
           <div className="flex items-center justify-around py-6">
             <RetentionBadge label="D1" value={players.retentionD1} />
             <RetentionBadge label="D7" value={players.retentionD7} />

@@ -340,7 +340,7 @@ export function PushClient({
             )}
             <div>
               <Label>Deep Link Route (optional)</Label>
-              <Input value={form.route} onChange={(event) => setForm({ ...form, route: event.target.value })} placeholder="inbox, shop, events" />
+              <Input value={form.route} onChange={(event) => setForm({ ...form, route: event.target.value })} placeholder="inbox, shop, guild-hall" />
             </div>
           </div>
           <DialogFooter>

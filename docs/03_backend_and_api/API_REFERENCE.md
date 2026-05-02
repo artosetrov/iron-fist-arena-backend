@@ -299,6 +299,13 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 | POST | /push/register | Yes | Register device |
 | POST | /push/unregister | Yes | Unregister |
 
+**Current repo note:** admin push campaigns can attach an optional `data.route`
+string for iOS deep-link navigation, but the client intentionally supports only a
+bounded route subset that does not require extra typed payloads: `inbox`,
+`shop`, `guild-hall`, `arena`, `battle-pass`, `daily-quests`, `achievements`,
+`leaderboard`, `tavern`, `stash`, `shell-game`, `fortune-wheel`, `gold-mine`,
+`dungeon-rush`, `settings`, `hero`, `hub`.
+
 ## Social (`/api/social/*`)
 
 | Method | Path | Auth | Purpose |

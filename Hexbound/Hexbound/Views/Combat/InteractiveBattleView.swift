@@ -407,6 +407,8 @@ struct FighterAnchorKey: PreferenceKey {
 private struct DuelFighterCard: View {
     typealias Side = DuelSide
 
+    @Environment(GameDataCache.self) private var cache
+
     let side: Side
     let profile: FighterProfile?
     let currentHp: Int
@@ -414,7 +416,7 @@ private struct DuelFighterCard: View {
     var slideX: CGFloat = 0
     var flash: Bool = false
     var popups: [DamagePopup] = []
-    /// When true the avatar tile renders at ~half its normal width.
+    /// When true the avatar tile renders at the compact 80pt square.
     /// Used by the `.summary` phase so the post-battle log gets the
     /// vertical room it needs without dropping the YOU/ENEMY identity.
     var compact: Bool = false
@@ -430,6 +432,14 @@ private struct DuelFighterCard: View {
         side == .player ? "YOU" : "ENEMY"
     }
 
+    /// Explicit square dimension. Replaces the previous
+    /// `.aspectRatio(1, .fit) + .frame(maxWidth:)` chain — that combo
+    /// was leaking the inner `AvatarImageView`'s fixed 200pt frame
+    /// through aspectRatio's `.fit` proposal and producing portrait
+    /// (taller-than-wide) tiles in summary on some devices. Matches
+    /// the classic combat header sizing in `CombatDetailView`.
+    private var tileSize: CGFloat { compact ? 80 : 130 }
+
     var body: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text(sideLabel)
@@ -437,11 +447,8 @@ private struct DuelFighterCard: View {
                 .foregroundStyle(borderColor)
 
             avatarTile
-                .aspectRatio(1, contentMode: .fit)
-                // `compact` halves the avatar (≈half-card width). Stroke,
-                // clip, flash overlay and popups all chain BEFORE the
-                // outer centering frame so they hug the smaller tile.
-                .frame(maxWidth: compact ? 80 : .infinity)
+                // Force a true square — width AND height locked.
+                .frame(width: tileSize, height: tileSize)
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .stroke(borderColor, lineWidth: 2)
@@ -465,7 +472,7 @@ private struct DuelFighterCard: View {
                 // Attacker slide-in X offset (per side)
                 .offset(x: slideX)
                 // Outer centering frame — keeps the tile horizontally
-                // centered inside its column even when `compact` shrinks it.
+                // centered inside its (wider) column.
                 .frame(maxWidth: .infinity)
 
             Text(profile?.name.uppercased() ?? "…")
@@ -533,15 +540,51 @@ private struct DuelFighterCard: View {
         ZStack {
             DarkFantasyTheme.bgSecondary
             if let profile {
-                AvatarImageView(
-                    skinKey: profile.avatar,
-                    characterClass: profile.characterClass,
-                    size: 200
-                )
-                .scaleEffect(x: side == .player ? 1 : -1, y: 1)
+                avatarContent(for: profile)
             } else {
                 HexPulseLoader(.compact)
             }
+        }
+    }
+
+    /// Resolution order for the rendered portrait:
+    ///   1. Dungeon-boss portrait by name (enemy side only)
+    ///   2. Rush-mob portrait by name    (enemy side only)
+    ///   3. AvatarImageView with `deterministicSeed: profile.id` so
+    ///      bots without a `skinKey` still get a stable hero portrait
+    ///      from the shared pool instead of falling all the way through
+    ///      to the class-icon fallback.
+    /// Mirrors the resolution order used in `CombatDetailView` (classic
+    /// combat) so both surfaces show the same enemy art.
+    @MainActor
+    @ViewBuilder
+    private func avatarContent(for profile: FighterProfile) -> some View {
+        let isEnemy = side == .enemy
+        let mirrorScale: CGFloat = isEnemy ? -1 : 1
+
+        if isEnemy,
+           let bossAsset = EnemyPortraitResolver.bossPortraitImage(for: profile.name, cache: cache),
+           UIImage(named: bossAsset) != nil {
+            Image(bossAsset)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
+                .scaleEffect(x: mirrorScale, y: 1)
+        } else if isEnemy,
+                  let rushAsset = EnemyPortraitResolver.rushEnemyPortrait(for: profile.name) {
+            Image(rushAsset)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
+                .scaleEffect(x: mirrorScale, y: 1)
+        } else {
+            AvatarImageView(
+                skinKey: profile.avatar,
+                characterClass: profile.characterClass,
+                size: 200,
+                deterministicSeed: profile.id
+            )
+            .scaleEffect(x: mirrorScale, y: 1)
         }
     }
 }
@@ -842,28 +885,12 @@ struct InteractiveBattleRouteView: View {
     var body: some View {
         Group {
             if let vm {
-                // Feature-flagged host swap. `combatUXV2` defaults to
-                // false, so production keeps running the legacy V1 view
-                // until an admin flips the flag. Both hosts take the same
-                // VM and emit the same terminal callback — swapping is
-                // zero-risk from the route wrapper's perspective.
-                // See docs/07_ui_ux/COMBAT_UX_INTEGRATION_PLAN.md §1 for
-                // rollout + rollback procedure.
-                if appState.combatUXV2 {
-                    InteractiveBattleV2View(
-                        vm: vm,
-                        onFinished: { phase in
-                            handleTerminal(phase, vm: vm)
-                        }
-                    )
-                } else {
-                    InteractiveBattleView(
-                        vm: vm,
-                        onFinished: { phase in
-                            handleTerminal(phase, vm: vm)
-                        }
-                    )
-                }
+                InteractiveBattleView(
+                    vm: vm,
+                    onFinished: { phase in
+                        handleTerminal(phase, vm: vm)
+                    }
+                )
             } else {
                 ZStack {
                     DarkFantasyTheme.bgPrimary.ignoresSafeArea()

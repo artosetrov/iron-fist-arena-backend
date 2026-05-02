@@ -111,8 +111,8 @@ private struct InfoBadgePill: View {
 // MARK: - Critical Pill (danger red, pulsing)
 
 /// Danger-red pill with a white outline and a faster, stronger pulse.
-/// Pulse is OPACITY-ONLY per `feedback_no_scale_animations.md` — we never
-/// scale-grow UI elements anywhere in the app.
+/// Pulse is OPACITY-ONLY — we keep app-wide emphasis animation free of
+/// scale-grow transforms.
 private struct CriticalBadgePill: View {
     let text: String
     let visible: Bool
