@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // v4 — 2026-05-01: added `flavor` (narrative prose for the talent modal).
-    const cacheKey = 'passives:tree:v4'
+    // v5 — 2026-05-01 lane-grid repos: position_x/y migrated to 80bp grid +
+    // legacy v1 nodes deactivated. Bump invalidates the v4 cache.
+    const cacheKey = 'passives:tree:v5'
     let tree = await cacheGet<CachedTree>(cacheKey)
 
     if (!tree) {
