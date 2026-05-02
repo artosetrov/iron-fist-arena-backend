@@ -104,6 +104,7 @@ Players allocate talent points into a node-based passive tree for permanent stat
 - **DB constraint ensures slot kind.** Active-slot row cannot hold skill+passive simultaneously — backend writers must choose one.
 - **Server-authoritative effects.** Client NEVER simulates passive effects in combat — backend computes.
 - **Active slot count is no longer the old generic “5-slot” plan.** The live shipped path is base 3 slots with an optional premium fourth slot unlock; treat broader slot-count planning notes in older docs as historical.
+- **Talents v2 ult polish tail is presentation-only.** The four new ult-granted action types (`stealth`, `aoe_damage`, `cooldown_reset`, `aoe_stun`) are already shipped through the passive-tree and active-slot runtime. The remaining follow-up is dedicated combat VFX/SFX for Vanish / Cataclysm / Rewind / Quake; current iOS combat uses bounded fallback assets in `CombatLogEvent.swift` and `InteractiveBattleViewModel.swift`.
 - **Migration-before-deploy rule.** New nodes / connections added to schema → must apply migration via Supabase MCP BEFORE code deploy.
 
 ## Tests / fixtures

@@ -10,9 +10,9 @@ updated: 2026-05-01
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5210
-- Untracked project-owned files: 33
-- In-scope files listed here: 5243
+- Tracked files: 5236
+- Untracked project-owned files: 2
+- In-scope files listed here: 5238
 
 ## Excluded Generated / Vendor Areas
 
@@ -38,14 +38,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs: 197
 - figma-assets: 333
 - graphify-out: 869
-- Hexbound: 1516
+- Hexbound: 1509
 - onboarding-assets: 10
 - prototypes: 10
 - qa-reports: 9
 - scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 370
+- wiki: 372
 
 ## File List By Block
 
@@ -513,8 +513,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/migrations/20260421_seed_dungeon_drops/migration.sql
 - backend/prisma/migrations/20260421_seed_dungeons/migration.sql
 - backend/prisma/migrations/20260429_talent_action_v2_ults/migration.sql
-- backend/prisma/migrations/20260501_passive_node_flavor/migration.sql _(untracked)_
-- backend/prisma/migrations/20260501000000_repos_passive_positions_for_lane_layout/migration.sql _(untracked)_
+- backend/prisma/migrations/20260501_passive_node_flavor/migration.sql
+- backend/prisma/migrations/20260501000000_repos_passive_positions_for_lane_layout/migration.sql
 - backend/prisma/migrations/migration_lock.toml
 - backend/prisma/referral-reward-backfill.ts
 - backend/prisma/schema.prisma
@@ -1072,8 +1072,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-04-26.md
 - docs/retro/RETRO_2026-04-27.md
 - docs/retro/RETRO_2026-04-28.md
-- docs/retro/RETRO_2026-04-30.md _(untracked)_
-- docs/retro/RETRO_2026-05-01.md _(untracked)_
+- docs/retro/RETRO_2026-04-30.md
+- docs/retro/RETRO_2026-05-01.md
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -2298,7 +2298,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - graphify-out/graph.json
 - graphify-out/manifest.json
 
-### Hexbound (1516)
+### Hexbound (1509)
 
 - Hexbound/.gitignore
 - Hexbound/.swiftlint.yml
@@ -3585,20 +3585,13 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Combat/CombatLogRow.swift
 - Hexbound/Hexbound/Views/Combat/CombatResultDetailView.swift
 - Hexbound/Hexbound/Views/Combat/CombatViewModel.swift
-- Hexbound/Hexbound/Views/Combat/EnemyPortraitResolver.swift _(untracked)_
+- Hexbound/Hexbound/Views/Combat/EnemyPortraitResolver.swift
 - Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift
 - Hexbound/Hexbound/Views/Combat/InteractiveBattleViewModel.swift
 - Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift
 - Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift
 - Hexbound/Hexbound/Views/Combat/LogDivider.swift
 - Hexbound/Hexbound/Views/Combat/LootDetailView.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatUXState.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatV2ChoosePhase.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatV2EndComponents.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatV2EndPhase.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatV2ResolvePhase.swift
-- Hexbound/Hexbound/Views/Combat/V2/CombatV2SharedComponents.swift
-- Hexbound/Hexbound/Views/Combat/V2/InteractiveBattleV2View.swift
 - Hexbound/Hexbound/Views/Combat/VFX/CombatFXAssetMap.swift
 - Hexbound/Hexbound/Views/Combat/VFX/CombatFXImageOverlay.swift
 - Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift
@@ -3845,9 +3838,9 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 
 ### qa-reports (9)
 
-- qa-reports/2026-05-01_talent_modal_redesign.md _(untracked)_
-- qa-reports/prototypes/talents-horizontal-only-2026-04-29.html _(untracked)_
-- qa-reports/prototypes/talents-wow-style-2026-04-29.html _(untracked)_
+- qa-reports/2026-05-01_talent_modal_redesign.md
+- qa-reports/prototypes/talents-horizontal-only-2026-04-29.html
+- qa-reports/prototypes/talents-wow-style-2026-04-29.html
 - qa-reports/QA_FIX_PLAN_2026-04-11.md
 - qa-reports/QA_REPORT_2026-04-09.md
 - qa-reports/QA_REPORT_2026-04-10.md
@@ -4976,7 +4969,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (370)
+### wiki (371)
 
 - wiki/_generated/api-routes.json
 - wiki/_generated/balance-constants.json
@@ -5259,31 +5252,33 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-272-retro-2026-04-13-19-20-memory-boundary-sync.md
 - wiki/audit/block-273-audit-trail-memory-token-residual-scrub.md
 - wiki/audit/block-274-historical-doc-tbd-wording-sync.md
-- wiki/audit/block-275-backend-pvp-resolve-rating-bounds-parity.md _(untracked)_
-- wiki/audit/block-276-delete-orphan-qa-prototype-artifact.md _(untracked)_
-- wiki/audit/block-277-inventory-marker-parity-after-pvp-wave-rollforward.md _(untracked)_
-- wiki/audit/block-278-social-docs-and-guild-hall-scrolls-parity.md _(untracked)_
-- wiki/audit/block-279-ios-guild-hall-city-route-parity.md _(untracked)_
-- wiki/audit/block-280-screen-inventory-guild-hall-runtime-parity.md _(untracked)_
-- wiki/audit/block-281-pre-release-audit-guild-hall-resolved-followup.md _(untracked)_
-- wiki/audit/block-282-guild-hall-wave-verification-and-audit-trail-sync.md _(untracked)_
-- wiki/audit/block-283-ios-city-map-route-less-building-filter-parity.md _(untracked)_
-- wiki/audit/block-284-pre-release-audit-followup-temporal-wording-sync.md _(untracked)_
-- wiki/audit/block-285-ios-push-deep-link-route-parity.md _(untracked)_
-- wiki/audit/block-286-social-message-action-and-todo-inventory-parity.md _(untracked)_
-- wiki/audit/block-287-admin-dashboard-fairness-and-retention-analytics-parity.md _(untracked)_
-- wiki/audit/block-288-pre-release-audit-bounded-todo-followup.md _(untracked)_
-- wiki/audit/block-289-runtime-comment-memory-boundary-sync.md _(untracked)_
-- wiki/audit/block-290-retro-and-project-index-boundary-sync.md _(untracked)_
-- wiki/audit/block-291-ios-route-less-placeholder-wording-boundary-sync.md _(untracked)_
-- wiki/audit/block-292-delete-dead-guild-hall-duels-placeholder-helper.md _(untracked)_
-- wiki/audit/block-293-enemy-portrait-resolver-memory-boundary-sync.md _(untracked)_
-- wiki/audit/block-294-historical-review-and-retro-route-less-boundary-sync.md _(untracked)_
-- wiki/audit/block-295-audit-trail-token-and-placeholder-wording-scrub.md _(untracked)_
-- wiki/audit/block-296-inventory-and-audit-trail-self-reference-parity.md _(untracked)_
-- wiki/audit/block-297-ios-enemy-portrait-resolver-mainactor-parity.md _(untracked)_
-- wiki/audit/block-298-inventory-live-git-regeneration-parity.md _(untracked)_
-- wiki/audit/block-299-ios-unavailable-route-copy-parity.md _(untracked)_
+- wiki/audit/block-275-backend-pvp-resolve-rating-bounds-parity.md
+- wiki/audit/block-276-delete-orphan-qa-prototype-artifact.md
+- wiki/audit/block-277-inventory-marker-parity-after-pvp-wave-rollforward.md
+- wiki/audit/block-278-social-docs-and-guild-hall-scrolls-parity.md
+- wiki/audit/block-279-ios-guild-hall-city-route-parity.md
+- wiki/audit/block-280-screen-inventory-guild-hall-runtime-parity.md
+- wiki/audit/block-281-pre-release-audit-guild-hall-resolved-followup.md
+- wiki/audit/block-282-guild-hall-wave-verification-and-audit-trail-sync.md
+- wiki/audit/block-283-ios-city-map-route-less-building-filter-parity.md
+- wiki/audit/block-284-pre-release-audit-followup-temporal-wording-sync.md
+- wiki/audit/block-285-ios-push-deep-link-route-parity.md
+- wiki/audit/block-286-social-message-action-and-todo-inventory-parity.md
+- wiki/audit/block-287-admin-dashboard-fairness-and-retention-analytics-parity.md
+- wiki/audit/block-288-pre-release-audit-bounded-todo-followup.md
+- wiki/audit/block-289-runtime-comment-memory-boundary-sync.md
+- wiki/audit/block-290-retro-and-project-index-boundary-sync.md
+- wiki/audit/block-291-ios-route-less-placeholder-wording-boundary-sync.md
+- wiki/audit/block-292-delete-dead-guild-hall-duels-placeholder-helper.md
+- wiki/audit/block-293-enemy-portrait-resolver-memory-boundary-sync.md
+- wiki/audit/block-294-historical-review-and-retro-route-less-boundary-sync.md
+- wiki/audit/block-295-audit-trail-token-and-placeholder-wording-scrub.md
+- wiki/audit/block-296-inventory-and-audit-trail-self-reference-parity.md
+- wiki/audit/block-297-ios-enemy-portrait-resolver-mainactor-parity.md
+- wiki/audit/block-298-inventory-live-git-regeneration-parity.md
+- wiki/audit/block-299-ios-unavailable-route-copy-parity.md
+- wiki/audit/block-300-push-surface-apns-only-boundary-sync.md _(untracked)_
+- wiki/audit/block-301-talents-v2-polish-tail-boundary-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

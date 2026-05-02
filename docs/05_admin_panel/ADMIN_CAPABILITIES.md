@@ -723,7 +723,12 @@ Admin-facing routes and actions are expected to run behind authenticated admin a
 - Failed count
 - Active token count
 
-**Current repo note:** the live push surface is a basic campaign sender. The current dashboard does **not** expose timezone scheduling, recurring campaigns, A/B messaging, rich media, delivered/open/click analytics, or cohort targeting like VIP / inactive / region / beta-tester segments.
+**Current repo note:** the live push surface is a basic APNS-backed iOS
+campaign sender. Android tokens may exist in the database, but the repo does
+not yet ship an active FCM delivery path. The current dashboard does **not**
+expose timezone scheduling, recurring campaigns, A/B messaging, rich media,
+delivered/open/click analytics, or cohort targeting like VIP / inactive /
+region / beta-tester segments.
 When a deep-link route is attached, the current iOS client supports only a
 bounded subset of route strings that can open without extra typed payloads:
 `inbox`, `shop`, `guild-hall`, `arena`, `battle-pass`, `daily-quests`,

@@ -29,13 +29,17 @@ struct TalentTreeCanvas: View {
     var stagedRank: (PassiveNode) -> Int = { _ in 0 }
     let onTap: (PassiveNode) -> Void
 
-    private let nodePadding: CGFloat = 16
+    /// Inset around the entire tree from the canvas edges. Must be at least
+    /// half the node size (28pt) so leftmost/rightmost foundation nodes and
+    /// the bottom-row ultimates aren't clipped by the canvas border. 32pt
+    /// gives a 4pt visual gap between node edge and canvas frame.
+    private let nodePadding: CGFloat = 32
     /// Minimum on-screen X gap between centers of two nodes in the same row.
     /// Sized for the uniform 56pt node + 16pt breathing room.
     private let xMinGap: CGFloat = 72
     /// Vertical distance between adjacent tier rows. 56pt node + 8pt = 64pt;
-    /// drives a 7-row tree (foundation + 3 archetype tiers + keystone +
-    /// ultimate) to fit ~460pt frame: 6 transitions × 64 + 2 × 16 padding = 416.
+    /// 6 unique tier rows post-migration → 5 transitions × 64 + 2 × 32 padding
+    /// = 384pt content, fits inside the 400pt canvas frame in TalentsTabView.
     private let rowPitch: CGFloat = 64
 
     // MARK: - Layout cache

@@ -28,7 +28,8 @@ function getErrorMessage(error: unknown): string {
 
 /**
  * Send push notification to a list of user IDs.
- * Fetches active tokens, sends via APNS/FCM, logs results.
+ * Fetches active tokens, sends live iOS/APNS pushes, logs results, and keeps
+ * Android tokens inert until an actual FCM transport is shipped.
  *
  * APNS integration:
  * - Requires APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_PATH env vars
@@ -135,7 +136,7 @@ export async function sendPushBroadcast(
 }
 
 // ---------------------------------------------------------------------------
-// Device-level send (APNS / FCM)
+// Device-level send (live APNS / deferred Android)
 // ---------------------------------------------------------------------------
 
 async function sendToDevice(

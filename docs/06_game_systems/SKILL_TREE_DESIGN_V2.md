@@ -12,6 +12,11 @@ Prototype: `prototypes/talents-horizontal.html`
 > - `backend/src/app/api/pvp/strike/route.ts`
 > - `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees.md`
 > - `wiki/features/passive-tree.md`
+>
+> Presentation follow-up remains intentionally narrow: dedicated VFX/SFX for
+> Vanish / Cataclysm / Rewind / Quake are still unshipped, while runtime
+> behavior already uses the live Talents v2 handlers and bounded fallback
+> combat assets.
 
 ## 0. Phase 0 Decisions (LOCKED)
 

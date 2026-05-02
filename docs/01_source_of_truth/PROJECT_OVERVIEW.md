@@ -263,7 +263,7 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 ### Communication
 - `MailMessage` — Messages (broadcast/segment/targeted)
 - `MailRecipient` — Read/claimed status per character
-- `PushToken` — Device push tokens (FCM/APNS)
+- `PushToken` — Device push tokens, with live iOS/APNS delivery and Android tokens retained for future FCM support
 - `PushCampaign` — Campaign metadata
 - `PushLog` — Delivery logs
 

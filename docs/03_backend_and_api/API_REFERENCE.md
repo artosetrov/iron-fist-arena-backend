@@ -296,8 +296,8 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | /push/register | Yes | Register device |
-| POST | /push/unregister | Yes | Unregister |
+| POST | /push/register | Yes | Register device token |
+| POST | /push/unregister | Yes | Unregister device token |
 
 **Current repo note:** admin push campaigns can attach an optional `data.route`
 string for iOS deep-link navigation, but the client intentionally supports only a
@@ -305,6 +305,8 @@ bounded route subset that does not require extra typed payloads: `inbox`,
 `shop`, `guild-hall`, `arena`, `battle-pass`, `daily-quests`, `achievements`,
 `leaderboard`, `tavern`, `stash`, `shell-game`, `fortune-wheel`, `gold-mine`,
 `dungeon-rush`, `settings`, `hero`, `hub`.
+The live delivery transport in this repo is APNS-backed iOS push. Android tokens
+can still be stored, but they do not yet go through a shipped FCM sender.
 
 ## Social (`/api/social/*`)
 

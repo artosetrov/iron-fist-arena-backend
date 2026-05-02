@@ -1,5 +1,23 @@
 # Hexbound Wiki — Log
 
+## [2026-05-01] audit | Block 301 Talents v2 polish tail boundary sync
+
+Closed the next bounded Talents v2 truth-sync seam.
+- **Created:** `[[block-301-talents-v2-polish-tail-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Models/CombatLogEvent.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleViewModel.swift`, `wiki/features/interactive-combat.md`, `wiki/features/passive-tree.md`, `docs/06_game_systems/SKILL_TREE_DESIGN_V2.md`
+- **Fixes:** updated the live feature maps and active Talents v2 design reference so they now say the same thing the code says: the four new ult action types are shipped, and the remaining open tail is dedicated Vanish / Cataclysm / Rewind / Quake VFX/SFX polish rather than missing gameplay/runtime support
+- **Inventory refresh:** updated current counts to `5238` in-scope files and `367 in-scope wiki markdown files / 366 wiki pages`
+- **Verification:** targeted grep of the Talents v2 TODO markers plus live git-state recount
+
+## [2026-05-01] audit | Block 300 push surface APNS-only boundary sync
+
+Closed the next live contract/doc drift in the push layer.
+- **Created:** `[[block-300-push-surface-apns-only-boundary-sync]]`
+- **Files audited:** `backend/src/lib/push/send.ts`, `admin/src/actions/push.ts`, `admin/src/app/(dashboard)/push/push-client.tsx`, `docs/03_backend_and_api/API_REFERENCE.md`, `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, `docs/01_source_of_truth/PROJECT_OVERVIEW.md`
+- **Fixes:** rewrote the backend push contract and adjacent docs so they no longer imply shipped APNS/FCM parity; the repo now consistently states the live truth that APNS-backed iOS delivery is active, Android tokens may be stored, and a real FCM sender is still future work
+- **Inventory refresh:** updated current counts to `5237` in-scope files and `366 in-scope wiki markdown files / 365 wiki pages`
+- **Verification:** targeted grep across backend/admin/docs for the old APNS/FCM wording plus live git-state recount
+
 ## [2026-05-01] audit | Block 299 iOS unavailable-route copy parity
 
 Closed the last generic live `Coming Soon` fallback wording in the iOS runtime.
