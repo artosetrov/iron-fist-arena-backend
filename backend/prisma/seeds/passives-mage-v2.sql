@@ -49,7 +49,7 @@ VALUES
   (gen_random_uuid(), 'mage.found.focus',         'Focus',        '+3%/+6%/+9% Damage',                'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  160, 0, 6, 'mage'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: cast speed
   (gen_random_uuid(), 'mage.found.resonance',     'Resonance',    '+2%/+4%/+6% Cooldown Reduction',    'cooldown_reduction'::"PassiveBonusType", NULL,  2, 1,  240, 0, 6, 'mage'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
   (gen_random_uuid(), 'mage.found.arcane_armor',  'Arcane Armor', '+2/+4/+6 Magic Resist',             'flat_magic_resist'::"PassiveBonusType",  NULL,  2, 1,  320, 0, 6, 'mage'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
-  (gen_random_uuid(), 'mage.found.ward',          'Ward',         '+5%/+10%/+15% Damage Reduction',    'damage_reduction'::"PassiveBonusType",   NULL,  5, 1, 400, 0, 6, 'mage'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: shield strength
+  (gen_random_uuid(), 'mage.found.ward',          'Ward',         '+5%/+10%/+15% Damage Reduction',    'damage_reduction'::"PassiveBonusType",   NULL,  5, 1, 400, 0, 6, 'mage'::"CharacterClass", TRUE, FALSE, FALSE, NULL, NULL, NULL), -- PROXY: shield strength
 
   -- Pyromancer lane (offense, tier 2) ---------------------------------------
   (gen_random_uuid(), 'mage.pyro.kindle',         'Kindle',         '+5%/+10%/+15% Damage',            'percent_damage'::"PassiveBonusType",     NULL,  5, 2,  120, 80, 6, 'mage'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: burn DoT

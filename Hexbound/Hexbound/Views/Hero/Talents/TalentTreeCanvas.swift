@@ -195,11 +195,6 @@ struct TalentTreeCanvas: View {
             // Background: radial gold glow on top of bgSecondary + noise grid overlay.
             background(size: size)
 
-            // Lane tints — subtle vertical strips behind archetype columns. They
-            // only appear for tiers BELOW the foundation row (y > 0 in backend
-            // coords) so the foundation strip stays visually neutral.
-            laneBackgrounds(layout: layout, size: size)
-
             // Corner ornaments (decorative brackets)
             cornerOrnaments(size: size)
 
@@ -288,41 +283,6 @@ struct TalentTreeCanvas: View {
         }
         .frame(width: size.width, height: size.height)
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
-    }
-
-    // MARK: - Lane backgrounds
-    //
-    // After the 2026-05-01 reposition migration, each archetype occupies one
-    // X column (warrior crus splits into 2 cols). Detect distinct X values
-    // among non-foundation nodes and draw subtle vertical tints behind them.
-    // Only spans Y above the foundation row (y > 0 in backend coords).
-
-    private func laneBackgrounds(layout: CachedLayout, size: CGSize) -> some View {
-        // Foundation = the single smallest Y row. Lanes start one row below it.
-        let foundationY = layout.rowYs.first ?? 0
-        let laneXs = Array(Set(
-            nodes
-                .filter { $0.positionY > foundationY }
-                .map(\.positionX)
-        )).sorted()
-
-        // Lane band stretches from row index 1 (top of archetypes) to bottom.
-        let bandTop = nodePadding + rowPitch * 1 - rowPitch / 2
-        let bandBottom = size.height - nodePadding / 2
-        let bandHeight = max(bandBottom - bandTop, 1)
-        let halfGap = xMinGap / 2
-
-        return ZStack(alignment: .topLeading) {
-            ForEach(Array(laneXs.enumerated()), id: \.offset) { _, x in
-                let centerX = nodePadding + CGFloat(x - layout.minX) * layout.xScale
-                Rectangle()
-                    .fill(DarkFantasyTheme.gold.opacity(0.04))
-                    .frame(width: xMinGap - 8, height: bandHeight)
-                    .position(x: centerX, y: bandTop + bandHeight / 2)
-            }
-        }
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
-        .allowsHitTesting(false)
     }
 
     private func cornerOrnaments(size: CGSize) -> some View {

@@ -366,6 +366,26 @@ The clamp at the function boundary kills all three vectors at once and is cheap.
 - New helper has `> 0` HP/damage clamp on output? → confirms heal-from-shield and execute-on-zero invariants.
 - Helper added without a vitest? → flag — every new lib in `src/lib/game/` should have a peer in `tests/lib/`.
 
+### 14. Cache Key Versioning on Data-Shape Migrations (2026-05-02)
+
+Any cached endpoint that returns rows whose **shape or geometry** is changed by a Prisma migration MUST bump its cache key version in the same PR. Otherwise warm Vercel caches keep serving the pre-migration payload (stale coords, stale shape, stale enums) and clients render against a contract that no longer exists in the DB.
+
+**Pattern (CORRECT):**
+```ts
+// /api/passives/tree/route.ts
+const CACHE_KEY = "passives:tree:v5"  // bumped from v4 alongside 20260501_repos_passive_positions_for_lane_layout
+```
+
+**Reference incident:** commit `18ac4fa` (2026-05-02). The lane-grid migration `20260501000000_repos_passive_positions_for_lane_layout` rewrote `(x, y)` for all 83 passive nodes. `/api/passives/tree` cache key was bumped `v4 → v5` in the same commit; without the bump, iOS would have rendered new node positions read from the old cached coords and overlapped half the canvas.
+
+**Review checklist:**
+- PR includes a Prisma migration that mutates row content (`UPDATE …`, `ALTER … SET DEFAULT …`, enum value rename)?
+- Any route under `backend/src/app/api/**` references that table behind a `CACHE_KEY` / `revalidate` / `unstable_cache` boundary?
+- If yes — was the cache key string version-bumped in the same commit? If no — flag as **High** priority.
+- Soft-deletes (`is_active = FALSE` on legacy rows) count as shape-changing for any endpoint whose query doesn't already filter on the flag.
+
+**Companion rule:** when a route returns a superset (e.g. nodes for ALL classes) and the client was previously narrowing client-side, the migration that adds rows must also be paired with a server-side filter or an explicit "client must filter" note in `API_REFERENCE.md`. The 2026-05-02 PR added `PassiveTreeViewModel.filter(by: classRestriction)` for exactly this reason; documenting the contract prevents the next consumer from forgetting.
+
 ## Output Format
 
 ```

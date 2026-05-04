@@ -79,7 +79,7 @@ VALUES
   (gen_random_uuid(), 'warrior.found.wards',        'Wards',        '+2/+4/+6 Magic Resist',                   'flat_magic_resist'::"PassiveBonusType",  NULL,  2, 1,  160, 0, 6, 'warrior'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
   (gen_random_uuid(), 'warrior.found.critical_eye', 'Critical Eye', '+1%/+2%/+3% Critical Strike Chance',      'flat_crit_chance'::"PassiveBonusType",   NULL,  1, 1,  240, 0, 6, 'warrior'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
   (gen_random_uuid(), 'warrior.found.swift_resolve','Swift Resolve','+3%/+6%/+9% Damage',                      'percent_damage'::"PassiveBonusType",     NULL,  3, 1,  320, 0, 6, 'warrior'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: attack speed
-  (gen_random_uuid(), 'warrior.found.lifesteal',    'Lifesteal',    '+2%/+4%/+6% Life Steal',                  'lifesteal'::"PassiveBonusType",          NULL,  2, 1, 400, 0, 6, 'warrior'::"CharacterClass", TRUE, TRUE, FALSE, NULL, NULL, NULL),
+  (gen_random_uuid(), 'warrior.found.lifesteal',    'Lifesteal',    '+2%/+4%/+6% Life Steal',                  'lifesteal'::"PassiveBonusType",          NULL,  2, 1, 400, 0, 6, 'warrior'::"CharacterClass", TRUE, FALSE, FALSE, NULL, NULL, NULL),
 
   -- Berserker lane (offense, tier 2, x~220→300) ----------------------------
   (gen_random_uuid(), 'warrior.berserk.rage',       'Rage',         '+4%/+8%/+12% Damage',                     'percent_damage'::"PassiveBonusType",     NULL,  4, 2,  80, 80, 6, 'warrior'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL),

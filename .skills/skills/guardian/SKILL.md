@@ -157,6 +157,20 @@ Button {
 
 **Review trigger:** flag any `Button { ... }` whose tap closure includes `forfeit`, `skip`, `sell`, `destroy`, `delete`, `quit`, `leave`, or `cancelMatch` and has no surrounding `.confirmationDialog` / `.alert` modifier.
 
+### 10. Fixed-Coord Canvas Edge Padding (2026-05-02)
+
+When a SwiftUI canvas lays out nodes from server-supplied `(x, y)` coords on a fixed range like `x ∈ [0, W]`, `y ∈ [0, H]` (e.g. `TalentTreeCanvas`), the canvas inset MUST satisfy:
+
+```
+nodePadding ≥ ceil(nodeSize / 2) + edgeBuffer (≥ 4pt)
+```
+
+Otherwise the leftmost/topmost (`x=0` / `y=0`) and rightmost/bottommost (`x=W` / `y=H`) nodes render with their **centers** flush to the canvas edge and the outer half of each node is clipped.
+
+**Reference incident:** commit `fb61faa` (2026-05-02). After the lane-grid migration repositioned passive nodes to `x ∈ [0, 400]`, `y ∈ [0, 400]`, the existing `nodePadding = 16` left only 16pt of clearance for a 56pt node (half-node = 28pt) — leftmost/rightmost nodes were clipped by 12pt and the bottom row spilled 4pt past the frame. Fix bumped `nodePadding` to 32 (= 28 half-node + 4pt buffer) and re-checked the resulting content frame against the parent `TalentsTabView` height.
+
+**Review trigger:** in any file matching `*Canvas.swift` / `*TreeCanvas.swift`, look for a `nodePadding` / `canvasPadding` / `inset` constant and verify it is `≥ nodeSize / 2 + 4`. Bonus: when reviewing a coord-migration PR, also verify the iOS canvas inset was re-checked against the new coord range — a backend-only repos commit can silently break iOS layout.
+
 ## Output Format
 
 For each file reviewed, produce:
