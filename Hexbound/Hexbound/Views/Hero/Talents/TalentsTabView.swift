@@ -91,18 +91,28 @@ struct TalentsTabView: View {
     /// ~392pt, so horizontal scroll is minimal on a 360pt iPhone.
     private var canvasContainer: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            TalentTreeCanvas(
-                nodes: vm.nodes,
-                connections: vm.connections,
-                isUnlocked: vm.isUnlocked,
-                isPending: vm.isPending,
-                isUnlockable: vm.isUnlockable,
-                currentRank: { vm.committedRank(for: $0.id) },
-                stagedRank: { vm.pendingTargetRank($0) ?? 0 },
-                onTap: { node in
-                    vm.selectedNode = node
-                }
-            )
+            // Center the tree inside the (possibly wider) ScrollView. When
+            // intrinsic content < scroll width, leading-aligned default would
+            // park nodes against the left edge with empty space on the right
+            // — visually awkward. The HStack with two flexible Spacers
+            // centers automatically, AND clamps to natural width when
+            // content exceeds frame so horizontal scroll still works.
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                TalentTreeCanvas(
+                    nodes: vm.nodes,
+                    connections: vm.connections,
+                    isUnlocked: vm.isUnlocked,
+                    isPending: vm.isPending,
+                    isUnlockable: vm.isUnlockable,
+                    currentRank: { vm.committedRank(for: $0.id) },
+                    stagedRank: { vm.pendingTargetRank($0) ?? 0 },
+                    onTap: { node in
+                        vm.selectedNode = node
+                    }
+                )
+                Spacer(minLength: 0)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 400)
@@ -114,6 +124,9 @@ struct TalentsTabView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        // Negate the parent VStack's 16pt screen padding so the canvas card
+        // bleeds edge-to-edge, while summary + reset rows keep their margins.
+        .padding(.horizontal, -LayoutConstants.screenPadding)
     }
 
     // MARK: - Loading / Empty

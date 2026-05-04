@@ -163,8 +163,18 @@ struct TalentsSummaryCard: View {
     }
 
     // Filled slot — solid gold border, icon.
+    //
+    // Asset resolution order (consumables): try the catalog image whose name
+    // matches `consumable_type` (e.g. `health_potion_medium`); fall back to
+    // the `cross.vial.fill` SF Symbol if no asset is bundled. Talent slots
+    // keep using the action-type SF Symbol — those don't have per-skill
+    // asset art yet.
     private func filledSlotTile(slot: ActiveSlot, index: Int) -> some View {
-        let symbol: String = {
+        let consumableAsset: String? = {
+            guard slot.kind == .consumable, let key = slot.consumableType else { return nil }
+            return UIImage(named: key) != nil ? key : nil
+        }()
+        let fallbackSymbol: String = {
             switch slot.kind {
             case .talent:     return slot.activeActionType?.sfSymbol ?? "sparkles"
             case .consumable: return "cross.vial.fill"
@@ -182,11 +192,22 @@ struct TalentsSummaryCard: View {
                     startPoint: .top, endPoint: .bottom
                 )
             ) {
-                Image(systemName: symbol)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .frame(width: 20, height: 20)
+                Group {
+                    if let asset = consumableAsset {
+                        // Asset art at slightly larger size so it reads as a
+                        // real bottle, not a pictogram.
+                        Image(asset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 28, height: 28)
+                    } else {
+                        Image(systemName: fallbackSymbol)
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .frame(width: 20, height: 20)
+                    }
+                }
             }
             .overlay(alignment: .leading) {
                 // 3px gold left bar — matches item-card DNA.
