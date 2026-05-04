@@ -285,6 +285,12 @@ final class InteractiveBattleViewModel {
 
     /// Initialize with opaque character IDs. Max HPs are provisional until
     /// `/match/start` returns the authoritative snapshot.
+    ///
+    /// Pre-fight optimistic profiles (`attackerProfile`/`defenderProfile`) let
+    /// the route mount `InteractiveBattleView` with the duel header already
+    /// painted from cached data — no big "PREPARING DUEL" spinner, no per-
+    /// avatar loaders moving in/out. The authoritative profile from
+    /// `/match/start` overwrites these the moment the response lands.
     init(appState: AppState,
          attackerCharacterId: String,
          defenderCharacterId: String,
@@ -293,7 +299,9 @@ final class InteractiveBattleViewModel {
          attackerCurrentHp: Int? = nil,
          defenderCurrentHp: Int? = nil,
          opponentType: InteractiveOpponentType = .pvp,
-         dungeonRunId: String? = nil) {
+         dungeonRunId: String? = nil,
+         attackerProfile: FighterProfile? = nil,
+         defenderProfile: FighterProfile? = nil) {
         self.appState = appState
         self.attackerCharacterId = attackerCharacterId
         self.defenderCharacterId = defenderCharacterId
@@ -308,6 +316,8 @@ final class InteractiveBattleViewModel {
             attackerMaxHp: attackerMaxHp,
             defenderMaxHp: defenderMaxHp
         )
+        self.attackerProfile = attackerProfile
+        self.defenderProfile = defenderProfile
     }
 
     // NOTE: No deinit cancellation. @MainActor-isolated stored properties can't
@@ -1184,6 +1194,26 @@ struct FighterProfile: Equatable, Sendable {
         self.characterClass = snapshot.characterClass
             .flatMap { CharacterClass(rawValue: $0.lowercased()) } ?? .warrior
         self.avatar = snapshot.avatar
+    }
+
+    /// Optimistic factory — build from the player's cached `Character` so the
+    /// duel header renders before `/match/start` answers.
+    init(character: Character) {
+        self.id = character.id
+        self.name = character.characterName
+        self.level = character.level
+        self.characterClass = character.characterClass
+        self.avatar = character.avatar
+    }
+
+    /// Optimistic factory — build from a cached `Opponent` row (e.g. the one
+    /// the player tapped in Arena / Opponent Profile).
+    init(opponent: Opponent) {
+        self.id = opponent.id
+        self.name = opponent.characterName
+        self.level = opponent.level
+        self.characterClass = opponent.characterClass
+        self.avatar = opponent.avatar
     }
 }
 

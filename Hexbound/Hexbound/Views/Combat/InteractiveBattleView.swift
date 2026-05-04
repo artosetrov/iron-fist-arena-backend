@@ -40,7 +40,7 @@ struct InteractiveBattleView: View {
     var onFinished: ((InteractiveBattleViewModel.Phase) -> Void)? = nil
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceMD) {
@@ -52,6 +52,16 @@ struct InteractiveBattleView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceLG)
+
+            // Cold-start "Connecting" pill — visible only during `.intro`,
+            // when /match/start is in flight. Replaces the old full-screen
+            // HexPulseLoader. Fades out the moment we transition to .predict.
+            if case .intro = vm.phase {
+                ConnectingPillStrip(label: "Connecting · round 1 incoming")
+                    .padding(.top, LayoutConstants.spaceMD)
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+            }
 
             // Canvas particle VFX — mounted behind PNG FX so sparks sit
             // under the slash/crit/text layer but above the UI chrome.
@@ -298,8 +308,14 @@ struct InteractiveBattleView: View {
     private var predictPanel: some View {
         switch vm.phase {
         case .intro:
-            HexPulseLoader(.standard, message: "PREPARING DUEL")
-                .frame(maxWidth: .infinity, minHeight: 180)
+            // Optimistic shell: render the predict UI in disabled state so
+            // the layout is identical to .predict. The thin "Connecting"
+            // pill at the top of the screen carries the loading semantics.
+            // No full-panel HexPulseLoader anymore — that was loader #2 of
+            // the 3-loader cold-start.
+            InteractivePredictView(vm: vm)
+                .disabled(true)
+                .opacity(0.55)
         case .unavailable:
             unavailableBanner
         case .error(let message):
@@ -542,7 +558,12 @@ private struct DuelFighterCard: View {
             if let profile {
                 avatarContent(for: profile)
             } else {
-                HexPulseLoader(.compact)
+                // Quiet skeleton — no spinner, no jitter. Triggers only in
+                // the rare case where pre-fight cache didn't have the
+                // opponent (e.g. revenge fight against a fighter not in
+                // the local cache). The empty silhouette resolves the
+                // moment /match/start fills in `defenderProfile`.
+                AvatarSkeletonFill()
             }
         }
     }
@@ -871,8 +892,18 @@ private struct ZoneTileButton: View {
 /// Thin wrapper that owns the `InteractiveBattleViewModel` lifecycle and wires
 /// the terminal phases back into AppState navigation. Mounted by `AppRouter`
 /// for the `.interactiveBattle` route.
+///
+/// Cold-start contract (combat v3.1, 2026-05-03):
+/// pre-fight data is already cached when this route mounts (the player came
+/// from Arena / Opponent Profile / Dungeon, so `appState.currentCharacter`
+/// and the opponent row in `cache.opponents` are warm). We pass those into
+/// the VM init as optimistic profiles so `InteractiveBattleView` paints the
+/// duel header on the very first frame — no big "PREPARING DUEL" spinner,
+/// no per-avatar loaders. Only a thin "Connecting" pill (rendered inside the
+/// host view during `.intro`) signals that `/match/start` is in flight.
 struct InteractiveBattleRouteView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     let characterId: String
     let opponentId: String
     let attackerMaxHp: Int
@@ -892,10 +923,12 @@ struct InteractiveBattleRouteView: View {
                     }
                 )
             } else {
-                ZStack {
-                    DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-                    HexPulseLoader(.large, message: "PREPARING DUEL")
-                }
+                // Single-frame placeholder until `.onAppear` assigns the VM.
+                // Intentionally empty (no spinner) — the actual loading state
+                // lives inside `InteractiveBattleView` once the VM is mounted,
+                // and is now an optimistic shell rather than a full-screen
+                // pulse loader.
+                DarkFantasyTheme.bgPrimary.ignoresSafeArea()
             }
         }
         .onAppear {
@@ -907,7 +940,9 @@ struct InteractiveBattleRouteView: View {
                     attackerMaxHp: attackerMaxHp,
                     defenderMaxHp: defenderMaxHp,
                     opponentType: opponentType,
-                    dungeonRunId: dungeonRunId
+                    dungeonRunId: dungeonRunId,
+                    attackerProfile: optimisticAttackerProfile(),
+                    defenderProfile: optimisticDefenderProfile()
                 )
             }
         }
@@ -915,6 +950,27 @@ struct InteractiveBattleRouteView: View {
             vm?.cancel()
         }
         .navigationBarBackButtonHidden(true)
+    }
+
+    /// Build an optimistic `FighterProfile` for the player from the cached
+    /// `Character` in `AppState`. Returns nil only if we somehow opened
+    /// combat without a current character (defensive — shouldn't happen
+    /// in normal flows because the route is gated on character selection).
+    private func optimisticAttackerProfile() -> FighterProfile? {
+        guard let character = appState.currentCharacter,
+              character.id == characterId else { return nil }
+        return FighterProfile(character: character)
+    }
+
+    /// Build an optimistic `FighterProfile` for the opponent. Looks up the
+    /// id in `cache.opponents` (warm if the player came from Arena) and
+    /// falls back to nil — the per-avatar skeleton handles that case
+    /// without flashing a spinner.
+    private func optimisticDefenderProfile() -> FighterProfile? {
+        if let opp = cache.opponents.first(where: { $0.id == opponentId }) {
+            return FighterProfile(opponent: opp)
+        }
+        return nil
     }
 
     private func handleTerminal(_ phase: InteractiveBattleViewModel.Phase,
@@ -954,6 +1010,66 @@ struct InteractiveBattleRouteView: View {
         default:
             break
         }
+    }
+}
+
+// MARK: - Cold-Start Optimistic Shell
+//
+// Two tiny views that replace the 3-loader cold-start (combat v3.1, 2026-05-03):
+//   • ConnectingPillStrip — thin opacity-pulse pill at the top of the screen,
+//     visible only during `.intro` while /match/start is in flight. Replaces
+//     the full-screen "PREPARING DUEL" HexPulseLoader.
+//   • AvatarSkeletonFill  — quiet gradient fill used by DuelFighterCard when
+//     a profile hasn't been resolved yet. Replaces HexPulseLoader(.compact)
+//     so the avatar tile doesn't flash a spinner mid-screen.
+//
+// Both intentionally use only opacity-based motion (per project rule:
+// no scale grow/shrink animations).
+
+struct ConnectingPillStrip: View {
+    let label: String
+    @State private var dimmed: Bool = false
+
+    var body: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Circle()
+                .fill(DarkFantasyTheme.gold)
+                .frame(width: 6, height: 6)
+                .opacity(dimmed ? 0.3 : 1.0)
+                .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 4, y: 0)
+            Text(label.uppercased())
+                .font(DarkFantasyTheme.badge)
+                .tracking(1.5)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            Capsule()
+                .fill(DarkFantasyTheme.bgPrimary.opacity(0.94))
+        )
+        .overlay(
+            Capsule()
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                dimmed = true
+            }
+        }
+    }
+}
+
+struct AvatarSkeletonFill: View {
+    @State private var pulsed: Bool = false
+    var body: some View {
+        DarkFantasyTheme.bgSecondary
+            .opacity(pulsed ? 0.55 : 0.85)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                    pulsed = true
+                }
+            }
     }
 }
 

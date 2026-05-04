@@ -1,0 +1,1036 @@
+<!doctype html>
+<!--
+  Hexbound — Combat UI v3 Declutter Prototype
+  Author: Cowork session 2026-05-03
+  Goal: simplify the combat screens (loading, strike, reveal, end) and
+        replace the "3 preloaders" cold-start with one optimistic shell.
+  Status: discussion prototype — not Swift truth, not Figma truth.
+  UI strings: English (Hexbound is an English-language product).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hexbound — Combat v3.1 Mobile Readable</title>
+<style>
+  :root {
+    --bg: #0F0F1A;
+    --bg-screen: #0A0A12;
+    --surface: #1A1A2E;
+    --surface-2: #252538;
+    --surface-3: #2E2E45;
+    --gold: #D4A537;
+    --gold-soft: rgba(212,165,55,.18);
+    --gold-dim: #8C6D25;
+    --danger: #E63946;
+    --danger-soft: rgba(230,57,70,.16);
+    --success: #5FBF5F;
+    --info: #6BB3E8;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6E6E80;
+    --border-subtle: #2A2A3C;
+    --border-strong: #3A3A52;
+    --space-2xs: 4px;
+    --space-xs: 6px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-lg: 16px;
+    --space-xl: 24px;
+    --space-2xl: 32px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+    --font-h: "Oswald","Impact",system-ui,sans-serif;
+    --font-b: "Inter",-apple-system,system-ui,sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html,body { height:100%; }
+  body {
+    font-family: var(--font-b);
+    background:
+      radial-gradient(1200px 800px at 20% 10%, #1b1b32 0%, transparent 60%),
+      radial-gradient(900px 700px at 90% 90%, #241a2c 0%, transparent 60%),
+      var(--bg-screen);
+    color: var(--text-primary);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+    gap: 24px;
+  }
+
+  h1 {
+    font-family: var(--font-h);
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  h1 small {
+    display: block;
+    font-family: var(--font-b);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-transform: none;
+  }
+  .legend {
+    max-width: 880px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .legend strong { color: var(--gold); font-weight: 600; }
+
+  .stage {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .col-label {
+    font-family: var(--font-h);
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .col-sublabel {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* phone shell — sized to ~390pt wide so small text is honestly tested */
+  .phone {
+    width: 390px;
+    height: 820px;
+    border-radius: 44px;
+    background: var(--bg);
+    border: 8px solid #0a0a12;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 0 1px #2a2a3a;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .notch {
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: #000; border-radius: 18px; z-index: 50;
+  }
+  .statusbar {
+    display: flex; justify-content: space-between;
+    padding: 12px 22px 0;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-primary);
+    z-index: 40; position: relative;
+  }
+  .screen {
+    position: absolute; inset: 0;
+    padding: 50px 18px 20px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+
+  /* generic chrome — bumped sizes so every label is honestly readable on iPhone */
+  .label {
+    font-size: 12px; letter-spacing: 0.12em;
+    color: var(--text-tertiary); text-transform: uppercase;
+    font-weight: 600;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .pill.gold { color: var(--gold); border-color: rgba(212,165,55,.45); background: var(--gold-soft); }
+  .pill.danger { color: var(--danger); border-color: rgba(230,57,70,.45); background: var(--danger-soft); }
+  .pill.success { color: var(--success); border-color: rgba(95,191,95,.45); background: rgba(95,191,95,.14); }
+
+  .row { display: flex; align-items: center; gap: var(--space-sm); }
+  .row.between { justify-content: space-between; }
+
+  /* duel header — bigger avatar, bigger name + clear HP fraction */
+  .duel {
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);
+  }
+  .fighter {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .fighter .side {
+    font-family: var(--font-h); font-size: 13px; letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .fighter.you .side { color: var(--success); }
+  .fighter.foe .side { color: var(--danger); }
+  .avatar {
+    width: 96px; height: 96px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(180deg, #2a2a3a 0%, #1a1a28 100%);
+    border: 2px solid var(--border-strong);
+    overflow: hidden;
+    position: relative;
+  }
+  .fighter.you .avatar { border-color: var(--success); }
+  .fighter.foe .avatar { border-color: var(--danger); }
+  .avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+    image-rendering: pixelated;
+  }
+  .name {
+    font-family: var(--font-h);
+    font-size: 17px; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .meta {
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .hp {
+    width: 100%;
+    height: 9px;
+    background: #14141f;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+  }
+  .hp .fill { height: 100%; border-radius: 4px; }
+  .you .hp .fill { background: linear-gradient(90deg,#3da33d,var(--success)); }
+  .foe .hp .fill { background: linear-gradient(90deg,#a33d3d,var(--danger)); }
+  .hp-num {
+    font-family: var(--font-h); font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .you .hp-num { color: var(--success); }
+  .foe .hp-num { color: var(--danger); }
+
+  /* skeleton shimmer (used by loading screen) */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1a28 25%, #2a2a3a 50%, #1a1a28 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .opacity-fade { animation: fadeIn .5s ease-out; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+  /* connecting strip (replaces the 3 spinners) */
+  .connecting {
+    position: absolute;
+    top: 52px; left: 18px; right: 18px;
+    background: rgba(15,15,26,.94);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-secondary);
+    z-index: 20;
+  }
+  .connecting .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(212,165,55,.6);
+    animation: pulseDot 1.2s ease-in-out infinite;
+  }
+  @keyframes pulseDot {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* zone matrix — bigger tiles, ONE clear stat per tile, words not jargon */
+  .matrix {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+  .matrix .row-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-family: var(--font-h);
+    font-size: 14px; letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .matrix .row-head .lbl-atk { color: var(--danger); }
+  .matrix .row-head .lbl-def { color: var(--info); }
+  .matrix .row-head .hint {
+    font-family: var(--font-b);
+    font-size: 11px; letter-spacing: 0.04em; text-transform: none;
+    color: var(--text-tertiary);
+  }
+  .matrix .zones {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .zone {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+    color: var(--text-primary);
+  }
+  .zone .glyph { font-size: 24px; line-height: 1; }
+  .zone .z-name {
+    font-family: var(--font-h); font-size: 14px; letter-spacing: 0.1em;
+  }
+  /* single big stat — the only number on the tile */
+  .zone .big-stat {
+    font-family: var(--font-h); font-size: 16px;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+  }
+  /* small text label under the stat — explains in WORDS not codes */
+  .zone .stat-label {
+    font-size: 10px; color: var(--text-tertiary);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .zone.sel { background: var(--gold-soft); border-color: var(--gold); }
+  .zone.sel .big-stat { color: var(--gold); }
+  .zone.def.sel { background: rgba(107,179,232,.12); border-color: var(--info); }
+  .zone.def.sel .big-stat { color: var(--info); }
+
+  /* active skills row — bigger slots so the cooldown is readable */
+  .actives {
+    display: flex; gap: 10px; justify-content: center;
+  }
+  .slot {
+    width: 56px; height: 56px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    color: var(--text-secondary);
+    position: relative;
+  }
+  .slot.queued {
+    background: rgba(95,191,95,.14);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .slot.cd {
+    color: var(--text-tertiary);
+    opacity: 0.55;
+  }
+  .slot .cd-badge {
+    position: absolute; bottom: -6px; right: -6px;
+    min-width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    border: 2px solid var(--bg);
+    color: var(--gold);
+    font-family: var(--font-h);
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+  }
+
+  /* enemy intent dot strip (compact, on enemy avatar) */
+  .intent-strip {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .intent-pip {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+  }
+  .intent-pip.hot { background: var(--danger-soft); border-color: var(--danger); animation: hotPulse 1.2s ease-in-out infinite; }
+  @keyframes hotPulse { 0%,100% { box-shadow: 0 0 0 rgba(230,57,70,0); } 50% { box-shadow: 0 0 8px rgba(230,57,70,.6); } }
+
+  /* CTA bar — taller buttons, 17px label so the action is unmissable */
+  .ctabar {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: auto;
+  }
+  .btn {
+    padding: 18px 0;
+    border-radius: var(--radius-md);
+    font-family: var(--font-h); font-size: 17px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; text-align: center;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-secondary);
+    position: relative; overflow: hidden;
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%);
+    color: #1A1A2E;
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(212,165,55,.3);
+  }
+  .btn.danger {
+    background: linear-gradient(180deg, var(--danger) 0%, #8a2230 100%);
+    color: white;
+    border-color: var(--danger);
+    box-shadow: 0 0 16px rgba(230,57,70,.3);
+  }
+  .btn .timer-arc {
+    position: absolute; left: 0; bottom: 0; height: 3px;
+    background: rgba(255,255,255,.55);
+    width: 60%;
+  }
+
+  /* round chip — bigger, reads at glance */
+  .round-chip {
+    align-self: center;
+    padding: 6px 16px;
+    background: rgba(212,165,55,.1);
+    border: 1px solid rgba(212,165,55,.35);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-h);
+    font-size: 14px; letter-spacing: 0.18em; color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  /* reveal verdict — damage is the hero, everything else supports */
+  .verdict {
+    background: linear-gradient(180deg, rgba(95,191,95,.18) 0%, rgba(95,191,95,.04) 100%);
+    border: 1px solid rgba(95,191,95,.45);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px;
+    text-align: center;
+    color: var(--success);
+  }
+  .verdict.outread {
+    background: linear-gradient(180deg, rgba(230,57,70,.18) 0%, rgba(230,57,70,.04) 100%);
+    border-color: rgba(230,57,70,.45);
+    color: var(--danger);
+  }
+  .verdict .v-title {
+    font-family: var(--font-h); font-size: 22px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .verdict .v-sub {
+    font-size: 13px; color: var(--text-secondary);
+    margin-top: 4px; letter-spacing: 0.04em;
+  }
+  .exchange {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 12px;
+    margin-top: 16px;
+  }
+  .exchange .col-mini {
+    display: flex; flex-direction: column; gap: 6px; align-items: center;
+  }
+  .exchange .who {
+    font-family: var(--font-h); font-size: 13px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .exchange .col-mini.you .who { color: var(--success); }
+  .exchange .col-mini.foe .who { color: var(--danger); }
+  .exchange .vs {
+    font-family: var(--font-h); font-size: 16px; color: var(--text-tertiary);
+    letter-spacing: 0.16em;
+  }
+  .mini-pill {
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-h);
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid;
+    display: inline-flex; gap: 6px; align-items: center;
+    min-width: 96px; justify-content: center;
+  }
+  .mini-pill.atk { color: var(--danger); border-color: rgba(230,57,70,.45); }
+  .mini-pill.def { color: var(--info); border-color: rgba(107,179,232,.45); }
+  .mini-pill .pip-prefix { color: var(--text-tertiary); font-size: 10px; }
+  .dmg-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 16px;
+  }
+  .dmg-cell {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 8px; text-align: center;
+  }
+  /* huge damage number + clear English label below */
+  .dmg-cell .v {
+    font-family: var(--font-h); font-size: 34px; line-height: 1.1;
+  }
+  .dmg-cell .l {
+    font-size: 12px; letter-spacing: 0.08em;
+    color: var(--text-secondary); margin-top: 4px;
+  }
+  .dmg-cell.you .v { color: var(--success); }
+  .dmg-cell.foe .v { color: var(--danger); }
+
+  /* end-of-fight summary — Victory + Rating big, stats clear, log roomy */
+  .victory {
+    text-align: center; margin-top: 8px;
+  }
+  .victory .vt {
+    font-family: var(--font-h); font-size: 40px;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(212,165,55,.4);
+  }
+  .victory .rating-row {
+    margin-top: 6px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: rgba(212,165,55,.12);
+    border: 1px solid rgba(212,165,55,.35);
+  }
+  .victory .rating-delta {
+    font-family: var(--font-h);
+    font-size: 18px; color: var(--success);
+  }
+  .victory .rating-label {
+    font-size: 12px; color: var(--text-secondary);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .victory .vsub {
+    font-size: 12px; color: var(--text-tertiary);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px;
+  }
+  .stats4 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+  .stat .l { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+  .stat .v { font-family: var(--font-h); font-size: 22px; margin-top: 4px; }
+  .stat.you .v { color: var(--success); }
+  .stat.foe .v { color: var(--danger); }
+  .stat.gold .v { color: var(--gold); }
+  .rounds {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+  }
+  .rounds .header {
+    padding: 10px 14px;
+    background: rgba(212,165,55,.06);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .rounds .scroll {
+    overflow-y: auto;
+    padding: 8px 10px;
+  }
+  .rline {
+    display: grid; grid-template-columns: 40px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 10px 4px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--border-subtle);
+  }
+  .rline:last-child { border-bottom: none; }
+  .rline .num {
+    font-family: var(--font-h); font-size: 14px;
+    color: var(--text-tertiary); letter-spacing: 0.06em;
+  }
+  .rline .desc { color: var(--text-secondary); line-height: 1.35; }
+  .rline .desc b.you { color: var(--success); font-weight: 700; }
+  .rline .desc b.foe { color: var(--danger); font-weight: 700; }
+  .rline .delta {
+    font-family: var(--font-h);
+    font-size: 16px; letter-spacing: 0.04em;
+  }
+  .rline .delta.pos { color: var(--success); }
+  .rline .delta.neg { color: var(--danger); }
+
+  /* loading variant — duel skeleton already in place */
+  .loading-shell .name { width: 60%; height: 12px; background: var(--surface-2); border-radius: 3px; }
+  .loading-shell .meta { width: 80%; height: 10px; background: var(--surface-2); border-radius: 3px; margin-top: 4px; }
+
+  /* after annotations */
+  .after-note {
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .after-note b { color: var(--text-primary); }
+
+  /* "before" thumbnail inset */
+  .before-thumb {
+    width: 360px;
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .before-thumb b { color: var(--danger); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>
+  Hexbound — Combat v3.1 Mobile Readable
+  <small>v3 declutter + bigger type + plain-English labels. Phones rendered at ~390pt.</small>
+</h1>
+
+<div class="legend">
+  <strong>Round 2 of feedback.</strong> Same 4 phases, but every number
+  on screen now has room to breathe. Tile stats are <em>one</em> big
+  percentage with a word-label below ("+10% Damage" instead of the
+  cryptic "OFF +10% · CRIT +5%"). HP fractions, round chips, mini-pills,
+  damage cells, stat cards — all bumped to 12-22px so they actually
+  read on iPhone. Active-skill cooldowns sit on a 22-px circular badge
+  instead of a 9-px corner number.
+  Crit chance, dodge bonus, and other secondary modifiers move into a
+  long-press tooltip — they exist, they matter, but they don't fight
+  the primary stat for attention.
+</div>
+
+<div class="stage">
+
+  <!-- ============================================================
+       PHASE 1 — LOADING (Optimistic Shell, 1 spinner max)
+       ============================================================ -->
+  <div class="col">
+    <div class="col-label">1 · Loading</div>
+    <div class="col-sublabel">Optimistic, &lt; 200 ms perceived</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>10:48</span><span>● ● ●</span></div>
+      <div class="screen">
+
+        <!-- single connecting strip replaces 3 spinners -->
+        <div class="connecting">
+          <span class="dot"></span>
+          <span>Connecting · round 1 incoming</span>
+        </div>
+
+        <!-- duel header rendered immediately from cached pre-fight data -->
+        <div class="duel">
+          <div class="fighter you">
+            <span class="side">You</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a3a52/d4a537?text=DEGON" /></div>
+            <div class="name">DEGON</div>
+            <div class="meta">Lv.12 Warrior</div>
+            <div class="hp"><div class="fill" style="width:100%"></div></div>
+            <div class="hp-num">748 / 748</div>
+          </div>
+          <div class="fighter foe">
+            <span class="side">Enemy</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a2a2a/e63946?text=IRON" /></div>
+            <div class="name">IRONFANG</div>
+            <div class="meta">Lv.6 Warrior</div>
+            <div class="hp"><div class="fill" style="width:100%"></div></div>
+            <div class="hp-num">176 / 176</div>
+          </div>
+        </div>
+
+        <div class="round-chip">Round 1 · preparing</div>
+
+        <!-- skeleton matrix (immediate layout, no jump when data arrives) -->
+        <div class="matrix">
+          <div class="row-head">
+            <span class="lbl-atk">Attack</span>
+            <span class="hint">Where you'll swing</span>
+          </div>
+          <div class="zones">
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+          </div>
+          <div class="row-head">
+            <span class="lbl-def">Defend</span>
+            <span class="hint">Where you'll guard</span>
+          </div>
+          <div class="zones">
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+            <div class="zone"><div class="skeleton" style="width:24px;height:24px;border-radius:50%"></div><div class="skeleton" style="width:48px;height:14px"></div><div class="skeleton" style="width:64px;height:14px"></div></div>
+          </div>
+        </div>
+
+        <div class="ctabar">
+          <button class="btn" disabled style="opacity:.4">Skip</button>
+          <button class="btn primary" disabled style="opacity:.5">Loading…</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="before-thumb">
+      <b>Before:</b> 3 stacked loaders (route shell → "PREPARING DUEL" big →
+      "PREPARING DUEL" inline → 2× avatar spinners). Each one fades in/out
+      separately, layout jumps twice between them.
+    </div>
+    <div class="after-note">
+      <b>After:</b> Render full duel layout from cached pre-fight data
+      (we already know <b>characterId, opponentId, attackerMaxHp,
+      defenderMaxHp, opponent profile from opponent screen</b>). Show one
+      thin "Connecting" strip up top instead. Matrix area uses skeleton
+      shimmer until <code>/match/start</code> resolves. Zero layout jump.
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 2 — STRIKE (Choose Your Strike, decluttered)
+       ============================================================ -->
+  <div class="col">
+    <div class="col-label">2 · Strike</div>
+    <div class="col-sublabel">One scroll. No "stance echo".</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>10:47</span><span>● ● ●</span></div>
+      <div class="screen">
+
+        <!-- compact duel header — we drop the redundant STANCE chip stack -->
+        <div class="duel">
+          <div class="fighter you">
+            <span class="side">You</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a3a52/d4a537?text=DEGON" /></div>
+            <div class="name">DEGON</div>
+            <div class="meta">Lv.12 Warrior</div>
+            <div class="hp"><div class="fill" style="width:93%"></div></div>
+            <div class="hp-num">694 / 748</div>
+          </div>
+          <div class="fighter foe">
+            <span class="side">Enemy</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a2a2a/e63946?text=IRON" /></div>
+            <div class="name">IRONFANG</div>
+            <div class="meta">Lv.6 Warrior</div>
+            <div class="hp"><div class="fill" style="width:29%"></div></div>
+            <div class="hp-num">51 / 176</div>
+            <!-- enemy actives as compact dots; one is hot (about to fire) -->
+            <div class="intent-strip" title="Enemy actives — one armed">
+              <div class="intent-pip"></div>
+              <div class="intent-pip hot"></div>
+              <div class="intent-pip"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- single round + intent line (replaces "STANCE / OFF +10%" chip dupes) -->
+        <div class="row between">
+          <span class="round-chip">Round 4</span>
+          <span class="pill danger">Enemy may aim · Head</span>
+        </div>
+
+        <!-- core matrix: ATK row + DEF row.
+             ONE clear stat per tile + a plain-English label.
+             Damage % shown in big number; secondary like crit moved to long-press tooltip. -->
+        <div class="matrix">
+          <div class="row-head">
+            <span class="lbl-atk">Attack</span>
+            <span class="hint">Tap to choose</span>
+          </div>
+          <div class="zones">
+            <div class="zone sel">
+              <div class="glyph">🎯</div>
+              <div class="z-name">Head</div>
+              <div class="big-stat">+10%</div>
+              <div class="stat-label">Damage</div>
+            </div>
+            <div class="zone">
+              <div class="glyph">🛡️</div>
+              <div class="z-name">Chest</div>
+              <div class="big-stat">+5%</div>
+              <div class="stat-label">Damage</div>
+            </div>
+            <div class="zone">
+              <div class="glyph">👟</div>
+              <div class="z-name">Legs</div>
+              <div class="big-stat">+2%</div>
+              <div class="stat-label">Damage</div>
+            </div>
+          </div>
+          <div class="row-head">
+            <span class="lbl-def">Defend</span>
+            <span class="hint">Tap to choose</span>
+          </div>
+          <div class="zones">
+            <div class="zone def">
+              <div class="glyph">🎯</div>
+              <div class="z-name">Head</div>
+              <div class="big-stat">+8%</div>
+              <div class="stat-label">Dodge chance</div>
+            </div>
+            <div class="zone def sel">
+              <div class="glyph">🛡️</div>
+              <div class="z-name">Chest</div>
+              <div class="big-stat">−10%</div>
+              <div class="stat-label">Damage taken</div>
+            </div>
+            <div class="zone def">
+              <div class="glyph">👟</div>
+              <div class="z-name">Legs</div>
+              <div class="big-stat">−5%</div>
+              <div class="stat-label">Damage taken</div>
+            </div>
+          </div>
+
+          <!-- actives — bigger slots, cooldown on a clearly visible badge -->
+          <div class="row between" style="margin-top:4px">
+            <span class="label">Actives</span>
+            <div class="actives">
+              <div class="slot cd">⚔️<span class="cd-badge">2</span></div>
+              <div class="slot cd">⚔️<span class="cd-badge">2</span></div>
+              <div class="slot queued">➕</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctabar">
+          <button class="btn">Skip</button>
+          <button class="btn primary">
+            Strike
+            <span class="timer-arc"></span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="before-thumb">
+      <b>Before:</b> Stance chip stack on each fighter ("HEAD OFF +10%",
+      "CHEST DEF +10%") repeats below in the matrix. Timer is a separate
+      ornament. ACTIVE SKILLS has its own section heading + 3 big tiles.
+      Total: ~7 visual blocks competing for attention.
+    </div>
+    <div class="after-note">
+      <b>After:</b> 4 visual blocks — duel head, round + intent, matrix,
+      CTA bar. Stance is shown by the gold/blue selection in the matrix
+      itself (the matrix IS the stance). Actives moved INTO the matrix
+      card as a compact 3-slot row. Timer integrated into the STRIKE
+      button as a thin progress bar at the bottom edge.
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 3 — REVEAL (one verdict, one exchange, one damage row)
+       ============================================================ -->
+  <div class="col">
+    <div class="col-label">3 · Reveal</div>
+    <div class="col-sublabel">No nested log card.</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>10:49</span><span>● ● ●</span></div>
+      <div class="screen">
+
+        <div class="duel">
+          <div class="fighter you">
+            <span class="side">You</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a3a52/d4a537?text=DEGON" /></div>
+            <div class="name">DEGON</div>
+            <div class="meta">Lv.12 Warrior</div>
+            <div class="hp"><div class="fill" style="width:100%"></div></div>
+            <div class="hp-num">748 / 748</div>
+          </div>
+          <div class="fighter foe">
+            <span class="side">Enemy</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a2a2a/e63946?text=IRON" /></div>
+            <div class="name">IRONMARK</div>
+            <div class="meta">Lv.6 Mage</div>
+            <div class="hp"><div class="fill" style="width:69%"></div></div>
+            <div class="hp-num">118 / 171</div>
+          </div>
+        </div>
+
+        <div class="row between">
+          <span class="round-chip">Round 2</span>
+          <span class="label">Reveal</span>
+        </div>
+
+        <!-- single verdict banner (no second nested card)
+             Damage cells are the hero — 34px gold-tinted numbers with
+             plain English labels. Pills explain "what each side picked". -->
+        <div class="verdict">
+          <div class="v-title">Struck Through</div>
+          <div class="v-sub">Both landed hits this round</div>
+
+          <div class="exchange">
+            <div class="col-mini you">
+              <span class="who">You</span>
+              <span class="mini-pill atk">Hit · Chest</span>
+              <span class="mini-pill def">Guard · Chest</span>
+            </div>
+            <span class="vs">VS</span>
+            <div class="col-mini foe">
+              <span class="who">Enemy</span>
+              <span class="mini-pill atk">Hit · Legs</span>
+              <span class="mini-pill def">Guard · Legs</span>
+            </div>
+          </div>
+
+          <div class="dmg-row">
+            <div class="dmg-cell you"><div class="v">+53</div><div class="l">Damage you dealt</div></div>
+            <div class="dmg-cell foe"><div class="v">−22</div><div class="l">Damage you took</div></div>
+          </div>
+        </div>
+
+        <div class="row between" style="margin-top:auto">
+          <span class="label">Next round in 0.5 s</span>
+          <span class="label" style="color:var(--gold)">Tap to skip ▸</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="before-thumb">
+      <b>Before:</b> "STRUCK THROUGH" banner + nested ATK/DEF pills + a
+      separate ROUND 1 EXCHANGE log row + COUNTER label + sticky bottom
+      bar with "YOUR CHOICE / ATK CHEST · DEF CHEST". Two layers of
+      "what just happened" stacked on each other.
+    </div>
+    <div class="after-note">
+      <b>After:</b> One verdict card. Inside it: who chose what (4
+      pills) → damage delta (2 cells). Auto-advances after 0.5 s; tap
+      anywhere to skip. No bottom CTA needed — there's nothing to
+      decide right now.
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 4 — END (clean victory + collapsed rounds)
+       ============================================================ -->
+  <div class="col">
+    <div class="col-label">4 · End</div>
+    <div class="col-sublabel">Hero stat first, log second.</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>10:48</span><span>● ● ●</span></div>
+      <div class="screen">
+
+        <div class="duel" style="grid-template-columns:1fr 1fr">
+          <div class="fighter you">
+            <span class="side">You</span>
+            <div class="avatar"><img alt="" src="https://placehold.co/160x160/3a3a52/d4a537?text=DEGON" /></div>
+            <div class="name">DEGON</div>
+            <div class="hp"><div class="fill" style="width:90%"></div></div>
+            <div class="hp-num">671 / 748</div>
+          </div>
+          <div class="fighter foe">
+            <span class="side">Enemy</span>
+            <div class="avatar" style="opacity:.55"><img alt="" src="https://placehold.co/160x160/3a2a2a/e63946?text=IRON" /></div>
+            <div class="name" style="opacity:.55">IRONFANG</div>
+            <div class="hp"><div class="fill" style="width:0%"></div></div>
+            <div class="hp-num">0 / 176</div>
+          </div>
+        </div>
+
+        <div class="victory">
+          <div class="vt">Victory</div>
+          <div class="rating-row">
+            <span class="rating-delta">+25</span>
+            <span class="rating-label">Rating</span>
+          </div>
+          <div class="vsub">2 rounds · 1,420 → 1,445</div>
+        </div>
+
+        <div class="stats4">
+          <div class="stat you"><div class="l">Damage dealt</div><div class="v">233</div></div>
+          <div class="stat foe"><div class="l">Damage taken</div><div class="v">77</div></div>
+          <div class="stat"><div class="l">Hits landed</div><div class="v">4 / 5</div></div>
+          <div class="stat gold"><div class="l">Best hit</div><div class="v">72 · R3</div></div>
+        </div>
+
+        <div class="rounds">
+          <div class="header">
+            <span>Round log</span>
+            <span style="color:var(--text-tertiary)">2 rounds</span>
+          </div>
+          <div class="scroll">
+            <div class="rline">
+              <span class="num">R1</span>
+              <span class="desc"><b class="you">You</b> hit chest for 53 · <b class="foe">enemy</b> hit head for 15</span>
+              <span class="delta pos">+38</span>
+            </div>
+            <div class="rline">
+              <span class="num">R2</span>
+              <span class="desc"><b class="you">You</b> swung at head — dodged · <b class="foe">enemy</b> hit chest for 13</span>
+              <span class="delta neg">−13</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctabar" style="grid-template-columns: 1fr">
+          <button class="btn primary">Continue</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="before-thumb">
+      <b>Before:</b> Big duel head, then 4-stat grid, then full round
+      log expanded with ornamental cards per round (icon + ATK row +
+      COUNTER label + ATK row). Round log dominates the screen and
+      pushes CONTINUE down past the fold on small phones.
+    </div>
+    <div class="after-note">
+      <b>After:</b> Hero "Victory" headline + 4 stats above the fold.
+      Round log is a single scrollable list with one line per round
+      (who hit whom, delta on the right). CONTINUE is always pinned
+      at the bottom and reachable on iPhone SE.
+    </div>
+  </div>
+
+</div>
+
+<div class="legend" style="margin-top: 16px">
+  <strong>What carries over from Variant B2.</strong>
+  Side-by-side portraits, gold STRIKE primary on the right, ghost SKIP
+  on the left, opponent actives visible as a 3-icon strip on the enemy
+  card, intent hint ("Likely: Head").
+  <br><br>
+  <strong>What's new vs B2.</strong>
+  (1) Stance chip stack removed — selection in the matrix is the stance.
+  (2) Active skills moved INTO the matrix card, not a separate section.
+  (3) Reveal collapsed from 2 nested cards into 1 verdict card with the
+  exchange + damage inline.
+  (4) End screen flips priority — Victory + stats first, log second,
+  CONTINUE always pinned.
+  (5) Loading replaces 3 sequential spinners with 1 skeleton shell that
+  is pre-painted from cached pre-fight data; only the matrix shimmers.
+</div>
+
+</body>
+</html>
