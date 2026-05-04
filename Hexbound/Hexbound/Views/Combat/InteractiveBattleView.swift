@@ -457,11 +457,13 @@ private struct DuelFighterCard: View {
     private var tileSize: CGFloat { compact ? 80 : 130 }
 
     var body: some View {
+        // Compact duel header (combat v3.1 — 2026-05-03 Variant B):
+        //   • YOU/ENEMY moved from a dedicated row above the avatar into a
+        //     small corner ribbon on the avatar itself (top-leading).
+        //   • HP fraction "currentHp / maxHp" moved INSIDE the bar via
+        //     `showTextInside: true` instead of a standalone Text below.
+        // Net effect: 2 fewer rows per fighter, ~30pt vertical savings.
         VStack(spacing: LayoutConstants.spaceXS) {
-            Text(sideLabel)
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(borderColor)
-
             avatarTile
                 // Force a true square — width AND height locked.
                 .frame(width: tileSize, height: tileSize)
@@ -470,6 +472,17 @@ private struct DuelFighterCard: View {
                         .stroke(borderColor, lineWidth: 2)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+                // YOU / ENEMY corner ribbon — replaces the old dedicated
+                // side-label row above the avatar. Hidden in `.summary`
+                // because the post-fight log already has its own framing
+                // and the ribbon would compete with the verdict chrome.
+                .overlay(alignment: .topLeading) {
+                    if !compact {
+                        SideLabelRibbon(text: sideLabel, color: borderColor)
+                            .padding(LayoutConstants.spaceXS)
+                            .allowsHitTesting(false)
+                    }
+                }
                 // Hit flash — mirrors CombatDetailView
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
@@ -502,23 +515,19 @@ private struct DuelFighterCard: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(1)
 
+            // HP bar with fraction overlaid inside (showTextInside: true).
+            // The standalone `Text("\(currentHp) / \(maxHp)")` row that
+            // used to sit beneath the bar is gone — that information is
+            // now rendered by HPBarView itself when HP < 100%. At full HP
+            // the bar reads as obviously full and the missing fraction
+            // is acceptable.
             HPBarView(
                 currentHp: currentHp,
                 maxHp: maxHp,
                 size: .compact,
-                showTextInside: false,
+                showTextInside: true,
                 pulseOnCritical: true
             )
-
-            // HP numeric readout uses the side-specific border color so a
-            // quick glance at the number alone already tells you whose HP
-            // you're reading. Low-HP tint overrides with `hpBlood` to warn
-            // regardless of side when either fighter is near death.
-            Text("\(currentHp) / \(maxHp)")
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(hpTextColor)
-                .contentTransition(.numericText())
-                .animation(.easeOut(duration: 0.25), value: currentHp)
         }
         .opacity(outcomeOpacity)
         .shadow(color: outcomeShadowColor, radius: outcomeShadowRadius, y: 0)
@@ -529,14 +538,10 @@ private struct DuelFighterCard: View {
         outcomeRole == .loser ? 0.72 : 1.0
     }
 
-    /// HP text color. Side-tinted until HP drops low, then flips to
-    /// blood red so the "I'm about to die" signal reads the same for
-    /// both fighters.
-    private var hpTextColor: Color {
-        let ratio = maxHp > 0 ? Double(currentHp) / Double(maxHp) : 0
-        if ratio <= 0.25 { return DarkFantasyTheme.hpBlood }
-        return borderColor
-    }
+    // Note: the standalone hpTextColor helper was removed when the HP
+    // fraction moved inside the bar (combat v3.1 — Variant B). HPBarView
+    // owns its own color treatment now (canonical gradient + critical
+    // pulse), so the side-tinted/hpBlood text logic is no longer needed.
 
     private var outcomeShadowColor: Color {
         outcomeRole == .winner ? DarkFantasyTheme.gold.opacity(0.4) : .clear
@@ -1070,6 +1075,29 @@ struct AvatarSkeletonFill: View {
                     pulsed = true
                 }
             }
+    }
+}
+
+/// Tiny corner ribbon overlaid on the duel-card avatar. Replaces the old
+/// dedicated YOU/ENEMY row (combat v3.1 — Variant B). Uses side-tinted
+/// fill + white text so it reads against any portrait. Sized to land
+/// inside the LayoutConstants.spaceXS overlay padding without crowding
+/// the portrait subject.
+struct SideLabelRibbon: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(DarkFantasyTheme.badge)
+            .tracking(1.5)
+            .foregroundStyle(.white)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(color.opacity(0.92))
+            )
     }
 }
 
