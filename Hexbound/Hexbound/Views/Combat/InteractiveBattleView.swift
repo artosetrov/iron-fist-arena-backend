@@ -46,6 +46,7 @@ struct InteractiveBattleView: View {
             VStack(spacing: LayoutConstants.spaceMD) {
                 duelHeader
                 roundStrip
+                intentLine
                 InteractiveMicroLogView(entries: vm.microLogEntries)
                 Spacer(minLength: 0)
                 predictPanel
@@ -136,6 +137,40 @@ struct InteractiveBattleView: View {
         }
     }
 
+    // MARK: - Intent Line
+    //
+    // Single-line tell about the opponent's likely next attack zone.
+    // Combat v3.1 (2026-05-03): replaces the per-side StanceBonusChipStack
+    // that used to render the same heuristic as a "predicted" chip under
+    // the enemy avatar. One pill, plain English, only visible during
+    // `.predict` and only when the heuristic has enough rounds to be
+    // confident (see `InteractiveBattleViewModel.intentMinimumRounds`).
+
+    @ViewBuilder
+    private var intentLine: some View {
+        if vm.phase.isPredicting, let likely = vm.likelyOpponentAttack {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Spacer(minLength: 0)
+                Text("Enemy may aim · \(likely.rawValue.capitalized)".uppercased())
+                    .font(DarkFantasyTheme.badge)
+                    .tracking(1.5)
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                    .background(
+                        Capsule()
+                            .fill(DarkFantasyTheme.danger.opacity(0.12))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(DarkFantasyTheme.danger.opacity(0.4), lineWidth: 1)
+                    )
+                Spacer(minLength: 0)
+            }
+            .transition(.opacity)
+        }
+    }
+
     private var phaseTagLabel: String {
         switch vm.phase {
         case .predict:   return "CHOOSE YOUR STRIKE"
@@ -178,17 +213,12 @@ struct InteractiveBattleView: View {
                     HapticManager.medium()
                     vm.skipAndSubmit()
                 }
-                // Player stance always resolves to a confirmed selection:
-                // the VM defaults to .chest and the picker keeps a current
-                // choice at all times, so both chips are always .confirmed.
-                // Hidden in `.summary` — the post-battle log is the focus there
-                // and the stance chips add noise without informing the recap.
-                if !vm.phase.isSummary {
-                    StanceBonusChipStack(
-                        attackMode: .confirmed(vm.selectedAttackZone),
-                        defendMode: .confirmed(vm.selectedDefendZone)
-                    )
-                }
+                // Combat v3.1: removed StanceBonusChipStack here. The
+                // matrix tile gold-highlight already shows the player's
+                // current Hit/Guard zones; rendering the same info as
+                // chips under the avatar was a duplicate (and the chip
+                // codes "OFF +10%" / "DEF +10%" duplicated the new
+                // word-labeled stat on the matrix tiles too).
                 if let playerLabel = vm.lastActiveFiredLabel {
                     ActiveFireBanner(actionType: playerLabel, isOpponent: false)
                         .id("you-fire-\(playerLabel)")
@@ -216,20 +246,11 @@ struct InteractiveBattleView: View {
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
                 }
-                // Opponent chips cover three phases:
-                //   • `.predict` + last strike revealed          → confirmed (last round's zones)
-                //   • `.predict` before any reveal + history OK  → predicted ATK (heuristic), hidden DEF
-                //   • `.reveal` / `.resolving`                   → confirmed (fresh reveal)
-                // We don't know the opponent's upcoming DEF from the
-                // intent heuristic alone, so DEF stays hidden during
-                // predict. ATK is where the tell lives.
-                // Hidden in `.summary` — see player-side comment above.
-                if !vm.phase.isSummary {
-                    StanceBonusChipStack(
-                        attackMode: opponentAttackChipMode,
-                        defendMode: opponentDefendChipMode
-                    )
-                }
+                // Combat v3.1: removed StanceBonusChipStack on the
+                // opponent side too. The intent-tell ("Enemy may aim
+                // Head") moved to a single pill above the predict panel,
+                // and the post-reveal opponent zones are visible inside
+                // the round verdict card.
                 if !vm.opponentActives.isEmpty {
                     OpponentActivesPreview(actives: vm.opponentActives)
                 }
@@ -255,31 +276,13 @@ struct InteractiveBattleView: View {
         .animation(.easeInOut(duration: 0.25), value: vm.lastOpponentZones?.defend)
     }
 
-    // MARK: - Opponent chip mode derivation
-
-    /// ATK chip for the opponent side. Priority order:
-    ///   1. If `lastOpponentZones` is known (post-reveal)  → confirmed
-    ///   2. Else if predicting and we have a heuristic tell → predicted
-    ///   3. Else → hidden
-    private var opponentAttackChipMode: StanceBonusChip.Mode {
-        if let zones = vm.lastOpponentZones {
-            return .confirmed(zones.attack)
-        }
-        if vm.phase.isPredicting, let likely = vm.likelyOpponentAttack {
-            return .predicted(likely)
-        }
-        return .hidden
-    }
-
-    /// DEF chip for the opponent side. We never "predict" defense —
-    /// the tell lives on attack only. During predict: hidden.
-    /// After reveal: confirmed.
-    private var opponentDefendChipMode: StanceBonusChip.Mode {
-        if let zones = vm.lastOpponentZones {
-            return .confirmed(zones.defend)
-        }
-        return .hidden
-    }
+    // Note (combat v3.1): the per-side StanceBonusChipStack was removed
+    // 2026-05-03 because it duplicated information already shown in the
+    // matrix selection. The chip-mode derivation helpers that used to
+    // live here (`opponentAttackChipMode`, `opponentDefendChipMode`) are
+    // gone with it. The single surviving "intent tell" — "Enemy may
+    // aim · {zone}" — is rendered as a pill in `intentLine` above the
+    // predict panel and reads `vm.likelyOpponentAttack` directly.
 
     /// Convert each fighter's anchor bounds → normalized screen-space position,
     /// then write into the VM for VFX placement. Called from the root-attached
@@ -681,8 +684,13 @@ struct InteractivePredictView: View {
         }
     }
 
-    /// Stance pickers + active-skills HUD. Extracted so it can live
-    /// inside the ZStack that swaps it for the Round Exchange log card.
+    /// Stance pickers + active-skills HUD. Combat v3.1 (2026-05-03):
+    /// the actives row no longer has its own section heading
+    /// ("ACTIVE SKILLS"). It now sits as the trailing row inside the
+    /// same predict block as the matrix — one unit instead of two
+    /// stacked sections — fronted by a small inline "Actives" label
+    /// that reads at the same visual weight as the ATTACK / DEFEND row
+    /// captions.
     @ViewBuilder
     private var predictControls: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
@@ -702,10 +710,11 @@ struct InteractivePredictView: View {
             )
 
             if !vm.playerActives.isEmpty {
-                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                    Text("ACTIVE SKILLS")
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text("ACTIVES")
                         .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Spacer(minLength: 0)
                     ActiveSkillsHUD(
                         actives: vm.playerActives,
                         pendingSlot: vm.pendingActiveSlot,
@@ -747,14 +756,18 @@ struct InteractivePredictView: View {
                           isSelected: Bool,
                           isAttack: Bool,
                           action: @escaping () -> Void) -> some View {
-        let bonusText = isAttack
-            ? InteractiveStanceBonuses.attackBonusText(for: zone)
-            : InteractiveStanceBonuses.defendBonusText(for: zone)
+        // Combat v3.1: tile renders one big stat + plain-English label
+        // sourced from the new structured `attackPrimary` / `defendPrimary`
+        // helpers. The old comma-separated bonus string is gone.
+        let stat = isAttack
+            ? InteractiveStanceBonuses.attackPrimary(for: zone)
+            : InteractiveStanceBonuses.defendPrimary(for: zone)
         return ZoneTileButton(
             zone: zone,
             isSelected: isSelected,
             isAttack: isAttack,
-            bonusText: bonusText,
+            statValue: stat.value,
+            statLabel: stat.label,
             fallbackIcon: fallbackIconForZone(zone),
             action: action
         )
@@ -820,7 +833,12 @@ private struct ZoneTileButton: View {
     let zone: InteractiveBodyZone
     let isSelected: Bool
     let isAttack: Bool
-    let bonusText: String
+    /// Big single stat for combat v3.1 — e.g. "+10%" / "−10%" / "+8%".
+    let statValue: String
+    /// Plain-English label rendered under the stat — e.g. "Damage" /
+    /// "Damage taken" / "Dodge chance". Replaces the cryptic comma-
+    /// separated bonus text ("OFF +10%  CRIT +5%") that used to live here.
+    let statLabel: String
     let fallbackIcon: String
     let action: () -> Void
 
@@ -840,13 +858,24 @@ private struct ZoneTileButton: View {
                 Text(zone.rawValue.uppercased())
                     .font(DarkFantasyTheme.badge)
 
-                Text(bonusText)
-                    .font(DarkFantasyTheme.caption)
+                // Big stat — one cinematic-feeling number per tile, in
+                // gold when selected, near-white otherwise so it remains
+                // the visual anchor of the tile.
+                Text(statValue)
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(
                         isSelected
                             ? DarkFantasyTheme.gold
-                            : DarkFantasyTheme.textTertiary
+                            : DarkFantasyTheme.textPrimary
                     )
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                // Plain-English label — small, secondary. Tells the
+                // player WHAT the percentage is in human language.
+                Text(statLabel)
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }

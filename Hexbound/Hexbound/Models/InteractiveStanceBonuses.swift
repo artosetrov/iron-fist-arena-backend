@@ -65,6 +65,43 @@ enum InteractiveStanceBonuses {
         }
     }
 
+    // MARK: - Primary stat for v3.1 zone tiles
+    //
+    // Combat v3.1 (2026-05-03): zone tiles render a single big stat with a
+    // plain-English word label below it ("+10% Damage" instead of the
+    // codes "OFF +10% · CRIT +5%"). Secondary modifiers (crit %, the
+    // smaller dodge bonus on legs) move to the long-press tooltip — they
+    // exist, they matter for power users, but they don't fight the primary
+    // stat for attention.
+    //
+    // The picked "primary" stat per zone is whichever modifier is strongest
+    // and most decision-relevant:
+    //   ATTACK head/chest/legs → damage % (the offensive headline)
+    //   DEFEND head             → dodge chance (head defense IS dodge)
+    //   DEFEND chest/legs       → damage taken reduction (the defensive headline)
+
+    /// One big stat + plain-English label for rendering on a zone tile.
+    struct ZoneStatDisplay {
+        let value: String   // e.g. "+10%" / "−10%"
+        let label: String   // e.g. "Damage" / "Dodge chance" / "Damage taken"
+    }
+
+    static func attackPrimary(for zone: InteractiveBodyZone) -> ZoneStatDisplay {
+        switch zone {
+        case .head:  return ZoneStatDisplay(value: "+10%", label: "Damage")
+        case .chest: return ZoneStatDisplay(value: "+5%",  label: "Damage")
+        case .legs:  return ZoneStatDisplay(value: "+2%",  label: "Damage")
+        }
+    }
+
+    static func defendPrimary(for zone: InteractiveBodyZone) -> ZoneStatDisplay {
+        switch zone {
+        case .head:  return ZoneStatDisplay(value: "+8%",  label: "Dodge chance")
+        case .chest: return ZoneStatDisplay(value: "−10%", label: "Damage taken")
+        case .legs:  return ZoneStatDisplay(value: "−5%",  label: "Damage taken")
+        }
+    }
+
     // MARK: - Zone asset names
     //
     // The equipment-slot icons live closest to the body-zone semantics,
