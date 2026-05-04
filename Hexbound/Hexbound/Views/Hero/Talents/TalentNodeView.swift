@@ -45,6 +45,28 @@ struct TalentNodeView: View {
     /// Effective rank including staging — drives the pip strip's "bright" count.
     private var effectiveRank: Int { max(currentRank, stagedRank) }
 
+    /// `TRUE` for nodes that can be equipped into an active-skill slot
+    /// (today: only ultimates). Drives the epic-purple border treatment so the
+    /// player can tell at a glance which nodes feed slots 01/02/03 and which
+    /// are pure stat passives.
+    private var isActivatable: Bool { node.isActivatable == true }
+
+    /// Accent color applied to stroke + glow. Epic purple for activatable
+    /// ultimates, gold otherwise. Used in place of `DarkFantasyTheme.gold` for
+    /// every accent that distinguishes the node from `borderSubtle`.
+    private var accent: Color {
+        isActivatable ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.gold
+    }
+    private var accentBright: Color {
+        isActivatable ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.goldBright
+    }
+    private var accentDim: Color {
+        isActivatable ? DarkFantasyTheme.rarityEpic.opacity(0.55) : DarkFantasyTheme.goldDim
+    }
+    private var accentGlow: Color {
+        isActivatable ? DarkFantasyTheme.rarityEpicGlow : DarkFantasyTheme.goldGlow
+    }
+
     // Square tile footprint — uniform 56×56. Sized down from 64 so 7 tier rows
     // (foundation + 3 archetype tiers + keystone + ultimate) fit the 460pt
     // canvas frame without vertical scrolling. Emphasis on keystones/ultimates
@@ -58,20 +80,25 @@ struct TalentNodeView: View {
     private var cornerRadius: CGFloat { LayoutConstants.radiusMD } // 8
 
     private var strokeColor: Color {
+        // Activatable (ultimate) nodes lean purple so they read as
+        // "equippable" rather than "stat passive" — even when locked.
         switch state {
-        case .unlocked:   DarkFantasyTheme.gold
-        case .pending:    DarkFantasyTheme.goldBright
-        case .unlockable: DarkFantasyTheme.goldDim
-        case .locked:     DarkFantasyTheme.borderSubtle
+        case .unlocked:   accent
+        case .pending:    accentBright
+        case .unlockable: accentDim
+        case .locked:     isActivatable ? accentDim.opacity(0.6) : DarkFantasyTheme.borderSubtle
         }
     }
 
     private var strokeWidth: CGFloat {
+        // Activatable nodes get a slightly thicker stroke at all states so the
+        // purple frame reads strongly against gold neighbors.
+        let extra: CGFloat = isActivatable ? 0.5 : 0
         switch state {
-        case .unlocked:   1.5
-        case .pending:    2
-        case .unlockable: 1.5
-        case .locked:     1.5
+        case .unlocked:   return 1.5 + extra
+        case .pending:    return 2 + extra
+        case .unlockable: return 1.5 + extra
+        case .locked:     return 1.5 + extra
         }
     }
 
@@ -79,7 +106,7 @@ struct TalentNodeView: View {
         if isKeystone && state == .unlocked {
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
+                    colors: [accentBright, accent],
                     startPoint: .top, endPoint: .bottom
                 )
             )
@@ -89,15 +116,20 @@ struct TalentNodeView: View {
             return AnyShapeStyle(
                 LinearGradient(
                     colors: [
-                        DarkFantasyTheme.gold.opacity(0.18),
-                        DarkFantasyTheme.gold.opacity(0.05)
+                        accent.opacity(0.18),
+                        accent.opacity(0.05)
                     ],
                     startPoint: .top, endPoint: .bottom
                 )
             )
         case .pending:
-            return AnyShapeStyle(DarkFantasyTheme.gold.opacity(0.14))
+            return AnyShapeStyle(accent.opacity(0.14))
         case .unlockable, .locked:
+            // Tinted bg only when locked + activatable — telegraphs "this is
+            // an active skill, even though you can't equip it yet".
+            if state == .locked && isActivatable {
+                return AnyShapeStyle(accent.opacity(0.06))
+            }
             return AnyShapeStyle(DarkFantasyTheme.bgPrimary)
         }
     }
@@ -105,10 +137,10 @@ struct TalentNodeView: View {
     private var iconColor: Color {
         if isKeystone && state == .unlocked { return DarkFantasyTheme.textOnGold }
         switch state {
-        case .unlocked:   return DarkFantasyTheme.goldBright
-        case .pending:    return DarkFantasyTheme.goldBright
+        case .unlocked:   return accentBright
+        case .pending:    return accentBright
         case .unlockable: return DarkFantasyTheme.textSecondary
-        case .locked:     return DarkFantasyTheme.textDisabled
+        case .locked:     return isActivatable ? accent.opacity(0.55) : DarkFantasyTheme.textDisabled
         }
     }
 
@@ -118,10 +150,12 @@ struct TalentNodeView: View {
 
     private var glowColor: Color {
         switch state {
-        case .unlocked:   return DarkFantasyTheme.goldGlow
-        case .pending:    return DarkFantasyTheme.gold.opacity(0.40)
-        case .unlockable: return DarkFantasyTheme.gold.opacity(pulse ? 0.40 : 0.20)
-        case .locked:     return .clear
+        case .unlocked:   return accentGlow
+        case .pending:    return accent.opacity(0.40)
+        case .unlockable: return accent.opacity(pulse ? 0.40 : 0.20)
+        // Locked activatable nodes still get a faint constant halo so the
+        // player can see "this is an active skill" before it's unlocked.
+        case .locked:     return isActivatable ? accent.opacity(0.18) : .clear
         }
     }
 
@@ -130,11 +164,12 @@ struct TalentNodeView: View {
         case .unlocked:   return 12
         case .pending:    return 8
         case .unlockable: return pulse ? 20 : 12
-        case .locked:     return 0
+        case .locked:     return isActivatable ? 6 : 0
         }
     }
 
-    // Left 3px gold bar — only for unlocked state (matches item-card DNA).
+    // Left 3px accent bar — only for unlocked state (matches item-card DNA).
+    // Tints epic-purple on activatable ultimates, gold on regular passives.
     @ViewBuilder
     private var leftBar: some View {
         if state == .unlocked && !isKeystone {
@@ -144,7 +179,7 @@ struct TalentNodeView: View {
                 bottomTrailingRadius: 0,
                 topTrailingRadius: 0
             )
-            .fill(DarkFantasyTheme.gold)
+            .fill(accent)
             .frame(width: 3)
             .frame(maxHeight: .infinity)
         }
