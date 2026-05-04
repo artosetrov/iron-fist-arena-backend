@@ -33,16 +33,18 @@ struct InteractiveRoundLogCard: View {
     // once per peak reveal. Opacity only, no scale.
     @State private var outplayedBorderBright = false
 
-    // Upper bound on card height so a talent-heavy round doesn't dominate
-    // the screen. Scroll kicks in above this.
-    private let maxListHeight: CGFloat = 300
-
     var body: some View {
+        // Combat v3.1 (2026-05-03): collapsed from a 5-block card to a
+        // 4-block focused card. The verbose `logList` (per-event scroll
+        // with talent / crit / blocked rows) is gone — the floating VFX
+        // popups + ActiveFireBanner / ConsumableFireBanner already cover
+        // that feedback channel. The redundant "ROUND N · EXCHANGE"
+        // header is gone too — round number lives in the roundStrip
+        // above the predict panel and would only repeat itself here.
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             RoundVerdictHeader(verdict: exchange.verdict)
             ClashStripRow(exchange: exchange)
-            header
-            logList
+            damageRow
             footer
         }
         .padding(LayoutConstants.spaceMD)
@@ -53,6 +55,64 @@ struct InteractiveRoundLogCard: View {
         .task(id: exchange.id) { await runOutplayedBorderTween() }
         .task(id: exchange.id) { fireVerdictHaptic() }
         .onAppear { dotPulse.toggle() }
+    }
+
+    // MARK: - Damage row
+
+    /// Two large damage cells: what you dealt this round vs what you took.
+    /// Replaces the old per-event scroll list. Numbers come from summing
+    /// `damageDealt` over each side's events (CombatLogEvent helpers).
+    /// Hides if both sides did zero damage (held / both missed) — in that
+    /// case the verdict header alone tells the story.
+    @ViewBuilder
+    private var damageRow: some View {
+        let dealt = exchange.allyEvents.reduce(0)  { $0 + $1.damageDealt }
+        let taken = exchange.enemyEvents.reduce(0) { $0 + $1.damageDealt }
+        if dealt > 0 || taken > 0 {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                damageCell(
+                    value: dealt,
+                    sign: "+",
+                    label: "Damage you dealt",
+                    color: DarkFantasyTheme.success
+                )
+                damageCell(
+                    value: taken,
+                    sign: "−",
+                    label: "Damage you took",
+                    color: DarkFantasyTheme.danger
+                )
+            }
+        }
+    }
+
+    private func damageCell(value: Int,
+                            sign: String,
+                            label: String,
+                            color: Color) -> some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text(value > 0 ? "\(sign)\(value)" : "0")
+                .font(DarkFantasyTheme.cinematicTitle)
+                .foregroundStyle(color)
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.25), value: value)
+            Text(label)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgElevated)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     // MARK: - Haptics
@@ -72,60 +132,6 @@ struct InteractiveRoundLogCard: View {
         case .outread:   HapticManager.warning()
         case .held:      HapticManager.light()
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("ROUND \(exchange.roundNumber)")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .tracking(2)
-                .foregroundStyle(DarkFantasyTheme.gold)
-
-            Text("EXCHANGE")
-                .font(DarkFantasyTheme.badge)
-                .tracking(3)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-            Spacer(minLength: 0)
-
-            if exchange.finishingBlow {
-                Text("FINISHING BLOW")
-                    .font(DarkFantasyTheme.badge)
-                    .tracking(2)
-                    .foregroundStyle(DarkFantasyTheme.danger)
-            }
-        }
-    }
-
-    // MARK: - Log list
-
-    private var logList: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                ForEach(Array(exchange.allyEvents.enumerated()), id: \.element.id) { offset, ev in
-                    CombatLogRow(
-                        event: ev,
-                        staggerDelay: .milliseconds(offset * 120)
-                    )
-                }
-
-                if !exchange.enemyEvents.isEmpty && !exchange.allyEvents.isEmpty {
-                    LogDivider(label: "Counter")
-                }
-
-                ForEach(Array(exchange.enemyEvents.enumerated()), id: \.element.id) { offset, ev in
-                    let base = exchange.allyEvents.count + offset
-                    CombatLogRow(
-                        event: ev,
-                        staggerDelay: .milliseconds(base * 120 + 240)
-                    )
-                }
-            }
-            .padding(.vertical, LayoutConstants.space2XS)
-        }
-        .frame(maxHeight: maxListHeight)
     }
 
     // MARK: - Footer
@@ -348,8 +354,12 @@ private struct ZoneChip: View {
     let glowing: Bool
 
     var body: some View {
+        // Combat v3.1: rename ATK/DEF → Hit/Guard. The codes were
+        // ambiguous — players read "ATK CHEST" as "you'll hit chest"
+        // but the parallel "DEF CHEST" was a defense-zone, not an
+        // attack. "Hit / Guard" maps clearly to action verbs.
         HStack(spacing: 4) {
-            Text(kind == .attack ? "ATK" : "DEF")
+            Text(kind == .attack ? "HIT" : "GUARD")
                 .font(DarkFantasyTheme.badge)
                 .tracking(1)
             Text(zone.rawValue.uppercased())

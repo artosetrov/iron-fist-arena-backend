@@ -38,6 +38,12 @@ struct BattleSummaryView: View {
         // YOU/ENEMY avatars instead of being pushed toward the bottom of the
         // screen once the title/stars block is gone.
         VStack(spacing: LayoutConstants.spaceMD) {
+            // Combat v3.1: surface the VICTORY/DEFEAT verdict at the top
+            // of the summary screen, not just on the brief `.finished`
+            // banner that flashes after CONTINUE. The player has just
+            // landed (or eaten) the killing blow — the headline is the
+            // thing they want to see first, before stats and round log.
+            VerdictHeadline(won: won, rounds: vm.battleLog.count)
             BattleStatsHeader(stats: stats)
             logCard
             Spacer(minLength: 0)
@@ -45,6 +51,13 @@ struct BattleSummaryView: View {
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .layoutPriority(1)
+    }
+
+    /// True when the local player won the match. Computed from the
+    /// authoritative server winner id captured in `state.serverWinnerId`
+    /// (set by /strike when the finishing blow lands).
+    private var won: Bool {
+        vm.state.serverWinnerId == vm.state.attackerId
     }
 
     /// Cached aggregate so the view doesn't recompute on every rebuild.
@@ -253,6 +266,44 @@ private struct CollapsibleRoundBlock: View {
         if exchange.finishingBlow { return DarkFantasyTheme.gold.opacity(0.6) }
         if isExpanded             { return DarkFantasyTheme.gold.opacity(0.35) }
         return DarkFantasyTheme.borderSubtle
+    }
+}
+
+// MARK: - Verdict Headline
+//
+// VICTORY (gold) or DEFEAT (danger) headline + small "N rounds" sub. Lives
+// at the top of the summary screen so the match outcome is the first thing
+// the player sees on this surface.
+//
+// Rating delta + before/after rating numbers are intentionally NOT in this
+// commit — they require reading vm.prefetchCompleteResult, which only
+// settles after the prefetch /match/complete response lands. Adding it
+// without the data plumbing would render "+0 Rating" or worse "—" most
+// of the time. Comes in a follow-up that wires prefetch into this view.
+
+private struct VerdictHeadline: View {
+    let won: Bool
+    let rounds: Int
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text(won ? "VICTORY" : "DEFEAT")
+                .font(DarkFantasyTheme.cinematicTitle)
+                .tracking(4)
+                .foregroundStyle(won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
+                .shadow(
+                    color: (won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.35),
+                    radius: 16,
+                    y: 0
+                )
+
+            Text("\(rounds) round\(rounds == 1 ? "" : "s")".uppercased())
+                .font(DarkFantasyTheme.caption)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceXS)
     }
 }
 

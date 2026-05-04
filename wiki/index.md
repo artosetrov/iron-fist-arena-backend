@@ -376,7 +376,8 @@
 - [[block-299-ios-unavailable-route-copy-parity]] — the remaining live iOS route fallbacks now use honest unavailable-route copy instead of reviving the old generic `Coming Soon` wording in `AppRouter` and `CityMapView`
 - [[block-300-push-surface-apns-only-boundary-sync]] — the backend/admin/source-of-truth push surface now states the live repo truth plainly: APNS-backed iOS delivery is shipped, Android tokens may be stored, and a real FCM sender is still future work
 - [[block-301-talents-v2-polish-tail-boundary-sync]] — the live Talents v2 feature maps and active design reference now state the same bounded follow-up truth as the code: the new ult action types are shipped, and the only remaining tail is dedicated VFX/SFX polish
+- [[block-302-inventory-rollforward-and-retro-prototype-boundary-sync]] — the inventory now reflects the late tracked rollforward for the newest retro/prototype files, stale untracked markers are gone, and the adjacent retro/prototype notes carry clearer repo-owned boundaries
 
 ---
 
-*367 in-scope wiki markdown files | 366 wiki pages (13 systems, 15 decisions, 3 entities, 301 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + index/log | generated README excluded from page count | Last updated: 2026-05-01*
+*368 in-scope wiki markdown files | 367 wiki pages (13 systems, 15 decisions, 3 entities, 302 audit blocks, 28 feature maps, 1 schema) + audit index/inventory + feature template + index/log | generated README excluded from page count | Last updated: 2026-05-04*

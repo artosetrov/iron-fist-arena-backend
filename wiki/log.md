@@ -1,5 +1,14 @@
 # Hexbound Wiki — Log
 
+## [2026-05-04] audit | Block 302 inventory rollforward and retro/prototype boundary sync
+
+Closed the next live inventory drift plus the tiny adjacent boundary tail that came in with the new tracked retro/prototype wave.
+- **Created:** `[[block-302-inventory-rollforward-and-retro-prototype-boundary-sync]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `docs/retro/RETRO_2026-05-02.md`, `docs/retro/RETRO_2026-05-03.md`, `prototypes/combat-duel-header-compact.html`, `prototypes/combat-proto-v3.html`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rolled the inventory forward to the current tracked/untracked git state, added the four missing tracked retro/prototype files, removed stale `_(untracked)_` markers from `block-300` and `block-301`, rewrote the one external memory-token line in `RETRO_2026-05-02.md`, and clarified the duel-header prototype as discussion-only rather than Swift/Figma truth
+- **Inventory refresh:** updated current counts to `5243` in-scope files and `368 in-scope wiki markdown files / 367 wiki pages`
+- **Verification:** live git-state recount, inventory-vs-git comparison, targeted memory-token grep, and `git diff --check` on the touched slice
+
 ## [2026-05-01] audit | Block 301 Talents v2 polish tail boundary sync
 
 Closed the next bounded Talents v2 truth-sync seam.

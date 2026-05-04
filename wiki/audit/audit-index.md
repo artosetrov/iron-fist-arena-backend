@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-05-01
+updated: 2026-05-04
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5238
+- In-scope files: 5243
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -321,6 +321,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 299 | [[block-299-ios-unavailable-route-copy-parity]] — the remaining live iOS route fallbacks now use honest unavailable-route copy instead of reviving the old generic `Coming Soon` wording in `AppRouter` and `CityMapView` | Fixed |
 | 300 | [[block-300-push-surface-apns-only-boundary-sync]] — the backend/admin/source-of-truth push surface now states the live repo truth plainly: APNS-backed iOS delivery is shipped, Android tokens may be stored, and a real FCM sender is still future work | Fixed |
 | 301 | [[block-301-talents-v2-polish-tail-boundary-sync]] — the live Talents v2 feature maps and active design reference now state the same bounded follow-up truth as the code: the new ult action types are shipped, and the only remaining tail is dedicated VFX/SFX polish | Fixed |
+| 302 | [[block-302-inventory-rollforward-and-retro-prototype-boundary-sync]] — the inventory now reflects the late tracked rollforward for the newest retro/prototype files, stale untracked markers are gone, and the adjacent retro/prototype notes carry clearer repo-owned boundaries | Fixed |
 
 ## Status Legend
 
