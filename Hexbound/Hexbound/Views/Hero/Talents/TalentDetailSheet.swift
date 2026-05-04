@@ -62,43 +62,109 @@ struct TalentDetailSheet: View {
         }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
-            header
-
-            // Effect chip — canonical stat-effect string from `description`.
-            // Always rendered (no longer gated on `bonusStat`, which Tank-class
-            // proxy-bonus nodes intentionally leave NULL).
-            if !node.description.isEmpty {
-                effectChip(node.description)
-            }
-
-            // Flavor prose — narrative copy. Tank tree shipped 2026-05-01;
-            // other classes get content in follow-up passes (NULL → hidden).
-            if let flavor = node.flavor, !flavor.isEmpty {
-                flavorLine(flavor)
-            }
-
-            if isRanked {
-                rankLadder
-            }
-
-            Divider()
-                .background(DarkFantasyTheme.borderSubtle)
-
-            cta
-
-            if isUnlocked, node.isActivatable == true {
-                activeSlotCTA
-            }
+    /// Rarity-style stroke + ornament tint so the modal frame echoes the
+    /// node's role on the tree:
+    ///   - activatable ultimates → epic purple (matches the canvas border)
+    ///   - keystones → gold
+    ///   - everything else → subtle gold-dim
+    private var frameAccent: Color {
+        if node.isActivatable == true { return DarkFantasyTheme.rarityEpic }
+        switch node.bonusType {
+        case "keystone", "ultimate": return DarkFantasyTheme.gold
+        default:                     return DarkFantasyTheme.goldDim
         }
-        .padding(LayoutConstants.spaceLG)
-        .background(DarkFantasyTheme.bgSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.modalRadius))
+    }
+
+    var body: some View {
+        // ItemDetailSheet template parity. The hosting view (TalentsTabView)
+        // owns the tap-to-close backdrop, so this body only owns the modal
+        // chrome itself: top bar with close, ScrollView body, pinned actions,
+        // rich frame (RadialGlowBackground + surfaceLighting + innerBorder +
+        // cornerBrackets + cornerDiamonds + accent stroke).
+        VStack(spacing: 0) {
+            // Top bar — close button only
+            HStack {
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.closeButton)
+                .accessibilityLabel("Close talent detail")
+            }
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.top, LayoutConstants.spaceMD)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
+                    // Compact header — node tile + tier label + name
+                    header
+
+                    // Effect chip — canonical stat-effect string from
+                    // `description`. Always rendered (Tank proxy-bonuses
+                    // intentionally leave bonusStat NULL).
+                    if !node.description.isEmpty {
+                        effectChip(node.description)
+                    }
+
+                    // Flavor prose — narrative copy. Hidden when NULL/empty.
+                    if let flavor = node.flavor, !flavor.isEmpty {
+                        flavorLine(flavor)
+                    }
+
+                    // Hairline divider between narrative and mechanical sections
+                    Rectangle()
+                        .fill(DarkFantasyTheme.borderSubtle)
+                        .frame(height: 1)
+
+                    // Rank ladder (only ranked nodes — keystones/ultimates skip)
+                    if isRanked {
+                        rankLadder
+                    }
+                }
+                .padding(.horizontal, LayoutConstants.cardPadding)
+                .padding(.vertical, LayoutConstants.spaceSM)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+
+            // Action buttons pinned at bottom
+            VStack(spacing: LayoutConstants.spaceSM) {
+                cta
+                if isUnlocked, node.isActivatable == true {
+                    activeSlotCTA
+                }
+            }
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.vertical, LayoutConstants.spaceMD)
+        }
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.modalRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.14)
+        .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: frameAccent.opacity(0.12))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
+                .stroke(frameAccent.opacity(0.5), lineWidth: 2)
+        )
+        .cornerBrackets(color: frameAccent.opacity(0.5), length: 18, thickness: 2.0)
+        .cornerDiamonds(color: frameAccent.opacity(0.4), size: 6)
+        .shadow(color: frameAccent.opacity(0.18), radius: 10, y: 0)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+        .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Header
 
+    /// Compact header — talent tile preview + tier label + name. Close button
+    /// lives in the modal's top bar (parent body), so it's not duplicated here.
+    /// Tier label tints with the frame accent so activatable ultimates read as
+    /// purple "ULTIMATE" while keystones stay gold.
     private var header: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
             TalentNodeView(
@@ -114,24 +180,13 @@ struct TalentDetailSheet: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text(tierLabel)
                     .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .foregroundStyle(frameAccent)
                     .tracking(2)
                 Text(node.name)
                     .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
             }
             Spacer()
-
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .resizable()
-                    .scaledToFit()
-                    .fontWeight(.semibold)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .frame(width: 14, height: 14)
-                    .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
-            }
-            .buttonStyle(.plain)
         }
     }
 
