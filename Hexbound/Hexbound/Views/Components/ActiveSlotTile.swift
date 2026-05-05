@@ -264,9 +264,14 @@ struct ActiveSlotTile<Overlay: View>: View {
     }
 
     /// Epic/purple premium accent — mirror of the inline value from
-    /// `TalentsSummaryCard.premiumAccent`. No DarkFantasyTheme token
-    /// exists for this rarity-epic shade today.
-    static let premiumAccent: Color = Color(red: 0.71, green: 0.49, blue: 0.84)
+    /// the original `TalentsSummaryCard.premiumAccent`. No DarkFantasyTheme
+    /// token exists for this rarity-epic shade today.
+    ///
+    /// Computed (not `static let`) because Swift forbids static stored
+    /// properties on generic types — `ActiveSlotTile<Overlay>` is generic
+    /// over its overlay ViewBuilder, so we use a static computed Color
+    /// instead. Zero runtime cost (compiler inlines the constant).
+    static var premiumAccent: Color { Color(red: 0.71, green: 0.49, blue: 0.84) }
 }
 
 // MARK: - Convenience init
