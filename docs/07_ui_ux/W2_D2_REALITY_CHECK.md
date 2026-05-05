@@ -1,7 +1,7 @@
 # W2.D2 — REALITY CHECK: Current Cinematic ≠ Original Plan
 
 **Дата:** 2026-04-10
-**Статус:** 🛑 Обновление плана — execution paused до подтверждения
+**Статус:** 📚 HISTORICAL PLAN-CORRECTION NOTE — preserved onboarding cinematic reality check
 **Связанные:** `W2_D2_LORE_AUDIT.md` (обсолет в части архитектуры)
 
 > **Status boundary:** historical plan-correction snapshot for a specific onboarding cinematic architecture moment. It should not be treated as the current cinematic implementation plan without revalidation.

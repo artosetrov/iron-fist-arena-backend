@@ -34,6 +34,17 @@ struct ActiveSkillsHUD: View {
     }
 }
 
+/// Combat HUD slot — adapter on top of the shared `ActiveSlotTile`
+/// primitive (Views/Components/ActiveSlotTile.swift). Maps the
+/// server's `InteractiveActiveSlotSnapshot` model into the tile's
+/// state enum and layers combat-only overlays (cooldown countdown,
+/// armed border, "USED" stamp, ready-flash pulse) on top via the
+/// tile's `overlay` ViewBuilder.
+///
+/// Combat v3.1 unification (2026-05-03): chrome (frame, border, fill,
+/// number, gold left bar) is no longer drawn here — it comes from
+/// `ActiveSlotTile`. Only behavior + transient combat state lives in
+/// this adapter.
 private struct ActiveSkillSlotButton: View {
     let slotIndex: Int
     let slot: InteractiveActiveSlotSnapshot?
@@ -50,102 +61,81 @@ private struct ActiveSkillSlotButton: View {
     private var isConsumable: Bool { slot?.isConsumable == true }
     private var isConsumed: Bool { slot?.consumed == true }
 
-    private var strokeColor: Color {
-        if isArmed { return DarkFantasyTheme.gold }
-        if isReady { return DarkFantasyTheme.gold.opacity(0.5) }
-        return DarkFantasyTheme.borderSubtle
-    }
-
-    private var iconColor: Color {
-        if isEmpty { return DarkFantasyTheme.textDisabled }
-        if isOnCooldown || isConsumed { return DarkFantasyTheme.textDisabled }
-        // Consumables (potions) use a green tint so players can instantly
-        // distinguish them from gold-tinted talent actives in the HUD.
-        if isConsumable { return DarkFantasyTheme.success }
-        return DarkFantasyTheme.gold
+    /// Map server snapshot to shared tile state. Empty / consumed
+    /// snapshots show as `.locked` (padlock) — combat doesn't allow
+    /// equipping mid-fight, so the inviting "+" affordance from the
+    /// talents-page `.empty` state would mislead.
+    private var tileState: ActiveSlotTileState {
+        if let slot, let action = slot.talentAction {
+            return .filled(.sfSymbol(action.sfSymbol))
+        }
+        if let slot, slot.isConsumable {
+            return .filled(.sfSymbol("cross.vial.fill"))
+        }
+        return .locked
     }
 
     var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(DarkFantasyTheme.bgElevated)
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(strokeColor, lineWidth: isArmed ? 2 : 1)
-
-                if let slot, let action = slot.talentAction {
-                    Image(systemName: action.sfSymbol)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                } else if let slot, slot.isConsumable {
-                    // Consumable slot (Phase 4.C) — potion vial icon.
-                    Image(systemName: "cross.vial.fill")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                } else {
-                    // Empty slot — padlock asset (interactive combat v3).
-                    // Falls back to SF Symbol if the bundle asset hasn't
-                    // resolved yet so the slot never renders blank.
-                    CachedAssetImage(
-                        key: "icon-padlock",
-                        url: nil,
-                        systemIcon: "lock.fill",
-                        contentMode: .fit
-                    )
-                    .frame(width: 22, height: 22)
-                    .foregroundStyle(DarkFantasyTheme.textDisabled)
-                    .opacity(0.6)
-                }
-
-                if isOnCooldown, let slot {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
-                    Text("\(slot.cooldownRemaining)")
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .contentTransition(.numericText(countsDown: true))
-                        .id("cd-\(slotIndex)-\(slot.cooldownRemaining)")
-                } else if isConsumable && isConsumed {
-                    // Phase 4.C — one-shot consumable already fired this duel.
-                    // Mirror cooldown-overlay styling so the slot reads as
-                    // "spent" without introducing a new visual vocabulary.
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
-                    Text("USED")
-                        .font(DarkFantasyTheme.badge)
-                        .tracking(1)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-            }
-            .frame(width: 56, height: 56)
-            .opacity(canTap ? 1.0 : (isEmpty ? 0.5 : 0.85))
-            // Phase 4 polish — animate cooldown tick and "ready" flash.
-            // When cooldownRemaining decrements (server → client), the digit
-            // rolls via contentTransition; when it hits 0 the dark overlay
-            // fades out and the stroke pulses gold once.
-            .animation(.easeOut(duration: 0.25),
-                       value: slot?.cooldownRemaining)
-            .animation(.easeOut(duration: 0.3),
-                       value: isReady)
-            .onChange(of: isReady) { _, newValue in
-                guard newValue, !isEmpty else { return }
-                readyFlash = true
-                Task {
-                    try? await Task.sleep(for: .milliseconds(500))
-                    await MainActor.run { readyFlash = false }
-                }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(DarkFantasyTheme.gold, lineWidth: readyFlash ? 2 : 0)
-                    .opacity(readyFlash ? 0.85 : 0)
-                    .animation(.easeOut(duration: 0.5), value: readyFlash)
-                    .allowsHitTesting(false)
-            )
+        ActiveSlotTile(
+            slotNumber: slotIndex,
+            state: tileState,
+            isDisabled: !canTap,
+            action: onTap
+        ) {
+            combatOverlay
         }
-        .buttonStyle(.plain)
-        .disabled(!canTap)
+        .frame(width: 56, height: 56)
+        .opacity(canTap ? 1.0 : (isEmpty ? 0.5 : 0.85))
+        .animation(.easeOut(duration: 0.25), value: slot?.cooldownRemaining)
+        .animation(.easeOut(duration: 0.3),  value: isReady)
+        .onChange(of: isReady) { _, newValue in
+            guard newValue, !isEmpty else { return }
+            readyFlash = true
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                await MainActor.run { readyFlash = false }
+            }
+        }
         .accessibilityLabel(Text(accessibilityLabel))
+    }
+
+    /// Combat-only transient overlays — cooldown dim + countdown,
+    /// "USED" stamp on consumed consumables, armed gold border on
+    /// the slot the player has queued for the next strike, and the
+    /// one-shot ready-flash pulse when the cooldown expires.
+    @ViewBuilder
+    private var combatOverlay: some View {
+        if isOnCooldown, let slot {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
+            Text("\(slot.cooldownRemaining)")
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .contentTransition(.numericText(countsDown: true))
+                .id("cd-\(slotIndex)-\(slot.cooldownRemaining)")
+        } else if isConsumable && isConsumed {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
+            Text("USED")
+                .font(DarkFantasyTheme.badge)
+                .tracking(1)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        // Armed border — gold 2pt stroke when the player has queued
+        // this slot for the next strike. Layered on top of the tile's
+        // base border so the underlying chrome stays consistent.
+        if isArmed {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.gold, lineWidth: 2)
+                .allowsHitTesting(false)
+        }
+        // One-shot ready-flash pulse on cooldown → 0.
+        if readyFlash {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.gold, lineWidth: 2)
+                .opacity(0.85)
+                .allowsHitTesting(false)
+        }
     }
 
     private var accessibilityLabel: String {

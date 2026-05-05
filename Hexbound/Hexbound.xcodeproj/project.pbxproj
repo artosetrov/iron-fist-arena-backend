@@ -284,6 +284,7 @@
 		957960B6A4229E470D1774CA /* TutorialOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A10CBA6CE5382D3C002F3F3 /* TutorialOverlayView.swift */; };
 		95A2C5527E0D38C558367AB0 /* combat_block.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0CCDA9FFE0140112EA65EE15 /* combat_block.wav */; };
 		95A33C717E6DFC5BB43324C7 /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4599C5B23903A3CEB334E06E /* AvatarImageView.swift */; };
+		EC4F22EC97C047E291E66BCF /* ActiveSlotTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C53D1206C8E11514A29D168 /* ActiveSlotTile.swift */; };
 		96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB9546BEA21F368E3E72FA3 /* BattlePassViewModel.swift */; };
 		994AC7E405C4FEE36836AB83 /* combat_special_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 992517DB4BEDB0A2DA7DEC67 /* combat_special_2.wav */; };
 		99741C9FEC95AB98FE84F48E /* AuthBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB747C6FDAB2BFE84A10570 /* AuthBackground.swift */; };
@@ -644,6 +645,7 @@
 		44e83640753af3d064cd2dda /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
 		4548EC844F00904DF207ED30 /* ItemRarity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRarity.swift; sourceTree = "<group>"; };
 		4599C5B23903A3CEB334E06E /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
+		4C53D1206C8E11514A29D168 /* ActiveSlotTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSlotTile.swift; sourceTree = "<group>"; };
 		476A9CFCA1A9D35CCC98890C /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		47D25C881865117CB558F2C7 /* ContextualHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualHintOverlay.swift; sourceTree = "<group>"; };
 		48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashViewModel.swift; sourceTree = "<group>"; };
@@ -1410,6 +1412,7 @@
 				E3F5A7B9C1D3E5F7A9B1C3D5 /* ActiveQuestBanner.swift */,
 				E3F5A7B9C1D3E5F7A9B1C3D6 /* EventBannerView.swift */,
 				4599C5B23903A3CEB334E06E /* AvatarImageView.swift */,
+				4C53D1206C8E11514A29D168 /* ActiveSlotTile.swift */,
 				660D282C9061E69CDF418A66 /* AssetPlaceholderView.swift */,
 				0045A1B2C3D4E5F6A7B8C9D3 /* BattleResultAnimations.swift */,
 				0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */,
@@ -2283,6 +2286,7 @@
 				E55080DD83E15810D7C63678 /* SegmentedProgressBar.swift in Sources */,
 				48B45024E1F5F9192D4A497D /* AuthService.swift in Sources */,
 				95A33C717E6DFC5BB43324C7 /* AvatarImageView.swift in Sources */,
+				EC4F22EC97C047E291E66BCF /* ActiveSlotTile.swift in Sources */,
 				0EC076CD23D49AF8714BF567 /* BPRewardNodeView.swift in Sources */,
 				0EC076CD23D49AF8714BF568 /* SeasonSummaryModalView.swift in Sources */,
 				554ADF9C431484FE80147946 /* SessionSummaryViewModel.swift in Sources */,

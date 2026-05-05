@@ -1,5 +1,50 @@
 # Hexbound Wiki — Log
 
+## [2026-05-04] audit | Block 308 historical planning-header parity wave two
+
+Closed the next tiny-but-real docs seam by aligning another cluster of historical planning files with the archival boundaries they already carried lower in the page.
+- **Created:** `[[block-308-historical-planning-header-parity-wave-two]]`
+- **Files audited:** `docs/07_ui_ux/W3_D5_REVIEW_PLAN.md`, `docs/07_ui_ux/W2_D3_SCRIPTED_FIGHT_DESIGN.md`, `docs/07_ui_ux/W2_D2_REALITY_CHECK.md`, `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`
+- **Fixes:** updated the stale present-tense header wording so these files no longer read like approval or execution is still paused right now; their top lines now match their own historical planning/proposal boundaries
+- **Inventory refresh:** updated current counts to `5251` in-scope files and `374 in-scope wiki markdown files / 373 wiki pages` (`5246` tracked + `5` untracked)
+- **Verification:** targeted header wording grep plus `git diff --check` on the touched slice
+
+## [2026-05-04] audit | Block 307 historical design-doc status-header parity
+
+Closed the next low-noise but real docs seam: a few already-archived design docs were still introducing themselves as if present-tense approval were pending, even though their own boundary notes already said otherwise.
+- **Created:** `[[block-307-historical-design-doc-status-header-parity]]`
+- **Files audited:** `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md`, `docs/07_ui_ux/W2_D5_BADGE_PRIORITY_DESIGN.md`, `docs/06_game_systems/SKILL_TREE_DESIGN.md`, `docs/06_game_systems/SKILL_TREE_DESIGN_V2.md`, `wiki/features/passive-tree.md`
+- **Fixes:** updated the stale header status wording in the historical combat redesign, badge-priority, and early skill-tree docs so those files now describe themselves the same way their own archival boundaries already do; also added an explicit live-vs-historical boundary note to `SKILL_TREE_DESIGN.md`
+- **Inventory refresh:** updated current counts to `5250` in-scope files and `373 in-scope wiki markdown files / 372 wiki pages` (`5246` tracked + `4` untracked)
+- **Verification:** targeted header/boundary grep plus `git diff --check` on the touched slice
+
+## [2026-05-04] audit | Block 306 talent-modal report and active-categories boundary sync
+
+Closed the next historical combat/talents seam by removing fresh external note references from the new talent-modal redesign report and by framing the older active-categories writeup as proposal history instead of live contract.
+- **Created:** `[[block-306-talent-modal-report-and-active-categories-boundary-sync]]`
+- **Files audited:** `qa-reports/2026-05-01_talent_modal_redesign.md`, `docs/features/combat/ACTIVE_CATEGORIES_V1.md`, `Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift`, `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift`, `Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift`, `backend/prisma/migrations/20260501_passive_node_flavor/migration.sql`, `wiki/features/interactive-combat.md`
+- **Fixes:** rewrote the new talent-modal redesign report so it now points at checked-in repo truth instead of external `feedback_*` note names, and added an explicit historical boundary to `ACTIVE_CATEGORIES_V1.md` so it no longer reads like the current combat-banner contract after the later Talents v2/runtime evolution
+- **Inventory refresh:** updated current counts to `5249` in-scope files and `372 in-scope wiki markdown files / 371 wiki pages` (`5246` tracked + `3` untracked)
+- **Verification:** targeted runtime cross-checks plus `git diff --check` on the touched slice
+
+## [2026-05-04] audit | Block 305 inventory rollforward and combat-strike prototype boundary sync
+
+Closed the late inventory rollforward that landed right after block 304 and wired the new strike-anatomy prototype into checked-in combat truth instead of leaving it as an orphaned tracked file.
+- **Created:** `[[block-305-inventory-rollforward-and-combat-strike-prototype-boundary-sync]]`
+- **Files audited:** `wiki/audit/project-file-inventory.md`, `docs/retro/RETRO_2026-05-04.md`, `prototypes/combat-strike-anatomy.html`, `wiki/features/interactive-combat.md`, `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rolled the inventory forward to the new tracked/untracked git state, added the missing tracked `RETRO_2026-05-04.md` and `combat-strike-anatomy.html` files, removed the stale `_(untracked)_` marker from `block-303`, and made the new anatomy-layout prototype explicit in the live combat docs/wiki layer as a discussion-only follow-up surface rather than implementation truth
+- **Inventory refresh:** updated current counts to `5248` in-scope files and `371 in-scope wiki markdown files / 370 wiki pages` (`5246` tracked + `2` untracked)
+- **Verification:** live git-state recount, inventory-vs-git comparison, and `git diff --check` on the touched slice
+
+## [2026-05-04] audit | Block 304 combat v3 retro boundary and feature-map parity
+
+Closed the next real combat truth-drift instead of just polishing prose in isolation.
+- **Created:** `[[block-304-combat-v3-retro-boundary-and-feature-map-parity]]`
+- **Files audited:** `docs/retro/RETRO_2026-05-04.md`, `wiki/features/interactive-combat.md`, `wiki/features/pvp-combat.md`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift`, `Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift`, `Hexbound/Hexbound/Models/CombatData.swift`
+- **Fixes:** rewrote the fresh combat retro so its lessons now rest on checked-in repo truth instead of external feedback/project note names, updated `interactive-combat.md` to reflect the shipped v3.1 cold-start/header/reveal-summary wave, and corrected `pvp-combat.md` so it no longer implies the interactive summary already shows `rating_before` / `rating_after` even though `BattleSummaryView` still keeps that tile as a follow-up
+- **Inventory refresh:** updated current counts to `5245` in-scope files and `370 in-scope wiki markdown files / 369 wiki pages`
+- **Verification:** targeted grep across the retro/feature-map slice plus `git diff --check` on the touched files
+
 ## [2026-05-04] audit | Block 303 combat discussion prototype boundary and Swift comment sync
 
 Closed the next tiny combat truth-sync seam after the late prototype rollforward.

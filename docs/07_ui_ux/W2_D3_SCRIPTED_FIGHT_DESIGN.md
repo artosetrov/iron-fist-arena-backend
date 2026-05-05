@@ -1,7 +1,7 @@
 # W2.D3 — Scripted Tutorial Fight: Architecture & Design Doc
 
 **Дата:** 2026-04-10
-**Статус:** 🔵 Design — requires Artem approval BEFORE implementation
+**Статус:** 📚 HISTORICAL DESIGN DOC — scripted tutorial fight proposal snapshot
 **Исходный plan item:** `QA_FIX_PLAN_2026-04-10.md` W2.D3 — *«ONB-01 Tutorial fight (biggest win)»*
 **Оценка:** 2 дня (biggest task недели)
 

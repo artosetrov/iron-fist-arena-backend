@@ -1,11 +1,13 @@
 # Active Abilities — UX Categories v1
 
-Status: proposal, awaiting Artem's approval.
+Status: historical proposal snapshot from 2026-04-19, not a live runtime contract.
 Owner: Active Slot UX.
 Date: 2026-04-19.
 Inspiration: Duels RPG (fandom wiki) — "Preparation" / "Direct" / "Trap" skill
 archetypes. We keep it narrower: only Direct + a single Preparation bucket fit
 the current 5 effects.
+
+> **Status boundary:** preserve this file as the original category-label proposal, not as the current shipped contract. The live fire-banner vocabulary now lives in `Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift`, and the audited runtime map lives in `wiki/features/interactive-combat.md`. The shipped surface later expanded beyond these original five v1 action types to include the Talents v2 ult labels as well.
 
 ## Goal
 

@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5244
+- In-scope files: 5251
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -323,6 +323,11 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 301 | [[block-301-talents-v2-polish-tail-boundary-sync]] — the live Talents v2 feature maps and active design reference now state the same bounded follow-up truth as the code: the new ult action types are shipped, and the only remaining tail is dedicated VFX/SFX polish | Fixed |
 | 302 | [[block-302-inventory-rollforward-and-retro-prototype-boundary-sync]] — the inventory now reflects the late tracked rollforward for the newest retro/prototype files, stale untracked markers are gone, and the adjacent retro/prototype notes carry clearer repo-owned boundaries | Fixed |
 | 303 | [[block-303-combat-discussion-prototype-boundary-and-swift-comment-sync]] — the newer checked-in combat discussion prototypes now have explicit checked-in boundaries in combat docs/wiki, and the last active Swift comment using an external feedback-token shorthand has been rewritten into repo-owned prose | Fixed |
+| 304 | [[block-304-combat-v3-retro-boundary-and-feature-map-parity]] — the fresh combat v3 retro now stands on checked-in repo truth, and the `interactive-combat` / `pvp-combat` feature maps now match the actual shipped v3.1 runtime instead of older or slightly over-optimistic wording | Fixed |
+| 305 | [[block-305-inventory-rollforward-and-combat-strike-prototype-boundary-sync]] — the inventory now reflects the late tracked rollforward after block 304, and the new checked-in `combat-strike-anatomy` prototype is explicitly framed as a discussion-only combat follow-up surface in the live docs/wiki layer | Fixed |
+| 306 | [[block-306-talent-modal-report-and-active-categories-boundary-sync]] — the 2026-05-01 talent-modal redesign report now stands on checked-in repo truth instead of external `feedback_*` note names, and the older `ACTIVE_CATEGORIES_V1` doc is now clearly framed as a historical proposal rather than a live combat contract | Fixed |
+| 307 | [[block-307-historical-design-doc-status-header-parity]] — several historical design docs now have header status lines that agree with their own archival boundaries, instead of still sounding like they are waiting for present-tense approval | Fixed |
+| 308 | [[block-308-historical-planning-header-parity-wave-two]] — the next cluster of historical W2/W3/combat planning docs now introduces itself in the same archival tense that its boundary notes already use, instead of sounding like approval or execution is still paused in the present | Fixed |
 
 ## Status Legend
 

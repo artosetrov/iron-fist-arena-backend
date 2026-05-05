@@ -192,11 +192,11 @@ struct TalentTreeCanvas: View {
         }
 
         ZStack {
-            // Background: radial gold glow on top of bgSecondary + noise grid overlay.
-            background(size: size)
-
-            // Corner ornaments (decorative brackets)
-            cornerOrnaments(size: size)
+            // Block-level chrome (bgSecondary fill, radial glow, grid overlay,
+            // L-brackets, stroke) was previously painted here at intrinsic
+            // tree width (~392pt). It now lives on `TalentsTabView.canvasContainer`
+            // so it tracks the outer block width and matches the summary/reset
+            // rows. This view renders only the tree itself (connections + nodes).
 
             // Solid connections — drawn in Canvas for perf
             Canvas { context, _ in
@@ -265,61 +265,15 @@ struct TalentTreeCanvas: View {
         .onDisappear { dashPhase = 0 }
     }
 
-    // MARK: - Background (radial glow + noise grid)
-
-    private func background(size: CGSize) -> some View {
-        ZStack {
-            DarkFantasyTheme.bgSecondary
-            // Top-center gold radial glow — pulls the eye to the keystone.
-            RadialGradient(
-                colors: [DarkFantasyTheme.gold.opacity(0.06), .clear],
-                center: .init(x: 0.5, y: 0.0),
-                startRadius: 0,
-                endRadius: size.height * 0.7
-            )
-            // 24pt grid — barely-there lines so the canvas reads as "arcane chart".
-            GridLinesOverlay(spacing: 24)
-                .opacity(0.5)
-        }
-        .frame(width: size.width, height: size.height)
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
-    }
-
-    private func cornerOrnaments(size: CGSize) -> some View {
-        ZStack {
-            Rectangle()
-                .fill(Color.clear)
-                .frame(width: size.width, height: size.height)
-                .overlay(alignment: .topLeading) { cornerBracket(rotation: 0) }
-                .overlay(alignment: .topTrailing) { cornerBracket(rotation: 90) }
-                .overlay(alignment: .bottomTrailing) { cornerBracket(rotation: 180) }
-                .overlay(alignment: .bottomLeading) { cornerBracket(rotation: 270) }
-        }
-        .allowsHitTesting(false)
-    }
-
-    /// L-shaped corner bracket (top-left orientation at rotation 0).
-    private func cornerBracket(rotation: Double) -> some View {
-        ZStack(alignment: .topLeading) {
-            // Horizontal arm
-            Rectangle()
-                .fill(DarkFantasyTheme.goldDim)
-                .frame(width: 14, height: 1.5)
-            // Vertical arm
-            Rectangle()
-                .fill(DarkFantasyTheme.goldDim)
-                .frame(width: 1.5, height: 14)
-        }
-        .opacity(0.4)
-        .frame(width: 14, height: 14)
-        .padding(8)
-        .rotationEffect(.degrees(rotation))
-    }
 }
 
 // MARK: - Grid lines overlay
 
-private struct GridLinesOverlay: View {
+/// Faint 24pt-spaced grid lines. Used as the talent canvas backdrop ("arcane
+/// chart" feel). Lifted from `TalentTreeCanvas` to file scope so the parent
+/// (`TalentsTabView.canvasContainer`) can paint it across the full block
+/// width instead of intrinsic tree width.
+struct GridLinesOverlay: View {
     let spacing: CGFloat
 
     var body: some View {

@@ -130,183 +130,67 @@ struct TalentsSummaryCard: View {
     }
 
     // MARK: - Slot tile
+    //
+    // Combat v3.1 unification (2026-05-03): all 3 slot variants
+    // (empty / filled / premium-locked) now flow through the shared
+    // `ActiveSlotTile` primitive in `Views/Components/`. Talents and
+    // combat use the same chrome — same border, same number style,
+    // same gold left bar, same premium gem treatment. The old inline
+    // `emptySlotTile`, `filledSlotTile`, `premiumSlotTile`,
+    // `slotChrome`, `slotNumber`, and `premiumAccent` helpers were
+    // collapsed into this adapter.
 
     @ViewBuilder
     private func slotTile(index: Int) -> some View {
         let isPremium = index >= vm.maxActiveSlots
         if isPremium {
-            premiumSlotTile(index: index)
+            ActiveSlotTile(
+                slotNumber: index,
+                state: .premium(gemCost: premiumSlotGemCost),
+                isDisabled: vm.isMutating,
+                action: {
+                    onTapPremiumSlot()
+                    HapticManager.light()
+                }
+            )
+            .accessibilityLabel("Unlock 4th active slot for \(premiumSlotGemCost) gems")
         } else if let slot = vm.activeSlots.first(where: { $0.slotIndex == index }) {
-            filledSlotTile(slot: slot, index: index)
+            ActiveSlotTile(
+                slotNumber: index,
+                state: .filled(iconKind(for: slot)),
+                isDisabled: vm.isMutating,
+                action: {
+                    vm.openActiveSkillPicker(focusedSlotIndex: index)
+                    HapticManager.light()
+                }
+            )
         } else {
-            emptySlotTile(index: index)
-        }
-    }
-
-    // Empty slot — dashed border, "+" icon, slot number top-left.
-    private func emptySlotTile(index: Int) -> some View {
-        Button {
-            vm.openActiveSkillPicker(focusedSlotIndex: index)
-            HapticManager.light()
-        } label: {
-            slotChrome(borderStyle: .dashed, borderColor: DarkFantasyTheme.borderSubtle, fill: DarkFantasyTheme.bgPrimary) {
-                Image(systemName: "plus")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(DarkFantasyTheme.textDisabled)
-                    .frame(width: 16, height: 16)
-            }
-            .overlay(alignment: .topLeading) { slotNumber(index: index, color: DarkFantasyTheme.textDisabled) }
-        }
-        .buttonStyle(.plain)
-        .disabled(vm.isMutating)
-    }
-
-    // Filled slot — solid gold border, icon.
-    //
-    // Asset resolution order (consumables): try the catalog image whose name
-    // matches `consumable_type` (e.g. `health_potion_medium`); fall back to
-    // the `cross.vial.fill` SF Symbol if no asset is bundled. Talent slots
-    // keep using the action-type SF Symbol — those don't have per-skill
-    // asset art yet.
-    private func filledSlotTile(slot: ActiveSlot, index: Int) -> some View {
-        let consumableAsset: String? = {
-            guard slot.kind == .consumable, let key = slot.consumableType else { return nil }
-            return UIImage(named: key) != nil ? key : nil
-        }()
-        let fallbackSymbol: String = {
-            switch slot.kind {
-            case .talent:     return slot.activeActionType?.sfSymbol ?? "sparkles"
-            case .consumable: return "cross.vial.fill"
-            }
-        }()
-        return Button {
-            vm.openActiveSkillPicker(focusedSlotIndex: index)
-            HapticManager.light()
-        } label: {
-            slotChrome(
-                borderStyle: .solid,
-                borderColor: DarkFantasyTheme.gold,
-                fill: LinearGradient(
-                    colors: [DarkFantasyTheme.gold.opacity(0.18), DarkFantasyTheme.gold.opacity(0.05)],
-                    startPoint: .top, endPoint: .bottom
-                )
-            ) {
-                Group {
-                    if let asset = consumableAsset {
-                        // Asset art at slightly larger size so it reads as a
-                        // real bottle, not a pictogram.
-                        Image(asset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 28, height: 28)
-                    } else {
-                        Image(systemName: fallbackSymbol)
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .frame(width: 20, height: 20)
-                    }
+            ActiveSlotTile(
+                slotNumber: index,
+                state: .empty,
+                isDisabled: vm.isMutating,
+                action: {
+                    vm.openActiveSkillPicker(focusedSlotIndex: index)
+                    HapticManager.light()
                 }
-            }
-            .overlay(alignment: .leading) {
-                // 3px gold left bar — matches item-card DNA.
-                UnevenRoundedRectangle(
-                    topLeadingRadius: LayoutConstants.radiusMD,
-                    bottomLeadingRadius: LayoutConstants.radiusMD
-                )
-                .fill(DarkFantasyTheme.gold)
-                .frame(width: 3)
-                .frame(maxHeight: .infinity)
-            }
-            .overlay(alignment: .topLeading) { slotNumber(index: index, color: DarkFantasyTheme.gold) }
+            )
         }
-        .buttonStyle(.plain)
-        .disabled(vm.isMutating)
     }
 
-    // Premium locked slot — purple gem + cost.
-    private func premiumSlotTile(index: Int) -> some View {
-        Button {
-            onTapPremiumSlot()
-            HapticManager.light()
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                premiumAccent.opacity(0.08),
-                                premiumAccent.opacity(0.02)
-                            ],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .strokeBorder(premiumAccent.opacity(0.35), lineWidth: 1.5)
-
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    // Diamond-shaped gem
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(red: 0.83, green: 0.63, blue: 0.94),
-                                         Color(red: 0.60, green: 0.36, blue: 0.78),
-                                         Color(red: 0.35, green: 0.16, blue: 0.54)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 12, height: 12)
-                        .rotationEffect(.degrees(45))
-                        .shadow(color: premiumAccent.opacity(0.5), radius: 6)
-                    Text("\(premiumSlotGemCost)")
-                        .font(DarkFantasyTheme.badge)
-                        .foregroundStyle(premiumAccent)
-                }
+    /// Adapter: project the talents-page `ActiveSlot` model onto the
+    /// shared tile's `ActiveSlotTileIcon`. Consumables prefer the
+    /// catalog asset by `consumable_type` key (e.g. `health_potion_medium`)
+    /// and fall back to the `cross.vial.fill` SF Symbol when no asset
+    /// is bundled. Talent slots use the action-type SF Symbol.
+    private func iconKind(for slot: ActiveSlot) -> ActiveSlotTileIcon {
+        switch slot.kind {
+        case .consumable:
+            if let key = slot.consumableType, UIImage(named: key) != nil {
+                return .asset(key)
             }
-            .aspectRatio(1, contentMode: .fit)
-            .overlay(alignment: .topLeading) { slotNumber(index: index, color: premiumAccent.opacity(0.8)) }
+            return .sfSymbol("cross.vial.fill")
+        case .talent:
+            return .sfSymbol(slot.activeActionType?.sfSymbol ?? "sparkles")
         }
-        .buttonStyle(.plain)
-        .disabled(vm.isMutating)
-        .accessibilityLabel("Unlock 4th active slot for \(premiumSlotGemCost) gems")
-    }
-
-    /// Epic/purple premium accent — no token exists in DarkFantasyTheme for this,
-    /// so we derive one that matches the design-system rarity epic color.
-    private var premiumAccent: Color { Color(red: 0.71, green: 0.49, blue: 0.84) }
-
-    // MARK: - Helpers
-
-    private enum BorderStyle { case solid, dashed }
-
-    private func slotChrome<Fill: ShapeStyle, Content: View>(
-        borderStyle: BorderStyle,
-        borderColor: Color,
-        fill: Fill,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(fill)
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .strokeBorder(
-                    borderColor,
-                    style: StrokeStyle(
-                        lineWidth: 1.5,
-                        dash: borderStyle == .dashed ? [4, 4] : []
-                    )
-                )
-            content()
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-
-    private func slotNumber(index: Int, color: Color) -> some View {
-        Text(String(format: "%02d", index + 1))
-            .font(DarkFantasyTheme.badge)
-            .foregroundStyle(color)
-            .padding(.leading, LayoutConstants.spaceXS)
-            .padding(.top, LayoutConstants.spaceXS)
     }
 }

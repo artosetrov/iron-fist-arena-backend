@@ -775,7 +775,12 @@ struct InteractivePredictView: View {
                     isInteractive: true,
                     onTap: { vm.toggleActiveSlot($0) }
                 )
-                EmptyConsumableSlot()
+                // 4th slot — shared `ActiveSlotTile` in `.locked` state,
+                // identical chrome to the 3 talent slots above. Reserved
+                // for the future consumable-in-combat feature; today the
+                // tile is non-tappable and shows the padlock affordance.
+                ActiveSlotTile(slotNumber: 3, state: .locked, action: {})
+                    .frame(width: 56, height: 56)
             }
         }
     }
@@ -1258,31 +1263,11 @@ private struct BodySilhouettePath: Shape {
     }
 }
 
-/// 4th slot in the Active Skills row (Strike v4). Always-empty placeholder
-/// reserved for the future consumable-in-combat feature. Visually distinct
-/// from the 3 talent slots (purple-tinted dashed border) so it reads as
-/// "different category" not "your loadout slot is empty".
-///
-/// When the consumable backend lands this becomes a real Button with the
-/// stack icon + count; today it's purely visual.
-struct EmptyConsumableSlot: View {
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgElevated)
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .stroke(
-                    DarkFantasyTheme.borderStrong,
-                    style: StrokeStyle(lineWidth: 1, dash: [3, 2])
-                )
-            Image(systemName: "cross.vial")
-                .font(.system(size: 18, weight: .light))
-                .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
-        }
-        .frame(width: 56, height: 56)
-        .accessibilityLabel("Consumable slot — coming soon")
-    }
-}
+// Note (combat v3.1 unification): the inline `EmptyConsumableSlot`
+// struct that briefly lived here was a duplicate of the talents-page
+// empty-slot chrome. It's gone — the Strike screen now uses the
+// shared `ActiveSlotTile(state: .locked)` from `Views/Components/`
+// for its 4th slot, matching the 3 talent slots above pixel-for-pixel.
 
 struct BodySilhouetteView: View {
     let attackZone: InteractiveBodyZone

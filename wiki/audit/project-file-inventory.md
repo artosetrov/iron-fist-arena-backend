@@ -10,9 +10,9 @@ updated: 2026-05-04
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5243
-- Untracked project-owned files: 1
-- In-scope files listed here: 5244
+- Tracked files: 5246
+- Untracked project-owned files: 5
+- In-scope files listed here: 5251
 
 ## Excluded Generated / Vendor Areas
 
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 374
+- wiki: 375
 
 ## File List By Block
 
@@ -890,7 +890,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (199)
+### docs (200)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -1076,6 +1076,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-05-01.md
 - docs/retro/RETRO_2026-05-02.md
 - docs/retro/RETRO_2026-05-03.md
+- docs/retro/RETRO_2026-05-04.md
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -3825,13 +3826,14 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - onboarding-assets/panel-3-1b-dungeon-victory.png
 - onboarding-assets/panel-3-2-forge.png
 
-### prototypes (12)
+### prototypes (13)
 
 - prototypes/active-categories.html
 - prototypes/boss-encounter.html
 - prototypes/combat-3-state-flow.html
 - prototypes/combat-duel-header-compact.html
 - prototypes/combat-proto-v3.html
+- prototypes/combat-strike-anatomy.html
 - prototypes/fine-orb.pdf
 - prototypes/strike-reveal-b.html
 - prototypes/strike-reveal-compact.html
@@ -4973,7 +4975,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (374)
+### wiki (379)
 
 - wiki/_generated/api-routes.json
 - wiki/_generated/balance-constants.json
@@ -5284,7 +5286,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-300-push-surface-apns-only-boundary-sync.md
 - wiki/audit/block-301-talents-v2-polish-tail-boundary-sync.md
 - wiki/audit/block-302-inventory-rollforward-and-retro-prototype-boundary-sync.md
-- wiki/audit/block-303-combat-discussion-prototype-boundary-and-swift-comment-sync.md _(untracked)_
+- wiki/audit/block-303-combat-discussion-prototype-boundary-and-swift-comment-sync.md
+- wiki/audit/block-304-combat-v3-retro-boundary-and-feature-map-parity.md _(untracked)_
+- wiki/audit/block-305-inventory-rollforward-and-combat-strike-prototype-boundary-sync.md _(untracked)_
+- wiki/audit/block-306-talent-modal-report-and-active-categories-boundary-sync.md _(untracked)_
+- wiki/audit/block-307-historical-design-doc-status-header-parity.md _(untracked)_
+- wiki/audit/block-308-historical-planning-header-parity-wave-two.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

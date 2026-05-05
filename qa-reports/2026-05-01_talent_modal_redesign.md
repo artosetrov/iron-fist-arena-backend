@@ -1,8 +1,10 @@
 # Talent Detail Modal — Redesign Report
 **Date:** 2026-05-01
 **Owner:** Artem
-**Status:** Awaiting approval before implementation
+**Status:** Historical redesign report — the modal/flavor pipeline later shipped in a narrower checked-in form
 **Related:** `Hexbound/Views/Hero/Talents/TalentDetailSheet.swift`, `TalentsTabView.swift`, `backend/prisma/schema.prisma` (PassiveNode), `backend/prisma/seeds/passives-tank-v2.sql`
+
+> **Status boundary:** preserve this file as the original redesign/planning snapshot from `2026-05-01`, not as the live runtime contract. Current shipped truth lives in `Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift`, `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift`, `Hexbound/Hexbound/Models/PassiveTree.swift`, `backend/prisma/migrations/20260501_passive_node_flavor/migration.sql`, and `docs/retro/RETRO_2026-05-04.md`.
 
 ---
 
@@ -71,7 +73,7 @@ Replace `.sheet(item: ...).presentationDetents([.medium])` with an in-tree ZStac
 }
 ```
 
-Result: card hugs content vertically, dim backdrop, tap-out dismisses, close × still works. Per `feedback_no_scale_animations.md` — opacity-only enter/exit is acceptable; if scale is forbidden by that rule, drop the `.scale` and use plain `.opacity`. **Flag for confirmation.**
+Result: card hugs content vertically, dim backdrop, tap-out dismisses, close × still works. If the current no-scale transition rule applies here too, drop the `.scale` and use plain `.opacity`; the later shipped overlay followed that safer path.
 
 ### 2.4 Why this approach
 
@@ -144,7 +146,7 @@ Voice: dark-fantasy, second-person, lean. 1–2 short sentences. Hints at the pr
 
 ## 4. Implementation Plan
 
-Order matters — migration before code deploy (per `feedback_migration_mcp_apply_to_prod.md`, `feedback_prisma_schema_without_migration.md`).
+Order matters — migration before code deploy, because `PassiveNode.flavor` needs to exist in prod before runtime code can read it safely.
 
 ### Phase A — Schema + data (backend)
 1. Create migration `backend/prisma/migrations/20260501_passive_node_flavor/migration.sql`:
@@ -174,14 +176,14 @@ Order matters — migration before code deploy (per `feedback_migration_mcp_appl
     - Replace `.sheet(item: sheetBinding()) { node in ... }` with `.overlay { ... }` ZStack as in §2.3.
     - Confirm interaction with existing `.sheet(isPresented: $vm.showActiveSkillPicker)` — they're independent.
 
-### Phase E — Figma DS sync (per `feedback_sync_figma_swift_always.md`)
+### Phase E — Figma DS sync
 13. Update `Hexbound-DS` Figma file — add new "TalentDetailModal" component variant (overlay-card) using DS tokens. Match new layout.
 14. Document in `docs/07_ui_ux/DESIGN_SYSTEM.md` if a new pattern is added (modal-overlay vs sheet).
 
 ### Phase F — pbxproj + ship
 15. No new .swift files → pbxproj untouched.
 16. Run `gatekeeper` agent preflight.
-17. Deploy via `.git-trigger` (per `feedback_deploy_via_tmp_clone.md`). Backend first, then iOS build.
+17. Deploy via the repo's checked-in `.git-trigger` flow. Backend first, then iOS build.
 
 ### Phase G — verification
 18. Verify on prod simulator: tap each Tank talent, confirm flavor renders, modal sizes to content, backdrop tap dismisses.
@@ -191,8 +193,8 @@ Order matters — migration before code deploy (per `feedback_migration_mcp_appl
 
 ## 5. Risks / Open Questions
 
-1. **No-scale-animation rule** — the prototype suggests a small `.scale(0.96)` enter transition. If `feedback_no_scale_animations.md` covers ALL views (not just buttons/cards), drop scale and use opacity-only. **Need confirmation.**
-2. **Other classes** — Warrior/Mage/Rogue currently have no v2 seeds (per `feedback_no_rotting_scaffolds.md`?). If their nodes exist with `flavor = NULL`, modal should render gracefully. Drafting their flavor is out of scope here.
+1. **No-scale-animation rule** — the prototype suggests a small `.scale(0.96)` enter transition. If the app-wide no-scale transition rule applies here too, drop scale and use opacity-only.
+2. **Other classes** — at report time only the Tank flavor draft was written. If Warrior/Mage/Rogue nodes still carry `flavor = NULL`, the modal must render gracefully without that line.
 3. **Bonus-row removal** — dropping the `bonusText`-from-`bonusStat` computation makes the `bonusStat`/`bonusValue` fields inert in the modal. They're still used elsewhere (TalentNodeView icons?). Need to confirm before deleting the helper. Safe path: leave the helper, just stop calling it.
 4. **Length budget** — the flavor lines above are 1–2 sentences (~120 chars max). Keystones with longer effect strings could clip on iPhone SE width. Will visually QA on small device.
 
@@ -209,4 +211,4 @@ Reply OK or with edits on each:
 - [ ] No-scale-animation interpretation (drop scale entirely?)
 - [ ] Phase ordering — migration-first via Supabase MCP, then code
 
-Once OK on all six, I run Phase A → G.
+This checklist is preserved as the original approval gate for the redesign pass; use the checked-in runtime files above for current shipped truth.

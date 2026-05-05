@@ -116,17 +116,64 @@ struct TalentsTabView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 400)
+        // Block-level chrome — bgSecondary fill + radial top glow + 24pt grid
+        // overlay + corner brackets + subtle stroke. Lifted out of
+        // `TalentTreeCanvas` (where it sat at intrinsic tree width ~392pt and
+        // left a bgPrimary halo around the dark tile) so it now spans the
+        // outer block width and matches the summary/reset rows.
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgPrimary)
+            ZStack {
+                DarkFantasyTheme.bgSecondary
+                RadialGradient(
+                    colors: [DarkFantasyTheme.gold.opacity(0.06), .clear],
+                    center: .init(x: 0.5, y: 0.0),
+                    startRadius: 0,
+                    endRadius: 280
+                )
+                GridLinesOverlay(spacing: 24)
+                    .opacity(0.5)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
-        // Negate the parent VStack's 16pt screen padding so the canvas card
-        // bleeds edge-to-edge, while summary + reset rows keep their margins.
-        .padding(.horizontal, -LayoutConstants.screenPadding)
+        .overlay { canvasCornerBrackets }
+    }
+
+    // MARK: - Canvas corner brackets
+
+    /// Decorative L-brackets pinned to the four corners of the talent canvas
+    /// block. Lifted from `TalentTreeCanvas` so they anchor to the block
+    /// edges (matching summary/reset width) instead of the intrinsic tree
+    /// rectangle.
+    private var canvasCornerBrackets: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .overlay(alignment: .topLeading)     { canvasCornerBracket(rotation: 0) }
+            .overlay(alignment: .topTrailing)    { canvasCornerBracket(rotation: 90) }
+            .overlay(alignment: .bottomTrailing) { canvasCornerBracket(rotation: 180) }
+            .overlay(alignment: .bottomLeading)  { canvasCornerBracket(rotation: 270) }
+            .allowsHitTesting(false)
+    }
+
+    /// L-shaped corner bracket (top-left orientation at rotation 0).
+    private func canvasCornerBracket(rotation: Double) -> some View {
+        ZStack(alignment: .topLeading) {
+            // Horizontal arm
+            Rectangle()
+                .fill(DarkFantasyTheme.goldDim)
+                .frame(width: 14, height: 1.5)
+            // Vertical arm
+            Rectangle()
+                .fill(DarkFantasyTheme.goldDim)
+                .frame(width: 1.5, height: 14)
+        }
+        .opacity(0.4)
+        .frame(width: 14, height: 14)
+        .padding(8)
+        .rotationEffect(.degrees(rotation))
     }
 
     // MARK: - Loading / Empty

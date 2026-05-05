@@ -1,7 +1,7 @@
 # W2.D5 — Badge Priority System
 
 **Дата:** 2026-04-10
-**Статус:** 📝 DESIGN DOC — awaiting approval
+**Статус:** 📚 HISTORICAL DESIGN DOC — archived badge-priority proposal
 **План:** `QA_FIX_PLAN_2026-04-10.md` W2.D5 — «Badge priority / visual hierarchy»
 **Связанные доки:** `W2_D4_BUILDING_GATING_DESIGN.md`
 

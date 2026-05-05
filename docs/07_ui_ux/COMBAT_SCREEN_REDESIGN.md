@@ -2,10 +2,10 @@
 
 **Date:** 2026-04-13
 **Author:** Claude (UX orchestrator)
-**Status:** Paper prototype — awaiting Artem's approval before Figma + Swift build
+**Status:** Historical paper prototype from 2026-04-13 — preserved as combat UX exploration
 **Scope:** Active fight screen + end-of-fight reveal. Combat log visibility rethought.
 
-> **Status boundary:** historical combat UX proposal from `2026-04-13`. Use this as a design exploration snapshot, not as the live combat UI source of truth. For current shipped/runtime truth, re-check the audited combat feature pages in `wiki/`, `prototypes/combat-3-state-flow.html`, and the later discussion-only `prototypes/combat-proto-v3.html` / `prototypes/combat-duel-header-compact.html` surfaces before treating any one branch as active implementation truth.
+> **Status boundary:** historical combat UX proposal from `2026-04-13`. Use this as a design exploration snapshot, not as the live combat UI source of truth. For current shipped/runtime truth, re-check the audited combat feature pages in `wiki/`, `prototypes/combat-3-state-flow.html`, and the later discussion-only `prototypes/combat-proto-v3.html`, `prototypes/combat-duel-header-compact.html`, and `prototypes/combat-strike-anatomy.html` surfaces before treating any one branch as active implementation truth.
 
 ---
 

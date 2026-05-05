@@ -3,8 +3,14 @@
 **Version:** 1.0 Draft
 **Date:** 2026-04-13
 **Owner:** Artem + Claude (combat/progression design)
-**Status:** Design draft awaiting approval
+**Status:** Historical design draft — preserved as early tree/progression direction
 **Related docs:** `COMBAT.md`, `PROGRESSION.md`, `BALANCE_CONSTANTS.md`, `ECONOMY.md`, `ECONOMY_RULES.md`
+
+> **Status boundary:** preserve this document as the earlier full tree-system
+> direction, not as the live passive-tree/runtime contract. Current shipped or
+> later-audited truth now lives in `docs/06_game_systems/SKILL_TREE_DESIGN_V2.md`
+> and `wiki/features/passive-tree.md`; use this file for design rationale and
+> superseded structure only.
 
 ---
 

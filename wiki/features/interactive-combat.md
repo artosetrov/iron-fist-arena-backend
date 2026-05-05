@@ -8,8 +8,8 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 ## Status
 
-- **Phase:** Talents v2 ult action types shipped 2026-04-29 (`stealth` / `aoe_damage` / `cooldown_reset` / `aoe_stun` — see `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees`). Phase 3.B shipped 2026-04-13 (5 active effects + opp AI firing + iOS fire banner). Phase 3 shipped 2026-04-13 (burst_damage firing + cooldown ticks + iOS HUD + opponent preview). Phase 1 shipped 2026-04-13 (Active Slot schema + CRUD + iOS UI).
-- **Last major change:** 2026-04-29 — Talents v2 ult action types + cross-round buff state pattern (`interactiveActives.{p1,p2}_buffs`)
+- **Phase:** In production. Latest live UI wave is combat v3.1 (`2026-05-03`): optimistic cold-start shell, inline intent pill + active HUD declutter, compact duel header, collapsed verdict summary. Talents v2 ult action types shipped `2026-04-29` (`stealth` / `aoe_damage` / `cooldown_reset` / `aoe_stun` — see `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees`). Phase 3.B shipped `2026-04-13` (5 active effects + opp AI firing + iOS fire banner). Phase 3 shipped `2026-04-13` (burst_damage firing + cooldown ticks + iOS HUD + opponent preview). Phase 1 shipped `2026-04-13` (Active Slot schema + CRUD + iOS UI).
+- **Last major change:** 2026-05-03 — combat v3.1 readability/flow pass in `InteractiveBattleView` + `BattleSummaryView` (optimistic cold-start, compact duel header, one-channel reveal feedback, verdict headline). Rating delta on the summary surface is still a bounded follow-up.
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -53,8 +53,9 @@ Optional combat mode where the player slots up to N "active skills" before the f
 - `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift` — main screen, round animation, fire banner
 - `Hexbound/Hexbound/Views/Combat/InteractiveBattleViewModel.swift` — `@Observable` state: round, HP, cooldowns
 - `Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift` — cooldown HUD for actives
+- `Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift` — end-of-battle summary with stars, verdict headline, collapsible round recap
 - `Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift` — shared sub-components (banners, cooldown pills, opponent active preview)
-- `Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift` — per-round log card in the battle log
+- `Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift` — compact round card used in the live reveal/micro-log layer
 
 ### Active-slot configuration
 
@@ -78,7 +79,7 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 - `docs/06_game_systems/COMBAT.md` — combat foundation
 - `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md` — checked-in rollout/deferred-work plan
-- `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md` — historical combat redesign exploration; current checked-in prototypes now include `prototypes/combat-proto-v3.html` and `prototypes/combat-duel-header-compact.html` as discussion-only follow-up surfaces
+- `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md` — historical combat redesign exploration; current checked-in prototypes now include `prototypes/combat-proto-v3.html`, `prototypes/combat-duel-header-compact.html`, and `prototypes/combat-strike-anatomy.html` as discussion-only follow-up surfaces
 - `wiki/features/combat-unification-remaining.md` — current remaining unification tails around combat mode consolidation
 
 ## Notable gotchas
@@ -90,6 +91,8 @@ Optional combat mode where the player slots up to N "active skills" before the f
 - **Cross-round buff state.** `interactiveActives.{p1,p2}_buffs: ActiveBuffsState` holds effects that persist beyond the round of their fire. Currently used only by `aoe_stun` (`stunRoundsRemaining`); future cross-round effects (DoTs, charges, multi-round shields) attach the same way.
 - **Opponent AI.** Opponent actives fire deterministically based on match seed — classic flow doesn't need to care, but interactive preview shows upcoming opp active.
 - **Fire banner** was shipped 2026-04-13 as part of 3.B — iOS UI highlights which active just fired that round.
+- **v3.1 collapsed the duplicate reveal channel.** The live screen now prefers one channel per event: compact reveal/micro-log plus floating VFX, not a second full scroll log competing for attention.
+- **Summary rating tile still pending.** `CombatResultInfo.ratingBefore` / `ratingAfter` already exist, but `BattleSummaryView` intentionally does not render them until `prefetchCompleteResult` is wired cleanly into that surface. Treat rating delta there as an open follow-up, not a shipped element.
 
 ## Tests / fixtures
 

@@ -1,6 +1,6 @@
 # Interactive Combat — Full Feature Plan
 
-**Status:** planning — **REVISED 2026-04-13 (v2)** after balance/economy review.
+**Status:** historical design plan — revised on 2026-04-13 (v2) and preserved as combat rationale.
 **Created:** 2026-04-13
 **Owner:** Artem
 **Scope:** Phase 1 (active talent slots) + Phase 2 (per-strike stance choice) — shipped together
