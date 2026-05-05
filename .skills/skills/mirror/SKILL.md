@@ -97,6 +97,16 @@ Any tap that **forfeits progress, currency, or a turn** must require an explicit
 - Buttons placed adjacent to a primary positive action (SKIP next to STRIKE, CANCEL next to CONFIRM) → especially require this even if the action itself is mild, because adjacency raises mis-tap rate.
 - Confirmation dialog buttons should always have `.role(.destructive)` for the destructive option and `.cancel` for back-out, so VoiceOver announces "Skip, destructive button" rather than just "Skip".
 
+### One Feedback Channel Per Event (2026-05-04)
+
+If a per-event signal is already delivered by floating VFX/popups (DamagePopup, ActiveFireBanner, ConsumableFireBanner, toast), do NOT also render a secondary scrollable summary of the same events on the same screen. Two channels for the same data fight for attention and force the player to pick which to read; the screen feels noisier without delivering extra information.
+
+- Pick the channel that carries motion/timing best (usually VFX) and let the panel surface drop the duplicate list.
+- Aggregate totals (e.g. "+53 Damage you dealt / −22 Damage you took") are NOT duplicate channels — they're a derived summary, not a per-event repeat.
+- Headers that repeat info already shown elsewhere on the same screen (e.g. "ROUND N · EXCHANGE" when round number lives in roundStrip directly above) → drop them.
+
+**Reference:** Combat v3.1 reveal refactor — InteractiveRoundLogCard dropped logList ScrollView + redundant round header (commit `4f0bf20`, 2026-05-04).
+
 ### Accessibility
 
 - **Every Button needs `.accessibilityLabel()`.** Count buttons without labels — report the number. Icon-only buttons (arrows, close, toggles) are critical.

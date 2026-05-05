@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5243
+- In-scope files: 5244
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -322,6 +322,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 300 | [[block-300-push-surface-apns-only-boundary-sync]] — the backend/admin/source-of-truth push surface now states the live repo truth plainly: APNS-backed iOS delivery is shipped, Android tokens may be stored, and a real FCM sender is still future work | Fixed |
 | 301 | [[block-301-talents-v2-polish-tail-boundary-sync]] — the live Talents v2 feature maps and active design reference now state the same bounded follow-up truth as the code: the new ult action types are shipped, and the only remaining tail is dedicated VFX/SFX polish | Fixed |
 | 302 | [[block-302-inventory-rollforward-and-retro-prototype-boundary-sync]] — the inventory now reflects the late tracked rollforward for the newest retro/prototype files, stale untracked markers are gone, and the adjacent retro/prototype notes carry clearer repo-owned boundaries | Fixed |
+| 303 | [[block-303-combat-discussion-prototype-boundary-and-swift-comment-sync]] — the newer checked-in combat discussion prototypes now have explicit checked-in boundaries in combat docs/wiki, and the last active Swift comment using an external feedback-token shorthand has been rewritten into repo-owned prose | Fixed |
 
 ## Status Legend
 

@@ -1,0 +1,615 @@
+<!doctype html>
+<!--
+  Hexbound — Combat Strike v4 (Anatomy layout)
+  Author: Cowork session 2026-05-03
+  Goal: replace the linear ATTACK/DEFEND row matrix with a spatially-anchored
+        2-column layout: ATK tiles on left, DEF tiles on right, body silhouette
+        in the middle. Each zone tile sits anatomically next to the body part
+        it represents — head-tile by head, legs-tile by feet — so the player
+        reads the choice without parsing labels.
+  Status: discussion prototype — body silhouette is a placeholder SVG, not the
+          final asset. Asset substitution + Swift work waits on user approval.
+  Reference: user-provided screenshot 2026-05-03 with watermarked stock body.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hexbound — Strike v4 Anatomy</title>
+<style>
+  :root {
+    --bg: #0F0F1A;
+    --bg-screen: #0A0A12;
+    --surface: #1A1A2E;
+    --surface-2: #252538;
+    --gold: #D4A537;
+    --gold-soft: rgba(212,165,55,.18);
+    --gold-dim: #8C6D25;
+    --danger: #E63946;
+    --danger-soft: rgba(230,57,70,.16);
+    --success: #5FBF5F;
+    --info: #6BB3E8;
+    --purple: #9F7AEA;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6E6E80;
+    --border-subtle: #2A2A3C;
+    --border-strong: #3A3A52;
+    --font-h: "Oswald","Impact",system-ui,sans-serif;
+    --font-b: "Inter",-apple-system,system-ui,sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-b);
+    background: var(--bg-screen);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  h1 {
+    font-family: var(--font-h);
+    font-size: 26px;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  h1 small {
+    display: block;
+    font-family: var(--font-b);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-transform: none;
+  }
+  .legend {
+    max-width: 880px;
+    background: var(--surface);
+    border-left: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 12px 18px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .legend strong { color: var(--gold); }
+  .legend em { color: var(--text-primary); font-style: normal; font-weight: 600; }
+
+  /* phone shell */
+  .phone {
+    width: 390px;
+    height: 860px;
+    border-radius: 44px;
+    background: var(--bg);
+    border: 8px solid #0a0a12;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 0 1px #2a2a3a;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .notch {
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: #000; border-radius: 18px; z-index: 50;
+  }
+  .statusbar {
+    display: flex; justify-content: space-between;
+    padding: 12px 22px 0;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-primary);
+    z-index: 40; position: relative;
+  }
+  .screen {
+    position: absolute; inset: 0;
+    padding: 50px 16px 16px;
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+
+  /* compact duel header (carries over from v3.1 compact variant) */
+  .duel {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .fighter {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .avatar {
+    width: 72px; height: 72px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #2a2a3a, #1a1a28);
+    border: 2px solid;
+    overflow: hidden;
+    position: relative;
+  }
+  .fighter.you .avatar { border-color: var(--success); }
+  .fighter.foe .avatar { border-color: var(--danger); }
+  .side-ribbon {
+    position: absolute; top: 3px; left: 3px;
+    padding: 1px 5px; border-radius: 3px;
+    font-family: var(--font-h);
+    font-size: 9px; letter-spacing: 0.14em;
+    color: white;
+  }
+  .fighter.you .side-ribbon { background: rgba(95,191,95,.85); }
+  .fighter.foe .side-ribbon { background: rgba(230,57,70,.85); }
+  .name {
+    font-family: var(--font-h); font-size: 14px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .meta { font-size: 11px; color: var(--text-secondary); }
+  .hp-bar {
+    width: 100%;
+    height: 14px;
+    background: #14141f;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+  }
+  .hp-bar .fill { height: 100%; }
+  .you .hp-bar .fill { background: linear-gradient(90deg,#3da33d,var(--success)); }
+  .foe .hp-bar .fill { background: linear-gradient(90deg,#a33d3d,var(--danger)); }
+  .hp-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-h); font-size: 10px; letter-spacing: 0.04em;
+    color: white; text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  }
+
+  .round-chip {
+    align-self: center;
+    padding: 4px 14px;
+    background: rgba(212,165,55,.1);
+    border: 1px solid rgba(212,165,55,.35);
+    border-radius: 999px;
+    font-family: var(--font-h);
+    font-size: 12px; letter-spacing: 0.18em; color: var(--gold);
+    text-transform: uppercase;
+  }
+  .intent-pill {
+    align-self: center;
+    padding: 4px 12px;
+    background: var(--danger-soft);
+    border: 1px solid rgba(230,57,70,.4);
+    border-radius: 999px;
+    font-family: var(--font-h);
+    font-size: 11px; letter-spacing: 0.12em; color: var(--danger);
+    text-transform: uppercase;
+  }
+
+  /* anatomy matrix — 3 columns: ATK / body / DEF */
+  .anatomy {
+    display: grid;
+    grid-template-columns: 1fr 110px 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .col-head {
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+    padding: 0 4px 4px;
+  }
+  .col-head .lbl {
+    font-family: var(--font-h);
+    font-size: 13px; letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .col-head.atk .lbl { color: var(--danger); }
+  .col-head.def .lbl { color: var(--info); }
+  .col-zones {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  /* Each zone tile compact, vertically stacked, 3 per side */
+  .zone {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 10px 6px 8px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    flex: 1;
+  }
+  .zone .glyph { font-size: 22px; line-height: 1; }
+  .zone .z-name {
+    font-family: var(--font-h);
+    font-size: 13px; letter-spacing: 0.1em;
+  }
+  .zone .big-stat {
+    font-family: var(--font-h);
+    font-size: 18px; letter-spacing: 0.02em;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+  .zone .stat-label {
+    font-size: 10px; color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+  .zone.sel { background: var(--gold-soft); border-color: var(--gold); }
+  .zone.sel .big-stat { color: var(--gold); }
+
+  /* body silhouette container */
+  .body-col {
+    background: rgba(20, 20, 32, 0.5);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .body-col svg {
+    width: 80%;
+    height: 95%;
+  }
+  /* Hot-zone glow when paired tile is selected */
+  .body-zone-overlay {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    background: radial-gradient(circle, rgba(212,165,55,.5) 0%, transparent 70%);
+  }
+  .body-zone-overlay.head {
+    top: 6%; left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 50px;
+  }
+  .body-zone-overlay.chest {
+    top: 30%; left: 50%;
+    transform: translateX(-50%);
+    width: 70px; height: 70px;
+  }
+  .body-zone-overlay.legs {
+    top: 60%; left: 50%;
+    transform: translateX(-50%);
+    width: 70px; height: 100px;
+  }
+  .body-zone-overlay.active { opacity: 1; }
+  .body-zone-overlay.atk { background: radial-gradient(circle, rgba(230,57,70,.55) 0%, transparent 70%); }
+  .body-zone-overlay.def { background: radial-gradient(circle, rgba(107,179,232,.55) 0%, transparent 70%); }
+
+  /* Active skills section */
+  .actives-section {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .actives-head {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .actives-head .ttl {
+    font-family: var(--font-h);
+    font-size: 13px; letter-spacing: 0.14em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+  .actives-head .sub {
+    font-size: 11px; color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+  .actives-head .sub b { color: var(--gold); font-weight: 700; }
+  .actives-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .slot {
+    aspect-ratio: 1 / 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    color: var(--text-tertiary);
+    font-size: 22px;
+  }
+  .slot .num {
+    position: absolute; top: 4px; left: 6px;
+    font-family: var(--font-h);
+    font-size: 9px; letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+  }
+  .slot.empty {
+    border-style: dashed;
+    border-color: var(--border-strong);
+  }
+  .slot.empty .plus {
+    color: var(--text-tertiary);
+    font-size: 28px; font-weight: 300;
+  }
+  .slot.equipped { border-color: var(--gold); background: rgba(212,165,55,.05); }
+  .slot.consumable { border-color: var(--purple); background: rgba(159,122,234,.06); }
+  .slot.consumable .count {
+    position: absolute; bottom: 3px; right: 5px;
+    font-family: var(--font-h);
+    font-size: 11px; color: var(--purple);
+  }
+  .slot .icon {
+    font-size: 26px;
+  }
+
+  /* CTA */
+  .ctabar {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: auto;
+  }
+  .btn {
+    padding: 16px 0;
+    border-radius: 10px;
+    font-family: var(--font-h); font-size: 16px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; text-align: center;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-secondary);
+    position: relative; overflow: hidden;
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+    color: #1A1A2E;
+    border-color: var(--gold);
+    box-shadow: 0 0 16px rgba(212,165,55,.3);
+  }
+  .btn .timer-arc {
+    position: absolute; left: 0; bottom: 0; height: 3px;
+    background: rgba(255,255,255,.55);
+    width: 65%;
+  }
+
+  .stage {
+    display: flex; gap: 32px; flex-wrap: wrap;
+    justify-content: center; align-items: flex-start;
+  }
+  .col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
+  }
+  .col-label {
+    font-family: var(--font-h);
+    font-size: 14px; letter-spacing: 0.16em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .after-note {
+    width: 390px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .after-note b { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<h1>
+  Strike v4 — Anatomy Layout
+  <small>Body silhouette anchors zones spatially. Body asset = placeholder SVG (mock).</small>
+</h1>
+
+<div class="legend">
+  <strong>What changes vs v3.1.</strong>
+  Matrix flips from <em>2 stacked rows</em> (ATTACK row + DEFEND row) to
+  <em>2 vertical columns flanking a body silhouette</em>. Head-tile sits next to
+  the head, legs-tile sits next to the feet — players don't have to read
+  "HEAD / CHEST / LEGS" labels because the spatial anatomy already tells
+  them. Selecting a tile lights up the matching body region (red glow for
+  ATK, blue glow for DEF). Active Skills section grows from 3 → 4 slots
+  (3 talent slots + 1 consumable slot with stack count).
+</div>
+
+<div class="stage">
+  <div class="col">
+    <div class="col-label">Strike v4 · Anatomy</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>10:47</span><span>● ● ●</span></div>
+      <div class="screen">
+
+        <!-- compact duel header (3.1 carryover) -->
+        <div class="duel">
+          <div class="fighter you">
+            <div class="avatar">
+              <span class="side-ribbon">YOU</span>
+              <img alt="" src="https://placehold.co/120x120/3a3a52/d4a537?text=DEGON" style="width:100%;height:100%;object-fit:cover"/>
+            </div>
+            <div class="name">DEGON</div>
+            <div class="meta">Lv.12 Warrior</div>
+            <div class="hp-bar you">
+              <div class="fill" style="width:93%"></div>
+              <div class="hp-text">694 / 748</div>
+            </div>
+          </div>
+          <div class="fighter foe">
+            <div class="avatar">
+              <span class="side-ribbon">ENEMY</span>
+              <img alt="" src="https://placehold.co/120x120/3a2a2a/e63946?text=IRON" style="width:100%;height:100%;object-fit:cover"/>
+            </div>
+            <div class="name">IRONFANG</div>
+            <div class="meta">Lv.6 Warrior</div>
+            <div class="hp-bar foe">
+              <div class="fill" style="width:29%"></div>
+              <div class="hp-text">51 / 176</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; justify-content:center; align-items:center">
+          <span class="round-chip">Round 4</span>
+          <span class="intent-pill">Enemy may aim · Head</span>
+        </div>
+
+        <!-- anatomy 3-col matrix -->
+        <div class="anatomy">
+          <!-- ATK column -->
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="col-head atk">
+              <span class="lbl">Attack</span>
+            </div>
+            <div class="col-zones">
+              <div class="zone sel">
+                <div class="glyph">🪖</div>
+                <div class="z-name">Head</div>
+                <div class="big-stat">+10%</div>
+                <div class="stat-label">Damage</div>
+              </div>
+              <div class="zone">
+                <div class="glyph">🛡️</div>
+                <div class="z-name">Chest</div>
+                <div class="big-stat">+5%</div>
+                <div class="stat-label">Damage</div>
+              </div>
+              <div class="zone">
+                <div class="glyph">👢</div>
+                <div class="z-name">Legs</div>
+                <div class="big-stat">+2%</div>
+                <div class="stat-label">Damage</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body silhouette in middle -->
+          <div class="body-col">
+            <!-- Hot-zone glows: ATK head selected → red glow on head;
+                 DEF chest selected → blue glow on chest -->
+            <div class="body-zone-overlay head atk active"></div>
+            <div class="body-zone-overlay chest def active"></div>
+            <!-- Stylized human silhouette SVG (placeholder, no asset needed) -->
+            <svg viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              <!-- head -->
+              <ellipse cx="50" cy="22" rx="14" ry="17" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <!-- neck -->
+              <rect x="44" y="36" width="12" height="8" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <!-- torso (chest+abs) -->
+              <path d="M 28 46 Q 50 42 72 46 L 70 110 Q 50 116 30 110 Z" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <!-- arms -->
+              <path d="M 28 48 Q 14 90 22 130 L 30 130 Q 26 92 36 56 Z" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <path d="M 72 48 Q 86 90 78 130 L 70 130 Q 74 92 64 56 Z" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <!-- legs -->
+              <path d="M 32 110 L 30 200 L 44 200 L 48 116 Z" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <path d="M 68 110 L 70 200 L 56 200 L 52 116 Z" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <!-- feet -->
+              <ellipse cx="36" cy="206" rx="8" ry="4" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+              <ellipse cx="64" cy="206" rx="8" ry="4" fill="#0F0F1A" stroke="#3A3A52" stroke-width="1.2"/>
+            </svg>
+          </div>
+
+          <!-- DEF column -->
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="col-head def">
+              <span class="lbl">Defend</span>
+            </div>
+            <div class="col-zones">
+              <div class="zone">
+                <div class="glyph">🪖</div>
+                <div class="z-name">Head</div>
+                <div class="big-stat">+8%</div>
+                <div class="stat-label">Dodge chance</div>
+              </div>
+              <div class="zone sel">
+                <div class="glyph">🛡️</div>
+                <div class="z-name">Chest</div>
+                <div class="big-stat">−10%</div>
+                <div class="stat-label">Damage taken</div>
+              </div>
+              <div class="zone">
+                <div class="glyph">👢</div>
+                <div class="z-name">Legs</div>
+                <div class="big-stat">−5%</div>
+                <div class="stat-label">Damage taken</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active skills section -->
+        <div class="actives-section">
+          <div class="actives-head">
+            <span class="ttl">Active Skills</span>
+            <span class="sub">· <b>1</b> / 3 equipped</span>
+          </div>
+          <div class="actives-row">
+            <div class="slot empty">
+              <span class="num">01</span>
+              <span class="plus">+</span>
+            </div>
+            <div class="slot empty">
+              <span class="num">02</span>
+              <span class="plus">+</span>
+            </div>
+            <div class="slot equipped">
+              <span class="num">03</span>
+              <span class="icon">🧪</span>
+            </div>
+            <div class="slot consumable">
+              <span class="num">04</span>
+              <span class="icon">💎</span>
+              <span class="count">100</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTAs -->
+        <div class="ctabar">
+          <button class="btn">Skip</button>
+          <button class="btn primary">
+            Strike
+            <span class="timer-arc"></span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+    <div class="after-note">
+      <b>How the spatial cue works:</b> selecting <em>Hit · Head</em> on the
+      left column lights up a soft red glow on the silhouette's head;
+      selecting <em>Guard · Chest</em> on the right column lights a blue
+      glow on the silhouette's chest. Two glows can coexist (one ATK,
+      one DEF). Long-press a tile still opens the existing crit / dodge
+      tooltip.
+      <br><br>
+      <b>Body silhouette is placeholder.</b> The SVG above is a mock so
+      the layout reads — the real ship will use either a class-aware
+      asset (warrior in armor, mage in robes, …) or the player's own
+      avatar dimmed to silhouette form. Open question: do we want
+      <em>generic body</em> (current screenshot vibe) or
+      <em>your own avatar as silhouette</em> (more personal but might
+      conflict with the YOU portrait at the top)?
+    </div>
+  </div>
+</div>
+
+<div class="legend" style="margin-top: 16px">
+  <strong>Open trade-offs to confirm.</strong>
+  <br>
+  (1) <em>Body silhouette source</em> — generic placeholder asset, class-aware
+  (warrior / mage / rogue / tank), or player's own dimmed avatar.
+  <br>
+  (2) <em>Spatial glow on selection</em> — keep (extra signal but more motion)
+  or drop (cleaner but loses the "you and the body are one" feel).
+  <br>
+  (3) <em>4th slot semantics</em> — is slot 04 a single consumable, or
+  unlocks a stack-rotator (multiple potion types)? The current data model
+  only supports per-character active actives; consumables are a separate
+  item-system surface today.
+  <br>
+  (4) <em>iPhone SE (375pt) viability</em> — 3-column 1fr/110px/1fr is tight
+  but fits. Body column may need to drop to 90px on the smallest phones.
+</div>
+
+</body>
+</html>

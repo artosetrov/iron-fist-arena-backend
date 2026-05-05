@@ -273,7 +273,8 @@ struct TalentsTabView: View {
     /// Fitted overlay-card replacing the legacy .sheet(.medium) presentation.
     /// Card sizes to its content (no half-screen empty area). The backdrop
     /// fills the screen and dismisses on tap; the close × inside the sheet
-    /// still works. Animation is opacity-only — see `feedback_no_scale_animations`.
+    /// still works. Animation is opacity-only so the overlay does not reintroduce
+    /// the old scale-pop motion that this UI pass was explicitly removing.
     @ViewBuilder
     private var talentDetailOverlay: some View {
         if let node = vm.selectedNode {

@@ -10,9 +10,9 @@ updated: 2026-05-04
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5242
+- Tracked files: 5243
 - Untracked project-owned files: 1
-- In-scope files listed here: 5243
+- In-scope files listed here: 5244
 
 ## Excluded Generated / Vendor Areas
 
@@ -45,7 +45,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 373
+- wiki: 374
 
 ## File List By Block
 
@@ -4973,7 +4973,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (373)
+### wiki (374)
 
 - wiki/_generated/api-routes.json
 - wiki/_generated/balance-constants.json
@@ -5283,7 +5283,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-299-ios-unavailable-route-copy-parity.md
 - wiki/audit/block-300-push-surface-apns-only-boundary-sync.md
 - wiki/audit/block-301-talents-v2-polish-tail-boundary-sync.md
-- wiki/audit/block-302-inventory-rollforward-and-retro-prototype-boundary-sync.md _(untracked)_
+- wiki/audit/block-302-inventory-rollforward-and-retro-prototype-boundary-sync.md
+- wiki/audit/block-303-combat-discussion-prototype-boundary-and-swift-comment-sync.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

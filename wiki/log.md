@@ -1,5 +1,14 @@
 # Hexbound Wiki — Log
 
+## [2026-05-04] audit | Block 303 combat discussion prototype boundary and Swift comment sync
+
+Closed the next tiny combat truth-sync seam after the late prototype rollforward.
+- **Created:** `[[block-303-combat-discussion-prototype-boundary-and-swift-comment-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift`, `wiki/features/interactive-combat.md`, `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md`, `docs/features/combat/COMBAT_V3_IMPLEMENTATION_PLAN.md`, `prototypes/combat-proto-v3.html`, `prototypes/combat-duel-header-compact.html`
+- **Fixes:** rewrote the last active Swift comment that still depended on an external `feedback_*` shorthand, and updated the combat docs/wiki layer so the newer `combat-proto-v3` and `combat-duel-header-compact` files are clearly framed as discussion-only checked-in prototypes rather than ambiguous live design truth
+- **Inventory refresh:** updated current counts to `5244` in-scope files and `369 in-scope wiki markdown files / 368 wiki pages` (`5243` tracked + `1` untracked)
+- **Verification:** targeted grep for the old feedback-token shorthand plus `git diff --check` on the touched slice
+
 ## [2026-05-04] audit | Block 302 inventory rollforward and retro/prototype boundary sync
 
 Closed the next live inventory drift plus the tiny adjacent boundary tail that came in with the new tracked retro/prototype wave.

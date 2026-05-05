@@ -78,6 +78,7 @@ Optional combat mode where the player slots up to N "active skills" before the f
 
 - `docs/06_game_systems/COMBAT.md` — combat foundation
 - `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md` — checked-in rollout/deferred-work plan
+- `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md` — historical combat redesign exploration; current checked-in prototypes now include `prototypes/combat-proto-v3.html` and `prototypes/combat-duel-header-compact.html` as discussion-only follow-up surfaces
 - `wiki/features/combat-unification-remaining.md` — current remaining unification tails around combat mode consolidation
 
 ## Notable gotchas

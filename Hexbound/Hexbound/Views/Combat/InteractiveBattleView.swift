@@ -684,46 +684,107 @@ struct InteractivePredictView: View {
         }
     }
 
-    /// Stance pickers + active-skills HUD. Combat v3.1 (2026-05-03):
-    /// the actives row no longer has its own section heading
-    /// ("ACTIVE SKILLS"). It now sits as the trailing row inside the
-    /// same predict block as the matrix — one unit instead of two
-    /// stacked sections — fronted by a small inline "Actives" label
-    /// that reads at the same visual weight as the ATTACK / DEFEND row
-    /// captions.
+    /// Anatomy matrix (Strike v4 — 2026-05-03): 3-column HStack with
+    /// a body silhouette in the middle so each zone tile sits next to
+    /// the body part it represents. Head-tile by the head, legs-tile
+    /// by the feet — players read the choice without having to parse
+    /// "HEAD / CHEST / LEGS" labels.
+    ///
+    /// Below the matrix: Active Skills section restored to a proper
+    /// titled block ("ACTIVE SKILLS · X / 3 equipped") with 3 talent
+    /// slots from `ActiveSkillsHUD` plus a 4th `EmptyConsumableSlot`
+    /// placeholder. The consumable slot is empty/disabled today —
+    /// it'll wire to the inventory system when consumables are
+    /// promoted into the combat HUD.
     @ViewBuilder
     private var predictControls: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            zonePicker(
-                title: "ATTACK",
-                selection: Binding(
-                    get: { vm.selectedAttackZone },
-                    set: { vm.pickAttack($0) }
-                )
-            )
-            zonePicker(
-                title: "DEFEND",
-                selection: Binding(
-                    get: { vm.selectedDefendZone },
-                    set: { vm.pickDefend($0) }
-                )
-            )
-
+            anatomyMatrix
             if !vm.playerActives.isEmpty {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Text("ACTIVES")
-                        .font(DarkFantasyTheme.uiLabel)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Spacer(minLength: 0)
-                    ActiveSkillsHUD(
-                        actives: vm.playerActives,
-                        pendingSlot: vm.pendingActiveSlot,
-                        isInteractive: true,
-                        onTap: { vm.toggleActiveSlot($0) }
-                    )
-                }
+                activesSection
             }
         }
+    }
+
+    private var anatomyMatrix: some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            zoneColumn(
+                title: "ATTACK",
+                titleColor: DarkFantasyTheme.danger,
+                selectedZone: vm.selectedAttackZone,
+                isAttack: true,
+                pick: { vm.pickAttack($0) }
+            )
+            BodySilhouetteView(
+                attackZone: vm.selectedAttackZone,
+                defendZone: vm.selectedDefendZone
+            )
+            .frame(width: 110)
+            zoneColumn(
+                title: "DEFEND",
+                titleColor: DarkFantasyTheme.info,
+                selectedZone: vm.selectedDefendZone,
+                isAttack: false,
+                pick: { vm.pickDefend($0) }
+            )
+        }
+        .animation(.easeInOut(duration: 0.18), value: vm.selectedAttackZone)
+        .animation(.easeInOut(duration: 0.18), value: vm.selectedDefendZone)
+    }
+
+    private func zoneColumn(title: String,
+                            titleColor: Color,
+                            selectedZone: InteractiveBodyZone,
+                            isAttack: Bool,
+                            pick: @escaping (InteractiveBodyZone) -> Void) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            HStack {
+                Text(title)
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(titleColor)
+                    .tracking(1.5)
+                Spacer(minLength: 0)
+            }
+            ForEach(InteractiveBodyZone.allCases, id: \.self) { zone in
+                zoneTile(
+                    zone: zone,
+                    isSelected: selectedZone == zone,
+                    isAttack: isAttack,
+                    action: { pick(zone) }
+                )
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var activesSection: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+            HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
+                Text("ACTIVE SKILLS")
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("· \(equippedActivesCount) / 3 equipped")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: LayoutConstants.spaceSM) {
+                ActiveSkillsHUD(
+                    actives: vm.playerActives,
+                    pendingSlot: vm.pendingActiveSlot,
+                    isInteractive: true,
+                    onTap: { vm.toggleActiveSlot($0) }
+                )
+                EmptyConsumableSlot()
+            }
+        }
+    }
+
+    /// Number of slots in `vm.playerActives` that are actually populated
+    /// (have a `talentAction`). Drives the "X / 3 equipped" subtitle so
+    /// players can see at a glance how full their loadout is.
+    private var equippedActivesCount: Int {
+        vm.playerActives.filter { $0.talentAction != nil }.count
     }
 
     private var timerFraction: Double {
@@ -732,25 +793,10 @@ struct InteractivePredictView: View {
         return max(0, min(1, vm.predictTimeRemaining / total))
     }
 
-    private func zonePicker(title: String, selection: Binding<InteractiveBodyZone>) -> some View {
-        let isAttack = title == "ATTACK"
-        return VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-            Text(title)
-                .font(DarkFantasyTheme.uiLabel)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-            HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(InteractiveBodyZone.allCases, id: \.self) { zone in
-                    zoneTile(
-                        zone: zone,
-                        isSelected: selection.wrappedValue == zone,
-                        isAttack: isAttack
-                    ) {
-                        selection.wrappedValue = zone
-                    }
-                }
-            }
-        }
-    }
+    // Note (Strike v4): the old `zonePicker(title:selection:)` helper was
+    // removed when the matrix flipped from 2 stacked rows (ATTACK row /
+    // DEFEND row) to 2 vertical columns flanking a body silhouette.
+    // The new column constructor is `zoneColumn(...)` above.
 
     private func zoneTile(zone: InteractiveBodyZone,
                           isSelected: Bool,
@@ -1127,6 +1173,173 @@ struct SideLabelRibbon: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(color.opacity(0.92))
             )
+    }
+}
+
+// MARK: - Body Silhouette (Strike v4 anatomy layout)
+//
+// Stylized human silhouette rendered as pure SwiftUI Path so we ship
+// without an external asset dependency. Sits in the middle column of
+// the predict-screen anatomy matrix between ATK (left) and DEF (right)
+// tile columns. Two soft radial glows on top show the player's current
+// Hit/Guard zone selection — the head-tile lights the silhouette's
+// head with a red glow when ATK·HEAD is picked, etc.
+//
+// Coordinate space: 100×220 viewBox (matches the prototype SVG one-to-one).
+// Path scales uniformly to fit whatever frame the parent gives it.
+//
+// Coordinates intentionally NOT extracted into a constants table — the
+// silhouette is a placeholder pending the real class-aware art asset
+// (warrior plate, mage robes, …); when that lands this whole struct
+// gets replaced with an Image, not refined.
+
+private struct BodySilhouettePath: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width / 100.0, rect.height / 220.0)
+        let xOff = (rect.width - 100.0 * scale) / 2
+        let yOff = (rect.height - 220.0 * scale) / 2
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: xOff + x * scale, y: yOff + y * scale)
+        }
+        var path = Path()
+        // Head
+        path.addEllipse(in: CGRect(
+            x: xOff + (50 - 14) * scale,
+            y: yOff + (22 - 17) * scale,
+            width: 28 * scale, height: 34 * scale
+        ))
+        // Neck
+        path.addRect(CGRect(
+            x: xOff + 44 * scale, y: yOff + 36 * scale,
+            width: 12 * scale, height: 8 * scale
+        ))
+        // Torso
+        path.move(to: p(28, 46))
+        path.addQuadCurve(to: p(72, 46), control: p(50, 42))
+        path.addLine(to: p(70, 110))
+        path.addQuadCurve(to: p(30, 110), control: p(50, 116))
+        path.closeSubpath()
+        // Left arm
+        path.move(to: p(28, 48))
+        path.addQuadCurve(to: p(22, 130), control: p(14, 90))
+        path.addLine(to: p(30, 130))
+        path.addQuadCurve(to: p(36, 56), control: p(26, 92))
+        path.closeSubpath()
+        // Right arm
+        path.move(to: p(72, 48))
+        path.addQuadCurve(to: p(78, 130), control: p(86, 90))
+        path.addLine(to: p(70, 130))
+        path.addQuadCurve(to: p(64, 56), control: p(74, 92))
+        path.closeSubpath()
+        // Left leg
+        path.move(to: p(32, 110))
+        path.addLine(to: p(30, 200))
+        path.addLine(to: p(44, 200))
+        path.addLine(to: p(48, 116))
+        path.closeSubpath()
+        // Right leg
+        path.move(to: p(68, 110))
+        path.addLine(to: p(70, 200))
+        path.addLine(to: p(56, 200))
+        path.addLine(to: p(52, 116))
+        path.closeSubpath()
+        // Feet
+        path.addEllipse(in: CGRect(
+            x: xOff + (36 - 8) * scale,
+            y: yOff + (206 - 4) * scale,
+            width: 16 * scale, height: 8 * scale
+        ))
+        path.addEllipse(in: CGRect(
+            x: xOff + (64 - 8) * scale,
+            y: yOff + (206 - 4) * scale,
+            width: 16 * scale, height: 8 * scale
+        ))
+        return path
+    }
+}
+
+/// 4th slot in the Active Skills row (Strike v4). Always-empty placeholder
+/// reserved for the future consumable-in-combat feature. Visually distinct
+/// from the 3 talent slots (purple-tinted dashed border) so it reads as
+/// "different category" not "your loadout slot is empty".
+///
+/// When the consumable backend lands this becomes a real Button with the
+/// stack icon + count; today it's purely visual.
+struct EmptyConsumableSlot: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgElevated)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(
+                    DarkFantasyTheme.borderStrong,
+                    style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                )
+            Image(systemName: "cross.vial")
+                .font(.system(size: 18, weight: .light))
+                .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
+        }
+        .frame(width: 56, height: 56)
+        .accessibilityLabel("Consumable slot — coming soon")
+    }
+}
+
+struct BodySilhouetteView: View {
+    let attackZone: InteractiveBodyZone
+    let defendZone: InteractiveBodyZone
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                .fill(DarkFantasyTheme.bgPrimary.opacity(0.5))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                )
+            BodySilhouettePath()
+                .fill(DarkFantasyTheme.bgPrimary)
+            BodySilhouettePath()
+                .stroke(DarkFantasyTheme.borderStrong, lineWidth: 1.2)
+            zoneGlow(zone: attackZone, color: DarkFantasyTheme.danger)
+            zoneGlow(zone: defendZone, color: DarkFantasyTheme.info)
+        }
+        .clipped()
+        .accessibilityHidden(true)
+    }
+
+    /// Soft radial glow positioned over the body region the player has
+    /// currently chosen for ATK or DEF. Uses the same 100×220 viewBox
+    /// math as the silhouette so the glow lands on the correct body part
+    /// regardless of frame size.
+    private func zoneGlow(zone: InteractiveBodyZone, color: Color) -> some View {
+        GeometryReader { geo in
+            let scale = min(geo.size.width / 100.0, geo.size.height / 220.0)
+            let xOff = (geo.size.width - 100.0 * scale) / 2
+            let yOff = (geo.size.height - 220.0 * scale) / 2
+            let center: CGPoint = {
+                switch zone {
+                case .head:  return CGPoint(x: xOff + 50 * scale, y: yOff + 22 * scale)
+                case .chest: return CGPoint(x: xOff + 50 * scale, y: yOff + 78 * scale)
+                case .legs:  return CGPoint(x: xOff + 50 * scale, y: yOff + 158 * scale)
+                }
+            }()
+            let glowSize: CGSize = {
+                switch zone {
+                case .head:  return CGSize(width: 50 * scale, height: 50 * scale)
+                case .chest: return CGSize(width: 70 * scale, height: 70 * scale)
+                case .legs:  return CGSize(width: 70 * scale, height: 100 * scale)
+                }
+            }()
+            RadialGradient(
+                colors: [color.opacity(0.55), color.opacity(0.0)],
+                center: .center,
+                startRadius: 0,
+                endRadius: max(glowSize.width, glowSize.height) / 2
+            )
+            .frame(width: glowSize.width, height: glowSize.height)
+            .position(center)
+        }
+        .allowsHitTesting(false)
     }
 }
 

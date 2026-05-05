@@ -2,6 +2,7 @@
 
 > **Scope:** wire the approved historical B2-v3 direction into native SwiftUI.
 > **Historical note:** the exploratory `combat-proto-B2-v3.html` was removed during later repository cleanup; this implementation record remains as the retained source for that design branch.
+> **Later boundary:** the tracked `prototypes/combat-proto-v3.html` and `prototypes/combat-duel-header-compact.html` files are newer discussion explorations around readability/compactness, not a revival of this historical B2-v3 implementation branch.
 > **Target screen:** `InteractiveBattleView`
 > **Owner:** client-only changes (no backend / schema work — consumes existing `InteractiveStrikeResponse`)
 > **Status:** Implemented in workspace; keep as implementation record. Re-verify against native Swift files before using as an active plan.
