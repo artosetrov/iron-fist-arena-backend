@@ -1,6 +1,6 @@
 # Hexbound — Полный аудит проекта 2026-10-13
 
-> **Статус на вечер 2026-10-13:** Спринты 0–3 выполнены в той же сессии (24 коммита, см. `docs/retro/RETRO_2026-10-13.md`). Закрыто: C1 C2 C4 C5 C6 C7 · H1–H14 (кроме H15–H18 — ops). Открыто: прод-миграции, Vercel env, Xcode-сборка, ASC, Спринт 4 (App Store), docs-sync.
+> **Статус на вечер 2026-10-13:** Спринты 0–4 выполнены в той же сессии (30 коммитов, см. `docs/retro/RETRO_2026-10-13.md`). Закрыто: все C1–C7, H1–H14, Спринт 4 (UGC-модерация, SIWA, support, odds, metadata, kill-switches). Открыто (руками): 8 прод-миграций, Vercel env, Xcode-сборка, ASC (SKU, Push, скриншоты, age rating, demo-аккаунт), два боевых стека, лимиты на аккаунт, docs-sync.
 
 > Snapshot: `~/Documents/Cursor AI/PVP RPG`, ветка `main`, последний коммит `20cdcea` (2026-05-04).
 > Метод: 10 зон по `.claude/skills/project-audit`, 5 параллельных проверок по коду (343 Swift / 190 API-роутов / 44 admin-страницы), сверка с аудитом 2026-04-17 и `HEXBOUND_FULL_AUDIT_2026-09-10.md`.
