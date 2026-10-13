@@ -123,10 +123,12 @@ struct Character: Codable, Identifiable {
         return "\(years)yr"
     }
 
-    var xpNeeded: Int {
-        let nextLevel = level + 1
-        return 100 * nextLevel + 20 * nextLevel * nextLevel
-    }
+    /// XP to finish the current level. Mirrors backend `xpToNextLevel`:
+    /// delta of the cumulative curve `100N + 20N²` → `120 + 40·level`.
+    /// (Was the cumulative value itself — ×18 too slow; AUDIT-2026-10-13 H6.)
+    var xpNeeded: Int { Character.xpToNextLevel(level) }
+
+    static func xpToNextLevel(_ level: Int) -> Int { 120 + 40 * level }
 
     var xpPercentage: Double {
         guard let xp = experience else { return 0 }

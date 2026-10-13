@@ -2,7 +2,7 @@
 // progression.ts — Level up and prestige system
 // =============================================================================
 
-import { xpForLevel } from './balance';
+import { xpForLevel, xpToNextLevel } from './balance';
 import { getPrestigeConfig, getPassivesConfig } from './live-config';
 import { updateMultipleAchievements } from './achievements';
 import {
@@ -13,7 +13,7 @@ import { track as trackAnalytics } from '../analytics';
 import { prisma } from '../prisma';
 
 // Re-export for convenience
-export { xpForLevel };
+export { xpForLevel, xpToNextLevel };
 
 type LevelUpCharacterSnapshot = {
   currentXp: number
@@ -175,7 +175,7 @@ export async function checkLevelUp(character: {
 
   // Allow multiple level-ups in one pass
   while (level < prestigeConfig.MAX_LEVEL) {
-    const needed = xpForLevel(level + 1);
+    const needed = xpToNextLevel(level);
     if (currentXp < needed) {
       break;
     }

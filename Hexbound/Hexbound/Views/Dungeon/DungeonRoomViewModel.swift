@@ -477,7 +477,6 @@ final class DungeonRoomViewModel {
     /// backend `xpRequired()` helper. Kept in one place so the dungeon
     /// victory animation and the optimistic level-up update agree.
     static func xpNeededForLevel(_ level: Int) -> Int {
-        let next = level + 1
-        return 100 * next + 20 * next * next
+        Character.xpToNextLevel(level)
     }
 }

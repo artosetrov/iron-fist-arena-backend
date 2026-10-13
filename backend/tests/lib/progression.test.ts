@@ -13,7 +13,7 @@ vi.mock('../../src/lib/game/live-config', () => ({
   getPassivesConfig: mockGetPassivesConfig,
 }))
 
-import { applyPrestigeBonus, checkLevelUp, xpForLevel } from '../../src/lib/game/progression'
+import { applyPrestigeBonus, checkLevelUp, xpForLevel, xpToNextLevel } from '../../src/lib/game/progression'
 
 describe('progression.ts', () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('progression.ts', () => {
   it('handles multiple level-ups in a single XP dump', async () => {
     const result = await checkLevelUp({
       level: 1,
-      currentXp: xpForLevel(2) + xpForLevel(3) + 5,
+      currentXp: xpToNextLevel(1) + xpToNextLevel(2) + 5,
     })
 
     expect(result).toEqual({
@@ -42,6 +42,16 @@ describe('progression.ts', () => {
       passivePointsAwarded: 2,
       atMaxLevel: false,
     })
+  })
+
+  it('per-level requirement is the delta of the cumulative curve (L50 ≈ 55k total, not 986k)', () => {
+    expect(xpToNextLevel(1)).toBe(160)
+    expect(xpToNextLevel(10)).toBe(520)
+    expect(xpToNextLevel(49)).toBe(2080)
+    let total = 0
+    for (let l = 1; l < 50; l++) total += xpToNextLevel(l)
+    expect(total).toBe(xpForLevel(50) - xpForLevel(1))
+    expect(total).toBeLessThan(60_000)
   })
 
   it('applies prestige stat bonus multiplicatively from config', async () => {

@@ -17,6 +17,7 @@ import {
   DROP_CHANCES,
   RARITY_DISTRIBUTION,
   xpForLevel,
+  xpToNextLevel,
   bpXpForLevel,
 } from '@/lib/game/balance'
 
@@ -39,7 +40,8 @@ export async function GET(req: NextRequest) {
   // Build XP table for levels 1–50
   const xpTable = Array.from({ length: 50 }, (_, i) => ({
     level: i + 1,
-    xp_required: xpForLevel(i + 1),
+    xp_required: xpToNextLevel(i + 1),   // per-level (what the bar shows)
+    xp_cumulative: xpForLevel(i + 1),    // design-doc threshold
   }))
 
   // Build BP XP table for levels 1–30

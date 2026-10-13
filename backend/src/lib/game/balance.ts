@@ -105,9 +105,27 @@ export const HP_REGEN = {
 } as const;
 
 // --- XP ---
-/** XP required to reach the given level (cumulative threshold). */
+/**
+ * Cumulative XP threshold for a level: `100N + 20N²` (BALANCE_CONSTANTS.md
+ * "XP Formula"). Level 50 = 55,000 total.
+ *
+ * NOT the per-level requirement. `checkLevelUp` resets `currentXp` on every
+ * level, so it must use `xpToNextLevel` below. Feeding this cumulative value
+ * into the per-level loop made L50 cost ~986k XP (×18 the design) — the
+ * "XP curve" item open since the April balance audit (AUDIT-2026-10-13 H6).
+ */
 export function xpForLevel(level: number): number {
   return 100 * level + 20 * level * level;
+}
+
+/**
+ * XP needed to finish `level` (reach `level + 1`) when XP resets per level.
+ * `xpForLevel(level + 1) - xpForLevel(level)` = `120 + 40·level`.
+ * L1→2 = 160, L10→11 = 520, L49→50 = 2,080; sum over 1..49 = 54,880.
+ * iOS mirrors this in `Character.xpNeeded` — keep both in sync.
+ */
+export function xpToNextLevel(level: number): number {
+  return xpForLevel(level + 1) - xpForLevel(level);
 }
 
 // --- Gold rewards (Economy v2 — reduced to fix gold hyperinflation) ---

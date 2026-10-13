@@ -642,8 +642,7 @@ struct CombatResultDetailView: View {
     // MARK: - XP Snapshot & Animation (preserved from original)
 
     private func xpNeededForLevel(_ level: Int) -> Int {
-        let next = level + 1
-        return 100 * next + 20 * next * next
+        Character.xpToNextLevel(level)
     }
 
     private func captureXpSnapshot() {
