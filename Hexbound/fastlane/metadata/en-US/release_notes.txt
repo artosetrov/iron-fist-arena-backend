@@ -1,0 +1,6 @@
+• New: Prestige at max level, Refill stamina with gems, abandon a stuck dungeon run
+• New: Report players and messages; Help & Support in Settings
+• Fixed: bot and boss fights now complete correctly; tutorial progress saves
+• Fixed: Big Spender quest updates right after a purchase
+• Economy: levelling rebalanced — reaching level 50 is now achievable
+• Battle Pass seasons roll over automatically

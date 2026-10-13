@@ -1,0 +1,9 @@
+No account is required: tap PLAY on the welcome screen to start as a guest. A demo account with a high-level character is provided below for testing PvP, dungeons and purchases.
+
+User-generated content: character names and direct messages are filtered server-side; every player profile and message has a Report action (Guild Hall → Scrolls → long-press a message; Leaderboard → player → Report player). Reports are reviewed in our admin console. Players can block others from the Allies tab.
+
+Fortune Wheel wagers in-game gold only (gold cannot be purchased directly); outcome odds are displayed on the wheel screen. Loot sources (dungeons, Scavenger) show their contents or drop chances before purchase.
+
+In-app purchases: gem packs (consumable), bundles (non-consumable), Premium Pass (auto-renewable subscription, 30 days). Restore Purchases is on the gem shop and Premium Pass screens.
+
+Account deletion: Settings → Account → Delete Account.

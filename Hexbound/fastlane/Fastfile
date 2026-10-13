@@ -157,6 +157,33 @@ platform :ios do
   end
 
   # ──────────────────────────────────────────────
+  # МЕТАДАННЫЕ APP STORE (без бинарника)
+  # Запуск: fastlane metadata
+  # Источник: fastlane/metadata/** + fastlane/screenshots/**
+  # Демо-аккаунт ревьюера: DEMO_USER / DEMO_PASSWORD в env (не в git).
+  # ──────────────────────────────────────────────
+  desc "Залить описание/ключевые слова/скриншоты в App Store Connect"
+  lane :metadata do
+    auth = require_release_identity!
+    opts = {
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      force: true,                  # без интерактивного HTML-превью
+      overwrite_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      submit_for_review: false,
+    }
+    if ENV["DEMO_USER"].to_s.strip != "" && ENV["DEMO_PASSWORD"].to_s.strip != ""
+      opts[:app_review_information] = {
+        demo_user: ENV["DEMO_USER"],
+        demo_password: ENV["DEMO_PASSWORD"],
+      }
+    end
+    opts[:api_key] = auth[:api_key] if auth[:api_key]
+    upload_to_app_store(**opts)
+  end
+
+  # ──────────────────────────────────────────────
   # ИНКРЕМЕНТ ВЕРСИИ
   # Запуск: fastlane bump_patch / bump_minor / bump_major
   # ──────────────────────────────────────────────
