@@ -1,4 +1,6 @@
 import type { CharacterClass, Prisma } from '@prisma/client'
+import http2 from 'node:http2'
+import { createPrivateKey, sign as cryptoSign } from 'node:crypto'
 import { prisma } from '@/lib/prisma'
 
 type PushPayload = {
@@ -152,23 +154,65 @@ async function sendToDevice(
   return false
 }
 
-async function sendAPNS(token: string, payload: PushPayload): Promise<boolean> {
+// ---------------------------------------------------------------------------
+// APNs transport — HTTP/2 + ES256 provider token (AUDIT-2026-10-13 C5)
+//
+// Env:
+//   APNS_KEY_ID    — 10-char key id from App Store Connect → Keys
+//   APNS_TEAM_ID   — Apple developer team id
+//   APNS_AUTH_KEY  — contents of AuthKey_XXXX.p8 (PEM; "\n" escapes allowed)
+//   APNS_BUNDLE_ID — defaults to com.hexbound.app
+//   APNS_ENV       — "production" | "sandbox" (TestFlight/App Store use
+//                    production; defaults to production when NODE_ENV=production)
+// Without key id / team id / key the sender logs and reports success=false.
+// ---------------------------------------------------------------------------
+
+
+let cachedJwt: { value: string; issuedAt: number } | null = null
+const JWT_MAX_AGE_MS = 50 * 60 * 1000 // Apple: refresh at least hourly, not more often than every 20 min
+
+function base64url(input: Buffer | string): string {
+  return Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+}
+
+function apnsProviderToken(): string | null {
   const keyId = process.env.APNS_KEY_ID
   const teamId = process.env.APNS_TEAM_ID
+  const rawKey = process.env.APNS_AUTH_KEY
+  if (!keyId || !teamId || !rawKey) return null
+
+  const now = Date.now()
+  if (cachedJwt && now - cachedJwt.issuedAt < JWT_MAX_AGE_MS) return cachedJwt.value
+
+  const header = base64url(JSON.stringify({ alg: 'ES256', kid: keyId }))
+  const claims = base64url(JSON.stringify({ iss: teamId, iat: Math.floor(now / 1000) }))
+  const signingInput = `${header}.${claims}`
+  const key = createPrivateKey(rawKey.replace(/\\n/g, '\n'))
+  // JWS wants the raw r||s signature, not DER.
+  const signature = cryptoSign('sha256', Buffer.from(signingInput), { key, dsaEncoding: 'ieee-p1363' })
+  const value = `${signingInput}.${base64url(signature)}`
+  cachedJwt = { value, issuedAt: now }
+  return value
+}
+
+function apnsHost(): string {
+  const env = process.env.APNS_ENV ?? (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox')
+  return env === 'production' ? 'https://api.push.apple.com' : 'https://api.sandbox.push.apple.com'
+}
+
+/**
+ * One HTTP/2 POST to /3/device/{token}. Resolves true on 200, throws with
+ * Apple's `reason` otherwise. The caller marks `BadDeviceToken` /
+ * `Unregistered` tokens inactive.
+ */
+async function sendAPNS(token: string, payload: PushPayload): Promise<boolean> {
+  const jwt = apnsProviderToken()
   const bundleId = process.env.APNS_BUNDLE_ID ?? 'com.hexbound.app'
-  const isProduction = process.env.NODE_ENV === 'production'
 
-  if (!keyId || !teamId) {
-    // Dev mode — just log
-    console.log(`[Push/APNS] DEV MODE — would send to ${token.slice(0, 12)}...`)
-    console.log(`  Title: ${payload.title}`)
-    console.log(`  Body: ${payload.body}`)
-    return true // Pretend success in dev
+  if (!jwt) {
+    console.log(`[Push/APNS] not configured (APNS_KEY_ID/TEAM_ID/AUTH_KEY) — skipped ${token.slice(0, 12)}…: ${payload.title}`)
+    return false
   }
-
-  const host = isProduction
-    ? 'https://api.push.apple.com'
-    : 'https://api.sandbox.push.apple.com'
 
   const apnsPayload = {
     aps: {
@@ -179,32 +223,36 @@ async function sendAPNS(token: string, payload: PushPayload): Promise<boolean> {
     ...(payload.data ?? {}),
   }
 
-  try {
-    // NOTE: Real APNS requires JWT token signed with the p8 key.
-    // This would use jose or jsonwebtoken to create the JWT.
-    // For now, we use a pre-generated bearer token from env.
-    const bearerToken = process.env.APNS_BEARER_TOKEN
+  return new Promise<boolean>((resolve, reject) => {
+    const client = http2.connect(apnsHost())
+    const finish = (fn: () => void) => { try { client.close() } catch { /* noop */ } fn() }
+    client.on('error', (err) => finish(() => reject(err)))
 
-    const response = await fetch(`${host}/3/device/${token}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apns-topic': bundleId,
-        'apns-push-type': 'alert',
-        'apns-priority': '10',
-        ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
-      },
-      body: JSON.stringify(apnsPayload),
+    const req = client.request({
+      ':method': 'POST',
+      ':path': `/3/device/${token}`,
+      'authorization': `bearer ${jwt}`,
+      'apns-topic': bundleId,
+      'apns-push-type': 'alert',
+      'apns-priority': '10',
+      'content-type': 'application/json',
     })
 
-    if (response.status === 200) return true
-
-    const errorBody = await response.json().catch((): { reason?: string } => ({}))
-    const reason = typeof errorBody.reason === 'string' ? errorBody.reason : `HTTP ${response.status}`
-    throw new Error(reason)
-  } catch (error: unknown) {
-    throw error
-  }
+    let status = 0
+    let body = ''
+    req.setEncoding('utf8')
+    req.on('response', (headers) => { status = Number(headers[':status'] ?? 0) })
+    req.on('data', (chunk) => { body += chunk })
+    req.on('end', () => finish(() => {
+      if (status === 200) return resolve(true)
+      let reason = `HTTP ${status}`
+      try { reason = (JSON.parse(body) as { reason?: string }).reason ?? reason } catch { /* keep */ }
+      reject(new Error(reason))
+    }))
+    req.on('error', (err) => finish(() => reject(err)))
+    req.setTimeout(10_000, () => { req.close(http2.constants.NGHTTP2_CANCEL); finish(() => reject(new Error('APNs timeout'))) })
+    req.end(JSON.stringify(apnsPayload))
+  })
 }
 
 // ---------------------------------------------------------------------------

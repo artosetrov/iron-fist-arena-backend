@@ -1,7 +1,9 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { callBackendAdminJson } from '@/lib/backend-admin'
 import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   parseOptionalScheduledAt,
@@ -124,45 +126,21 @@ export async function sendCampaign(id: string) {
   if (!campaign) throw new Error('Campaign not found')
   if (campaign.status === 'sent') throw new Error('Already sent')
 
-  const targetType = parsePushTargetType(campaign.targetType)
-  const filter = sanitizePushCampaignTargetFilter(targetType, campaign.targetFilter)
-
-  let tokenCount = 0
-
-  if (targetType === 'user') {
-    if (!filter?.userIds?.length) {
-      throw new Error('User-targeted campaign is missing user IDs')
-    }
-    tokenCount = await prisma.pushToken.count({
-      where: { userId: { in: filter.userIds }, isActive: true },
-    })
-  } else if (targetType === 'segment') {
-    const characters = await prisma.character.findMany({
-      where: buildCharacterWhere(filter),
-      select: { userId: true },
-      distinct: ['userId'],
-    })
-
-    const userIds = characters.map((character) => character.userId)
-    if (userIds.length > 0) {
-      tokenCount = await prisma.pushToken.count({
-        where: { userId: { in: userIds }, isActive: true },
-      })
-    }
-  } else {
-    tokenCount = await prisma.pushToken.count({ where: { isActive: true } })
-  }
-
-  await prisma.pushCampaign.update({
-    where: { id },
-    data: {
-      status: 'sent',
-      sentCount: tokenCount,
-      sentAt: new Date(),
-    },
+  // Delivery lives in the backend (lib/push/send.ts — APNs HTTP/2 + JWT).
+  // This action used to count tokens and mark the campaign `sent` without
+  // sending anything (AUDIT-2026-10-13 C5).
+  const result = await callBackendAdminJson<{
+    status: 'sent' | 'failed'
+    sent: number
+    failed: number
+    errors: string[]
+  }>('/api/admin/push/send', {
+    method: 'POST',
+    body: JSON.stringify({ campaign_id: id }),
   })
 
-  return { tokenCount }
+  revalidatePath('/push')
+  return { tokenCount: result.sent + result.failed, sent: result.sent, failed: result.failed, status: result.status }
 }
 
 export async function getPushStats() {
