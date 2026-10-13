@@ -222,8 +222,9 @@ Always use for gold/gems display. Sizes: `.standard` (36px), `.compact` (14px), 
 - Types: `.both`, `.gold`, `.gems`. Never use SF Symbols for currency.
 
 ### Toast System
-Signature: `appState.showToast(_ title:, subtitle:, type:, actionLabel:, action:)`. First arg positional. No `.success` type — use `.info` or `.reward`.
-- Types: `.achievement`, `.levelUp`, `.rankUp`, `.quest`, `.reward`, `.info`, `.error`
+Signature: `appState.showToast(_ title:, subtitle:, type:, actionLabel:, action:)`. First arg positional.
+- Types: `.achievement`, `.levelUp`, `.rankUp`, `.quest`, `.reward`, `.success`, `.info`, `.error` (`.success` exists since 2026-05; prefer `.reward` for anything that gave the player something)
+- Dead-end rule: a toast that blocks an action (no stamina, active dungeon run, not enough gems) MUST carry an `actionLabel` that resolves it — `Refill`, `Abandon`, `Shop`. See `CharacterService.showOutOfStamina`.
 - Error toasts: always include `actionLabel: "Retry"` + retry closure
 - 401 → `SessionExpiredModalView` (blocking modal, NOT toast)
 
@@ -370,11 +371,15 @@ All `@State var vm: VM?` screens MUST add `.transaction { $0.animation = nil }` 
 - `APIError.serverError` has 2 values: `(statusCode: Int, message: String)` — always destructure both
 - Complex `body` → break into sub-methods with `: some View` return type
 
+### API Endpoints
+- Every backend route lives under `/api/…`; the base URL carries no prefix. `APIClient` asserts `hasPrefix("/api/")` in DEBUG. Add constants to `Network/APIEndpoints.swift`, never inline strings.
+
 ### APIClient Signatures
-- `getRaw(_:params:)` — positional first arg, `params:` (NOT `endpoint:`, NOT `queryItems:`)
-- `postRaw(_:body:)` — body `[String: Any]`, returns `[String: Any]`
-- `get(_:params:)` — generic, returns `T: Decodable`
-- `post(_:body:)` — body is `Encodable?`. **Never pass `[String: Any]`** — use `postRaw()` or an Encodable struct
+`APIClient` is an `actor`; it exposes only typed calls — there is **no** `getRaw`/`postRaw` (removed; the names still appear in old docs):
+- `get(_:params:)` — positional first arg, `params: [String: String]` (NOT `endpoint:`, NOT `queryItems:`), returns `T: Decodable`
+- `post(_:body:)` / `patch(_:body:)` — body is `Encodable?`. **Never pass `[String: Any]`** — write a small `Encodable` struct (bodies are encoded with `.convertToSnakeCase`)
+- `delete(_:)`
+- Decode a tiny response struct even for fire-and-forget calls (e.g. `ClientEventAck`)
 
 ### Model Properties
 - Character has `.avatar`, NOT `.skinKey`

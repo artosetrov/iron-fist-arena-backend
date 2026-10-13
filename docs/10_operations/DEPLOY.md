@@ -40,6 +40,17 @@ prisma generate && next build
 - `SUPABASE_JWT_SECRET`
 - `CORS_ORIGINS`
 - `NEXT_PUBLIC_APP_URL`
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — shared rate limiting (without them each lambda keeps its own in-memory counters)
+- `BOT_TICKET_SECRET` — HMAC for bot-match tickets
+- `INTERACTIVE_COMBAT_V1` — interactive combat flag
+- **IAP:** `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`, `APPLE_IAP_ENVIRONMENT`, `APPLE_BUNDLE_ID` — `/verify-receipt` **rejects every purchase in production** when these are missing
+- **Apple webhook:** `APPLE_APP_APPLE_ID`, `APPLE_ROOT_CERTS` (or `APPLE_ROOT_CERTS_DIR`) — `/iap/apple-notifications` returns 503 until set
+- **Push:** `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_AUTH_KEY` (.p8 contents), `APNS_BUNDLE_ID`, `APNS_ENV=production`
+- **Cron:** `CRON_SECRET` — Vercel Cron auth for `/api/cron/*` (`backend/vercel.json`)
+- **Observability:** `HEXBOUND_SENTRY_DSN` is an iOS xcconfig value, not a Vercel var
+- Optional: `ANALYTICS_BACKEND=noop`, `ANALYTICS_DEBUG=true`, `DEV_ROUTES_ENABLED=true` (re-exposes `/api/dev/*` in prod)
+
+Full list with comments: `backend/.env.example`.
 
 ### Preview Deploys
 
@@ -52,6 +63,9 @@ GitHub Actions now runs `.github/workflows/ci.yml` on `push` and `pull_request` 
 - `Backend Build & Test` — `npm ci`, `prisma generate`, `vitest`, `docs:balance:check`, `next build`
 - `Admin Build` — `npm ci`, `prisma generate`, `next build`
 - `Prisma Schema & Migration Drift Check` — backend/admin schema diff + `scripts/check_schema_drift.py`
+- `Ladder Parity` — `scripts/check_ladder_parity.py`
+- `iOS Release Config` — `Hexbound/scripts/check_release_config.py`
+- `iOS Build` — `xcodebuild` on `macos-15` (Debug, no signing) — the only compile step for iOS outside a developer Mac
 
 This does **not** replace Vercel deploys, but it does catch build/test/schema regressions before or alongside production pushes.
 
