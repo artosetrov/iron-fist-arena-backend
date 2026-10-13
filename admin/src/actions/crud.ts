@@ -16,6 +16,36 @@ const MAX_COLUMNS = 50
 /** Max string length for a single field value. */
 const MAX_VALUE_LENGTH = 10_000
 
+/**
+ * Raw CRUD is the most powerful surface in the panel: it runs arbitrary
+ * INSERT/UPDATE/DELETE on any public table. Two guards (AUDIT-2026-10-13 C4):
+ *  1. only the strict `admin` role may mutate (moderator/developer are read-only
+ *     here — a moderator could otherwise `UPDATE users SET role='admin'`);
+ *  2. identity, billing and audit tables are never editable through raw SQL,
+ *     whatever the role. Use the dedicated pages/actions for those.
+ */
+const RAW_CRUD_DENYLIST = new Set([
+  'users',
+  'admin_logs',
+  'iap_transactions',
+  'premium_subscriptions',
+  'push_tokens',
+  'push_logs',
+  '_prisma_migrations',
+])
+
+function requireRawCrudAccess(
+  admin: { role: string } | null,
+  tableName: string,
+): { error: string } | null {
+  if (!admin) return { error: 'Unauthorized' }
+  if (admin.role !== 'admin') return { error: 'Admin role required for raw table edits' }
+  if (RAW_CRUD_DENYLIST.has(tableName)) {
+    return { error: `Table "${tableName}" cannot be edited through raw CRUD` }
+  }
+  return null
+}
+
 function sanitizeName(name: string): string {
   if (!SAFE_NAME_RE.test(name)) {
     throw new Error(
@@ -141,7 +171,8 @@ export async function createRecord(
   data: Record<string, unknown>
 ): Promise<{ success: true } | { error: string }> {
   const admin = await getAdminUser()
-  if (!admin) return { error: 'Unauthorized' }
+  const denied = requireRawCrudAccess(admin, tableName)
+  if (denied) return denied
 
   try {
     const safeTable = sanitizeName(tableName)
@@ -173,7 +204,8 @@ export async function updateRecord(
   data: Record<string, unknown>
 ): Promise<{ success: true } | { error: string }> {
   const admin = await getAdminUser()
-  if (!admin) return { error: 'Unauthorized' }
+  const denied = requireRawCrudAccess(admin, tableName)
+  if (denied) return denied
 
   try {
     const safeTable = sanitizeName(tableName)
@@ -206,7 +238,8 @@ export async function deleteRecord(
   pkValue: string
 ): Promise<{ success: true } | { error: string }> {
   const admin = await getAdminUser()
-  if (!admin) return { error: 'Unauthorized' }
+  const denied = requireRawCrudAccess(admin, tableName)
+  if (denied) return denied
 
   try {
     const safeTable = sanitizeName(tableName)

@@ -2,7 +2,7 @@
 
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   normalizeOfferKey,
   normalizeOfferTags,
@@ -169,6 +169,13 @@ async function requireAdminUser() {
   return admin
 }
 
+/** Mutations: moderators are read-only (AUDIT-2026-10-13 C4). */
+async function requireMutatingAdmin() {
+  const admin = await requireAdminUser()
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
+  return admin
+}
+
 export async function listShopOffers() {
   await requireAdminUser()
 
@@ -199,7 +206,7 @@ export async function getShopOffer(id: string) {
 }
 
 export async function createShopOffer(input: CreateOfferInput) {
-  const admin = await requireAdminUser()
+  const admin = await requireMutatingAdmin()
   const normalized = normalizeOfferInput(input)
 
   return prisma.shopOffer.create({
@@ -228,7 +235,7 @@ export async function createShopOffer(input: CreateOfferInput) {
 }
 
 export async function updateShopOffer(input: UpdateOfferInput) {
-  await requireAdminUser()
+  await requireMutatingAdmin()
 
   const current = await prisma.shopOffer.findUnique({
     where: { id: input.id },
@@ -284,7 +291,7 @@ export async function updateShopOffer(input: UpdateOfferInput) {
 }
 
 export async function toggleShopOffer(id: string) {
-  await requireAdminUser()
+  await requireMutatingAdmin()
 
   const offer = await prisma.shopOffer.findUnique({ where: { id }, select: { isActive: true } })
   if (!offer) throw new Error('Offer not found')
@@ -296,7 +303,7 @@ export async function toggleShopOffer(id: string) {
 }
 
 export async function deleteShopOffer(id: string) {
-  await requireAdminUser()
+  await requireMutatingAdmin()
   return prisma.shopOffer.delete({ where: { id } })
 }
 
@@ -319,7 +326,7 @@ export async function getOfferStats() {
 }
 
 export async function seedDefaultOffers() {
-  const admin = await requireAdminUser()
+  const admin = await requireMutatingAdmin()
 
   const defaults: Array<Omit<CreateOfferInput, 'contents'> & { contents: OfferContentItem[] }> = [
     {

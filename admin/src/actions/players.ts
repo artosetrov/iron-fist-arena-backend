@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 
 // ---------------------------------------------------------------------------
@@ -132,6 +132,7 @@ export async function unbanPlayer(userId: string) {
 export async function grantGold(characterId: string, amount: number) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   validateUUID(characterId, 'characterId')
   validatePositiveInt(amount, 'Amount')
   // Gold is account-level (User.gold), not per-character. Look up the owning
@@ -152,6 +153,7 @@ export async function grantGold(characterId: string, amount: number) {
 export async function grantGems(userId: string, amount: number) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   validateUUID(userId, 'userId')
   validatePositiveInt(amount, 'Amount')
   await prisma.user.update({
@@ -165,6 +167,7 @@ export async function grantGems(userId: string, amount: number) {
 export async function grantItem(characterId: string, itemId: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   validateUUID(characterId, 'characterId')
   validateUUID(itemId, 'itemId')
 
@@ -185,6 +188,7 @@ export async function grantItem(characterId: string, itemId: string) {
 export async function resetInventory(characterId: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   validateUUID(characterId, 'characterId')
   const { count } = await prisma.equipmentInventory.deleteMany({
     where: { characterId },

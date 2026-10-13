@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   sanitizeQuestDefinitionInput,
   type QuestDefinitionInput,
@@ -19,6 +19,7 @@ export async function getQuestDefinitions() {
 export async function createQuestDefinition(data: QuestDefinitionInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const payload = sanitizeQuestDefinitionInput(data)
   const existing = await prisma.questDefinition.findUnique({
@@ -52,6 +53,7 @@ export async function updateQuestDefinition(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const existing = await prisma.questDefinition.findUnique({
     where: { id },
@@ -96,6 +98,7 @@ export async function updateQuestDefinition(
 export async function deleteQuestDefinition(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const def = await prisma.questDefinition.delete({ where: { id } })
 
@@ -113,6 +116,7 @@ export async function deleteQuestDefinition(id: string) {
 export async function seedQuestDefinitions() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const catalog = [
     {

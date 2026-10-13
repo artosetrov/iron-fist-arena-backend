@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   parseOptionalScheduledAt,
   parsePushTargetType,
@@ -34,6 +34,13 @@ type NormalizedCampaignInput = {
 async function requireAdminUser() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  return admin
+}
+
+/** Mutations: moderators are read-only (AUDIT-2026-10-13 C4). */
+async function requireMutatingAdmin() {
+  const admin = await requireAdminUser()
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   return admin
 }
 
@@ -89,7 +96,7 @@ export async function listCampaigns() {
 }
 
 export async function createCampaign(input: CreateCampaignInput) {
-  const admin = await requireAdminUser()
+  const admin = await requireMutatingAdmin()
   const normalized = normalizeCampaignInput(input)
 
   return prisma.pushCampaign.create({
@@ -106,12 +113,12 @@ export async function createCampaign(input: CreateCampaignInput) {
 }
 
 export async function deleteCampaign(id: string) {
-  await requireAdminUser()
+  await requireMutatingAdmin()
   return prisma.pushCampaign.delete({ where: { id } })
 }
 
 export async function sendCampaign(id: string) {
-  await requireAdminUser()
+  await requireMutatingAdmin()
 
   const campaign = await prisma.pushCampaign.findUnique({ where: { id } })
   if (!campaign) throw new Error('Campaign not found')

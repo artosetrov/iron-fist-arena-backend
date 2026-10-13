@@ -2,7 +2,7 @@
 
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { callBackendAdminJson } from '@/lib/backend-admin'
 
 type SnapshotConfigEntry = {
@@ -25,6 +25,7 @@ type SnapshotListItem = {
 export async function createConfigSnapshot(name: string, description?: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   // Read all current configs
   const allConfigs = await prisma.gameConfig.findMany()
@@ -81,6 +82,7 @@ export async function listConfigSnapshots(): Promise<SnapshotListItem[]> {
 export async function rollbackToSnapshot(snapshotId: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const snapshot = await prisma.configSnapshot.findUnique({ where: { id: snapshotId } })
   if (!snapshot) throw new Error('Snapshot not found')
@@ -110,6 +112,7 @@ export async function rollbackToSnapshot(snapshotId: string) {
 export async function deleteConfigSnapshot(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   await prisma.$transaction(async (tx) => {
     await tx.configSnapshot.delete({ where: { id } })

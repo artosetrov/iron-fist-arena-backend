@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   sanitizeAchievementDefinitionInput,
   type AchievementDefinitionInput,
@@ -21,6 +21,7 @@ export async function createAchievementDefinition(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const payload = sanitizeAchievementDefinitionInput(data)
   const existing = await prisma.achievementDefinition.findUnique({
@@ -54,6 +55,7 @@ export async function updateAchievementDefinition(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const existing = await prisma.achievementDefinition.findUnique({
     where: { id },
@@ -98,6 +100,7 @@ export async function updateAchievementDefinition(
 export async function deleteAchievementDefinition(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const def = await prisma.achievementDefinition.delete({ where: { id } })
 
@@ -115,6 +118,7 @@ export async function deleteAchievementDefinition(id: string) {
 export async function seedAchievementDefinitions() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const catalog = [
     { key: 'pvp_first_blood', target: 1, category: 'pvp', rewardType: 'gold', rewardAmount: 100 },

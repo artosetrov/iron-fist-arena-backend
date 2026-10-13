@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 import {
   sanitizeAppearanceSkinInput,
@@ -19,6 +19,7 @@ export async function getAppearances() {
 export async function createAppearance(data: AppearanceSkinInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const payload = sanitizeAppearanceSkinInput(data)
   const existing = await prisma.appearanceSkin.findUnique({
@@ -64,6 +65,7 @@ export async function updateAppearance(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const existing = await prisma.appearanceSkin.findUnique({
     where: { id },
@@ -116,6 +118,7 @@ export async function updateAppearance(
 export async function deleteAppearance(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const skin = await prisma.appearanceSkin.findUnique({
     where: { id },

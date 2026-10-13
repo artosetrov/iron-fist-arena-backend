@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 import { sanitizeBattlePassRewardInput } from '@/lib/battle-pass-rewards'
 
@@ -34,6 +34,7 @@ export async function createBattlePassReward(data: {
 }) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const payload = sanitizeBattlePassRewardInput(data)
   const reward = await prisma.battlePassReward.create({ data: payload })
@@ -59,6 +60,7 @@ export async function updateBattlePassReward(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const existing = await prisma.battlePassReward.findUnique({
     where: { id },
@@ -91,6 +93,7 @@ export async function updateBattlePassReward(
 export async function deleteBattlePassReward(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const reward = await prisma.battlePassReward.findUnique({
     where: { id },
@@ -114,6 +117,7 @@ export async function bulkCreateBattlePassRewards(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   if (!seasonId.trim()) throw new Error('Season is required')
   if (!Number.isInteger(maxLevel) || maxLevel < 1) {
     throw new Error('Max level must be a positive integer')

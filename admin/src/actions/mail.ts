@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 
 // ============================================================================
@@ -75,6 +75,7 @@ export interface MailMessageWithRecipients {
 export async function sendMail(data: SendMailInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const {
     subject,
@@ -296,6 +297,7 @@ export async function getMailStats() {
 export async function deleteMailMessage(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   // Fetch the message info before deleting for audit log
   const message = await prisma.mailMessage.findUnique({

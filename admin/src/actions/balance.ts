@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { callBackendAdminJson } from '@/lib/backend-admin'
 
 export async function getBalanceConfigs() {
@@ -67,6 +67,7 @@ export async function batchUpdateBalanceConfigs(
 ): Promise<BalanceSaveResult> {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   // Snapshot first — the backup has to exist before anything is written, not
   // after — and discard it if the write is refused, so a rejected save does not
@@ -112,6 +113,7 @@ export async function resetBalanceToDefaults(
 ): Promise<{ deleted: number } | { error: string }> {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   await snapshotCurrentConfigs(admin.id, `Auto-backup before reset (${keys.length} configs)`)
 

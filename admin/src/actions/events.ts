@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 import type { EventType } from '@prisma/client'
 
@@ -24,6 +24,7 @@ export async function createEvent(data: {
 }) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   const event = await prisma.event.create({
     data: {
       eventKey: data.eventKey,
@@ -58,6 +59,7 @@ export async function updateEvent(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   const updateData: Record<string, unknown> = {}
   if (data.eventKey !== undefined) updateData.eventKey = data.eventKey
   if (data.title !== undefined) updateData.title = data.title
@@ -81,6 +83,7 @@ export async function updateEvent(
 export async function deleteEvent(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   // Fetch the event title before deleting so we can include it in the audit log.
   const event = await prisma.event.findUnique({ where: { id }, select: { title: true, eventKey: true } })
   await prisma.event.delete({ where: { id } })
@@ -94,6 +97,7 @@ export async function deleteEvent(id: string) {
 export async function toggleEventActive(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   const event = await prisma.event.findUnique({ where: { id } })
   if (!event) throw new Error('Event not found')
 

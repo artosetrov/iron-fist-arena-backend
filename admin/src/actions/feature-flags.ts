@@ -2,7 +2,7 @@
 
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 import {
   FEATURE_FLAG_ENVIRONMENTS,
   getDefaultFeatureFlagValue,
@@ -148,6 +148,7 @@ export async function getFeatureFlag(id: string) {
 export async function createFeatureFlag(data: CreateFlagInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const key = normalizeFeatureFlagKey(data.key)
   if (!key) throw new Error('key is required')
@@ -184,6 +185,7 @@ export async function createFeatureFlag(data: CreateFlagInput) {
 export async function updateFeatureFlag(id: string, data: UpdateFlagInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const current = await prisma.featureFlag.findUnique({
     where: { id },
@@ -231,6 +233,7 @@ export async function updateFeatureFlag(id: string, data: UpdateFlagInput) {
 export async function toggleFeatureFlag(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const current = await prisma.featureFlag.findUnique({ where: { id } })
   if (!current) throw new Error('Flag not found')
@@ -251,6 +254,7 @@ export async function toggleFeatureFlag(id: string) {
 export async function deleteFeatureFlag(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const flag = await prisma.featureFlag.delete({ where: { id } })
 
@@ -276,6 +280,7 @@ export async function getFeatureFlagStats() {
 export async function seedDefaultFlags() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
 
   const defaults: DefaultFlagSeed[] = [
     { key: 'maintenance_mode', title: 'Maintenance Mode', description: 'Show maintenance screen to all players', flagType: 'boolean', value: false },

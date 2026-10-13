@@ -1,7 +1,7 @@
 'use server'
 
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { getAdminUser } from '@/lib/auth'
+import { getAdminUser, canModifyConfig } from '@/lib/auth'
 
 export async function listAssets(bucket: string, path?: string) {
   const admin = await getAdminUser()
@@ -18,6 +18,7 @@ export async function listAssets(bucket: string, path?: string) {
 export async function uploadAsset(bucket: string, path: string, formData: FormData) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   const supabase = getSupabaseAdmin()
   const file = formData.get('file') as File
   if (!file) throw new Error('No file provided')
@@ -43,6 +44,7 @@ export async function uploadAsset(bucket: string, path: string, formData: FormDa
 export async function deleteAsset(bucket: string, path: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!canModifyConfig(admin.role)) throw new Error('Insufficient permissions — admin or developer role required')
   const supabase = getSupabaseAdmin()
   const { error } = await supabase.storage
     .from(bucket)
