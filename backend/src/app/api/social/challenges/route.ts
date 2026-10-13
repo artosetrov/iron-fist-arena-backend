@@ -328,74 +328,84 @@ async function handleSend(character: ChallengeActor, body: ChallengeSendBody) {
   const now = new Date()
   const todayStart = new Date()
   todayStart.setUTCHours(0, 0, 0, 0)
-
-  // Check daily limit
-  const todaySent = await prisma.challenge.count({
-    where: {
-      challengerId: character.id,
-      createdAt: { gte: todayStart },
-    },
-  })
-  if (todaySent >= MAX_CHALLENGES_PER_DAY) {
-    return NextResponse.json({ error: 'Daily challenge limit reached (10)' }, { status: 429 })
-  }
-
-  // Check no duplicate pending challenge to same target
-  const existingPending = await prisma.challenge.findFirst({
-    where: {
-      challengerId: character.id,
-      defenderId: target_id,
-      status: 'pending',
-    },
-  })
-  if (existingPending) {
-    return NextResponse.json({ error: 'Challenge already pending to this player' }, { status: 409 })
-  }
-
-  // Check target doesn't have too many pending incoming
-  const targetPending = await prisma.challenge.count({
-    where: {
-      defenderId: target_id,
-      status: 'pending',
-    },
-  })
-  if (targetPending >= MAX_PENDING_CHALLENGES * 4) {
-    return NextResponse.json({ error: 'Target has too many pending challenges' }, { status: 429 })
-  }
-
-  // Check stamina (challenger pays on send)
-  const STAMINA = await getStaminaConfig()
-  const staminaResult = await calculateCurrentStamina(
-    character.currentStamina,
-    character.maxStamina,
-    character.lastStaminaUpdate ?? new Date()
-  )
-  const currentStamina = staminaResult.stamina
-  const staminaCost = STAMINA.PVP_COST
-  if (currentStamina < staminaCost) {
-    return NextResponse.json({ error: 'Not enough stamina' }, { status: 400 })
-  }
-
-  // Create challenge + deduct stamina
   const expiresAt = new Date(now.getTime() + CHALLENGE_EXPIRY_HOURS * 60 * 60 * 1000)
+  const STAMINA = await getStaminaConfig()
+  const staminaCost = STAMINA.PVP_COST
 
-  const [challenge] = await prisma.$transaction([
-    prisma.challenge.create({
+  // Daily limit, duplicate-pending, target inbox cap and stamina are all
+  // checked UNDER a row lock on the challenger. Before this, N parallel sends
+  // passed every check once and produced N challenges for one stamina charge
+  // (AUDIT-2026-10-13 M2). Mirrors the lock used on the accept path.
+  const sendResult = await prisma.$transaction(async (tx) => {
+    const [locked] = await tx.$queryRawUnsafe<Array<{
+      current_stamina: number
+      max_stamina: number
+      last_stamina_update: Date | null
+    }>>(
+      `SELECT current_stamina, max_stamina, last_stamina_update
+       FROM characters WHERE id = $1 FOR UPDATE`,
+      character.id,
+    )
+    if (!locked) throw new Error('CHARACTER_NOT_FOUND')
+
+    const todaySent = await tx.challenge.count({
+      where: { challengerId: character.id, createdAt: { gte: todayStart } },
+    })
+    if (todaySent >= MAX_CHALLENGES_PER_DAY) throw new Error('DAILY_LIMIT')
+
+    const existingPending = await tx.challenge.findFirst({
+      where: { challengerId: character.id, defenderId: target_id, status: 'pending' },
+      select: { id: true },
+    })
+    if (existingPending) throw new Error('DUPLICATE_PENDING')
+
+    const targetPending = await tx.challenge.count({
+      where: { defenderId: target_id, status: 'pending' },
+    })
+    if (targetPending >= MAX_PENDING_CHALLENGES * 4) throw new Error('TARGET_BUSY')
+
+    const staminaResult = await calculateCurrentStamina(
+      locked.current_stamina,
+      locked.max_stamina,
+      locked.last_stamina_update ?? now,
+    )
+    if (staminaResult.stamina < staminaCost) throw new Error('NO_STAMINA')
+
+    const challenge = await tx.challenge.create({
       data: {
         challengerId: character.id,
         defenderId: target_id,
         message: message?.slice(0, 100) || null,
         expiresAt,
       },
-    }),
-    prisma.character.update({
+    })
+    await tx.character.update({
       where: { id: character.id },
       data: {
-        currentStamina: currentStamina - staminaCost,
+        currentStamina: staminaResult.stamina - staminaCost,
         lastStaminaUpdate: now,
       },
-    }),
-  ])
+    })
+    return challenge
+  }).catch((err: unknown) => {
+    const code = err instanceof Error ? err.message : ''
+    switch (code) {
+      case 'DAILY_LIMIT':
+        return NextResponse.json({ error: 'Daily challenge limit reached (10)' }, { status: 429 })
+      case 'DUPLICATE_PENDING':
+        return NextResponse.json({ error: 'Challenge already pending to this player' }, { status: 409 })
+      case 'TARGET_BUSY':
+        return NextResponse.json({ error: 'Target has too many pending challenges' }, { status: 429 })
+      case 'NO_STAMINA':
+        return NextResponse.json({ error: 'Not enough stamina' }, { status: 400 })
+      case 'CHARACTER_NOT_FOUND':
+        return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      default:
+        throw err
+    }
+  })
+  if (sendResult instanceof NextResponse) return sendResult
+  const challenge = sendResult
 
   // Fire-and-forget: create battle invite mail in defender's inbox
   createBattleInviteMail(prisma, {

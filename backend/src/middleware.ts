@@ -35,12 +35,27 @@ function getClientIp(request: NextRequest): string {
   return forwardedFor.split(',')[0]?.trim() || 'anon'
 }
 
+// ── Dev-route kill switch ──
+// /api/dev/* are operator tools. Each one is supposed to check the caller's
+// role itself, but an unauthenticated DB-mutating helper slipped through once
+// (AUDIT-2026-10-13 C7). In production they are hidden entirely unless
+// DEV_ROUTES_ENABLED=true; /api/dev/health stays public for uptime probes.
+const DEV_ROUTES_ENABLED =
+  process.env.VERCEL_ENV !== 'production' || process.env.DEV_ROUTES_ENABLED === 'true'
+
 export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin')
+  const { pathname } = request.nextUrl
 
   // ── Preflight ──
   if (request.method === 'OPTIONS') {
     const res = new NextResponse(null, { status: 204 })
+    return applyCorsHeaders(res, origin)
+  }
+
+  // ── Dev routes hidden in production ──
+  if (!DEV_ROUTES_ENABLED && pathname.startsWith('/api/dev/') && pathname !== '/api/dev/health') {
+    const res = NextResponse.json({ error: 'Not found' }, { status: 404 })
     return applyCorsHeaders(res, origin)
   }
 

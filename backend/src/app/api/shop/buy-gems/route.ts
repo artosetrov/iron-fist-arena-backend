@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
 import { GEM_PACKS, getGemPack } from '@/lib/game/gem-packs'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 /**
  * POST /api/shop/buy-gems
@@ -92,6 +94,13 @@ export async function POST(req: NextRequest) {
 
       return updatedUser
     })
+
+    // Gold spent on gem packs counts toward Big Spender / Spendthrift like any
+    // other shop purchase (was missing — AUDIT-2026-10-13 H14). Non-critical.
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', goldCost),
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', goldCost),
+    ]).catch((err: unknown) => console.error('buy-gems quest progress error:', err))
 
     // Flat response — matches every other shop endpoint so ShopService.updateCharacter
     // can read `gold`/`gems` directly without unwrapping a nested `character` object.

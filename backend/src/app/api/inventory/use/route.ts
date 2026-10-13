@@ -89,129 +89,150 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    const now = new Date()
-    if (isStaminaPotion(consumableType)) {
-      const staminaResult = await calculateCurrentStamina(
-        character.currentStamina,
-        character.maxStamina,
-        character.lastStaminaUpdate ?? now,
-      )
-
-      if (staminaResult.stamina >= character.maxStamina) {
-        return NextResponse.json(
-          { error: 'Stamina is already full' },
-          { status: 400 },
-        )
-      }
-
-      // Same daily cap as /api/consumables/use. A stamina potion held as an
-      // inventory row restores the same bar, so capping only one of the two
-      // endpoints would just move the exploit rather than close it.
-      const potionsUsedToday = currentDailyValue(
-        character.staminaPotionsToday,
-        character.staminaPotionsDate,
-        now,
-      )
-      if (potionsUsedToday >= STAMINA_POTION_DR.DAILY_CAP) {
-        return NextResponse.json(
-          {
-            error: `You can drink ${STAMINA_POTION_DR.DAILY_CAP} stamina potions per day. Resets at 00:00 UTC.`,
-            code: 'STAMINA_POTION_CAP',
-            dailyCap: STAMINA_POTION_DR.DAILY_CAP,
-          },
-          { status: 429 },
-        )
-      }
-
-      const staminaRestore = await getStaminaRestore(consumableType)
-      const newStamina = Math.min(staminaResult.stamina + staminaRestore, character.maxStamina)
-
-      await prisma.$transaction([
-        prisma.equipmentInventory.delete({ where: { id: inventory_id } }),
-        prisma.character.update({
-          where: { id: character_id },
-          data: {
-            currentStamina: newStamina,
-            lastStaminaUpdate: now,
-            staminaPotionsToday: potionsUsedToday + 1,
-            ...(isDifferentUtcDay(character.staminaPotionsDate, now)
-              ? { staminaPotionsDate: now }
-              : {}),
-          },
-        }),
-      ])
-
-      // Update daily + weekly quest progress
-      await Promise.all([
-        updateDailyQuestProgress(prisma, character_id, 'consumable_use'),
-        updateWeeklyChallengeProgress(prisma, character_id, 'consumable_use'),
-      ])
-
-      return NextResponse.json({
-        used: true,
-        consumable_type: consumableType,
-        itemName,
-        stamina: {
-          before: staminaResult.stamina,
-          after: newStamina,
-          max: character.maxStamina,
-          restored: newStamina - staminaResult.stamina,
-        },
-      })
-    }
-
-    if (!isHealthPotion(consumableType)) {
+    if (!isStaminaPotion(consumableType) && !isHealthPotion(consumableType)) {
       return NextResponse.json(
         { error: 'Unknown consumable effect for this item' },
         { status: 400 },
       )
     }
 
-    const hpResult = await calculateCurrentHp(
-      character.currentHp,
-      character.maxHp,
-      character.lastHpUpdate ?? now,
-    )
+    // Everything that reads a counter and writes it back happens under a row
+    // lock. The pre-tx reads above are only for early 4xx responses; the
+    // authoritative stamina/HP/daily-cap checks are re-done here so parallel
+    // requests cannot bypass STAMINA_POTION_DR.DAILY_CAP (AUDIT-2026-10-13 M1).
+    // Mirrors /api/consumables/use.
+    type Outcome =
+      | { kind: 'stamina'; before: number; after: number; max: number }
+      | { kind: 'health'; before: number; after: number; max: number }
 
-    if (hpResult.hp >= character.maxHp) {
-      return NextResponse.json(
-        { error: 'Health is already full' },
-        { status: 400 },
+    const outcome = await prisma.$transaction(async (tx): Promise<Outcome> => {
+      const [locked] = await tx.$queryRawUnsafe<Array<{
+        current_stamina: number
+        max_stamina: number
+        last_stamina_update: Date | null
+        current_hp: number
+        max_hp: number
+        last_hp_update: Date | null
+        stamina_potions_today: number
+        stamina_potions_date: Date | null
+      }>>(
+        `SELECT current_stamina, max_stamina, last_stamina_update,
+                current_hp, max_hp, last_hp_update,
+                stamina_potions_today, stamina_potions_date
+         FROM characters
+         WHERE id = $1
+         FOR UPDATE`,
+        character_id,
       )
-    }
+      if (!locked) throw new Error('CHARACTER_NOT_FOUND')
 
-    const hpRestorePercent = await getHpRestorePercent(consumableType)
-    const restoreAmount = Math.floor(character.maxHp * hpRestorePercent / 100)
-    const newHp = Math.min(hpResult.hp + restoreAmount, character.maxHp)
+      // Lock the inventory row too: two requests for the same inventory_id
+      // must not both delete it and both apply the effect.
+      const [lockedRow] = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT id FROM equipment_inventory WHERE id = $1 AND character_id = $2 FOR UPDATE`,
+        inventory_id,
+        character_id,
+      )
+      if (!lockedRow) throw new Error('ITEM_GONE')
 
-    await prisma.$transaction([
-      prisma.equipmentInventory.delete({ where: { id: inventory_id } }),
-      prisma.character.update({
+      const now = new Date()
+
+      if (isStaminaPotion(consumableType)) {
+        const staminaResult = await calculateCurrentStamina(
+          locked.current_stamina,
+          locked.max_stamina,
+          locked.last_stamina_update ?? now,
+        )
+        if (staminaResult.stamina >= locked.max_stamina) throw new Error('STAMINA_FULL')
+
+        const potionsUsedToday = currentDailyValue(
+          locked.stamina_potions_today,
+          locked.stamina_potions_date,
+          now,
+        )
+        if (potionsUsedToday >= STAMINA_POTION_DR.DAILY_CAP) throw new Error('STAMINA_POTION_CAP')
+
+        const staminaRestore = await getStaminaRestore(consumableType)
+        const newStamina = Math.min(staminaResult.stamina + staminaRestore, locked.max_stamina)
+        const dayRolled = isDifferentUtcDay(locked.stamina_potions_date, now)
+
+        await tx.equipmentInventory.delete({ where: { id: inventory_id } })
+        await tx.character.update({
+          where: { id: character_id },
+          data: {
+            currentStamina: newStamina,
+            lastStaminaUpdate: now,
+            // Atomic increment under the lock; reset to 1 on day rollover.
+            staminaPotionsToday: dayRolled ? 1 : { increment: 1 },
+            ...(dayRolled ? { staminaPotionsDate: now } : {}),
+          },
+        })
+
+        return { kind: 'stamina', before: staminaResult.stamina, after: newStamina, max: locked.max_stamina }
+      }
+
+      const hpResult = await calculateCurrentHp(
+        locked.current_hp,
+        locked.max_hp,
+        locked.last_hp_update ?? now,
+      )
+      if (hpResult.hp >= locked.max_hp) throw new Error('HP_FULL')
+
+      const hpRestorePercent = await getHpRestorePercent(consumableType)
+      const restoreAmount = Math.floor(locked.max_hp * hpRestorePercent / 100)
+      const newHp = Math.min(hpResult.hp + restoreAmount, locked.max_hp)
+
+      await tx.equipmentInventory.delete({ where: { id: inventory_id } })
+      await tx.character.update({
         where: { id: character_id },
-        data: {
-          currentHp: newHp,
-          lastHpUpdate: now,
-        },
-      }),
-    ])
+        data: { currentHp: newHp, lastHpUpdate: now },
+      })
 
-    // Update daily + weekly quest progress
+      return { kind: 'health', before: hpResult.hp, after: newHp, max: locked.max_hp }
+    }).catch((err: unknown) => {
+      const code = err instanceof Error ? err.message : ''
+      switch (code) {
+        case 'STAMINA_FULL':
+          return NextResponse.json({ error: 'Stamina is already full' }, { status: 400 })
+        case 'HP_FULL':
+          return NextResponse.json({ error: 'Health is already full' }, { status: 400 })
+        case 'STAMINA_POTION_CAP':
+          return NextResponse.json(
+            {
+              error: `You can drink ${STAMINA_POTION_DR.DAILY_CAP} stamina potions per day. Resets at 00:00 UTC.`,
+              code: 'STAMINA_POTION_CAP',
+              dailyCap: STAMINA_POTION_DR.DAILY_CAP,
+            },
+            { status: 429 },
+          )
+        case 'ITEM_GONE':
+          return NextResponse.json({ error: 'Item not found in inventory' }, { status: 404 })
+        case 'CHARACTER_NOT_FOUND':
+          return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+        default:
+          throw err
+      }
+    })
+
+    if (outcome instanceof NextResponse) return outcome
+
+    // Update daily + weekly quest progress (W3.D5 — Weekly BP challenge: Alchemist slot)
     await Promise.all([
       updateDailyQuestProgress(prisma, character_id, 'consumable_use'),
-      // W3.D5 — Weekly BP challenge: Alchemist slot
       updateWeeklyChallengeProgress(prisma, character_id, 'consumable_use'),
     ])
 
+    const effect = {
+      before: outcome.before,
+      after: outcome.after,
+      max: outcome.max,
+      restored: outcome.after - outcome.before,
+    }
     return NextResponse.json({
       used: true,
       consumable_type: consumableType,
       itemName,
-      health: {
-        before: hpResult.hp,
-        after: newHp,
-        max: character.maxHp,
-        restored: newHp - hpResult.hp,
-      },
+      ...(outcome.kind === 'stamina' ? { stamina: effect } : { health: effect }),
     })
   } catch (error) {
     console.error('use inventory item error:', error)
