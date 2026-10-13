@@ -2,6 +2,19 @@ import { Prisma } from '@prisma/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeNextRequest } from '../helpers/next-request'
 
+const APPLE_TO_INTERNAL: Record<string, string> = {
+  'com.hexbound.gems_small': 'gems_small',
+  'com.hexbound.gems_mega': 'gems_mega',
+  'com.hexbound.premium_pass_monthly': 'premium_pass_monthly',
+  'com.hexbound.monthly_gem_card': 'monthly_gem_card',
+  'com.hexbound.adventurer_bundle_III': 'adventurer_bundle_III',
+  // Bare internal keys, as StoreKit Configuration environments may report them.
+  gems_small: 'gems_small',
+  gems_mega: 'gems_mega',
+  premium_pass_monthly: 'premium_pass_monthly',
+  monthly_gem_card: 'monthly_gem_card',
+}
+
 const {
   mockGetAuthUser,
   mockVerifyAppleTransaction,
@@ -44,6 +57,10 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/apple-iap', () => ({
   verifyAppleTransaction: mockVerifyAppleTransaction,
+  // Rewards are resolved from Apple's product id, never the client's — the
+  // route imports this mapper, so the mock must provide it.
+  internalProductIdFromApple: (appleProductId: string) =>
+    APPLE_TO_INTERNAL[appleProductId],
 }))
 
 import { POST } from '@/app/api/iap/verify-receipt/route'
@@ -211,5 +228,99 @@ describe('POST /api/iap/verify-receipt', () => {
       transactionId: 'iap-row-1',
       gemsAwarded: 100,
     })
+  })
+
+  it('blocks product substitution: a cheap receipt claimed against an expensive SKU', async () => {
+    // Real, Apple-valid $0.99 transaction replayed with product_id: gems_mega.
+    mockVerifyAppleTransaction.mockResolvedValue({
+      valid: true,
+      transactionInfo: {
+        transactionId: 'tx-sub',
+        originalTransactionId: 'tx-sub',
+        bundleId: 'com.hexbound.app',
+        productId: 'com.hexbound.gems_small',
+        purchaseDate: Date.now(),
+        type: 'Consumable',
+        inAppOwnershipType: 'PURCHASED',
+        environment: 'Production',
+        signedDate: Date.now(),
+      },
+    })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/iap/verify-receipt', {
+        method: 'POST',
+        body: JSON.stringify({
+          product_id: 'gems_mega',
+          transaction_id: 'tx-sub',
+          receipt_data: 'receipt-blob',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(prismaMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('rejects a transaction for a product id we do not sell', async () => {
+    mockVerifyAppleTransaction.mockResolvedValue({
+      valid: true,
+      transactionInfo: {
+        transactionId: 'tx-unknown',
+        originalTransactionId: 'tx-unknown',
+        bundleId: 'com.hexbound.app',
+        productId: 'com.hexbound.not_a_real_sku',
+        purchaseDate: Date.now(),
+        type: 'Consumable',
+        inAppOwnershipType: 'PURCHASED',
+        environment: 'Production',
+        signedDate: Date.now(),
+      },
+    })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/iap/verify-receipt', {
+        method: 'POST',
+        body: JSON.stringify({
+          product_id: 'gems_small',
+          transaction_id: 'tx-unknown',
+          receipt_data: 'receipt-blob',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(prismaMock.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('grants the product Apple confirms when client and Apple agree', async () => {
+    mockVerifyAppleTransaction.mockResolvedValue({
+      valid: true,
+      transactionInfo: {
+        transactionId: 'tx-ok',
+        originalTransactionId: 'tx-ok',
+        bundleId: 'com.hexbound.app',
+        productId: 'com.hexbound.gems_small',
+        purchaseDate: Date.now(),
+        type: 'Consumable',
+        inAppOwnershipType: 'PURCHASED',
+        environment: 'Production',
+        signedDate: Date.now(),
+      },
+    })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/iap/verify-receipt', {
+        method: 'POST',
+        body: JSON.stringify({
+          product_id: 'gems_small',
+          transaction_id: 'tx-ok',
+          receipt_data: 'receipt-blob',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.$transaction).toHaveBeenCalled()
   })
 })

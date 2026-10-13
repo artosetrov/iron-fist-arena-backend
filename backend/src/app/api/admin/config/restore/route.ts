@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthAdmin, forbiddenResponse } from '@/lib/auth-admin'
 import { prisma } from '@/lib/prisma'
 import { invalidateGameConfigCache } from '@/lib/game/config'
+import { describeLadderRowsProblem } from '@/lib/game/ladder-config'
 
 type SnapshotConfigEntry = {
   key: string
@@ -48,6 +49,18 @@ export async function POST(req: NextRequest) {
     const uniqueKeys = new Set(parsedConfigs.map((config) => config.key))
     if (uniqueKeys.size !== parsedConfigs.length) {
       return NextResponse.json({ error: 'configs[] contains duplicate keys' }, { status: 400 })
+    }
+
+    // A restore replaces every row, so the snapshot's `pvp_ranks.*` entries are
+    // the whole ladder (tiers it omits fall back to their frozen floors).
+    // Rolling back to a snapshot taken before these keys were live could
+    // otherwise reinstate floors the game then silently ignores.
+    const ladderProblem = describeLadderRowsProblem(parsedConfigs)
+    if (ladderProblem) {
+      return NextResponse.json(
+        { error: `Snapshot contains an invalid PvP ladder: ${ladderProblem}` },
+        { status: 400 },
+      )
     }
 
     const previousConfigs = await prisma.gameConfig.findMany({

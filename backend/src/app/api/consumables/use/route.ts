@@ -14,6 +14,8 @@ import {
   isHealthPotion,
 } from '@/lib/game/consumable-effects'
 import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
+import { STAMINA_POTION_DR } from '@/lib/game/balance'
+import { currentDailyValue, isDifferentUtcDay } from '@/lib/game/daily-counter'
 
 /**
  * POST /api/consumables/use
@@ -57,9 +59,12 @@ export async function POST(req: NextRequest) {
         current_hp: number
         max_hp: number
         last_hp_update: Date | null
+        stamina_potions_today: number
+        stamina_potions_date: Date | null
       }>>(
         `SELECT id, user_id, current_stamina, max_stamina, last_stamina_update,
-                current_hp, max_hp, last_hp_update
+                current_hp, max_hp, last_hp_update,
+                stamina_potions_today, stamina_potions_date
          FROM characters
          WHERE id = $1
          FOR UPDATE`,
@@ -95,6 +100,17 @@ export async function POST(req: NextRequest) {
           throw new Error('STAMINA_FULL')
         }
 
+        // Daily cap, lazily reset — mirrors the gem-refill cap. Without it,
+        // free contraband potions made the stamina budget meaningless.
+        const potionsUsedToday = currentDailyValue(
+          character.stamina_potions_today,
+          character.stamina_potions_date,
+          now
+        )
+        if (potionsUsedToday >= STAMINA_POTION_DR.DAILY_CAP) {
+          throw new Error('STAMINA_POTION_CAP')
+        }
+
         const restore = await getStaminaRestore(ctEnum)
         const newStamina = Math.min(staminaResult.stamina + restore, character.max_stamina)
 
@@ -104,6 +120,12 @@ export async function POST(req: NextRequest) {
             data: {
               currentStamina: newStamina,
               lastStaminaUpdate: now,
+              staminaPotionsToday: potionsUsedToday + 1,
+              // Only stamp the date when the day rolled over, so the column
+              // keeps marking the day the counter belongs to.
+              ...(isDifferentUtcDay(character.stamina_potions_date, now)
+                ? { staminaPotionsDate: now }
+                : {}),
             },
           }),
           tx.consumableInventory.update({
@@ -118,6 +140,8 @@ export async function POST(req: NextRequest) {
           after: newStamina,
           max: character.max_stamina,
           remaining: updatedConsumable.quantity,
+          potionsUsedToday: potionsUsedToday + 1,
+          potionsDailyCap: STAMINA_POTION_DR.DAILY_CAP,
         }
       }
 
@@ -176,6 +200,10 @@ export async function POST(req: NextRequest) {
           restored: result.after - result.before,
         },
         remaining_quantity: result.remaining,
+        // So the client can show "2 of 4 today" instead of only discovering
+        // the cap by getting a 429 on the fifth potion.
+        potions_used_today: result.potionsUsedToday,
+        potions_daily_cap: result.potionsDailyCap,
       })
     }
 
@@ -202,6 +230,16 @@ export async function POST(req: NextRequest) {
       }
       if (error.message === 'STAMINA_FULL') {
         return NextResponse.json({ error: 'Stamina is already full' }, { status: 400 })
+      }
+      if (error.message === 'STAMINA_POTION_CAP') {
+        return NextResponse.json(
+          {
+            error: `You can drink ${STAMINA_POTION_DR.DAILY_CAP} stamina potions per day. Resets at 00:00 UTC.`,
+            code: 'STAMINA_POTION_CAP',
+            dailyCap: STAMINA_POTION_DR.DAILY_CAP,
+          },
+          { status: 429 }
+        )
       }
       if (error.message === 'HEALTH_FULL') {
         return NextResponse.json({ error: 'Health is already full' }, { status: 400 })

@@ -3,6 +3,7 @@
 // =============================================================================
 
 import type { AchievementDefinition } from '@prisma/client'
+import { minRatingForTier } from './tier'
 
 export type AchievementRewardType = 'gold' | 'gems' | 'xp' | 'title' | 'frame'
 
@@ -118,30 +119,37 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
   // -------------------------------------------------------------------------
   // Ranking  (tracked after ELO update in pvp/fight + pvp/resolve)
   // -------------------------------------------------------------------------
+  // Rank achievements are named after tiers, so their targets ARE the tier
+  // floors — derived, never typed out. Note they follow the FROZEN floors, not
+  // an operator's live `pvp_ranks.*` overrides: the catalog is synchronous and
+  // achievement rows carry a target copied at creation, so a live threshold
+  // here would mean rows created before and after an edit disagreeing about
+  // what "Silver" costs. Moving a floor therefore needs a matching migration
+  // (see 20260915_rank_achievement_targets). v3 corrected diamond (1800 → 3000) and
+  // grandmaster (2200 → 4250) by hand after players earned a "Diamond" badge at
+  // Platinum; rank_silver kept its own stale 1200 (Silver I on the current
+  // ladder) until 2026-09-15, which is the same bug with a smaller blast radius
+  // and the reason these are now computed.
   rank_silver: {
-    target: 1200,
+    target: minRatingForTier('silver'),
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 1,
   },
   rank_gold: {
-    target: 1500,
+    target: minRatingForTier('gold'),
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 3,
   },
   rank_diamond: {
-    // v3: 1800 → 3000. PVP_RANKS.DIAMOND minimum is 3000, so the old 1800 target
-    // unlocked the achievement at Platinum — players got "Diamond" badge without
-    // actually reaching Diamond. See ECONOMY_RULES.md R5 + PVP_RANKS table.
-    target: 3000,
+    target: minRatingForTier('diamond'),
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 10,
   },
   rank_grandmaster: {
-    // v3: 2200 → 4250. PVP_RANKS.GRANDMASTER minimum is 4250. Same reasoning as above.
-    target: 4250,
+    target: minRatingForTier('grandmaster'),
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 25,

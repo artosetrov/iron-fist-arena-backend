@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { getGameConfig, getGameConfigs } from './config'
+import { resolveTierRanges, ladderContract, type PvPLadderContract } from './tier'
 import {
   STAMINA, HP_REGEN, GOLD_REWARDS, XP_REWARDS, FIRST_WIN_BONUS,
   COMBAT, ELO, PRESTIGE, BATTLE_PASS, SKILLS, PASSIVES,
@@ -182,6 +183,33 @@ export async function getPvpRanksConfig() {
     MASTER: configs['pvp_ranks.master'] as number,
     GRANDMASTER: configs['pvp_ranks.grandmaster'] as number,
   }
+}
+
+/**
+ * The live PvP ladder — the frozen table from tier.ts with the admin panel's
+ * `pvp_ranks.*` floors applied (and rejected wholesale if they do not form a
+ * valid ascending ladder; see `resolveTierRanges`).
+ *
+ * Every tier answer the server gives — leaderboard badges, and the contract
+ * iOS renders from — must come through here, so that one edit in the balance
+ * panel moves the whole game and not just one screen.
+ */
+export async function getPvpLadderRanges() {
+  const floors = await getPvpRanksConfig()
+  return resolveTierRanges({
+    bronze: floors.BRONZE,
+    silver: floors.SILVER,
+    gold: floors.GOLD,
+    platinum: floors.PLATINUM,
+    diamond: floors.DIAMOND,
+    master: floors.MASTER,
+    grandmaster: floors.GRANDMASTER,
+  })
+}
+
+/** Serializable ladder for `/api/game/init` → iOS `PvPLadder`. */
+export async function getPvpLadderContract(): Promise<PvPLadderContract> {
+  return ladderContract(await getPvpLadderRanges())
 }
 
 // --- Prestige ---

@@ -173,4 +173,43 @@ describe('admin config restore route', () => {
       error: 'configs[] contains duplicate keys',
     })
   })
+  // A snapshot taken before 2026-09-15 can contain `pvp_ranks.*` rows that were
+  // written when nothing read them — including sets that cannot form a ladder.
+  // Restoring one would put the panel and the game back out of agreement.
+  it('refuses a snapshot whose tier floors do not form a ladder', async () => {
+    const response = await POST(
+      makeNextRequest('http://localhost/api/admin/config/restore', {
+        method: 'POST',
+        body: JSON.stringify({
+          snapshotName: 'legacy',
+          configs: [
+            { key: 'pvp_ranks.silver', value: 4000, category: 'pvp_ranks', description: null },
+          ],
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining('invalid PvP ladder'),
+    })
+    expect(prismaMock.$transaction).not.toHaveBeenCalled()
+    expect(transactionMock.gameConfig.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('restores a snapshot whose tier floors do form a ladder', async () => {
+    const response = await POST(
+      makeNextRequest('http://localhost/api/admin/config/restore', {
+        method: 'POST',
+        body: JSON.stringify({
+          snapshotName: 'tuned',
+          configs: [
+            { key: 'pvp_ranks.gold', value: 1400, category: 'pvp_ranks', description: null },
+          ],
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+  })
 })

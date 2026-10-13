@@ -53,7 +53,15 @@ export const SHAFT_TOTAL_EXTRACTIONS = 5
  */
 export const MINIGAME_DURATION_SEC = 60
 export const MINIGAME_CAP_PERCENT = 0.15 // 15% cap on passive pool
-export const MINIGAME_GEM_CAP = 3 // max 3 bonus gems per 60s session
+// Max bonus gems per 60s session. Was 3 while the design note 40 lines below
+// said 1 — at 3 gems × 3 slots × ~2 cycles this was the single largest hard
+// currency faucet in the game (~90 gems/day/account). Back to the documented
+// value.
+export const MINIGAME_GEM_CAP = 1
+// Share of spawned coins a player must catch to earn the gem. Below this the
+// gem is not awarded at all — it is meant to be a reward for playing well, not
+// a participation payout.
+export const MINIGAME_GEM_CATCH_THRESHOLD = 0.75
 export const MINIGAME_SESSION_TTL_SEC = 180 // session must be claimed within 3 min (game is 60s)
 export const MINIGAME_GAME_TYPE = 'gold_mine_rush' as const
 
@@ -94,9 +102,70 @@ export function calcMinigameCap(passiveGoldAmount: number): number {
  * Level 2 mine → 17.25%.
  * Level 3 mine → 19.5%.
  *
- * Gem cap stays at MINIGAME_GEM_CAP (1) regardless of level — gems are
- * designed to be rare high-value drops, not a scaling bonus.
+ * Gem cap stays at MINIGAME_GEM_CAP regardless of level — gems are designed to
+ * be rare high-value drops, not a scaling bonus.
  */
+/**
+ * Coin spawn schedule for the 60-second falling-coins minigame.
+ *
+ * The client drives the actual spawning (it is a real-time action game), but
+ * the SERVER must own the denominator: `caught / spawned`. Before this, both
+ * numbers came from the request body, so a client could send any pair it liked
+ * and the "derived" reward was still whatever it asked for.
+ *
+ * Mirrors `MinigameWave` in GoldMineMiniGameView.swift — keep the two in sync.
+ */
+const MINIGAME_WAVES: ReadonlyArray<{ durationSec: number; spawnIntervalSec: number }> = [
+  { durationSec: 15, spawnIntervalSec: 0.50 }, // warmup
+  { durationSec: 15, spawnIntervalSec: 0.40 }, // building
+  { durationSec: 15, spawnIntervalSec: 0.32 }, // gold rush
+  { durationSec: 7, spawnIntervalSec: 0.38 },  // gem storm
+  { durationSec: 8, spawnIntervalSec: 0.25 },  // final frenzy
+]
+
+/**
+ * How many coins a full 60-second session spawns, per the schedule above.
+ * Pinned into the session row at /start so a later balance change cannot
+ * retroactively alter the denominator of a session already in flight.
+ */
+export function expectedSpawnCount(): number {
+  return Math.floor(
+    MINIGAME_WAVES.reduce(
+      (total, wave) => total + wave.durationSec / wave.spawnIntervalSec,
+      0,
+    ),
+  )
+}
+
+/**
+ * Derive the bonus a minigame session actually earned.
+ *
+ * `spawned` MUST be the server's own number (see `expectedSpawnCount`), never
+ * a value from the request body — otherwise the ratio is whatever the client
+ * decides it is. `caught` is still client-reported and clamped to `spawned`;
+ * bounding a real-time action game further would need a per-coin protocol.
+ * What this does guarantee: the payout can never exceed the per-slot cap, the
+ * passive pool, or what the player claimed.
+ */
+export function deriveMinigameBonus(input: {
+  capGold: number
+  passivePool: number
+  caught: number
+  spawned: number
+}): { gold: number; gems: number; catchRatio: number } {
+  const spawned = Math.max(0, Math.floor(input.spawned))
+  const caught = Math.min(Math.max(0, Math.floor(input.caught)), spawned)
+  const catchRatio = spawned > 0 ? caught / spawned : 0
+
+  const goldCeiling = Math.max(0, Math.min(input.capGold, input.passivePool))
+
+  return {
+    gold: Math.floor(goldCeiling * catchRatio),
+    gems: catchRatio >= MINIGAME_GEM_CATCH_THRESHOLD ? MINIGAME_GEM_CAP : 0,
+    catchRatio,
+  }
+}
+
 export function calcSlotMinigameCap(
   slotReward: number,
   goldMineSlotsLevel: number

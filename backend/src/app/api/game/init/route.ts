@@ -15,6 +15,7 @@ import {
   getDailyLoginRewardsConfig,
   getEloConfig,
   getPvpRanksConfig,
+  getPvpLadderContract,
   getBattlePassConfig,
   getGemCostsConfig,
 } from '@/lib/game/live-config'
@@ -265,6 +266,7 @@ export async function GET(req: NextRequest) {
       dailyLoginRewardsConfig,
       eloConfig,
       pvpRanksConfig,
+      pvpLadderContract,
       battlePassConfig,
       gemCostsConfig,
       featureFlags,
@@ -279,6 +281,7 @@ export async function GET(req: NextRequest) {
       getDailyLoginRewardsConfig(),
       getEloConfig(),
       getPvpRanksConfig(),
+      getPvpLadderContract(),
       getBattlePassConfig(),
       getGemCostsConfig(),
       resolveAllFlags(user.id, { id: character.id, level: character.level, class: character.class }),
@@ -306,7 +309,12 @@ export async function GET(req: NextRequest) {
       maxDodgeChance: combatConfig.MAX_DODGE_CHANCE,
       dailyLoginRewards: dailyLoginRewardsConfig,
       eloCalibrationGames: eloConfig.CALIBRATION_GAMES,
+      // Bare tier floors. Kept for the admin panel's own round-trip; the client
+      // reads `pvpLadder` below, which carries the divisions and labels too.
       pvpRanks: pvpRanksConfig,
+      // The full ladder contract — iOS decodes this into `PvPLadder` and stops
+      // classifying ratings itself. See backend/src/lib/game/tier.ts.
+      pvpLadder: pvpLadderContract,
       battlePass: battlePassConfig,
       gemCosts: {
         goldMineSlotCost: gemCostsConfig.GOLD_MINE_BUY_SLOT,

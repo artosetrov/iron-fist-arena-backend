@@ -45,7 +45,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buildSlotsArray } from '@/lib/game/gold-mine'
 import {
-  MINIGAME_GEM_CAP,
+  deriveMinigameBonus,
+  expectedSpawnCount,
   MINIGAME_GAME_TYPE,
 } from '@/lib/game/shaft-catalog'
 
@@ -163,10 +164,12 @@ export async function POST(req: NextRequest) {
           passive_gold_amount: number | null
           expires_at: Date | null
           created_at: Date
+          secret_data: unknown
         }>
       >(
         `SELECT id, character_id, game_type, status,
-                cap_gold, passive_gold_amount, expires_at, created_at
+                cap_gold, passive_gold_amount, expires_at, created_at,
+                secret_data
            FROM minigame_sessions
           WHERE id = $1
           FOR UPDATE`,
@@ -205,15 +208,26 @@ export async function POST(req: NextRequest) {
       const capGold = minigameRow.cap_gold ?? 0
       const passivePool = minigameRow.passive_gold_amount ?? 0
 
-      // Clamp + cap. Gold claim can never exceed the passive pool AND
-      // never exceed the per-slot cap.
-      const spawned = clampInt(spawned_count, 0, 500)
+      // The reward is DERIVED from how many coins were caught, not taken from
+      // the client's claim. The old code only clamped the claim, so a scripted
+      // client simply claimed the maximum every time and the minigame was
+      // decorative. The client's own numbers now act only as an upper bound.
+      // The denominator comes from the session row the server wrote at /start.
+      // `spawned_count` from the body is ignored: with both sides of the ratio
+      // client-supplied, "deriving" the reward server-side meant nothing.
+      const pinnedSpawnCount =
+        typeof (minigameRow.secret_data as { spawnCount?: unknown } | null)?.spawnCount === 'number'
+          ? Math.floor((minigameRow.secret_data as { spawnCount: number }).spawnCount)
+          : expectedSpawnCount() // sessions created before this shipped
+      const spawned = clampInt(pinnedSpawnCount, 0, 500)
       const caught = clampInt(caught_count, 0, spawned)
+
       const goldClaim = clampInt(gold_claimed_in_session, 0, passivePool)
       const gemsClaim = clampInt(gems_claimed_in_session, 0, 5) // hard safety
 
-      const bonusGold = Math.min(goldClaim, capGold)
-      const bonusGems = Math.min(gemsClaim, MINIGAME_GEM_CAP)
+      const earned = deriveMinigameBonus({ capGold, passivePool, caught, spawned })
+      const bonusGold = Math.min(earned.gold, goldClaim)
+      const bonusGems = Math.min(earned.gems, gemsClaim)
 
       // Credit bonus.
       const updatedUserAfterGold = await tx.user.update({

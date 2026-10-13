@@ -32,6 +32,7 @@ import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/bot-ticket'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -142,6 +143,10 @@ export async function POST(req: NextRequest) {
     if (!attacker) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     if (attacker.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (!defender) return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
+    if (sameOwner(attacker, defender)) {
+      console.warn(`[pvp] self-farm blocked on resolve: user ${user.id}, ${character_id} vs ${opponent_id}`)
+      return selfFarmResponse()
+    }
 
     // Stamina pre-check (fast early-exit) — authoritative check happens inside transaction with row lock
     if (!isRevenge) {

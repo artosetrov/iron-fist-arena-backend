@@ -10,6 +10,7 @@ import { getHpRestoreFraction, isHealthPotion } from '@/lib/game/consumable-effe
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 import type { Enemy } from '@/lib/game/dungeon'
 import { ConsumableType, Prisma } from '@prisma/client'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 type OpponentType = 'pvp' | 'bot' | 'dungeon_boss'
 const VALID_OPPONENT_TYPES: readonly OpponentType[] = ['pvp', 'bot', 'dungeon_boss']
@@ -141,6 +142,10 @@ export async function POST(req: NextRequest) {
       : null
     if (opponentType === 'pvp' && !defender) {
       return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
+    }
+    if (defender && sameOwner(attacker, defender)) {
+      console.warn(`[pvp] self-farm blocked on match start: user ${user.id}, ${character_id} vs ${opponent_id}`)
+      return selfFarmResponse()
     }
     if (opponentType === 'bot' && !isNpcBot(opponent_id)) {
       return NextResponse.json({ error: 'Invalid bot opponent id (expected npc_* prefix)' }, { status: 400 })

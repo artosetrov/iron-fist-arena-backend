@@ -15,9 +15,12 @@
  *   REFUND / REVOKE       — Apple revoked entitlement → status=refunded
  *   OFFER_REDEEMED        — promo offer applied → update expiresAt
  *
- * Auth model: Apple signs the entire payload with its intermediate cert.
- * We decode the JWS payload (signature verification against Apple's cert
- * chain is a Phase 3 hardening item — see PREMIUM_PASS_MIGRATION.md).
+ * Auth model: this endpoint is unauthenticated by design — Apple cannot send
+ * a bearer token. Authenticity comes entirely from the JWS signature, which
+ * is verified against Apple's certificate chain via `@/lib/apple-jws`
+ * (Apple's own `SignedDataVerifier`). An unverifiable payload is rejected,
+ * never decoded-and-trusted: this row grants paid entitlements, so a forged
+ * DID_RENEW would be free premium forever.
  *
  * Idempotency: Apple retries on non-2xx. We always return 200 after
  * processing to prevent duplicate deliveries, and our upserts are
@@ -26,6 +29,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {
+  isSignedDataVerificationConfigured,
+  signedDataVerifierError,
+  verifyWithAnyEnvironment,
+} from '@/lib/apple-jws'
 
 // ──────────────────────────────────────────────
 // Apple payload types (minimal — see Apple docs for full schema)
@@ -64,15 +72,6 @@ interface JWSRenewalInfoDecodedPayload {
   productId: string
 }
 
-// ──────────────────────────────────────────────
-// JWS decode (payload only — signature verification is Phase 3)
-// ──────────────────────────────────────────────
-
-function decodeJWSPayload<T>(jws: string): T {
-  const parts = jws.split('.')
-  if (parts.length !== 3) throw new Error('Invalid JWS')
-  return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
-}
 
 // ──────────────────────────────────────────────
 // Handler
@@ -85,18 +84,66 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing signedPayload' }, { status: 400 })
     }
 
-    const payload = decodeJWSPayload<ResponseBodyV2DecodedPayload>(body.signedPayload)
-    const { notificationType, subtype, data } = payload
+    // Signature first. Nothing below may read the payload until Apple's chain
+    // has vouched for it.
+    if (!isSignedDataVerificationConfigured()) {
+      // Misconfiguration, not an attack. 503 makes Apple retry, so no
+      // notification is lost once the certificates are in place.
+      console.error('[apple-webhook] verification unavailable:', signedDataVerifierError())
+      return NextResponse.json({ error: 'verification unavailable' }, { status: 503 })
+    }
 
-    if (!data?.signedTransactionInfo) {
-      console.warn('[apple-webhook] payload missing signedTransactionInfo', notificationType)
+    let payload: ResponseBodyV2DecodedPayload
+    let tx: JWSTransactionDecodedPayload
+    let renewal: JWSRenewalInfoDecodedPayload | null = null
+
+    try {
+      const signedPayload = body.signedPayload
+      payload = await verifyWithAnyEnvironment((v) =>
+        v.verifyAndDecodeNotification(signedPayload),
+      ) as unknown as ResponseBodyV2DecodedPayload
+
+      const signedTransactionInfo = payload.data?.signedTransactionInfo
+      if (!signedTransactionInfo) {
+        console.warn('[apple-webhook] payload missing signedTransactionInfo', payload.notificationType)
+        return NextResponse.json({ ok: true })
+      }
+
+      tx = await verifyWithAnyEnvironment((v) =>
+        v.verifyAndDecodeTransaction(signedTransactionInfo),
+      ) as unknown as JWSTransactionDecodedPayload
+
+      const signedRenewalInfo = payload.data?.signedRenewalInfo
+      renewal = signedRenewalInfo
+        ? (await verifyWithAnyEnvironment((v) =>
+            v.verifyAndDecodeRenewalInfo(signedRenewalInfo),
+          )) as unknown as JWSRenewalInfoDecodedPayload
+        : null
+    } catch (error) {
+      // Bad signature, wrong bundle id, expired cert, or a revocation-check
+      // outage. Apple retries on any non-2xx regardless, so 401 here is a
+      // signal for our own logs rather than a way to stop redelivery.
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[apple-webhook] signature verification failed:', message)
+      return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
+    }
+
+    const { notificationType, subtype } = payload
+
+    // Every field of Apple's decoded payloads is optional in the library's
+    // types. Without this guard a missing originalTransactionId becomes
+    // `findFirst({ where: { originalTransactionId: undefined } })`, which in
+    // Prisma means "no filter" — i.e. it would return, and then mutate, an
+    // unrelated player's subscription.
+    if (!tx.originalTransactionId) {
+      console.warn('[apple-webhook] transaction has no originalTransactionId', notificationType)
       return NextResponse.json({ ok: true })
     }
 
-    const tx = decodeJWSPayload<JWSTransactionDecodedPayload>(data.signedTransactionInfo)
-    const renewal = data.signedRenewalInfo
-      ? decodeJWSPayload<JWSRenewalInfoDecodedPayload>(data.signedRenewalInfo)
-      : null
+    if (!notificationType) {
+      console.warn('[apple-webhook] payload has no notificationType', tx.originalTransactionId)
+      return NextResponse.json({ ok: true })
+    }
 
     // Look up the existing subscription by original_transaction_id.
     // original_transaction_id is stable across all renewals / resumes.

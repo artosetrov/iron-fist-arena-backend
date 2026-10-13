@@ -28,6 +28,7 @@
     "test:economy-sim": "vitest run tests/economy/sink-ratio.test.ts"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "^3.1.0",
     "@prisma/client": "^6.4.0",
     "@supabase/supabase-js": "^2.49.0",
     "@upstash/ratelimit": "^2.0.8",

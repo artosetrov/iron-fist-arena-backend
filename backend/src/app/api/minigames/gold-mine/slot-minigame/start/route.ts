@@ -48,6 +48,7 @@ import {
   getUnlockedShaftKeys,
   isValidShaftKey,
   type ShaftKey,
+  expectedSpawnCount,
 } from '@/lib/game/shaft-catalog'
 
 interface StartBody {
@@ -199,6 +200,9 @@ export async function POST(req: NextRequest) {
           passiveGoldAmount: slotRow.reward,
           capGold,
           expiresAt,
+          // The denominator of the reward ratio, decided here and never taken
+          // from the client on submit.
+          secretData: { spawnCount: expectedSpawnCount() },
         },
       })
 

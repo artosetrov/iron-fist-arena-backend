@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { shouldFaceBots, generateBotOpponentCard, NPC_FIGHT_THRESHOLD } from '@/lib/game/npc-bots'
 import type { CharacterClassType } from '@/lib/game/combat'
+import { excludeOwnCharacters } from '@/lib/game/pvp-opponent'
 
 const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 5
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
       // Phase 1: Rating + Level + Gear score (tightest match)
       prisma.character.findMany({
         where: {
-          id: { not: characterId },
+          ...excludeOwnCharacters(characterId, user.id),
           level: { gte: minLevel, lte: maxLevel },
           gearScore: { gte: minGear, lte: maxGear },
           pvpRating: { gte: minRating, lte: maxRating },
@@ -92,7 +93,7 @@ export async function GET(req: NextRequest) {
       // Phase 2: Level + Gear score only (drop rating filter)
       prisma.character.findMany({
         where: {
-          id: { not: characterId },
+          ...excludeOwnCharacters(characterId, user.id),
           level: { gte: minLevel, lte: maxLevel },
           gearScore: { gte: minGear, lte: maxGear },
         },
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
       // Phase 3: Level only (drop gear filter)
       prisma.character.findMany({
         where: {
-          id: { not: characterId },
+          ...excludeOwnCharacters(characterId, user.id),
           level: { gte: minLevel, lte: maxLevel },
         },
         select: selectFields,
@@ -116,7 +117,7 @@ export async function GET(req: NextRequest) {
       // a high-level player in a sparse pool gets the closest-level opponents
       // (e.g. Lv18 → Lv7), not the lowest-level ones (Lv18 → Lv1).
       prisma.character.findMany({
-        where: { id: { not: characterId } },
+        where: { ...excludeOwnCharacters(characterId, user.id) },
         select: selectFields,
         take: 100,
       }),

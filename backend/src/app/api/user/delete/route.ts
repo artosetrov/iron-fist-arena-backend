@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
@@ -11,8 +12,14 @@ import { createAdminClient } from '@/lib/supabase/server'
  * Required by App Store guidelines for account deletion.
  *
  * Deletion order:
- * 1. Delete Prisma user record (cascades all related data via FK onDelete: Cascade)
- * 2. Delete Supabase auth user via admin API
+ * 1. Clean up pvp_matches by hand — those FKs are ON DELETE RESTRICT, so the
+ *    cascade from `user` dies there and the whole delete fails for anyone who
+ *    has ever fought (PvP, bot, or boss — they all write a PvpMatch row).
+ * 2. Delete the Prisma user record (everything else does cascade).
+ * 3. Delete the Supabase auth user via admin API.
+ *
+ * Mirrors the cleanup in DELETE /api/characters/[id], which already had to
+ * solve the same constraint.
  */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -25,14 +32,42 @@ export async function POST(req: NextRequest) {
 
   try {
     // Step 1: Delete all user data from application database.
-    // All foreign keys use onDelete: Cascade, so deleting the user record
-    // automatically removes: characters (and their items, equipment, consumables,
-    // training sessions, gold mine sessions, minigame sessions, daily quests,
-    // pvp matches, dungeon progress, dungeon runs, legendary shards,
-    // battle pass claims, skills, passives, achievements, quest progress),
-    // cosmetics, push tokens, IAP transactions, daily gem cards, mail recipients.
-    await prisma.user.delete({
-      where: { id: user.id },
+    // Everything except pvp_matches cascades from the user row. PvpMatch
+    // references characters with ON DELETE RESTRICT on player1/player2, so it
+    // must be cleared first or the delete fails with a constraint error.
+    // Read the character list INSIDE the transaction: a character created
+    // between the read and the delete would otherwise resurrect the constraint
+    // error this cleanup exists to avoid.
+    await prisma.$transaction(async (tx) => {
+      const characters = await tx.character.findMany({
+        where: { userId: user.id },
+        select: { id: true },
+      })
+      const characterIds = characters.map((c) => c.id)
+
+      if (characterIds.length > 0) {
+        // Nullify the optional participant columns first.
+        await tx.pvpMatch.updateMany({
+          where: { winnerId: { in: characterIds } },
+          data: { winnerId: null },
+        })
+        await tx.pvpMatch.updateMany({
+          where: { loserId: { in: characterIds } },
+          data: { loserId: null },
+        })
+        // Then drop every match this user's characters took part in.
+        await tx.pvpMatch.deleteMany({
+          where: {
+            OR: [
+              { player1Id: { in: characterIds } },
+              { player2Id: { in: characterIds } },
+            ],
+          },
+        })
+      }
+
+      // Finally the user — cascades characters and everything hanging off them.
+      await tx.user.delete({ where: { id: user.id } })
     })
 
     // Step 2: Delete the Supabase auth user.
@@ -51,8 +86,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Account deletion error:', error)
 
-    // Check if user was already deleted (concurrent request)
-    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+    // Check if user was already deleted (concurrent request). Inside a
+    // transaction Prisma reshapes the message, so match on the code.
+    if (
+      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') ||
+      (error instanceof Error && error.message.includes('Record to delete does not exist'))
+    ) {
       return NextResponse.json({ success: true, message: 'Account already deleted' })
     }
 

@@ -12,6 +12,7 @@ import {
   getCombatConfig,
 } from '@/lib/game/live-config'
 import { STANCE_ZONES } from '@/lib/game/balance'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 const BATTLE_TICKET_TTL_MS = 5 * 60_000
 
@@ -156,6 +157,23 @@ export async function POST(req: NextRequest) {
 
     // Load both combat characters — bot opponents are generated, not loaded from DB
     const isBotFight = isNpcBot(resolvedOpponentId)
+
+    // A ticket issued here is what /resolve later honours, so the self-farm
+    // check has to happen before the ticket exists, not only at resolve time.
+    if (!isBotFight) {
+      const defenderOwner = await prisma.character.findUnique({
+        where: { id: resolvedOpponentId },
+        select: { userId: true },
+      })
+      if (!defenderOwner) {
+        return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
+      }
+      if (sameOwner(attacker, defenderOwner)) {
+        console.warn(`[pvp] self-farm blocked on prepare: user ${user.id}, ${character_id} vs ${resolvedOpponentId}`)
+        return selfFarmResponse()
+      }
+    }
+
     const playerStats = await loadCombatCharacter(character_id)
 
     const totalFights = attacker.pvpRating !== undefined

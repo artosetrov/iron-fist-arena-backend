@@ -47,6 +47,64 @@ export interface AppleVerifyResult {
 }
 
 // ──────────────────────────────────────────────
+// Product ID mapping (App Store Connect ↔ internal)
+// ──────────────────────────────────────────────
+
+/**
+ * The ONLY authoritative link between an App Store Connect product identifier
+ * and an internal `IAP_PRODUCTS` key.
+ *
+ * Rewards must always be resolved from Apple's `productId`, never from a
+ * client-supplied `product_id` — otherwise a real $0.99 receipt can be replayed
+ * against a $49.99 SKU. Adding a SKU means adding it here, in
+ * `IAP_PRODUCTS` (balance.ts), in the iOS `IAPProduct` enum, in
+ * `HexboundProducts.storekit`, and in App Store Connect.
+ */
+export const APPLE_TO_INTERNAL_PRODUCT_ID: Record<string, string> = {
+  // Gem packs
+  'com.hexbound.gems_small': 'gems_small',
+  'com.hexbound.gems_medium': 'gems_medium',
+  'com.hexbound.gems_large': 'gems_large',
+  'com.hexbound.gems_huge': 'gems_huge',
+  'com.hexbound.gems_mega': 'gems_mega',
+  // Adventurer's Bundles (Economy v3)
+  'com.hexbound.adventurer_bundle_I': 'adventurer_bundle_I',
+  'com.hexbound.adventurer_bundle_II': 'adventurer_bundle_II',
+  'com.hexbound.adventurer_bundle_III': 'adventurer_bundle_III',
+  // Starter / subscription
+  'com.hexbound.starter_bundle': 'starter_bundle',
+  'com.hexbound.monthly_gem_card': 'monthly_gem_card',
+  'com.hexbound.premium_pass_monthly': 'premium_pass_monthly',
+  // Retired SKUs — kept so an in-flight receipt still resolves to the right
+  // product and is rejected by the `enabled: false` gate rather than by a
+  // confusing "unknown product" error.
+  'com.hexbound.gold500': 'gold_500',
+  'com.hexbound.gold1200': 'gold_1200',
+  'com.hexbound.gold3500': 'gold_3500',
+  'com.hexbound.gold8000': 'gold_8000',
+  'com.hexbound.gold20000': 'gold_20000',
+  'com.hexbound.premium_forever': 'premium_forever',
+}
+
+/**
+ * Resolve Apple's product identifier to an internal `IAP_PRODUCTS` key.
+ * Returns undefined for an identifier we do not sell.
+ *
+ * A bare internal key is also accepted, because some environments (StoreKit
+ * Configuration files, sandbox setups) register SKUs without the reverse-DNS
+ * prefix. This stays strict where it matters: whatever comes back still has to
+ * equal the product the caller claimed, so it can never widen a $0.99 receipt
+ * into a $49.99 grant.
+ */
+export function internalProductIdFromApple(appleProductId: string): string | undefined {
+  const mapped = APPLE_TO_INTERNAL_PRODUCT_ID[appleProductId]
+  if (mapped) return mapped
+  return Object.values(APPLE_TO_INTERNAL_PRODUCT_ID).includes(appleProductId)
+    ? appleProductId
+    : undefined
+}
+
+// ──────────────────────────────────────────────
 // JWT Generation for App Store Server API
 // ──────────────────────────────────────────────
 
@@ -173,13 +231,32 @@ function decodeJWSPayload<T>(jws: string): T {
  *
  * Returns transaction info if valid, or an error message.
  */
+/**
+ * True on any deployed environment, not just when NODE_ENV happens to be set.
+ * A staging box with NODE_ENV unset must not become a free-currency endpoint.
+ */
+function isProductionDeploy(): boolean {
+  if (process.env.NODE_ENV === 'production') return true
+  const vercelEnv = process.env.VERCEL_ENV
+  return vercelEnv === 'production' || vercelEnv === 'preview'
+}
+
 export async function verifyAppleTransaction(transactionId: string): Promise<AppleVerifyResult> {
   const config = getAppleConfig()
 
-  // If Apple IAP keys are not configured, skip server verification
-  // (allows dev/sandbox testing with StoreKit Configuration)
+  // If Apple IAP keys are not configured we cannot prove anything about this
+  // transaction. Fail CLOSED in production — a missing env var must never be a
+  // path to free currency. Dev/sandbox keeps the bypass so StoreKit
+  // Configuration testing still works without App Store Connect keys.
   if (!config) {
-    console.warn('[Apple IAP] Keys not configured — skipping server-side verification')
+    if (isProductionDeploy()) {
+      console.error('[Apple IAP] Keys not configured in production — rejecting transaction')
+      return {
+        valid: false,
+        error: 'Purchase verification is temporarily unavailable. You have not been charged for anything that was not delivered — contact support with your receipt.',
+      }
+    }
+    console.warn('[Apple IAP] Keys not configured — skipping server-side verification (non-production only)')
     return { valid: true }
   }
 

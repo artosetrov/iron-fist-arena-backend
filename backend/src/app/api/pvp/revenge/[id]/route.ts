@@ -22,6 +22,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -100,6 +101,14 @@ export async function POST(
 
     if (attacker.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Revenge is a full payout path of its own — prepare/resolve guard their
+    // revenge flow, but this route is reachable directly, and revenge rows
+    // created before the guards shipped are still claimable through it.
+    if (sameOwner(attacker, defender)) {
+      console.warn(`[pvp] self-farm blocked on revenge: user ${user.id}`)
+      return selfFarmResponse()
     }
 
     const staminaResult = await calculateCurrentStamina(

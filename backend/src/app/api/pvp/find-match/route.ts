@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import { excludeOwnCharacters } from '@/lib/game/pvp-opponent'
 
 const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 3
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     // Find opponents within level AND gear score range
     const rawOpponents = await prisma.character.findMany({
       where: {
-        id: { not: character_id },
+        ...excludeOwnCharacters(character_id, user.id),
         level: {
           gte: minLevel,
           lte: maxLevel,
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
     if (candidates.length < MAX_OPPONENTS) {
       const fallback = await prisma.character.findMany({
         where: {
-          id: { not: character_id },
+          ...excludeOwnCharacters(character_id, user.id),
           level: { gte: minLevel, lte: maxLevel },
         },
         select: {
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
     if (candidates.length < MAX_OPPONENTS) {
       const anyFallback = await prisma.character.findMany({
         where: {
-          id: { not: character_id },
+          ...excludeOwnCharacters(character_id, user.id),
         },
         select: {
           id: true, characterName: true, class: true, origin: true,

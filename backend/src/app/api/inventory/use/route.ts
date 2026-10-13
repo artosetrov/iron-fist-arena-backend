@@ -13,6 +13,8 @@ import {
   isHealthPotion,
   isStaminaPotion,
 } from '@/lib/game/consumable-effects'
+import { STAMINA_POTION_DR } from '@/lib/game/balance'
+import { currentDailyValue, isDifferentUtcDay } from '@/lib/game/daily-counter'
 
 const LEGACY_CONSUMABLE_BY_NAME: Record<string, ConsumableType> = {
   'Small Stamina Potion': 'stamina_potion_small',
@@ -102,6 +104,25 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      // Same daily cap as /api/consumables/use. A stamina potion held as an
+      // inventory row restores the same bar, so capping only one of the two
+      // endpoints would just move the exploit rather than close it.
+      const potionsUsedToday = currentDailyValue(
+        character.staminaPotionsToday,
+        character.staminaPotionsDate,
+        now,
+      )
+      if (potionsUsedToday >= STAMINA_POTION_DR.DAILY_CAP) {
+        return NextResponse.json(
+          {
+            error: `You can drink ${STAMINA_POTION_DR.DAILY_CAP} stamina potions per day. Resets at 00:00 UTC.`,
+            code: 'STAMINA_POTION_CAP',
+            dailyCap: STAMINA_POTION_DR.DAILY_CAP,
+          },
+          { status: 429 },
+        )
+      }
+
       const staminaRestore = await getStaminaRestore(consumableType)
       const newStamina = Math.min(staminaResult.stamina + staminaRestore, character.maxStamina)
 
@@ -112,6 +133,10 @@ export async function POST(req: NextRequest) {
           data: {
             currentStamina: newStamina,
             lastStaminaUpdate: now,
+            staminaPotionsToday: potionsUsedToday + 1,
+            ...(isDifferentUtcDay(character.staminaPotionsDate, now)
+              ? { staminaPotionsDate: now }
+              : {}),
           },
         }),
       ])

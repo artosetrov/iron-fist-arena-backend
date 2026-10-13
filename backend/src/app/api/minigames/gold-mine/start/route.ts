@@ -11,6 +11,7 @@ import {
   GEM_DROP_MAX,
 } from '@/lib/game/gold-mine'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -46,22 +47,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check no active (uncollected) session for this slot
-    const existingSession = await prisma.goldMineSession.findFirst({
-      where: {
-        characterId: character_id,
-        slotIndex: slot_index,
-        collected: false,
-      },
-    })
-
-    if (existingSession) {
-      return NextResponse.json(
-        { error: 'Slot already has an active mining session' },
-        { status: 400 }
-      )
-    }
-
     const now = new Date()
     const endsAt = new Date(now.getTime() + MINE_DURATION_HOURS * 60 * 60 * 1000)
     const reward = Math.floor(
@@ -73,16 +58,54 @@ export async function POST(req: NextRequest) {
       ? Math.floor(Math.random() * (GEM_DROP_MAX - GEM_DROP_MIN + 1) + GEM_DROP_MIN)
       : 0
 
-    await prisma.goldMineSession.create({
-      data: {
-        characterId: character_id,
-        slotIndex: slot_index,
-        startedAt: now,
-        endsAt,
-        reward,
-        gemReward,
-      },
-    })
+    // One active session per slot. The check and the insert have to be atomic:
+    // the old read-then-write let two concurrent taps both see an empty slot
+    // and both create a session, which /collect-all then paid out twice.
+    // The row lock serialises taps from the same character; the partial unique
+    // index (migrations/20260912_gold_mine_active_slot_unique) is the backstop
+    // that makes a duplicate impossible even across instances.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.$queryRawUnsafe(
+          `SELECT id FROM characters WHERE id = $1 FOR UPDATE`,
+          character_id
+        )
+
+        const existingSession = await tx.goldMineSession.findFirst({
+          where: {
+            characterId: character_id,
+            slotIndex: slot_index,
+            collected: false,
+          },
+          select: { id: true },
+        })
+
+        if (existingSession) throw new Error('SLOT_BUSY')
+
+        await tx.goldMineSession.create({
+          data: {
+            characterId: character_id,
+            slotIndex: slot_index,
+            startedAt: now,
+            endsAt,
+            reward,
+            gemReward,
+          },
+        })
+      })
+    } catch (error) {
+      const isSlotBusy = error instanceof Error && error.message === 'SLOT_BUSY'
+      const isUniqueViolation =
+        error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+
+      if (isSlotBusy || isUniqueViolation) {
+        return NextResponse.json(
+          { error: 'Slot already has an active mining session' },
+          { status: 400 }
+        )
+      }
+      throw error
+    }
 
     const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
 

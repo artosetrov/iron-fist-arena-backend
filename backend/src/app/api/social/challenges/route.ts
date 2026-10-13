@@ -21,6 +21,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { createBattleResultMail, createBattleInviteMail, updateBattleInviteStatus } from '@/lib/game/battle-mail'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 const MAX_PENDING_CHALLENGES = 5
 const CHALLENGE_EXPIRY_HOURS = 24
@@ -308,10 +309,20 @@ async function handleSend(character: ChallengeActor, body: ChallengeSendBody) {
   // Check target exists
   const target = await prisma.character.findUnique({
     where: { id: target_id },
-    select: { id: true, characterName: true, class: true, level: true, pvpRating: true, avatar: true },
+    select: {
+      id: true, userId: true, characterName: true, class: true,
+      level: true, pvpRating: true, avatar: true,
+    },
   })
   if (!target) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
+  }
+  // Challenges pay BOTH sides and multiply the winner's gold, so a duel
+  // between two of your own characters is a strictly better self-farm than
+  // plain PvP. See lib/game/pvp-opponent.ts.
+  if (sameOwner(character, target)) {
+    console.warn(`[challenge] self-farm blocked: user ${character.userId}, ${character.id} vs ${target_id}`)
+    return selfFarmResponse()
   }
 
   const now = new Date()
@@ -437,6 +448,18 @@ async function handleAccept(character: ChallengeActor, body: ChallengeDecisionBo
   if (challenge.expiresAt < new Date()) {
     await prisma.challenge.update({ where: { id: challenge_id }, data: { status: 'expired' } })
     return NextResponse.json({ error: 'Challenge has expired' }, { status: 410 })
+  }
+
+  // Also guard on accept: challenges created before the send-side guard shipped
+  // are still sitting in the table as `pending` and would still pay out twice.
+  const challengerOwner = await prisma.character.findUnique({
+    where: { id: challenge.challengerId },
+    select: { userId: true },
+  })
+  if (challengerOwner && sameOwner(character, challengerOwner)) {
+    await prisma.challenge.update({ where: { id: challenge_id }, data: { status: 'declined' } })
+    console.warn(`[challenge] self-farm blocked on accept: user ${character.userId}, challenge ${challenge_id}`)
+    return selfFarmResponse()
   }
 
   // --- Run the fight (reuse combat engine) ---

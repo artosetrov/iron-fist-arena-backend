@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
-import { verifyAppleTransaction } from '@/lib/apple-iap'
+import { verifyAppleTransaction, internalProductIdFromApple } from '@/lib/apple-iap'
 import { track as trackAnalytics } from '@/lib/analytics'
 
 function isDuplicateTransactionError(error: unknown): boolean {
@@ -27,6 +27,14 @@ function isDuplicateTransactionError(error: unknown): boolean {
   return false
 }
 
+/**
+ * Error contract for the client.
+ *
+ * `code: 'RECEIPT_REJECTED'` means this receipt will NEVER be granted — the
+ * client should finish the StoreKit transaction and stop replaying it.
+ * `code: 'VERIFICATION_UNAVAILABLE'` and any 5xx are transient: the client must
+ * leave the transaction unfinished so it is retried.
+ */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -37,26 +45,17 @@ export async function POST(req: NextRequest) {
 
     if (!product_id || !transaction_id || !receipt_data) {
       return NextResponse.json(
-        { error: 'product_id, transaction_id, and receipt_data are required' },
+        { error: 'product_id, transaction_id, and receipt_data are required', code: 'RECEIPT_REJECTED' },
         { status: 400 }
       )
     }
 
-    const product = IAP_PRODUCTS[product_id]
-    if (!product) {
+    // Fast client-side sanity check only. The reward-bearing lookup happens
+    // AFTER Apple verification, against Apple's own product id — see below.
+    if (!Object.prototype.hasOwnProperty.call(IAP_PRODUCTS, product_id)) {
       return NextResponse.json(
-        { error: 'Invalid product_id' },
+        { error: 'Invalid product_id', code: 'RECEIPT_REJECTED' },
         { status: 400 }
-      )
-    }
-
-    // Economy v3: reject disabled SKUs (e.g., premium_forever, flat gold packs).
-    // Existing owners' entitlements are unaffected — this only blocks NEW receipts.
-    // See docs/06_game_systems/ECONOMY_RULES.md R10, R11.
-    if (product.enabled === false) {
-      return NextResponse.json(
-        { error: 'This product is no longer available for purchase.' },
-        { status: 410 } // Gone
       )
     }
 
@@ -76,21 +75,83 @@ export async function POST(req: NextRequest) {
     const appleResult = await verifyAppleTransaction(transaction_id)
     if (!appleResult.valid) {
       return NextResponse.json(
-        { error: appleResult.error || 'Apple verification failed' },
+        { error: appleResult.error || 'Apple verification failed', code: 'VERIFICATION_UNAVAILABLE' },
         { status: 403 }
       )
     }
 
-    // If Apple returned transaction info, cross-check product ID
+    // ──────────────────────────────────────────────
+    // Resolve WHAT WAS ACTUALLY BOUGHT from Apple, not from the client.
+    //
+    // Apple's signed transaction is the only trustworthy statement of which
+    // SKU was paid for. Trusting the request body here let a real $0.99
+    // receipt be replayed against any SKU in the catalogue.
+    // ──────────────────────────────────────────────
+    let resolvedProductId = product_id
+
     if (appleResult.transactionInfo) {
-      const appleProductId = appleResult.transactionInfo.productId
-      // Map our internal product_id to the StoreKit product ID
-      const expectedPrefix = `com.hexbound.${product_id.replace(/_/g, '')}`
-      const altId = `com.hexbound.${product_id}`
-      if (appleProductId !== expectedPrefix && appleProductId !== altId && appleProductId !== product_id) {
-        console.warn(`[IAP] Product ID mismatch: client=${product_id}, apple=${appleProductId}`)
-        // Don't block — log for monitoring, as naming conventions may vary
+      const info = appleResult.transactionInfo
+
+      // A refunded or Apple-revoked transaction must not grant anything, and a
+      // family-shared copy is not a purchase by this account.
+      if (info.revocationDate) {
+        console.warn(`[IAP] Revoked transaction rejected: ${transaction_id} (user ${user.id})`)
+        return NextResponse.json(
+          { error: 'This purchase was refunded and cannot be redeemed.', code: 'RECEIPT_REJECTED' },
+          { status: 403 }
+        )
       }
+      if (info.inAppOwnershipType && info.inAppOwnershipType !== 'PURCHASED') {
+        console.warn(`[IAP] Non-purchased ownership rejected: ${info.inAppOwnershipType} (user ${user.id})`)
+        return NextResponse.json(
+          { error: 'This purchase cannot be redeemed on this account.', code: 'RECEIPT_REJECTED' },
+          { status: 403 }
+        )
+      }
+
+      const appleProductId = info.productId
+      const mapped = internalProductIdFromApple(appleProductId)
+
+      if (!mapped) {
+        console.error(`[IAP] Unknown Apple product id: ${appleProductId} (client claimed ${product_id}, user ${user.id})`)
+        return NextResponse.json(
+          { error: 'This purchase could not be matched to a product. Contact support with your receipt.', code: 'RECEIPT_REJECTED' },
+          { status: 403 }
+        )
+      }
+
+      if (mapped !== product_id) {
+        console.error(`[IAP] Product substitution blocked: client=${product_id}, apple=${appleProductId} (${mapped}), user=${user.id}`)
+        return NextResponse.json(
+          { error: 'Purchase does not match the requested product.', code: 'RECEIPT_REJECTED' },
+          { status: 403 }
+        )
+      }
+
+      resolvedProductId = mapped
+    } else if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV) {
+      // verifyAppleTransaction already fails closed in production, so this is
+      // belt-and-braces: never grant on an unverifiable transaction in prod.
+      console.error(`[IAP] Missing Apple transaction info in production (user ${user.id})`)
+      return NextResponse.json(
+        { error: 'Purchase verification is temporarily unavailable. Contact support with your receipt.', code: 'VERIFICATION_UNAVAILABLE' },
+        { status: 403 }
+      )
+    }
+
+    const product = IAP_PRODUCTS[resolvedProductId]
+    if (!product) {
+      return NextResponse.json({ error: 'Invalid product_id' }, { status: 400 })
+    }
+
+    // Economy v3: reject disabled SKUs (e.g., premium_forever, flat gold packs).
+    // Existing owners' entitlements are unaffected — this only blocks NEW receipts.
+    // See docs/06_game_systems/ECONOMY_RULES.md R10, R11.
+    if (product.enabled === false) {
+      return NextResponse.json(
+        { error: 'This product is no longer available for purchase.', code: 'RECEIPT_REJECTED' },
+        { status: 410 } // Gone
+      )
     }
 
     const now = new Date()
@@ -142,7 +203,7 @@ export async function POST(req: NextRequest) {
     const createIapTransaction = prisma.iapTransaction.create({
       data: {
         userId: user.id,
-        productId: product_id,
+        productId: resolvedProductId,
         transactionId: transaction_id,
         receiptData: receipt_data,
         gemsAwarded: product.gems,
@@ -211,7 +272,7 @@ export async function POST(req: NextRequest) {
           )
         }
       } else {
-        console.warn(`[IAP] bundle ${product_id} bought by user ${user.id} with no character — items skipped`)
+        console.warn(`[IAP] bundle ${resolvedProductId} bought by user ${user.id} with no character — items skipped`)
       }
     }
 
@@ -224,7 +285,7 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
           create: {
             userId: user.id,
-            productId: product_id,
+            productId: resolvedProductId,
             originalTransactionId: subscriptionOriginalTxId,
             latestTransactionId: transaction_id,
             startedAt: subscriptionStartedAt,
@@ -234,7 +295,7 @@ export async function POST(req: NextRequest) {
             latestReceipt: receipt_data,
           },
           update: {
-            productId: product_id,
+            productId: resolvedProductId,
             originalTransactionId: subscriptionOriginalTxId,
             latestTransactionId: transaction_id,
             startedAt: subscriptionStartedAt,
@@ -277,7 +338,7 @@ export async function POST(req: NextRequest) {
     trackAnalytics({
       name: 'iap_purchase',
       userId: user.id,
-      productId: product_id,
+      productId: resolvedProductId,
       transactionId: transaction_id,
       gemsAwarded: product.gems ?? 0,
       goldAwarded: product.gold ?? 0,

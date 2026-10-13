@@ -29,6 +29,7 @@ import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultip
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -127,6 +128,12 @@ export async function POST(req: NextRequest) {
     }
     if (!defender) {
       return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
+    }
+    // Both payouts increment the same `users` row when attacker and defender
+    // share an account — see lib/game/pvp-opponent.ts.
+    if (sameOwner(attacker, defender)) {
+      console.warn(`[pvp] self-farm blocked: user ${user.id}, ${character_id} vs ${opponent_id}`)
+      return selfFarmResponse()
     }
 
     // Calculate current stamina with regen (optimistic pre-check — full validation happens inside transaction)

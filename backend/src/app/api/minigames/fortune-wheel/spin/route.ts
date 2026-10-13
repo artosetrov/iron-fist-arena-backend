@@ -71,21 +71,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Daily spin limit — calendar day (UTC)
     const today = new Date().toISOString().split('T')[0]
-    const todaySpins = await prisma.minigameSession.count({
-      where: {
-        characterId: character_id,
-        gameType: 'fortune_wheel',
-        createdAt: { gte: new Date(today) },
-      },
-    })
-    if (todaySpins >= DAILY_SPIN_LIMIT) {
-      return NextResponse.json(
-        { error: 'Daily spin limit reached', spins_today: todaySpins, spins_limit: DAILY_SPIN_LIMIT },
-        { status: 429 }
-      )
-    }
 
     // Pick winning sector server-side
     const winningSectorIndex = pickWinningSector()
@@ -103,11 +89,27 @@ export async function POST(req: NextRequest) {
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
-      // Check user has enough gold
-      const userRow = await tx.user.findUnique({
-        where: { id: user.id },
+      // Lock the wallet row first, then check the daily limit and the balance
+      // inside the same transaction. Both used to be read outside it, so
+      // concurrent spins could exceed the daily cap and drive gold negative.
+      // shell-game/start already does it this way.
+      const locked = await tx.$queryRaw<{ gold: number }[]>`
+        SELECT gold FROM "users" WHERE id = ${user.id} FOR UPDATE
+      `
+      const currentGold = locked[0]?.gold ?? 0
+
+      const todaySpins = await tx.minigameSession.count({
+        where: {
+          characterId: character_id,
+          gameType: 'fortune_wheel',
+          createdAt: { gte: new Date(today) },
+        },
       })
-      if (!userRow || userRow.gold < bet_amount) throw new Error('NOT_ENOUGH_GOLD')
+      if (todaySpins >= DAILY_SPIN_LIMIT) {
+        throw Object.assign(new Error('DAILY_LIMIT'), { spinsToday: todaySpins })
+      }
+
+      if (currentGold < bet_amount) throw new Error('NOT_ENOUGH_GOLD')
 
       // Deduct bet from user
       await tx.user.update({
@@ -133,7 +135,7 @@ export async function POST(req: NextRequest) {
       })
 
       // Award winnings if won
-      let finalGold = userRow.gold - bet_amount
+      let finalGold = currentGold - bet_amount
       if (won) {
         const updated = await tx.user.update({
           where: { id: user.id },
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
         finalGold = updated.gold
       }
 
-      return { finalGold, characterId: character_id }
+      return { finalGold, characterId: character_id, spinsToday: todaySpins + 1 }
     })
 
     // Update daily + weekly quest progress (non-critical, outside transaction)
@@ -160,9 +162,9 @@ export async function POST(req: NextRequest) {
       multiplier: winningSector.multiplier,
       win_amount: winAmount,
       gold: result.finalGold,
-      spins_today: todaySpins + 1,
+      spins_today: result.spinsToday,
       spins_limit: DAILY_SPIN_LIMIT,
-      spins_remaining: DAILY_SPIN_LIMIT - todaySpins - 1,
+      spins_remaining: Math.max(0, DAILY_SPIN_LIMIT - result.spinsToday),
       // Send full sector layout so client can render the wheel
       sectors: WHEEL_SECTORS.map(s => ({
         index: s.index,
@@ -175,6 +177,17 @@ export async function POST(req: NextRequest) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+      if (error.message === 'DAILY_LIMIT') {
+        const spinsToday = (error as Error & { spinsToday?: number }).spinsToday
+        return NextResponse.json(
+          {
+            error: 'Daily spin limit reached',
+            spins_today: spinsToday ?? DAILY_SPIN_LIMIT,
+            spins_limit: DAILY_SPIN_LIMIT,
+          },
+          { status: 429 }
+        )
+      }
     }
     console.error('fortune-wheel spin error:', error)
     return NextResponse.json(

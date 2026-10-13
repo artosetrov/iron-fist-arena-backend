@@ -4,6 +4,7 @@ import { cacheGet, cacheSet } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
 // W3.D5 — BAL-05 ladder: 8 tiers × 3 divisions + Master + GM + Challenger
 import { tierFromRating } from '@/lib/game/tier'
+import { getPvpLadderRanges } from '@/lib/game/live-config'
 
 const LEADERBOARD_CACHE_TTL = 60 * 1000 // 60 seconds
 
@@ -24,7 +25,12 @@ export async function GET(req: NextRequest) {
 
     const baseSelect = { id: true, characterName: true, class: true, pvpRating: true, level: true, avatar: true }
 
-    const [byRating, byLevel, byGold] = await Promise.all([
+    // Tier floors are live-configurable (admin balance panel → `pvp_ranks.*`),
+    // so the ladder is resolved per request rather than read off the frozen
+    // table. It joins the parallel block: on a config-cache miss it is another
+    // round trip, and there is no reason to serialize it ahead of the queries.
+    const [ladder, byRating, byLevel, byGold] = await Promise.all([
+      getPvpLadderRanges(),
       prisma.character.findMany({ select: baseSelect, orderBy: { pvpRating: 'desc' }, take: limit }),
       prisma.character.findMany({ select: baseSelect, orderBy: { level: 'desc' }, take: limit }),
       prisma.user.findMany({ select: { id: true, gold: true }, orderBy: { gold: 'desc' }, take: limit }),
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest) {
       // Tier is computed from actual pvpRating (not from the `value` slot, which
       // might be `level` for the level leaderboard). This keeps the badge
       // semantically stable across all sort orders.
-      const info = tierFromRating(c.pvpRating, valueKey === 'pvpRating' ? rank : undefined)
+      const info = tierFromRating(c.pvpRating, valueKey === 'pvpRating' ? rank : undefined, ladder)
       return {
         characterId: c.id,
         characterName: c.characterName,
@@ -66,7 +72,7 @@ export async function GET(req: NextRequest) {
       // Gold list: tier reflects the character's actual PvP rating, not their
       // rank within the gold list (so Challenger is never awarded here — it
       // would be misleading: that's the rating list's job).
-      const info = char ? tierFromRating(char.pvpRating) : null
+      const info = char ? tierFromRating(char.pvpRating, undefined, ladder) : null
       return {
         characterId: char?.id || '',
         characterName: char?.characterName || `User ${user.id.slice(0, 8)}`,

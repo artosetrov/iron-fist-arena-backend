@@ -31,6 +31,7 @@ import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/gam
 import { currentDailyValue } from '@/lib/game/daily-counter'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { Prisma } from '@prisma/client'
+import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 interface DungeonRunFightState {
   enemies: Enemy[]
@@ -170,6 +171,13 @@ export async function POST(req: NextRequest) {
       : null
     if (isPvp && !defender) {
       return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
+    }
+    // match/start refuses same-owner matches now, but rows already sitting at
+    // status `in_progress` from before that guard can still be completed here
+    // for a double payout.
+    if (defender && sameOwner(attacker, defender)) {
+      console.warn(`[pvp] self-farm blocked on match complete: user ${user.id}, match ${match.id}`)
+      return selfFarmResponse()
     }
 
     // Proxy object for bot opponents — just enough for shared code below that

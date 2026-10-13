@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
+import { minRatingForTier } from '@/lib/game/tier'
+
+function rankDescription(name: string, tier: Parameters<typeof minRatingForTier>[0]): string {
+  return `Achieve ${name} rank (${minRatingForTier(tier).toLocaleString('en-US')} rating)`
+}
 
 // Human-readable display metadata for achievements.
 // These are the titles and descriptions the player sees in the UI.
@@ -22,11 +27,13 @@ const ACHIEVEMENT_DISPLAY: Record<string, { title: string; description: string }
   reach_level_50:   { title: 'Legend',             description: 'Reach level 50' },
   first_prestige:   { title: 'Reborn',            description: 'Prestige for the first time' },
   prestige_3:       { title: 'Thrice Forged',     description: 'Reach prestige 3' },
-  // Ranking
-  rank_silver:      { title: 'Silver Rank',       description: 'Achieve Silver rank (1,200 rating)' },
-  rank_gold:        { title: 'Gold Rank',         description: 'Achieve Gold rank (1,500 rating)' },
-  rank_diamond:     { title: 'Diamond Rank',      description: 'Achieve Diamond rank (3,000 rating)' },
-  rank_grandmaster: { title: 'Grandmaster',       description: 'Achieve Grandmaster rank (4,250 rating)' },
+  // Ranking — see rankDescription: the rating in the copy is the tier floor,
+  // and it was typed out here as 1,200 for Silver long after the ladder moved
+  // Silver to 750. A description that quotes a threshold has to read it.
+  rank_silver:      { title: 'Silver Rank',       description: rankDescription('Silver', 'silver') },
+  rank_gold:        { title: 'Gold Rank',         description: rankDescription('Gold', 'gold') },
+  rank_diamond:     { title: 'Diamond Rank',      description: rankDescription('Diamond', 'diamond') },
+  rank_grandmaster: { title: 'Grandmaster',       description: rankDescription('Grandmaster', 'grandmaster') },
 }
 
 /** Fallback: convert achievement key to a readable title. */

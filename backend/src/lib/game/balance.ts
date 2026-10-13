@@ -2,6 +2,8 @@
 // balance.ts — Game balance constants and formulas
 // =============================================================================
 
+import { minRatingForTier } from './tier';
+
 // --- Stamina ---
 export const STAMINA = {
   // Economy v3 (2026-04-14): raised 120 → 180 so two daily check-ins fully use
@@ -37,6 +39,15 @@ export const STAMINA_REFILL_DR = {
   // See ECONOMY_RULES.md R8.refill.
   COST_MULTIPLIERS: [1, 1.6, 2.8, 4.8] as const, // refill 1 → 1×, 2 → 1.6×, 3 → 2.8×, 4 → 4.8×
   /** Maximum number of refills allowed per day. */
+  DAILY_CAP: 4,
+} as const;
+
+// --- Stamina potion daily cap (2026-09-12) ---
+// Gem refills were capped at 4/day, but potions — which restore the SAME bar
+// and are handed out free by contraband — had no cap at all. Matching the two
+// keeps stamina an actual throttle instead of a formality.
+export const STAMINA_POTION_DR = {
+  /** Maximum stamina potions of any size a character may drink per day. */
   DAILY_CAP: 4,
 } as const;
 
@@ -306,25 +317,29 @@ export const ELO = {
 //
 // Ladder: Bronze → Silver → Gold → Platinum → Diamond → Master → Grandmaster → Challenger
 // Each ranged tier is 750 ELO wide with 3 divisions (III → II → I, 250 ELO each).
-// Master (3750-4249) and Grandmaster (4250+) have no divisions.
+// Master and Grandmaster have no divisions. The widths below describe the
+// frozen defaults; once an operator edits `pvp_ranks.*` the tiers are whatever
+// resolveTierRanges() produces, so read tier.ts rather than this comment.
 // Challenger is top-100 leaderboard rank inside the Grandmaster rating band —
 // NOT a persistent rating threshold, so no constant here.
 //
 // Industry precedent: LoL 10 tiers × 4 div, Valorant 9 × 3, Apex 8 × 4.
 // Starting rating 1000 (Character.pvpRating default) lands in Silver II.
 //
-// These constants are kept for live-config compatibility AND as the source
-// of truth for tier floors, but the ladder logic lives in tier.ts
-// (tierFromRating / divisionFromRating). Do not duplicate those computations
-// here — import from tier.ts instead.
+// These constants exist so the admin balance panel can edit tier floors under
+// the `pvp_ranks.*` keys. They are DERIVED from tier.ts, not typed out again:
+// as literals they were a second copy of the ladder that nothing checked, and
+// a second copy of a table is a table that will eventually disagree with the
+// first one. The ladder logic itself (tierFromRating / divisionFromRating)
+// lives in tier.ts — never re-derive it here.
 export const PVP_RANKS = {
-  BRONZE: 0,
-  SILVER: 750,
-  GOLD: 1500,
-  PLATINUM: 2250,
-  DIAMOND: 3000,
-  MASTER: 3750,
-  GRANDMASTER: 4250,
+  BRONZE: minRatingForTier('bronze'),
+  SILVER: minRatingForTier('silver'),
+  GOLD: minRatingForTier('gold'),
+  PLATINUM: minRatingForTier('platinum'),
+  DIAMOND: minRatingForTier('diamond'),
+  MASTER: minRatingForTier('master'),
+  GRANDMASTER: minRatingForTier('grandmaster'),
 } as const;
 
 // --- Combat ---
