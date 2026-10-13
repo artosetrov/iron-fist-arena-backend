@@ -557,7 +557,14 @@ export function BalanceClient({
     setSuccessMsg('')
     setIsSavingAll(true)
     try {
-      await batchUpdateBalanceConfigs(updates)
+      const result = await batchUpdateBalanceConfigs(updates)
+      if ('error' in result) {
+        // The backend refuses some saves — a set of PvP tier floors that would
+        // not form a ladder, for one — and says why. Returned as data rather
+        // than thrown so the reason survives a production build.
+        setError(result.error)
+        return
+      }
       setSavedKeys(new Set(updates.map((u) => u.key)))
       setEditedValues({})
       setEditedUpgrades(null)

@@ -143,7 +143,10 @@ export async function seedAchievementDefinitions() {
     { key: 'earn_gold_100k', target: 100000, category: 'economy', rewardType: 'gems', rewardAmount: 3 },
     { key: 'spend_gold_50k', target: 50000, category: 'economy', rewardType: 'gems', rewardAmount: 2 },
     { key: 'shell_game_win_10', target: 10, category: 'minigame', rewardType: 'gold', rewardAmount: 1000 },
-    { key: 'rank_silver', target: 1200, category: 'ranking', rewardType: 'gems', rewardAmount: 1 },
+    // Rank targets are PvP tier floors — keep them equal to TIER_RANGES in
+    // backend/src/lib/game/tier.ts. `scripts/check_ladder_parity.py` fails CI
+    // if they drift (this app cannot import from the backend).
+    { key: 'rank_silver', target: 750, category: 'ranking', rewardType: 'gems', rewardAmount: 1 },
     { key: 'rank_gold', target: 1500, category: 'ranking', rewardType: 'gems', rewardAmount: 3 },
     { key: 'rank_diamond', target: 3000, category: 'ranking', rewardType: 'gems', rewardAmount: 10 },
     { key: 'rank_grandmaster', target: 4250, category: 'ranking', rewardType: 'gems', rewardAmount: 25 },
