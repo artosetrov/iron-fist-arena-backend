@@ -130,8 +130,11 @@ final class InventoryService {
 
     // MARK: - Load Inventory
 
-    func loadInventory() async -> [Item] {
-        guard let charId = appState.currentCharacter?.id else { return [] }
+    func loadInventory() async -> LoadOutcome<[Item]> {
+        // No character yet (switching, or the screen raced hydration). Nothing
+        // is known — assigning and caching [] here would recreate the exact bug
+        // LoadOutcome exists to prevent.
+        guard let charId = appState.currentCharacter?.id else { return .skipped }
         do {
             let response: InventorySnapshotResponse = try await APIClient.shared.get(
                 APIEndpoints.inventory,
@@ -141,21 +144,26 @@ final class InventoryService {
             let allItems = response.toItems(consumableMapper: mapConsumableToItem)
 
             appState.cachedInventory = allItems
-            return allItems
+            return .loaded(allItems)
         } catch {
             #if DEBUG
             print("[InventoryService] Network error: \(error)")
             #endif
-            // Fallback to cache
-            if let cached = appState.cachedInventory {
-                return cached
-            }
-            appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
-                Task { @MainActor in
-                    _ = await self?.loadInventory()
+            // Only interrupt with a toast when the player has nothing to look
+            // at. With warm cache on screen the view model's inline error is
+            // enough — a toast plus an error page for one failed refresh is
+            // two interruptions for one event.
+            if appState.cachedInventory == nil {
+                appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                    Task { @MainActor in
+                        _ = await self?.loadInventory()
+                    }
                 }
             }
-            return []
+            // The warm cache is NOT returned as if it were a fresh load — the
+            // caller keeps whatever it already shows and now learns the refresh
+            // failed, instead of silently re-caching stale data as current.
+            return .failed(error)
         }
     }
 

@@ -45,8 +45,8 @@ struct AchievementsDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
-                    } else if vm.errorMessage != nil {
-                        ErrorStateView.loadFailed { Task { await vm.loadAchievements() } }
+                    } else if vm.showsErrorState {
+                        ErrorStateView.loadFailed(message: vm.errorMessage) { Task { await vm.loadAchievements() } }
                     } else if vm.filteredAchievements.isEmpty {
                         EmptyStateView.noAchievements
                     } else {

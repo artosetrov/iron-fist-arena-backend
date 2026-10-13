@@ -13,6 +13,13 @@ final class InventoryViewModel {
     var totalSlots: Int = 28
     var errorMessage: String? = nil
 
+    /// True only when the last refresh failed AND there is nothing to show.
+    ///
+    /// A failed background refresh over warm cache must not replace a readable
+    /// list with a full-screen error — the stale list is more useful. The error
+    /// page is for the case where the screen would otherwise be blank.
+    var showsErrorState: Bool { errorMessage != nil && items.isEmpty }
+
     // Search & Sort
     var searchText = ""
     var sortMode: InventorySortMode = .rarity
@@ -119,10 +126,13 @@ final class InventoryViewModel {
             isLoading = true
         }
         errorMessage = nil
-        let result = await service.loadInventory()
-        items = result
+        let outcome = await service.loadInventory()
+        outcome.apply(
+            assign: { self.items = $0 },
+            cache: { self.appState.cachedInventory = $0 },
+            setError: { self.errorMessage = $0 }
+        )
         totalSlots = appState.currentCharacter?.inventorySlots ?? 28
-        appState.cachedInventory = result
         isLoading = false
     }
 

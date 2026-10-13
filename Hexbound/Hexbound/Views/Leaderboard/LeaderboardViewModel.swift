@@ -43,6 +43,13 @@ final class LeaderboardViewModel {
         currentEntries.first { $0.characterId == myCharacterId }?.rank
     }
 
+    /// True only when the last refresh failed AND there is nothing to show.
+    ///
+    /// A failed background refresh over warm cache must not replace a readable
+    /// list with a full-screen error — the stale list is more useful. The error
+    /// page is for the case where the screen would otherwise be blank.
+    var showsErrorState: Bool { errorMessage != nil && currentEntries.isEmpty }
+
     // MARK: - Load
 
     func loadLeaderboard() async {
@@ -53,9 +60,12 @@ final class LeaderboardViewModel {
             isLoading = true
         }
         errorMessage = nil
-        let result = await service.loadLeaderboard()
-        data = result
-        cache.cacheLeaderboard(result)
+        let outcome = await service.loadLeaderboard()
+        outcome.apply(
+            assign: { self.data = $0 },
+            cache: { self.cache.cacheLeaderboard($0) },
+            setError: { self.errorMessage = $0 }
+        )
         isLoading = false
     }
 

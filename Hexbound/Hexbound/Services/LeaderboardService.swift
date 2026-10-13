@@ -14,7 +14,7 @@ final class LeaderboardService {
         self.appState = appState
     }
 
-    func loadLeaderboard() async -> [String: [LeaderboardEntry]] {
+    func loadLeaderboard() async -> LoadOutcome<[String: [LeaderboardEntry]]> {
         do {
             let response: LeaderboardResponse = try await APIClient.shared.get(
                 APIEndpoints.leaderboard,
@@ -32,9 +32,11 @@ final class LeaderboardService {
                 }
                 result[key] = entries
             }
-            return result
+            return .loaded(result)
         } catch {
-            return [:]
+            // Never return an empty dictionary here: the caller would assign and
+            // cache it, wiping a good leaderboard on one failed refresh.
+            return .failed(error)
         }
     }
 

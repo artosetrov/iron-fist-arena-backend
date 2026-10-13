@@ -692,10 +692,10 @@ struct InteractivePredictView: View {
     ///
     /// Below the matrix: Active Skills section restored to a proper
     /// titled block ("ACTIVE SKILLS · X / 3 equipped") with 3 talent
-    /// slots from `ActiveSkillsHUD` plus a 4th `EmptyConsumableSlot`
-    /// placeholder. The consumable slot is empty/disabled today —
-    /// it'll wire to the inventory system when consumables are
-    /// promoted into the combat HUD.
+    /// slots from `ActiveSkillsHUD` plus a 4th locked consumable shell.
+    /// The consumable shell is intentionally empty/disabled today — it
+    /// reserves chrome and spacing for a future combat-HUD consumable
+    /// path without pretending that the feature is already wired.
     @ViewBuilder
     private var predictControls: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
@@ -776,9 +776,10 @@ struct InteractivePredictView: View {
                     onTap: { vm.toggleActiveSlot($0) }
                 )
                 // 4th slot — shared `ActiveSlotTile` in `.locked` state,
-                // identical chrome to the 3 talent slots above. Reserved
-                // for the future consumable-in-combat feature; today the
-                // tile is non-tappable and shows the padlock affordance.
+                // identical chrome to the 3 talent slots above. This is a
+                // bounded consumable shell, not the premium 4th talent slot
+                // from the Talents tab. Today it stays non-tappable and shows
+                // the padlock affordance until combat-HUD consumables ship.
                 ActiveSlotTile(slotNumber: 3, state: .locked, action: {})
                     .frame(width: 56, height: 56)
             }
@@ -1194,9 +1195,9 @@ struct SideLabelRibbon: View {
 // Path scales uniformly to fit whatever frame the parent gives it.
 //
 // Coordinates intentionally NOT extracted into a constants table — the
-// silhouette is a placeholder pending the real class-aware art asset
-// (warrior plate, mage robes, …); when that lands this whole struct
-// gets replaced with an Image, not refined.
+// current middle-column body is a temporary generic silhouette path, not the
+// eventual class-aware art asset (warrior plate, mage robes, ...). When that
+// art lands this whole struct gets replaced with an Image, not refined.
 
 private struct BodySilhouettePath: Shape {
     func path(in rect: CGRect) -> Path {

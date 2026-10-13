@@ -5,7 +5,7 @@
 //  Shared visual primitive for the Active Skills loadout slot. Used in:
 //    • TalentsSummaryCard.activeSkillsRow — Hero / Talents tab editor
 //    • ActiveSkillsHUD                     — combat predict screen HUD
-//    • InteractiveBattleView Strike screen — 4th consumable slot stub
+//    • InteractiveBattleView Strike screen — locked consumable shell tile
 //
 //  The two existing surfaces used to ship parallel slot rendering with
 //  drifting chrome (different border thickness, different empty-state
@@ -14,9 +14,9 @@
 //  timer for combat, premium gem cost for talents, etc.) via a
 //  ViewBuilder.
 //
-//  Project rule (memory `feedback_reusability_first_rule`):
-//  reusability of components across everything is the #1 project rule —
-//  never duplicate UI, always extract.
+//  Project rule #1 — component reusability everywhere:
+//  never duplicate UI when the same visual primitive can be extracted
+//  and reused across surfaces.
 //
 //  Sizing: aspect-ratio 1:1; the tile fills whatever frame the parent
 //  gives it. Combat HUD locks at 56×56 pt; talents grid stretches to
@@ -278,7 +278,7 @@ struct ActiveSlotTile<Overlay: View>: View {
 
 extension ActiveSlotTile where Overlay == EmptyView {
     /// Convenience init for surfaces that don't need any combat
-    /// overlays (talents page, locked stub slots in combat).
+    /// overlays (talents page, locked shell slots in combat).
     init(
         slotNumber: Int,
         state: ActiveSlotTileState,

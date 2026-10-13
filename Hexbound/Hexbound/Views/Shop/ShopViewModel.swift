@@ -20,6 +20,13 @@ final class ShopViewModel {
     var buyingOfferId: String?
     var errorMessage: String? = nil
 
+    /// True only when the last refresh failed AND there is nothing to show.
+    ///
+    /// A failed background refresh over warm cache must not replace a readable
+    /// list with a full-screen error — the stale list is more useful. The error
+    /// page is for the case where the screen would otherwise be blank.
+    var showsErrorState: Bool { errorMessage != nil && items.isEmpty }
+
     // Contraband (timed loot drops from "The Scavenger")
     var contrabandState: ContrabandUIState = .loading
     var isClaimingContraband = false
@@ -158,11 +165,14 @@ final class ShopViewModel {
         async let itemsTask = service.getItems()
         async let offersTask: Void = loadOffers()
         async let contrabandTask: Void = loadContraband()
-        let result = await itemsTask
+        let outcome = await itemsTask
         _ = await offersTask
         _ = await contrabandTask
-        items = result
-        cache.cacheShop(result)
+        outcome.apply(
+            assign: { self.items = $0 },
+            cache: { self.cache.cacheShop($0) },
+            setError: { self.errorMessage = $0 }
+        )
         isLoading = false
         // Pre-load inventory for comparison if not cached
         if appState.cachedInventory == nil {

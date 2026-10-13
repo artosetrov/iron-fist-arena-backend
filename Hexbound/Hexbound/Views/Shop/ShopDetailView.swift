@@ -217,8 +217,8 @@ struct ShopDetailView: View {
 
     @ViewBuilder
     private func shopContent(_ vm: ShopViewModel) -> some View {
-        if vm.errorMessage != nil {
-            ErrorStateView.loadFailed { let _ = Task { await vm.loadItems() } }
+        if vm.showsErrorState {
+            ErrorStateView.loadFailed(message: vm.errorMessage) { let _ = Task { await vm.loadItems() } }
         } else if vm.isLoading && vm.items.isEmpty {
             skeletonGrid()
         } else if vm.filteredItems.isEmpty {

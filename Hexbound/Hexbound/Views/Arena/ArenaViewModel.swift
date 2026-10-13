@@ -50,7 +50,7 @@ final class ArenaViewModel {
     var playerLevel: Int { character?.level ?? 1 }
     /// Gear score is server-computed; not returned in Character model yet
     var playerGearScore: Int { 0 }
-    var rank: PvPRank { PvPRank.fromRating(pvpRating) }
+    var rank: PvPRank { PvPLadder.current.rank(for: pvpRating) }
     /// Number of free PvP fights USED today (0..freePvpPerDayLimit)
     var freePvpUsed: Int { character?.freePvpToday ?? 0 }
     /// Daily free PvP limit — source: `/api/game/init` (cache.gameConfig), fallback `AppConstants`.

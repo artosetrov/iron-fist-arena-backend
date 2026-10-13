@@ -100,6 +100,10 @@ struct HexboundApp: App {
             .animation(.easeInOut(duration: 0.3), value: appState.isBossRevealing)
             .animation(.easeInOut(duration: 0.5), value: showSplash)
             .task {
+                // Crash reporting first, so anything that fails below is
+                // actually reported. No-op when no DSN is configured.
+                ObservabilityService.start()
+
                 // Wire push service into AppDelegate for token forwarding
                 appDelegate.pushService = pushService
                 appDelegate.routeHandler = { route in

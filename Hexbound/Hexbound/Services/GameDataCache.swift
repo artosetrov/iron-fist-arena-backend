@@ -563,6 +563,10 @@ final class GameDataCache {
         featureFlags = [:]
         gameConfig = nil
         Item.fallbackUpgradeStatBonusPerLevel = 1
+        // Server-authored ladder goes back to the bundled one on sign-out, so a
+        // ladder fetched for one account cannot classify the next account's
+        // ratings before its own /game/init lands.
+        PvPLadder.current = .fallback
         isInitLoaded = false
     }
 }

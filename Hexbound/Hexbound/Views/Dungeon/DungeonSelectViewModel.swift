@@ -9,6 +9,17 @@ final class DungeonSelectViewModel {
     var isLoading = false
     var errorMessage: String? = nil
 
+    /// True only when the last refresh failed AND there is nothing to show.
+    ///
+    /// A failed background refresh over warm cache must not replace a readable
+    /// list with a full-screen error — the stale list is more useful. The error
+    /// page is for the case where the screen would otherwise be blank.
+    // `dungeons` is seeded from DungeonInfo.fallback before the fetch, so it is
+    // never empty — including it here would make this screen's error state
+    // unreachable all over again. Progress is the thing that is actually
+    // missing when the load fails.
+    var showsErrorState: Bool { errorMessage != nil && dungeonProgress.isEmpty }
+
     // Progress: dungeonId → number of bosses defeated
     var dungeonProgress: [String: Int] = [:]
 
@@ -110,9 +121,16 @@ final class DungeonSelectViewModel {
         if let snapshot = data {
             dungeonProgress = snapshot.progress
             currentRun = snapshot.activeRun
+            // Cache only a real result. Caching whatever is in memory after a
+            // failed refresh is how an empty list became permanent.
+            cache.cacheDungeonProgress(dungeonProgress)
+        } else {
+            // The screen has an ErrorStateView that was unreachable because
+            // nothing ever assigned errorMessage. Keep any warm data visible
+            // and say the refresh failed.
+            errorMessage = "Couldn't load your dungeon progress. Check your connection."
         }
 
-        cache.cacheDungeonProgress(dungeonProgress)
         isLoading = false
     }
 

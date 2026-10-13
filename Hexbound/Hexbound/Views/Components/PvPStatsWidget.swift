@@ -30,11 +30,17 @@ extension PvPStatsProvider {
     }
 
     var pvpRank: PvPRank {
-        PvPRank.fromRating(pvpRating)
+        PvPLadder.current.rank(for: pvpRating)
     }
 
     var pvpRankColor: Color {
-        DarkFantasyTheme.rankColor(for: pvpRating)
+        pvpRank.color
+    }
+
+    /// Progress toward the next division or tier, or `nil` at the top of the
+    /// ladder. Thresholds come from the server ladder, not from this file.
+    var pvpRankProgress: PvPRankProgress? {
+        PvPLadder.current.progress(for: pvpRating)
     }
 
     var pvpWinRateColor: Color {
@@ -198,7 +204,7 @@ struct PvPStatsWidget: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: data.pvpRank.icon)
                         .font(DarkFantasyTheme.body.weight(.semibold))
-                    Text(data.pvpRank.rawValue)
+                    Text(data.pvpRank.label)
                         .font(DarkFantasyTheme.body.weight(.semibold))
                         .fontWeight(.semibold)
                 }
@@ -409,24 +415,21 @@ struct PvPStatsWidget: View {
 
     @ViewBuilder
     private var tierProgressBar: some View {
-        let rank = data.pvpRank
-        let nextRankIndex = PvPRank.allCases.firstIndex(of: rank).map { $0 + 1 }
-        let nextRank = nextRankIndex.flatMap { $0 < PvPRank.allCases.count ? PvPRank.allCases[$0] : nil }
-
-        if let nextRank {
-            let rangeStart = rank.minRating
-            let rangeEnd = nextRank.minRating
-            let progress = Double(data.pvpRating - rangeStart) / Double(rangeEnd - rangeStart)
+        // `PvPRank.allCases` went away with the client-side ladder: the next
+        // promotion is a division away as often as it is a tier away, and only
+        // the server knows where either boundary sits.
+        if let progress = data.pvpRankProgress {
+            let nextColor = progress.next.color
 
             VStack(spacing: LayoutConstants.space2XS) {
                 HStack {
-                    Text(rank.rawValue)
+                    Text(progress.current.label)
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
-                    Text("\(nextRank.rawValue) \(rangeEnd)")
+                    Text("\(progress.next.label) \(progress.rangeEnd)")
                         .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.rankColor(for: nextRank.minRating).opacity(0.6))
+                        .foregroundStyle(nextColor.opacity(0.6))
                 }
 
                 GeometryReader { geo in
@@ -436,12 +439,12 @@ struct PvPStatsWidget: View {
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(
                                 LinearGradient(
-                                    colors: [data.pvpRankColor.opacity(0.6), DarkFantasyTheme.rankColor(for: nextRank.minRating)],
+                                    colors: [data.pvpRankColor.opacity(0.6), nextColor],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: geo.size.width * min(max(progress, 0), 1))
+                            .frame(width: geo.size.width * progress.fraction)
                     }
                 }
                 .frame(height: 3)

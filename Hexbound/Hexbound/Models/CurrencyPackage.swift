@@ -12,10 +12,18 @@ struct CurrencyPackage: Identifiable {
     let isBestValue: Bool
     let isPopular: Bool
     let isSubscription: Bool
+    /// Extra contents beyond `amount` — e.g. the gems and consumables in a
+    /// bundle whose headline figure is gold. Shown under the amount so the
+    /// card never understates what the player is paying for.
+    let subtitle: String?
+    /// What to name in the "purchase complete" message. The card subtitle is
+    /// marketing copy with separators in it and reads badly in a sentence.
+    let successSummary: String?
 
     init(id: String, currencyType: CurrencyType, amount: Int, bonusAmount: Int,
          priceUSD: String, productId: String, isBestValue: Bool, isPopular: Bool,
-         isSubscription: Bool = false) {
+         isSubscription: Bool = false, subtitle: String? = nil,
+         successSummary: String? = nil) {
         self.id = id
         self.currencyType = currencyType
         self.amount = amount
@@ -25,17 +33,20 @@ struct CurrencyPackage: Identifiable {
         self.isBestValue = isBestValue
         self.isPopular = isPopular
         self.isSubscription = isSubscription
+        self.subtitle = subtitle
+        self.successSummary = successSummary
     }
 
     /// Per-tier illustration asset (gold only — gems use icon-gems for all tiers)
     var tierAsset: String? {
         switch id {
-        case "gold_500":   return "shop-gold-tier1"
-        case "gold_1200":  return "shop-gold-tier2"
-        case "gold_3500":  return "shop-gold-tier3"
-        case "gold_8000":  return "shop-gold-tier4"
-        case "gold_20000": return "shop-gold-tier5"
-        default:           return nil
+        // Economy v3 bundles reuse the retired gold-pack tier art so each
+        // card still reads as its own tier instead of five identical coins.
+        case "starter_bundle":        return "shop-gold-tier1"
+        case "adventurer_bundle_I":   return "shop-gold-tier2"
+        case "adventurer_bundle_II":  return "shop-gold-tier4"
+        case "adventurer_bundle_III": return "shop-gold-tier5"
+        default:                      return nil
         }
     }
 

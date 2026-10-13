@@ -79,11 +79,11 @@ struct OpponentProfile: Codable, Identifiable {
     }
 
     var rankName: String {
-        PvPRank.fromRating(pvpRating).rawValue
+        pvpRank.label
     }
 
     var pvpRank: PvPRank {
-        PvPRank.fromRating(pvpRating)
+        PvPLadder.current.rank(for: pvpRating)
     }
 
     var winRate: Double {

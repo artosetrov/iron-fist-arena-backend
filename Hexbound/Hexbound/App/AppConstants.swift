@@ -9,6 +9,7 @@ enum AppConstants {
         static let supabaseAnonKey = "HexboundSupabaseAnonKey"
         static let googleClientID = "HexboundGoogleClientID"
         static let googleReversedClientID = "HexboundGoogleReversedClientID"
+        static let sentryDSN = "HexboundSentryDSN"
     }
 
     // MARK: - Environment
@@ -100,6 +101,54 @@ enum AppConstants {
     static let freePvpPerDay = 3
     // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4
     static let pvpStaminaCost = 10
+
+    // MARK: - Observability
+
+    /// Sentry project DSN, or nil when crash reporting is intentionally off.
+    ///
+    /// Unlike the keys above this one is OPTIONAL: a missing or placeholder
+    /// value disables Sentry instead of refusing to launch. Losing crash
+    /// reports is bad; refusing to start the app over it would be worse.
+    static var sentryDSN: String? {
+        optionalConfigValue(for: ConfigKey.sentryDSN)
+    }
+
+    // MARK: - Bundle metadata
+
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+    }
+
+    static var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+    }
+
+    static var bundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "com.hexbound.app"
+    }
+
+    static var isDebugBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// Like `requiredConfigValue`, but returns nil instead of aborting when the
+    /// key is absent, blank, or still holding an `__MISSING_` placeholder.
+    private static func optionalConfigValue(for key: String) -> String? {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            return nil
+        }
+
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty || value.hasPrefix("__MISSING_") {
+            return nil
+        }
+
+        return value
+    }
 
     private static func requiredConfigValue(for key: String) -> String {
         guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {

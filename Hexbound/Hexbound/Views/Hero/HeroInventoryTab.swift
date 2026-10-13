@@ -259,8 +259,8 @@ extension HeroDetailView {
             .padding(.horizontal, LayoutConstants.screenPadding)
 
             // Item grid — always show all 28 slots
-            if vm.errorMessage != nil {
-                ErrorStateView.loadFailed { let _ = Task { await vm.loadInventory() } }
+            if vm.showsErrorState {
+                ErrorStateView.loadFailed(message: vm.errorMessage) { let _ = Task { await vm.loadInventory() } }
             } else if vm.isLoading && vm.items.isEmpty {
                 // Loading state
                 inventoryLoadingGrid()

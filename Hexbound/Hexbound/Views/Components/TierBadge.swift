@@ -22,6 +22,25 @@ struct TierBadge: View {
     let tierKey: String          // "bronze", "silver", ..., "challenger"
     let division: String?        // "III" | "II" | "I" | nil (Master/GM/Challenger have no division)
     let size: Size
+    /// The label exactly as the server wrote it, e.g. `"Silver II"`.
+    ///
+    /// Without it the badge capitalizes `tierKey` and appends the division,
+    /// which happens to match every tier shipped so far but is the client
+    /// guessing at a name the server already sent. Pass it whenever you have
+    /// it: `LeaderboardEntry.tierLabel`, or `PvPRank.label`.
+    var label: String? = nil
+
+    init(tierKey: String, division: String?, size: Size, label: String? = nil) {
+        self.tierKey = tierKey
+        self.division = division
+        self.size = size
+        self.label = label
+    }
+
+    /// Render a tier the ladder already resolved.
+    init(rank: PvPRank, size: Size) {
+        self.init(tierKey: rank.key, division: rank.division, size: size, label: rank.label)
+    }
 
     enum Size {
         case compact
@@ -102,6 +121,7 @@ struct TierBadge: View {
 
     /// Tier name + roman numeral, e.g. "Silver II" / "Master" / "Challenger".
     private var displayLabel: String {
+        if let label, !label.isEmpty { return label }
         let tierName = tierKey.prefix(1).uppercased() + tierKey.dropFirst()
         if let div = division, !div.isEmpty {
             return "\(tierName) \(div)"
@@ -110,33 +130,15 @@ struct TierBadge: View {
     }
 
     /// SF Symbol representing the tier — tracks the apex theme of each tier.
+    /// The map itself lives in `PvPRank`, so the inline rank pills elsewhere in
+    /// the app cannot draw a different symbol for the same tier.
     private var tierSymbol: String {
-        switch tierKey {
-        case "bronze":      return "shield.lefthalf.filled"
-        case "silver":      return "shield.lefthalf.filled"
-        case "gold":        return "crown.fill"
-        case "platinum":    return "hexagon.fill"
-        case "diamond":     return "diamond.fill"
-        case "master":      return "star.fill"
-        case "grandmaster": return "laurel.leading"
-        case "challenger":  return "crown.fill"
-        default:            return "shield.fill"
-        }
+        PvPRank.icon(forTierKey: tierKey)
     }
 
-    /// Primary tier color used for icon + glow.
+    /// Primary tier color used for icon + glow. Same reasoning as `tierSymbol`.
     private var iconColor: Color {
-        switch tierKey {
-        case "bronze":      return DarkFantasyTheme.rankBronze
-        case "silver":      return DarkFantasyTheme.rankSilver
-        case "gold":        return DarkFantasyTheme.rankGold
-        case "platinum":    return DarkFantasyTheme.rankPlatinum
-        case "diamond":     return DarkFantasyTheme.rankDiamond
-        case "master":      return DarkFantasyTheme.rankMaster
-        case "grandmaster": return DarkFantasyTheme.rankGrandmaster
-        case "challenger":  return DarkFantasyTheme.rankChallenger
-        default:            return DarkFantasyTheme.textSecondary
-        }
+        DarkFantasyTheme.rankColor(forTierKey: tierKey)
     }
 
     /// Border stays consistent with the icon color for cohesion.

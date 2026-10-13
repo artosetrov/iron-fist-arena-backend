@@ -84,7 +84,7 @@ struct OpponentCardView: View {
                 VStack(spacing: LayoutConstants.space2XS) {
                     Text("\(opponent.pvpRating)")
                         .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
+                        .foregroundStyle(opponent.rank.color)
                     Image(systemName: opponent.rank.icon)
                         .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(opponent.rank.color)

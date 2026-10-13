@@ -47,6 +47,16 @@
 	<string>$(HEXBOUND_GOOGLE_CLIENT_ID)</string>
 	<key>HexboundGoogleReversedClientID</key>
 	<string>$(HEXBOUND_GOOGLE_REVERSED_CLIENT_ID)</string>
+	<key>HexboundSentryDSN</key>
+	<string>$(HEXBOUND_SENTRY_DSN)</string>
+	<!--
+	  Export compliance. The app uses only HTTPS and Apple's own system
+	  cryptography, which is exempt. Without this key every upload sits in
+	  "Missing Compliance" in App Store Connect and cannot be distributed to
+	  testers until the question is answered by hand.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

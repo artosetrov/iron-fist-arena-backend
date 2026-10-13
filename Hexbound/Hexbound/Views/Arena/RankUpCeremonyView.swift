@@ -100,7 +100,7 @@ struct RankUpCeremonyView: View {
 
     private func rankBadge(rank: String, isOld: Bool) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            Image(systemName: isOld ? "shield" : "shield.fill")
+            Image(systemName: PvPRank.icon(forTierKey: PvPRank.tierKey(fromLabel: rank)))
                 .font((isOld ? DarkFantasyTheme.title : DarkFantasyTheme.cinematicTitle).bold())
                 .foregroundStyle(
                     isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
@@ -194,15 +194,12 @@ struct RankUpCeremonyView: View {
 
     // MARK: - Helpers
 
+    /// The ceremony receives rendered labels ("Silver II"), not ratings, so the
+    /// tier key is recovered from the label. This used to be its own color
+    /// table keyed on the whole string — which meant that the moment the server
+    /// started sending divisions, every rank-up ceremony fell through to the
+    /// default gold.
     private func rankColor(for rank: String) -> Color {
-        switch rank.lowercased() {
-        case "bronze": return DarkFantasyTheme.rarityUncommon
-        case "silver": return DarkFantasyTheme.textSecondary
-        case "gold": return DarkFantasyTheme.gold
-        case "platinum": return DarkFantasyTheme.info
-        case "diamond": return DarkFantasyTheme.rarityEpic
-        case "grandmaster": return DarkFantasyTheme.rarityLegendary
-        default: return DarkFantasyTheme.gold
-        }
+        DarkFantasyTheme.rankColor(forTierKey: PvPRank.tierKey(fromLabel: rank))
     }
 }

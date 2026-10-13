@@ -38,8 +38,8 @@ struct LeaderboardDetailView: View {
                     // Content
                     if vm.isSearchActive {
                         searchResultsContent(vm: vm)
-                    } else if vm.errorMessage != nil {
-                        ErrorStateView.loadFailed { Task { await vm.loadLeaderboard() } }
+                    } else if vm.showsErrorState {
+                        ErrorStateView.loadFailed(message: vm.errorMessage) { Task { await vm.loadLeaderboard() } }
                     } else if vm.isLoading && vm.currentEntries.isEmpty {
                         LazyVStack(spacing: LayoutConstants.spaceXS) {
                             ForEach(0..<8, id: \.self) { index in

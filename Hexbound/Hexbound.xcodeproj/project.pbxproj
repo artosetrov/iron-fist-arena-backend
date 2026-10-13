@@ -49,6 +49,7 @@
 		16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 776542cff60cc81ecdff074b /* StatPurchase.swift */; };
 		1704A1D3A63363F209977154 /* ui_transition.wav in Resources */ = {isa = PBXBuildFile; fileRef = F92586043C4AA4BD1A4F294F /* ui_transition.wav */; };
 		177944E1D094938DD266E070 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E9F432E444EE871124DC12E /* Assets.xcassets */; };
+		PRIV00001000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */; };
 		1817B4DE4C0F78F617740616 /* hit_critical_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA710DEA74DE34B17C932FE7 /* hit_critical_3.wav */; };
 		1824E994A72F9124AF03E6C0 /* combat_miss.wav in Resources */ = {isa = PBXBuildFile; fileRef = A8DE9B9F60FF0416FC335685 /* combat_miss.wav */; };
 		18615572677A0157EA7F57D7 /* amb_crowd_roar.wav in Resources */ = {isa = PBXBuildFile; fileRef = ECCAA0EC6A32992B2577580A /* amb_crowd_roar.wav */; };
@@ -238,6 +239,8 @@
 		7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */; };
 		7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */; };
 		7A638FA0C2D3E4F5A6B7C8D9 /* CurrencyPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */; };
+		07C779CE0DD60E548BAB6E9A /* LoadOutcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F575E3688D8763D1E3795B8 /* LoadOutcome.swift */; };
+		321B27F3C40A3730316A4B4E /* PvPLadder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9648584F4965D49D8C35F96A /* PvPLadder.swift */; };
 		7B44816E6A46753CCB089F0F /* hit_rogue_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */; };
 		7B9C1D3E5F7A9B1C3D5E7F8A /* SessionExpiredModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9B0C1D2E3F4A5B6C7D8E9F /* SessionExpiredModalView.swift */; };
 		7B9C1D3E5F7A9B1C3D5E7F8B /* Social.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */; };
@@ -445,6 +448,7 @@
 		E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FDAE41BCB1FB2232906E8C39 /* Oswald-Regular.ttf */; };
 		E53876454A91F74256038E64 /* AchievementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */; };
 		AA0417A1E85C4C0099D00001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */; };
+		A338221018B2F3C9C790EF22 /* ObservabilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B2009850BA9E002B9BE948 /* ObservabilityService.swift */; };
 		E55080DD83E15810D7C63678 /* SegmentedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB613DE56FBC3B40EBE42011 /* SegmentedProgressBar.swift */; };
 		E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47BF69C872101A05B35E80C /* Character.swift */; };
 		E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6D /* SFXManager.swift */; };
@@ -543,6 +547,7 @@
 		0119FF7351B52985539E24A3 /* ui_sell.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_sell.wav; sourceTree = "<group>"; };
 		029AA9A175D862EBED174221 /* shell_shuffle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shell_shuffle.wav; sourceTree = "<group>"; };
 		02E5682DDDCFDA8038B5CE1C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		02F525698FF57035C2C32D1B /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		03211693FA838BABF0DDF071 /* battle-combat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "battle-combat.mp3"; path = "Hexbound/Resources/Audio/BGM/battle-combat.mp3"; sourceTree = SOURCE_ROOT; };
 		0337A4B35D2288E5501C6665 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
@@ -675,6 +680,8 @@
 		5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomDetailView.swift; sourceTree = "<group>"; };
 		5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandState.swift; sourceTree = "<group>"; };
 		5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPackage.swift; sourceTree = "<group>"; };
+		6F575E3688D8763D1E3795B8 /* LoadOutcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadOutcome.swift; sourceTree = "<group>"; };
+		9648584F4965D49D8C35F96A /* PvPLadder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPLadder.swift; sourceTree = "<group>"; };
 		5E160EA5CEA60F2AB037A705 /* ItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCardView.swift; sourceTree = "<group>"; };
 		5E723480C1D3F6A742172D95 /* hit_physical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_physical.wav; sourceTree = "<group>"; };
 		5E9F432E444EE871124DC12E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -947,6 +954,7 @@
 		DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonViews.swift; sourceTree = "<group>"; };
 		DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementService.swift; sourceTree = "<group>"; };
 		AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		73B2009850BA9E002B9BE948 /* ObservabilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservabilityService.swift; sourceTree = "<group>"; };
 		DC2799E960A250F50D77C492 /* AssetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetManager.swift; sourceTree = "<group>"; };
 		DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_wind_heavy.wav; sourceTree = "<group>"; };
 		DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRowView.swift; sourceTree = "<group>"; };
@@ -1134,6 +1142,7 @@
 			isa = PBXGroup;
 			children = (
 				02E5682DDDCFDA8038B5CE1C /* Info.plist */,
+				PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */,
 				ENTL00001000000000000001 /* Hexbound.entitlements */,
 				36D1E6B13C04CFECB0BA6BBD /* App */,
 				B7C1B3175550513FAF0F7C63 /* Models */,
@@ -1548,6 +1557,7 @@
 				DC2799E960A250F50D77C492 /* AssetManager.swift */,
 				DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */,
 				AA0417A1E85C4C0099D00002 /* AnalyticsService.swift */,
+				73B2009850BA9E002B9BE948 /* ObservabilityService.swift */,
 				18860E524F76C28304AB39AF /* AuthService.swift */,
 				39859708651A5AACC1204865 /* BattlePassService.swift */,
 				D9E867F52B861525354D0709 /* BattlePreloader.swift */,
@@ -1798,6 +1808,8 @@
 				776542cff60cc81ecdff074b /* StatPurchase.swift */,
 				5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */,
 				5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */,
+				6F575E3688D8763D1E3795B8 /* LoadOutcome.swift */,
+				9648584F4965D49D8C35F96A /* PvPLadder.swift */,
 				OFFER001REF00001 /* ShopOffer.swift */,
 				62CD513D5B1711C8822F3588 /* Enums */,
 			);
@@ -2003,6 +2015,7 @@
 			name = Hexbound;
 			packageProductDependencies = (
 				GSIG00001PKG00002 /* GoogleSignIn */,
+				F5F9C5AAC6CF45237B7E267A /* Sentry */,
 				A0DB5CCB2F8C0DC800C3EEC2 /* Algorithms */,
 				A0DB5CCE2F8C0E3700C3EEC2 /* ArgumentParser */,
 				A0DB5CD12F8C0E4900C3EEC2 /* SwiftASN1 */,
@@ -2034,6 +2047,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				GSIG00001PKG00001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				AF1AD85F6CC563315D4CE8A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				A0DB5CCA2F8C0DC800C3EEC2 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 				A0DB5CCD2F8C0E3700C3EEC2 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				A0DB5CD02F8C0E4900C3EEC2 /* XCRemoteSwiftPackageReference "swift-asn1" */,
@@ -2119,6 +2133,7 @@
 				32FC676535D7D2588AB39F45 /* wheel_spin.wav in Resources */,
 				3E60DAFC7472A5B40C11F434 /* arena-pvp.mp3 in Resources */,
 				177944E1D094938DD266E070 /* Assets.xcassets in Resources */,
+				PRIV00001000000000000002 /* PrivacyInfo.xcprivacy in Resources */,
 				FA1D5ADF4E4BF99CD25E24A0 /* battle_defeat.wav in Resources */,
 				6B3AA0AE4FC179DBECC75D9C /* battle_start.wav in Resources */,
 				921CAA9BEBB39497D275B487 /* battle_victory.wav in Resources */,
@@ -2253,6 +2268,7 @@
 				A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */,
 				E53876454A91F74256038E64 /* AchievementService.swift in Sources */,
 				AA0417A1E85C4C0099D00001 /* AnalyticsService.swift in Sources */,
+				A338221018B2F3C9C790EF22 /* ObservabilityService.swift in Sources */,
 				542C67EDB654AF9BFE887353 /* AchievementsDetailView.swift in Sources */,
 				C70E9AD47FC899F2C57ADD80 /* AchievementsViewModel.swift in Sources */,
 				941F9A9BC1C17F6006E85B3E /* AppConstants.swift in Sources */,
@@ -2516,6 +2532,8 @@
 				319EBA8EDCD2DAD9FF12F314 /* ShopItem.swift in Sources */,
 				7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */,
 				7A638FA0C2D3E4F5A6B7C8D9 /* CurrencyPackage.swift in Sources */,
+				07C779CE0DD60E548BAB6E9A /* LoadOutcome.swift in Sources */,
+				321B27F3C40A3730316A4B4E /* PvPLadder.swift in Sources */,
 				5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */,
 				OFFER001BLD00001 /* ShopOffer.swift in Sources */,
 				OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */,
@@ -2604,9 +2622,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Hexbound/Hexbound.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 8;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Hexbound/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hexbound;
@@ -2629,9 +2648,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Hexbound/Hexbound.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 8;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Hexbound/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hexbound;
@@ -2683,7 +2703,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = JSLLJZ3J9J;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -2704,7 +2726,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2752,7 +2774,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = JSLLJZ3J9J;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -2767,7 +2791,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2859,6 +2883,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		AF1AD85F6CC563315D4CE8A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.44.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2896,6 +2928,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = GSIG00001PKG00001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		F5F9C5AAC6CF45237B7E267A /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF1AD85F6CC563315D4CE8A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

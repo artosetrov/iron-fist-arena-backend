@@ -16,18 +16,35 @@ struct PremiumFeature: Identifiable {
 
 struct PremiumPurchaseView: View {
     @Environment(AppState.self) private var appState
+    // Observed so the view re-renders when StoreKit finishes loading products —
+    // otherwise the legally-binding price in the disclosure below stays on its
+    // hardcoded USD fallback in every storefront.
+    @ObservedObject private var store = StoreKitService.shared
     @State private var purchaseState: PurchaseState = .idle
     @State private var showSuccessOverlay = false
     @State private var shimmerOffset: CGFloat = -200
 
-    private let price = "$9.99"
-    private let productId = "com.hexbound.premium_forever"
+    // Economy v3: `premium_forever` is retired (backend returns 410).
+    // Premium is now a 30-day auto-renewable pass — see
+    // docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
+    private let productId = IAPProduct.premiumPassMonthly.rawValue
+
+    /// Localized App Store price, or nil while StoreKit is still loading.
+    private var storePrice: String? {
+        let formatted = store.formattedPrice(for: .premiumPassMonthly)
+        return formatted == "—" ? nil : formatted
+    }
+
+    /// Price for display. Shows a placeholder rather than a guessed figure:
+    /// quoting the US list price to a player in another storefront is a false
+    /// price claim, and App Store review reads the displayed price.
+    private var price: String { storePrice ?? "—" }
 
     private let features: [PremiumFeature] = [
         .init(icon: "bolt.fill", title: "+20% XP from all sources",
               description: "Level up faster — PvP, dungeons, training, and quests all give 20% more experience.",
               highlight: true),
-        .init(icon: "icon-gold", title: "+20% Gold from all sources",
+        .init(icon: "icon-gold", title: "+10% Gold from all sources",
               description: "Earn more gold from battles, dungeons, daily quests, and Gold Mine.",
               highlight: true, assetIcon: true),
         .init(icon: "shield.lefthalf.filled", title: "5 Free PvP fights per day",
@@ -45,6 +62,9 @@ struct PremiumPurchaseView: View {
         .init(icon: "star.circle.fill", title: "Premium badge on profile",
               description: "Show off your Premium status with a golden crown next to your name.",
               highlight: false),
+        .init(icon: "icon-gems", title: "300 gems every month",
+              description: "Each renewal credits 300 gems to your account on top of every other benefit.",
+              highlight: true, assetIcon: true),
         .init(icon: "gift.fill", title: "Daily bonus reward",
               description: "Extra 50 gold added to your daily login rewards every day.",
               highlight: false),
@@ -110,6 +130,10 @@ struct PremiumPurchaseView: View {
                     .transition(.opacity)
             }
         }
+        // StoreKit loads products once at init; if that first attempt failed
+        // (offline at launch) the price would stay unknown for the whole
+        // session. Re-entering the screen retries it.
+        .task { await store.loadProducts() }
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
@@ -155,19 +179,16 @@ struct PremiumPurchaseView: View {
                 .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.premiumPink)
 
-            Text("One-time purchase. Premium forever.")
+            Text("Auto-renewing monthly subscription. Cancel anytime.")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             // Price pill
             HStack(spacing: LayoutConstants.spaceXS) {
-                Text("JUST")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(price)
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
-                Text("ONE TIME")
+                Text("PER MONTH")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
@@ -213,7 +234,8 @@ struct PremiumPurchaseView: View {
 
                 // Comparison rows
                 ComparisonRow(label: "XP Bonus", free: "0%", premium: "+20%")
-                ComparisonRow(label: "Gold Bonus", free: "0%", premium: "+20%")
+                ComparisonRow(label: "Gold Bonus", free: "0%", premium: "+10%")
+                ComparisonRow(label: "Monthly Gems", free: "0", premium: "300")
                 ComparisonRow(label: "Free PvP/day", free: "3", premium: "5")
                 ComparisonRow(label: "Stamina Regen", free: "8 min", premium: "6 min")
                 ComparisonRow(label: "Cosmetics", free: "Basic", premium: "Exclusive")
@@ -264,13 +286,22 @@ struct PremiumPurchaseView: View {
             // Restore
             Button {
                 Task {
-                    await StoreKitService.shared.restorePurchases()
-                    if StoreKitService.shared.isPremium {
-                        // Re-verify with server
+                    let result = await store.restorePurchases()
+                    if result.hasUnresolved {
+                        appState.showToast(
+                            "Some purchases could not be restored. Check your connection and try again.",
+                            type: .error
+                        )
+                    } else if result.hasUndeliverable {
+                        appState.showToast(
+                            "A purchase could not be delivered. Please contact support with your receipt.",
+                            type: .error
+                        )
+                    } else if store.isPremium {
+                        appState.showToast("Premium restored.", type: .reward)
                         appState.invalidateCache("character")
-                        appState.showToast("Premium restored!", type: .reward)
                     } else {
-                        appState.showToast("No Premium purchase found.", type: .error)
+                        appState.showToast("No Premium purchase found.", type: .info)
                     }
                 }
             } label: {
@@ -278,12 +309,48 @@ struct PremiumPurchaseView: View {
             }
             .buttonStyle(.secondary)
 
-            // Legal
-            Text("One-time purchase. No subscriptions. No recurring charges.")
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .multilineTextAlignment(.center)
+            // Legal — App Store Review Guideline 3.1.2 requires the length of
+            // the subscription, the per-period price, the auto-renew terms and
+            // working Terms of Use / Privacy Policy links at the point of sale.
+            // The price is only stated once StoreKit has the real storefront
+            // price: quoting a guessed one here would be a false price claim.
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Text(renewalTerms)
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: LayoutConstants.spaceLG) {
+                    Link(destination: URL(string: "https://hexboundapp.com/terms")!) {
+                        Text("Terms of Use")
+                            .font(DarkFantasyTheme.body)
+                            .underline()
+                            .frame(minHeight: LayoutConstants.touchMin)
+                            .contentShape(Rectangle())
+                    }
+                    Link(destination: URL(string: "https://hexboundapp.com/privacy")!) {
+                        Text("Privacy Policy")
+                            .font(DarkFantasyTheme.body)
+                            .underline()
+                            .frame(minHeight: LayoutConstants.touchMin)
+                            .contentShape(Rectangle())
+                    }
+                }
+                .tint(DarkFantasyTheme.goldBright)
+            }
         }
+    }
+
+    /// Renewal disclosure. Names the real storefront price when StoreKit has
+    /// it, and stays price-free until then rather than quoting a US figure to
+    /// a player in another market.
+    private var renewalTerms: String {
+        let opening = storePrice.map { "\($0) per month." }
+            ?? "Billed monthly at the price shown on the purchase sheet."
+        return opening + " Payment is charged to your Apple Account at confirmation of purchase. "
+            + "The subscription renews automatically unless cancelled at least 24 hours before the "
+            + "end of the current period. Manage or cancel it any time in your Apple Account settings."
     }
 
     // MARK: - Success Overlay
@@ -338,22 +405,18 @@ struct PremiumPurchaseView: View {
 
     private func buyPremium() {
         guard purchaseState == .idle else { return }
-        withAnimation { purchaseState = .purchasing(packageId: "premium_forever") }
+        withAnimation { purchaseState = .purchasing(packageId: "premium_pass_monthly") }
 
         Task {
             do {
-                let transaction = try await StoreKitService.shared.purchase(productId: productId)
-                // Verify with server — server sets premium_until on user
-                let body = IAPVerifyRequest(
-                    productId: "premium_forever",
-                    transactionId: String(transaction.id),
-                    receiptData: String(transaction.id)
-                )
-                let _: IAPVerifyResponse = try await APIClient.shared.post(APIEndpoints.iapVerify, body: body)
+                // Redemption happens inside StoreKitService, before the
+                // transaction is finished — so getting here means the server
+                // granted the pass.
+                _ = try await store.purchase(productId: productId)
 
                 await MainActor.run {
                     withAnimation {
-                        purchaseState = .success(packageId: "premium_forever")
+                        purchaseState = .success(packageId: "premium_pass_monthly")
                         showSuccessOverlay = true
                     }
                     appState.invalidateCache("character")

@@ -259,6 +259,17 @@ struct GoldMineMiniGameView: View {
     @State private var showResults: Bool = false
     @State private var serverResponse: GoldMineSlotMinigameSubmitResponse?
 
+    /// What the SERVER actually credited, once it has answered.
+    ///
+    /// The local `caughtGold` / `caughtGems` are what the player saw fall into
+    /// the basket; the server computes the reward from the share of spawned
+    /// coins caught and caps it at the slot cap. Showing the local numbers in
+    /// the summary meant the screen could promise "+150, +1 gem" while the
+    /// account received less. Before the response arrives (or if the submit
+    /// failed) the local tally is the honest best guess.
+    private var awardedGold: Int { serverResponse?.bonusGold ?? caughtGold }
+    private var awardedGems: Int { serverResponse?.bonusGems ?? caughtGems }
+
     // MARK: Wave state
     @State private var currentWave: MinigameWave = .warmup
     @State private var showWaveBanner: Bool = false
@@ -605,7 +616,7 @@ struct GoldMineMiniGameView: View {
                     resultRow(
                         icon: "shop-gold-tier2",
                         label: "Bonus gold",
-                        value: "+\(caughtGold)\(caughtGold >= session.capGold ? " (cap)" : "")",
+                        value: "+\(awardedGold)\(awardedGold >= session.capGold ? " (cap)" : "")",
                         color: DarkFantasyTheme.goldBright
                     )
                     Divider().background(DarkFantasyTheme.borderSubtle)
@@ -613,7 +624,7 @@ struct GoldMineMiniGameView: View {
                     resultRow(
                         icon: "icon-gems",
                         label: "Bonus gems",
-                        value: "+\(caughtGems)",
+                        value: "+\(awardedGems)",
                         color: DarkFantasyTheme.cyan
                     )
                     Divider().background(DarkFantasyTheme.gold.opacity(0.4))
@@ -621,10 +632,26 @@ struct GoldMineMiniGameView: View {
                     resultRow(
                         icon: nil,
                         label: "TOTAL GOLD",
-                        value: "+\(session.passiveGoldAmount + caughtGold)",
+                        value: "+\(session.passiveGoldAmount + awardedGold)",
                         color: DarkFantasyTheme.goldBright,
                         isTotal: true
                     )
+                }
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .transition(.opacity)
+            }
+
+            // Submit failed — say so instead of showing rewards that were
+            // never credited. The rows above fall back to the local tally when
+            // the server never answered, which reads as a promise.
+            if resultsPhase >= 4 && serverResponse == nil {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DarkFantasyTheme.textDanger)
+                    Text("Not saved — connection lost. Your mine keeps the gold; try collecting again.")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textDanger)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, LayoutConstants.spaceMD)
                 .transition(.opacity)

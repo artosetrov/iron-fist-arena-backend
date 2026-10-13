@@ -38,8 +38,8 @@ struct DungeonSelectDetailView: View {
                             .padding(.bottom, LayoutConstants.space2XL)
                         }
                     }
-                } else if vm.errorMessage != nil {
-                    ErrorStateView.loadFailed {
+                } else if vm.showsErrorState {
+                    ErrorStateView.loadFailed(message: vm.errorMessage) {
                         Task { await vm.loadProgress() }
                     }
                 } else if vm.dungeons.isEmpty {

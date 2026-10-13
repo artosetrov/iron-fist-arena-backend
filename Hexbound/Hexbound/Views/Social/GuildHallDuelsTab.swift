@@ -125,7 +125,7 @@ extension GuildHallDetailView {
                             .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
-                        let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
+                        let rank = PvPLadder.current.rank(for: challenge.challenger.pvpRating)
                         Image(systemName: rank.icon)
                             .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(rank.color)

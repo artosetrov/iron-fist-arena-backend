@@ -102,6 +102,8 @@
 "combat.damage" = "Damage";
 "combat.heal" = "Heal";
 "combat.miss" = "MISS";
+"combat.dodge" = "DODGE!";
+"combat.crit" = "CRIT!";
 "combat.critical" = "CRITICAL";
 
 // MARK: - Hero

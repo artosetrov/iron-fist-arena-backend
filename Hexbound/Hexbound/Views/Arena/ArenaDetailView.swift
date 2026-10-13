@@ -73,9 +73,10 @@ struct ArenaDetailView: View {
                                     .padding(.horizontal, LayoutConstants.screenPadding)
                                 }
 
-                                // Combat stance selector — right below hero widget
-                                stancePreview(appState.currentCharacter?.combatStance ?? .default)
-                                    .tutorialAnchor(.arenaStance)
+                                // Arena summary strip — rating widget restored as the
+                                // primary surface in this slot; stance editing stays
+                                // available as a smaller dedicated CTA below it.
+                                arenaSummarySection(vm)
 
                                 // Low HP potion banner — shown when HP < 30%
                                 if let currentChar = appState.currentCharacter,
@@ -366,18 +367,36 @@ struct ArenaDetailView: View {
 
     // MARK: - PvP Stats Bar
 
-    // MARK: - PvP Stats (moved to PvPStatsWidget)
-
-    // MARK: - Stance Preview
+    // MARK: - Arena summary strip
 
     @ViewBuilder
-    private func stancePreview(_ stance: CombatStance) -> some View {
-        StanceDisplayView(
-            stance: stance,
-            isInteractive: true,
-            onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
+    private func arenaSummarySection(_ vm: ArenaViewModel) -> some View {
+        if let char = vm.character {
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Button {
+                    appState.mainPath.append(AppRoute.leaderboard)
+                } label: {
+                    PvPStatsWidget(.compact, data: char)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                Button {
+                    appState.mainPath.append(AppRoute.stanceSelector)
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image(systemName: "figure.martial.arts")
+                            .font(DarkFantasyTheme.body.weight(.semibold))
+                        Text("COMBAT STANCE")
+                            .font(DarkFantasyTheme.body.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.secondary)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .accessibilityLabel("Edit combat stance")
+                .tutorialAnchor(.arenaStance)
+            }
+        }
     }
 
     // MARK: - Opponents Tab

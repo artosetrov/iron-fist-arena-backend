@@ -14,18 +14,21 @@ enum CombatFXAssetMap {
     /// - Returns: FX descriptor or nil if no FX should play
     static func fxForTurn(_ turn: CombatLog, isPlayerAttacking: Bool) -> CombatFXDescriptor? {
         if turn.isDodge {
+            // Code-drawn callout (no baked-text PNG; see ART_STYLE_GUIDE, Generation Rules 1)
             return CombatFXDescriptor(
-                asset: "fx-dodge-text",
+                asset: nil,
                 mode: .fullscreen,
-                tintColor: nil
+                tintColor: nil,
+                callout: .dodge
             )
         }
 
         if turn.isMiss {
             return CombatFXDescriptor(
-                asset: "fx-miss-text",
+                asset: nil,
                 mode: .fullscreen,
-                tintColor: nil
+                tintColor: nil,
+                callout: .miss
             )
         }
 
@@ -42,12 +45,12 @@ enum CombatFXAssetMap {
             let damageAsset = assetForDamageType(turn.damageType)
 
             if turn.isCrit {
-                // Crit: damage FX on avatar + fullscreen CRIT text
+                // Crit: damage FX on avatar + fullscreen code-drawn CRIT callout
                 return CombatFXDescriptor(
                     asset: damageAsset,
                     mode: .onDefender,
                     tintColor: nil,
-                    critOverlay: randomCritText()
+                    callout: .crit
                 )
             } else {
                 return CombatFXDescriptor(
@@ -126,11 +129,6 @@ enum CombatFXAssetMap {
         "fx-block-silvershield"
     ]
 
-    private static let critTextAssets = [
-        "fx-crit-text",
-        "fx-critical-text"
-    ]
-
     private static let healAssets = [
         "fx-heal-nature",
         "fx-heal-divine"
@@ -160,10 +158,6 @@ enum CombatFXAssetMap {
         blockAssets.randomElement() ?? "fx-block-hexshield"
     }
 
-    private static func randomCritText() -> String {
-        critTextAssets.randomElement() ?? "fx-crit-text"
-    }
-
     private static func randomHeal() -> String {
         healAssets.randomElement() ?? "fx-heal-nature"
     }
@@ -176,10 +170,38 @@ enum CombatFXAssetMap {
 // MARK: - FX Descriptor
 
 struct CombatFXDescriptor {
-    let asset: String
+    /// PNG FX plate (shape only: slash, burst, shield). `nil` for text-only callouts.
+    let asset: String?
     let mode: CombatFXMode
     let tintColor: Color?
-    var critOverlay: String? = nil
+    /// Code-drawn text callout shown fullscreen, on top of the plate when both are present.
+    var callout: CombatFXCallout? = nil
+}
+
+// MARK: - Combat Callout (code-drawn text)
+// Replaces the retired baked-text PNGs (fx-dodge-text, fx-miss-text, fx-crit-text,
+// fx-critical-text). Text is design-system typography and localizable.
+
+enum CombatFXCallout: Equatable {
+    case dodge
+    case miss
+    case crit
+
+    @MainActor var text: String {
+        switch self {
+        case .dodge: return "combat.dodge".localized
+        case .miss:  return "combat.miss".localized
+        case .crit:  return "combat.crit".localized
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .dodge: return DarkFantasyTheme.info
+        case .miss:  return DarkFantasyTheme.textSecondary
+        case .crit:  return DarkFantasyTheme.goldBright
+        }
+    }
 }
 
 enum CombatFXMode {
@@ -187,6 +209,6 @@ enum CombatFXMode {
     case onDefender
     /// Displayed centered on the attacker's avatar (for heals)
     case onAttacker
-    /// Displayed centered on screen (240×240pt, for CRIT/DODGE/MISS text)
+    /// Displayed centered on screen (240pt plates, or code-drawn CRIT / DODGE / MISS callouts)
     case fullscreen
 }

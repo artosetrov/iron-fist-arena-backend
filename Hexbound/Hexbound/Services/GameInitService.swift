@@ -29,6 +29,9 @@ final class GameInitService {
 
             appState.currentCharacter = response.character
             appState.currentUser = response.user
+            // Tie crash reports to the session that produced them — account id
+            // only, no email or display name.
+            ObservabilityService.setUser(id: response.user?.id)
             appState.cachedInventory = response.inventoryItems
             appState.cachedTypedQuests = response.quests
             appState.cachedDailyLogin = response.dailyLogin
@@ -43,6 +46,10 @@ final class GameInitService {
 
             cache.gameConfig = GameConfig(config: response.config)
             Item.fallbackUpgradeStatBonusPerLevel = response.config.upgradeStatBonusPerLevel
+            // The PvP ladder is server-authored from here on. Keeps its
+            // bundled fallback if the payload predates `pvpLadder` or carries
+            // a ladder that cannot be rendered.
+            PvPLadder.adopt(response.config.pvpLadder)
             cache.cacheFeatureFlags(response.featureFlags.compactMapValues(\.boolValue))
             cache.cacheHubLayout(mapLayout(response.hubLayout))
             cache.cacheDungeonMapLayout(mapLayout(response.dungeonMapLayout))
@@ -260,6 +267,10 @@ private struct GameInitConfigPayload: Decodable {
     let dailyLoginRewards: [DailyLoginRewardDef]
     let gemCosts: GameInitGemCosts
     let interactiveCombatEnabled: Bool
+    /// PvP tier ladder — see `PvPLadder`. Optional so a client built against
+    /// this payload still decodes a response from a server that has not
+    /// deployed the ladder contract yet.
+    let pvpLadder: PvPLadder?
 }
 
 private struct GameInitGemCosts: Decodable {

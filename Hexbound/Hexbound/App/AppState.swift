@@ -492,6 +492,7 @@ final class AppState {
         currentCharacter = nil
         userCharacters = []
         currentUser = nil
+        ObservabilityService.setUser(id: nil)
         combatData = nil
         combatResult = nil
         pendingLoot = []

@@ -210,11 +210,18 @@ extension ErrorStateView {
     }
 
     /// Data load failed (generic)
-    static func loadFailed(retryAction: @escaping () -> Void) -> ErrorStateView {
+    ///
+    /// Pass `message` to show the actual reason the load failed — the view
+    /// models derive a player-facing one from the error. The generic line is
+    /// the fallback for callers that have nothing more specific.
+    static func loadFailed(
+        message: String? = nil,
+        retryAction: @escaping () -> Void
+    ) -> ErrorStateView {
         ErrorStateView(
             icon: "exclamationmark.triangle",
             title: "Failed to Load",
-            message: "Something went wrong loading this content.",
+            message: message ?? "Something went wrong loading this content.",
             retryAction: retryAction
         )
     }

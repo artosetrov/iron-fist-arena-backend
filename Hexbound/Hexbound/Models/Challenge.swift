@@ -23,7 +23,7 @@ struct ChallengeCharacterInfo: Codable, Identifiable {
     }
 
     var rankName: String {
-        PvPRank.fromRating(pvpRating).rawValue
+        PvPLadder.current.rank(for: pvpRating).label
     }
 }
 

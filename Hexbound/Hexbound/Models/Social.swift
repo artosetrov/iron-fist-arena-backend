@@ -59,7 +59,7 @@ struct FriendEntry: Codable, Identifiable {
     }
 
     var rankName: String {
-        PvPRank.fromRating(pvpRating).rawValue
+        PvPLadder.current.rank(for: pvpRating).label
     }
 }
 
@@ -85,7 +85,7 @@ struct FriendRequest: Codable, Identifiable {
     }
 
     var rankName: String {
-        PvPRank.fromRating(pvpRating).rawValue
+        PvPLadder.current.rank(for: pvpRating).label
     }
 
     // CodingKeys needed only for "class" → characterClass mapping.

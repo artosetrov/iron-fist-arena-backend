@@ -8,6 +8,13 @@ final class AchievementsViewModel {
     var achievements: [Achievement] = []
     var isLoading = false
     var errorMessage: String? = nil
+
+    /// True only when the last refresh failed AND there is nothing to show.
+    ///
+    /// A failed background refresh over warm cache must not replace a readable
+    /// list with a full-screen error — the stale list is more useful. The error
+    /// page is for the case where the screen would otherwise be blank.
+    var showsErrorState: Bool { errorMessage != nil && achievements.isEmpty }
     var selectedTab = 0
     static let tabs = ["PvP", "Progress", "Ranking"]
     static let tabCategories = ["pvp", "progression", "ranking"]
@@ -50,15 +57,19 @@ final class AchievementsViewModel {
     // MARK: - Load
 
     func loadAchievements() async {
+        errorMessage = nil
         if let cached = cache.cachedAchievements() {
             achievements = cached
             autoSelectBestTab() // H4 fix: auto-select tab with most unclaimed
         } else {
             isLoading = true
         }
-        let result = await service.loadAchievements()
-        achievements = result
-        cache.cacheAchievements(result)
+        let outcome = await service.loadAchievements()
+        outcome.apply(
+            assign: { self.achievements = $0 },
+            cache: { self.cache.cacheAchievements($0) },
+            setError: { self.errorMessage = $0 }
+        )
         isLoading = false
         autoSelectBestTab() // H4 fix: re-check after network load
     }

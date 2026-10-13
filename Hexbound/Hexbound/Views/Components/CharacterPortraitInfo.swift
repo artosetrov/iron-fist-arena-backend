@@ -67,7 +67,7 @@ struct CharacterPortraitRankInfo: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(rank.rawValue) rank, \(rating) rating")
+        .accessibilityLabel("\(rank.label) rank, \(rating) rating")
     }
 
     private var rankPill: some View {
@@ -75,7 +75,7 @@ struct CharacterPortraitRankInfo: View {
             Image(systemName: rank.icon)
                 .font(DarkFantasyTheme.caption.weight(.semibold))
                 .foregroundStyle(rank.color)
-            Text(rank.rawValue)
+            Text(rank.label)
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(rank.color)
         }

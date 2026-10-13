@@ -33,16 +33,19 @@ final class AchievementService {
         self.appState = appState
     }
 
-    func loadAchievements() async -> [Achievement] {
-        guard let charId = appState.currentCharacter?.id else { return [] }
+    func loadAchievements() async -> LoadOutcome<[Achievement]> {
+        // No character yet (switching, or the screen raced hydration). Nothing
+        // is known — assigning and caching [] here would recreate the exact bug
+        // LoadOutcome exists to prevent.
+        guard let charId = appState.currentCharacter?.id else { return .skipped }
         do {
             let response: AchievementListResponse = try await APIClient.shared.get(
                 APIEndpoints.achievements,
                 params: ["character_id": charId]
             )
-            return response.achievements ?? response.data ?? []
+            return .loaded(response.achievements ?? response.data ?? [])
         } catch {
-            return []
+            return .failed(error)
         }
     }
 

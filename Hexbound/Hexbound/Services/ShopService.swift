@@ -89,21 +89,24 @@ final class ShopService {
 
     // MARK: - Get Items
 
-    func getItems() async -> [ShopItem] {
-        guard let charId = appState.currentCharacter?.id else { return [] }
+    func getItems() async -> LoadOutcome<[ShopItem]> {
+        // No character yet (switching, or the screen raced hydration). Nothing
+        // is known — assigning and caching [] here would recreate the exact bug
+        // LoadOutcome exists to prevent.
+        guard let charId = appState.currentCharacter?.id else { return .skipped }
         do {
             let response: ShopItemsResponse = try await APIClient.shared.get(
                 APIEndpoints.shopItems,
                 params: ["character_id": charId]
             )
-            return response.items ?? response.shopItems ?? []
+            return .loaded(response.items ?? response.shopItems ?? [])
         } catch {
             appState.showToast("Failed to load shop", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                 Task { @MainActor in
                     _ = await self?.getItems()
                 }
             }
-            return []
+            return .failed(error)
         }
     }
 

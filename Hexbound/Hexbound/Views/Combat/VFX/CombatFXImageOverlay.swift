@@ -7,7 +7,7 @@ import SwiftUI
 // Layer order (bottom → top):
 //   1. Background (bgAbyss)
 //   2. Main UI (fighters, HP, log)
-//   3. ★ THIS LAYER — PNG FX images
+//   3. ★ THIS LAYER — PNG FX plates + code-drawn text callouts
 //   4. Canvas VFX particles (CombatVFXOverlay)
 //   5. Damage popups
 //   6. Crit flash / Victory tint
@@ -38,32 +38,39 @@ final class CombatFXImageManager {
             activeFX.removeFirst()
         }
 
-        // Main FX
-        let mainFX = ActiveImageFX(
-            asset: descriptor.asset,
-            mode: descriptor.mode,
-            normalizedPosition: positionForMode(descriptor.mode, defenderPos: defenderPos, attackerPos: attackerPos),
-            duration: durationForMode(descriptor.mode) * speed,
-            rotation: Double.random(in: -8...8)
-        )
-        activeFX.append(mainFX)
-        scheduleRemoval(id: mainFX.id, after: durationForMode(descriptor.mode) * speed + 0.05)
+        let hasPlate = descriptor.asset != nil
 
-        // Crit overlay (fullscreen text on top of damage FX)
-        if let critAsset = descriptor.critOverlay {
-            let critFX = ActiveImageFX(
-                asset: critAsset,
+        // Main FX plate (PNG)
+        if let asset = descriptor.asset {
+            let mainFX = ActiveImageFX(
+                asset: asset,
+                callout: nil,
+                mode: descriptor.mode,
+                normalizedPosition: positionForMode(descriptor.mode, defenderPos: defenderPos, attackerPos: attackerPos),
+                duration: durationForMode(descriptor.mode) * speed,
+                rotation: Double.random(in: -8...8)
+            )
+            activeFX.append(mainFX)
+            scheduleRemoval(id: mainFX.id, after: durationForMode(descriptor.mode) * speed + 0.05)
+        }
+
+        // Code-drawn callout (fullscreen text: DODGE / MISS / CRIT)
+        if let callout = descriptor.callout {
+            let calloutFX = ActiveImageFX(
+                asset: nil,
+                callout: callout,
                 mode: .fullscreen,
                 normalizedPosition: CGPoint(x: 0.5, y: 0.38),
                 duration: 0.6 * speed,
                 rotation: 0
             )
-            // Slight delay so crit text appears just after hit
+            // Riding on a plate: land just after the hit. Alone: show at once.
+            let delay = hasPlate ? 0.08 * speed : 0
             Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.08 * speed))
+                if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
                 if activeFX.count >= maxConcurrent { activeFX.removeFirst() }
-                activeFX.append(critFX)
-                scheduleRemoval(id: critFX.id, after: 0.6 * speed + 0.05)
+                activeFX.append(calloutFX)
+                scheduleRemoval(id: calloutFX.id, after: 0.6 * speed + 0.05)
             }
         }
     }
@@ -110,7 +117,9 @@ final class CombatFXImageManager {
 
 struct ActiveImageFX: Identifiable {
     let id = UUID()
-    let asset: String
+    /// PNG plate name, or `nil` for a code-drawn callout.
+    let asset: String?
+    let callout: CombatFXCallout?
     let mode: CombatFXMode
     let normalizedPosition: CGPoint
     let duration: Double
@@ -155,12 +164,10 @@ private struct FXImageAnimator: View {
     }
 
     var body: some View {
-        Image(fx.asset)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: fxSize, height: fxSize)
+        content
             .opacity(opacity)
-            .scaleEffect(scale)
+            // Project motion rule: text callouts fade only, no scale-grow.
+            .scaleEffect(fx.callout == nil ? scale : 1)
             .rotationEffect(.degrees(rotationAngle))
             .position(
                 x: fx.normalizedPosition.x * containerSize.width,
@@ -175,9 +182,22 @@ private struct FXImageAnimator: View {
             }
     }
 
+    @ViewBuilder
+    private var content: some View {
+        if let callout = fx.callout {
+            CombatCalloutText(callout: callout)
+        } else if let asset = fx.asset {
+            Image(asset)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: fxSize, height: fxSize)
+        }
+    }
+
     private var fxShadowColor: Color {
+        if let callout = fx.callout { return callout.color }
         // Tint shadow based on asset name for extra glow
-        let name = fx.asset.lowercased()
+        let name = (fx.asset ?? "").lowercased()
         if name.contains("physical") || name.contains("crit") {
             return DarkFantasyTheme.gold
         } else if name.contains("magical") {
@@ -222,5 +242,27 @@ private struct FXImageAnimator: View {
                 scale = 1.08
             }
         }
+    }
+}
+
+// MARK: - Combat Callout Text (code-drawn DODGE / MISS / CRIT)
+// Design-system typography instead of a baked-text PNG: localizable, crisp on 3x,
+// tinted with theme tokens. Sized for the worst-case localized string.
+
+struct CombatCalloutText: View {
+    let callout: CombatFXCallout
+
+    var body: some View {
+        Text(callout.text)
+            .font(callout == .crit ? DarkFantasyTheme.combatCalloutLarge : DarkFantasyTheme.combatCallout)
+            .tracking(callout == .crit ? 8 : 6)
+            .foregroundStyle(callout.color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: 320)
+            // Ink edge: a hard offset shadow reads as the lineart outline, then a soft halo for separation.
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.95), radius: 0, x: 0, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 6)
+            .accessibilityLabel(callout.text)
     }
 }

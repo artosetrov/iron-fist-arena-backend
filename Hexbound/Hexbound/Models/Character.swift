@@ -92,7 +92,7 @@ struct Character: Codable, Identifiable {
 
     // Computed
     var rankName: String {
-        PvPRank.fromRating(pvpRating).rawValue
+        PvPLadder.current.rank(for: pvpRating).label
     }
 
     /// Character age in days since creation (from createdAt ISO string)

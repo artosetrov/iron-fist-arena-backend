@@ -376,7 +376,7 @@ struct SettingsDetailView: View {
     }
 
     private var versionLabel: some View {
-        Text("Hexbound v1.0.0")
+        Text("Hexbound v\(AppConstants.appVersion) (\(AppConstants.buildNumber))")
             .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textTertiary)
             .frame(maxWidth: .infinity)

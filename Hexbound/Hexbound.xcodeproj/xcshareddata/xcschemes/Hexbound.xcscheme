@@ -50,18 +50,6 @@
             ReferencedContainer = "container:Hexbound.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "DEV_EMAIL"
-            value = "osetrov.artem@gmail.com"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-         <EnvironmentVariable
-            key = "DEV_PASSWORD"
-            value = "Degon1986"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <StoreKitConfigurationFileReference
          identifier = "../../Hexbound/Resources/HexboundProducts.storekit">
       </StoreKitConfigurationFileReference>

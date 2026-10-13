@@ -634,18 +634,17 @@ struct HubView: View {
 
     private func prefetchShop() async {
         let shopService = ShopService(appState: appState)
-        let items = await shopService.getItems()
-        if !items.isEmpty {
-            await MainActor.run { cache.cacheShop(items) }
-        }
+        guard let items = await shopService.getItems().value, !items.isEmpty else { return }
+        await MainActor.run { cache.cacheShop(items) }
     }
 
     private func prefetchAchievements() async {
         let achievementService = AchievementService(appState: appState)
-        let achievements = await achievementService.loadAchievements()
-        if !achievements.isEmpty {
-            await MainActor.run { cache.cacheAchievements(achievements) }
-        }
+        // Prefetch only caches a real success — a failed prefetch must never
+        // overwrite a good cache with an empty list.
+        guard let achievements = await achievementService.loadAchievements().value,
+              !achievements.isEmpty else { return }
+        await MainActor.run { cache.cacheAchievements(achievements) }
     }
 
     private func prefetchDungeons() async {

@@ -11,20 +11,33 @@ struct CurrencyPurchaseView: View {
     @State private var showSuccessOverlay = false
     @State private var successMessage = "Currency has been added to your account."
 
-    private let tabs = ["GOLD", "GEMS", "SPECIAL"]
+    private let tabs = ["BUNDLES", "GEMS", "SPECIAL"]
 
-    // Gold packages
-    private let goldPackages: [CurrencyPackage] = [
-        .init(id: "gold_500", currencyType: .gold, amount: 500, bonusAmount: 0,
-              priceUSD: "$0.99", productId: "com.hexbound.gold500", isBestValue: false, isPopular: false),
-        .init(id: "gold_1200", currencyType: .gold, amount: 1000, bonusAmount: 200,
-              priceUSD: "$1.99", productId: "com.hexbound.gold1200", isBestValue: false, isPopular: true),
-        .init(id: "gold_3500", currencyType: .gold, amount: 3000, bonusAmount: 500,
-              priceUSD: "$4.99", productId: "com.hexbound.gold3500", isBestValue: true, isPopular: false),
-        .init(id: "gold_8000", currencyType: .gold, amount: 7000, bonusAmount: 1000,
-              priceUSD: "$9.99", productId: "com.hexbound.gold8000", isBestValue: false, isPopular: false),
-        .init(id: "gold_20000", currencyType: .gold, amount: 17000, bonusAmount: 3000,
-              priceUSD: "$19.99", productId: "com.hexbound.gold20000", isBestValue: false, isPopular: false),
+    // Adventurer's Bundles (Economy v3). The old flat gold packs
+    // (gold_500 … gold_20000) are retired: the backend returns 410 for them,
+    // so listing them charged the player and delivered nothing.
+    // Contents mirror IAP_PRODUCTS in backend/src/lib/game/balance.ts.
+    private let bundlePackages: [CurrencyPackage] = [
+        .init(id: "starter_bundle", currencyType: .gold, amount: 3000, bonusAmount: 0,
+              priceUSD: "$2.99", productId: IAPProduct.starterBundle.rawValue,
+              isBestValue: false, isPopular: true,
+              subtitle: "+200 gems · one-time starter",
+              successSummary: "3,000 gold and 200 gems"),
+        .init(id: "adventurer_bundle_I", currencyType: .gold, amount: 3000, bonusAmount: 0,
+              priceUSD: "$4.99", productId: IAPProduct.adventurerBundleI.rawValue,
+              isBestValue: false, isPopular: false,
+              subtitle: "+600 gems · 1 Protection Scroll",
+              successSummary: "3,000 gold, 600 gems and 1 Protection Scroll"),
+        .init(id: "adventurer_bundle_II", currencyType: .gold, amount: 10000, bonusAmount: 0,
+              priceUSD: "$9.99", productId: IAPProduct.adventurerBundleII.rawValue,
+              isBestValue: true, isPopular: false,
+              subtitle: "+1400 gems · 3 Protection Scrolls · 1 Legendary Shard",
+              successSummary: "10,000 gold, 1,400 gems, 3 Protection Scrolls and 1 Legendary Shard"),
+        .init(id: "adventurer_bundle_III", currencyType: .gold, amount: 20000, bonusAmount: 0,
+              priceUSD: "$19.99", productId: IAPProduct.adventurerBundleIII.rawValue,
+              isBestValue: false, isPopular: false,
+              subtitle: "+3200 gems · 5 Protection Scrolls · 5 Legendary Shards",
+              successSummary: "20,000 gold, 3,200 gems, 5 Protection Scrolls and 5 Legendary Shards"),
     ]
 
     // Gem packages — aligned with docs/02_product_and_features/ECONOMY.md
@@ -43,7 +56,7 @@ struct CurrencyPurchaseView: View {
 
     private var currentPackages: [CurrencyPackage] {
         switch selectedTab {
-        case 0: return goldPackages
+        case 0: return bundlePackages
         case 1: return gemPackages
         default: return []
         }
@@ -173,21 +186,22 @@ struct CurrencyPurchaseView: View {
 
     @ViewBuilder
     private var currencyHeader: some View {
-        let isGold = selectedTab == 0
+        // Tab 0 is no longer a gold store — it sells mixed bundles.
+        let isBundles = selectedTab == 0
         VStack(spacing: LayoutConstants.spaceSM) {
-            Image(isGold ? "icon-gold" : "icon-gems")
+            Image(isBundles ? "icon-gold" : "icon-gems")
                 .resizable()
                 .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                .accessibilityLabel(isGold ? "Gold currency icon" : "Gems currency icon")
+                .accessibilityLabel(isBundles ? "Gold currency icon" : "Gems currency icon")
                 .accessibilityElement(children: .ignore)
 
-            Text(isGold ? "GOLD TREASURY" : "GEM VAULT")
+            Text(isBundles ? "ADVENTURER'S BUNDLES" : "GEM VAULT")
                 .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(isGold ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan)
-                .accessibilityLabel("Currency vault: \(isGold ? "Gold Treasury" : "Gem Vault")")
+                .foregroundStyle(isBundles ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan)
+                .accessibilityLabel(isBundles ? "Adventurer's Bundles" : "Gem Vault")
 
-            Text(isGold
-                 ? "Gold fuels your journey — buy gear, potions, and upgrades."
+            Text(isBundles
+                 ? "Gold, gems and consumables together — the best value per purchase."
                  : "Gems unlock premium content — skins, boosts, and rare items.")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -268,18 +282,15 @@ struct CurrencyPurchaseView: View {
         guard purchaseState == .idle else { return }
 
         withAnimation { purchaseState = .purchasing(packageId: pkg.id) }
-        successMessage = "\(pkg.currencyType.label) has been added to your account."
+        successMessage = pkg.successSummary.map { "\($0) have been added to your account." }
+            ?? "\(pkg.currencyType.label) has been added to your account."
 
         Task {
             do {
-                let transaction = try await StoreKitService.shared.purchase(productId: pkg.productId)
-                // Verify with server & credit currency
-                let body = IAPVerifyRequest(
-                    productId: pkg.id,
-                    transactionId: String(transaction.id),
-                    receiptData: String(transaction.id)
-                )
-                let _: IAPVerifyResponse = try await APIClient.shared.post(APIEndpoints.iapVerify, body: body)
+                // StoreKitService redeems on the server before finishing the
+                // transaction, so reaching this line means the account was
+                // actually credited.
+                _ = try await StoreKitService.shared.purchase(productId: pkg.productId)
 
                 await MainActor.run {
                     withAnimation {
@@ -308,15 +319,9 @@ struct CurrencyPurchaseView: View {
 
         Task {
             do {
-                let transaction = try await StoreKitService.shared.purchase(
+                _ = try await StoreKitService.shared.purchase(
                     productId: IAPProduct.monthlyGemCard.rawValue
                 )
-                let body = IAPVerifyRequest(
-                    productId: "monthly_gem_card",
-                    transactionId: String(transaction.id),
-                    receiptData: String(transaction.id)
-                )
-                let _: IAPVerifyResponse = try await APIClient.shared.post(APIEndpoints.iapVerify, body: body)
 
                 await MainActor.run {
                     withAnimation {
@@ -339,8 +344,17 @@ struct CurrencyPurchaseView: View {
 
     private func restorePurchases() {
         Task {
-            await StoreKitService.shared.restorePurchases()
-            appState.showToast("Purchases restored!", type: .reward)
+            let result = await StoreKitService.shared.restorePurchases()
+            if result.hasUnresolved {
+                appState.showToast(
+                    "Some purchases could not be restored. Check your connection and try again.",
+                    type: .error
+                )
+            } else if result.recoveredPurchases > 0 {
+                appState.showToast("Purchases restored — your account has been credited.", type: .reward)
+            } else {
+                appState.showToast("Purchases restored!", type: .reward)
+            }
         }
     }
 
@@ -394,6 +408,12 @@ struct CurrencyPackageCard: View {
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                         .fontWeight(.semibold)
                         .accessibilityLabel("Bonus: \(formatBonus(package.bonusAmount)) \(package.currencyType.label)")
+                }
+                if let subtitle = package.subtitle {
+                    Text(subtitle)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -520,7 +540,7 @@ struct MonthlyGemCardOffer: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
                 } else {
-                    Text("GET FOR $4.99")
+                    Text("GET GEM CARD")
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
                 }
@@ -557,7 +577,7 @@ struct PremiumUnlockCard: View {
                     Text("UPGRADE TO PREMIUM")
                         .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
-                    Text("One-time purchase — unlock forever")
+                    Text("Auto-renewing monthly subscription — cancel anytime")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
@@ -567,7 +587,7 @@ struct PremiumUnlockCard: View {
             // Quick benefits preview
             HStack(spacing: LayoutConstants.spaceSM) {
                 PremiumBenefitChip(icon: "bolt.fill", text: "+20% XP")
-                PremiumBenefitChip(icon: "icon-gold", text: "+20% Gold", assetIcon: true)
+                PremiumBenefitChip(icon: "icon-gold", text: "+10% Gold", assetIcon: true)
                 PremiumBenefitChip(icon: "sparkles", text: "Exclusive")
             }
 

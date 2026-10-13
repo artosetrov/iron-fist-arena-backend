@@ -10,4 +10,7 @@ HEXBOUND_SUPABASE_ANON_KEY = __MISSING_SUPABASE_ANON_KEY__
 HEXBOUND_GOOGLE_CLIENT_ID = __MISSING_GOOGLE_CLIENT_ID__
 HEXBOUND_GOOGLE_REVERSED_CLIENT_ID = __MISSING_GOOGLE_REVERSED_CLIENT_ID__
 
+// Optional. Empty = crash reporting off; the app still launches normally.
+HEXBOUND_SENTRY_DSN =
+
 #include? "Local.secrets.xcconfig"

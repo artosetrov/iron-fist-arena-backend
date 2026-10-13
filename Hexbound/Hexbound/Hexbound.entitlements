@@ -6,5 +6,15 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<!--
+	  Push Notifications. Without this the app registers for remote
+	  notifications and APNs never returns a token, so /api/push/register is
+	  never called. Xcode rewrites "development" to "production" when exporting
+	  for the App Store, so this value is correct for both TestFlight and
+	  release builds. The Push Notifications capability must also be enabled on
+	  the App ID in the developer portal.
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

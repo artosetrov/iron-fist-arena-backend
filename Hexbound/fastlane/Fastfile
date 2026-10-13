@@ -93,27 +93,47 @@ platform :ios do
       output_name: "Hexbound.ipa",
       clean: true,
       include_symbols: true,
-      export_options: {
-        provisioningProfiles: {
-          "com.hexbound.app" => "Hexbound AppStore"
-        }
-      }
+      # Подпись автоматическая (CODE_SIGN_STYLE = Automatic в проекте).
+      # Ручной provisioningProfiles здесь конфликтовал с ней. Но автоматика
+      # сама НЕ создаст и не скачает недостающий профиль без этого флага —
+      # а после добавления aps-environment старый профиль заведомо устарел.
+      xcargs: "-allowProvisioningUpdates",
+      export_xcargs: "-allowProvisioningUpdates"
     )
 
     # 3. Загрузить на App Store Connect / TestFlight
+    #    Релиз-ноуты: CHANGELOG="..." fastlane beta, иначе — версия и билд.
+    current_version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
+    current_build = get_build_number(xcodeproj: "Hexbound.xcodeproj")
+
     upload_options = {
       skip_waiting_for_build_processing: true,
       notify_external_testers: false,
-      changelog: "Новый билд Hexbound 🎮"
+      changelog: (ENV["CHANGELOG"].to_s.strip.empty? ? "Hexbound #{current_version} (#{current_build})" : ENV["CHANGELOG"])
     }
     upload_options[:api_key] = auth[:api_key] if auth[:api_key]
     upload_to_testflight(**upload_options)
 
-    # 4. Уведомить об успехе
-    current_version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
-    current_build = get_build_number(xcodeproj: "Hexbound.xcodeproj")
+    # 4. Пометить коммит, из которого собран билд.
+    #    Без этого по номеру билда из App Store Connect невозможно
+    #    восстановить, какой код в нём лежит.
+    begin
+      # increment_build_number переписал project.pbxproj, но не закоммитил —
+      # без этого тег указывал бы на коммит с ПРЕДЫДУЩИМ номером билда.
+      commit_version_bump(
+        xcodeproj: "Hexbound.xcodeproj",
+        message: "chore(ios): build #{current_build}",
+        force: true
+      )
+      add_git_tag(tag: "ios/#{current_version}-#{current_build}")
+    rescue StandardError => e
+      UI.important("Не удалось закоммитить бамп версии / поставить тег: #{e.message}")
+    end
+
+    # 5. Уведомить об успехе
     auth_label = auth[:auth_mode] == :app_store_connect_api_key ? "ASC API key" : "Apple ID session"
     UI.success("✅ Hexbound #{current_version} (#{current_build}) загружен на TestFlight! Auth: #{auth_label}")
+    UI.message("Не забудьте запушить тег: git push origin ios/#{current_version}-#{current_build}")
   end
 
   # ──────────────────────────────────────────────
@@ -129,7 +149,9 @@ platform :ios do
       export_method: "app-store",
       output_directory: "./build",
       output_name: "Hexbound.ipa",
-      clean: true
+      clean: true,
+      xcargs: "-allowProvisioningUpdates",
+      export_xcargs: "-allowProvisioningUpdates"
     )
     UI.success("✅ Билд собран: ./build/Hexbound.ipa")
   end

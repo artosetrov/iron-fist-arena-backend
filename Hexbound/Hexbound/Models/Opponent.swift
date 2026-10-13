@@ -49,7 +49,7 @@ struct Opponent: Codable, Identifiable {
     }
 
     var rank: PvPRank {
-        PvPRank.fromRating(pvpRating)
+        PvPLadder.current.rank(for: pvpRating)
     }
 
     /// Computed attack power — mirrors Character.attackPower formula per class

@@ -445,6 +445,8 @@ enum DarkFantasyTheme {
 
     // Oswald — titles, hero names, cinematic text, section headers, button labels
     static let cinematicTitle = Font.custom("Oswald-Regular", size: 40)
+    static let combatCallout = Font.custom("Oswald-Regular", size: 48)      // DODGE / MISS combat callouts
+    static let combatCalloutLarge = Font.custom("Oswald-Regular", size: 56) // CRIT combat callout
     static let title = Font.custom("Oswald-Regular", size: 28)
     static let section = Font.custom("Oswald-Regular", size: 22)
     static let cardTitle = Font.custom("Oswald-Regular", size: 18)
@@ -547,15 +549,32 @@ enum DarkFantasyTheme {
         }
     }
 
-    static func rankColor(for rating: Int) -> Color {
-        switch rating {
-        case ..<1200: rankBronze
-        case 1200..<1500: rankSilver
-        case 1500..<1800: rankGold
-        case 1800..<2100: rankPlatinum
-        case 2100..<2400: rankDiamond
-        default: rankGrandmaster
+    /// Tier color by canonical tier key — the single mapping for the app.
+    ///
+    /// `TierBadge`, the arena rank pills and the rank-up ceremony all route
+    /// here. An unknown key (a tier the server added after this build shipped)
+    /// gets neutral styling rather than a wrong tier's color.
+    static func rankColor(forTierKey key: String) -> Color {
+        switch key {
+        case "bronze":      rankBronze
+        case "silver":      rankSilver
+        case "gold":        rankGold
+        case "platinum":    rankPlatinum
+        case "diamond":     rankDiamond
+        case "master":      rankMaster
+        case "grandmaster": rankGrandmaster
+        case "challenger":  rankChallenger
+        default:            textSecondary
         }
+    }
+
+    /// Tier color for a rating.
+    ///
+    /// The thresholds that used to live here (Bronze below 1200, Silver at
+    /// 1200…) were a third copy of the ladder, and disagreed with both the
+    /// server and `PvPRank`. Classification now happens in exactly one place.
+    static func rankColor(for rating: Int) -> Color {
+        rankColor(forTierKey: PvPLadder.current.rank(for: rating).key)
     }
 
     static func statColor(for stat: String) -> Color { statBarFill }
