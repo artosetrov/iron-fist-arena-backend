@@ -53,8 +53,8 @@ export async function PATCH(
 
     const updated = await prisma.$transaction(async (tx) => {
       // Lock user row for update (gold balance)
-      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
-        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number; gems: number }>>(
+        `SELECT id, gold, gems FROM users WHERE id = $1 FOR UPDATE`,
         user.id
       )
 
@@ -82,7 +82,7 @@ export async function PATCH(
           origin: newOrigin as CharacterOrigin,
           gender: newGender as CharacterGender,
         },
-        select: { skinKey: true },
+        select: { id: true, skinKey: true, isDefault: true, priceGold: true, priceGems: true },
         orderBy: { sortOrder: 'asc' },
       })
       const validKeys = availableSkins.map((s) => s.skinKey)
@@ -96,9 +96,32 @@ export async function PATCH(
         : validKeys[0] ?? newAvatar
 
       const originChanged = newOrigin !== charRow.origin
-      if (originChanged && userRow.gold < APPEARANCE_CHANGE_COST) {
-        throw new Error('NOT_ENOUGH_GOLD')
+      const avatarChanged = finalAvatar !== charRow.avatar
+
+      // Skin pricing + ownership. The editor shows priceGold/priceGems from
+      // the catalog, but the server never charged or checked them — every
+      // premium skin was free (AUDIT-2026-10-13 H5). A non-default skin must
+      // be owned (Cosmetic type=skin from Battle Pass / achievements, or a
+      // previous purchase here) or paid for now, under the user row lock.
+      let skinGoldCost = 0
+      let skinGemCost = 0
+      let purchasedSkinKey: string | null = null
+      const targetSkin = avatarChanged ? availableSkins.find((sk) => sk.skinKey === finalAvatar) : undefined
+      if (targetSkin && !targetSkin.isDefault && (targetSkin.priceGold > 0 || targetSkin.priceGems > 0)) {
+        const owned = await tx.cosmetic.findFirst({
+          where: { userId: user.id, type: 'skin', refId: { in: [targetSkin.skinKey, targetSkin.id] } },
+          select: { id: true },
+        })
+        if (!owned) {
+          skinGoldCost = targetSkin.priceGold
+          skinGemCost = targetSkin.priceGems
+          purchasedSkinKey = targetSkin.skinKey
+        }
       }
+
+      const totalGoldCost = (originChanged ? APPEARANCE_CHANGE_COST : 0) + skinGoldCost
+      if (userRow.gold < totalGoldCost) throw new Error('NOT_ENOUGH_GOLD')
+      if (userRow.gems < skinGemCost) throw new Error('NOT_ENOUGH_GEMS')
 
       // Recalculate stats only if origin changed
       const data: Record<string, unknown> = {
@@ -118,12 +141,6 @@ export async function PATCH(
 
         const maxHp = calculateMaxHp(newStats.vit, newStats.end)
 
-        // Deduct gold from user, not character
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { decrement: APPEARANCE_CHANGE_COST } },
-        })
-
         Object.assign(data, {
           str: newStats.str,
           agi: newStats.agi,
@@ -138,24 +155,44 @@ export async function PATCH(
         })
       }
 
+      // Charge once for everything (gold lives on users, not characters).
+      if (totalGoldCost > 0 || skinGemCost > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            ...(totalGoldCost > 0 ? { gold: { decrement: totalGoldCost } } : {}),
+            ...(skinGemCost > 0 ? { gems: { decrement: skinGemCost } } : {}),
+          },
+        })
+      }
+      if (purchasedSkinKey) {
+        await tx.cosmetic.create({
+          data: { userId: user.id, type: 'skin', refId: purchasedSkinKey },
+        })
+      }
+
       const character = await tx.character.update({ where: { id }, data })
-      const gold = originChanged ? userRow.gold - APPEARANCE_CHANGE_COST : userRow.gold
-      return { character, gold }
+      const gold = userRow.gold - totalGoldCost
+      const gems = userRow.gems - skinGemCost
+      return { character, gold, gems, purchasedSkinKey }
     })
 
     return NextResponse.json({
       // Compatibility alias: current clients still decode `character.gold`.
-      character: { ...updated.character, gold: updated.gold },
+      character: { ...updated.character, gold: updated.gold, gems: updated.gems },
       // Compatibility alias for older lightweight callers.
       gold: updated.gold,
+      gems: updated.gems,
       // Canonical wallet boundary for newer callers.
-      wallet: { gold: updated.gold },
+      wallet: { gold: updated.gold, gems: updated.gems },
+      purchasedSkin: updated.purchasedSkinKey,
     })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold (100 required to change origin)' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold for this change' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GEMS') return NextResponse.json({ error: 'Not enough gems for this skin' }, { status: 400 })
       if (error.message === 'INVALID_AVATAR') return NextResponse.json({ error: 'Avatar does not match selected gender' }, { status: 400 })
     }
     console.error('appearance change error:', error)
