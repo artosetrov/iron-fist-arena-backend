@@ -26,6 +26,7 @@ struct HeroDetailView: View {
     @State var inventoryVM: InventoryViewModel?
     @State var talentVM: PassiveTreeViewModel?
     @State var showRespecConfirm = false
+    @State var showPrestigeConfirm = false
     @State var tooltipStat: StatType?
     @State var heroHint: NPCHint?
 

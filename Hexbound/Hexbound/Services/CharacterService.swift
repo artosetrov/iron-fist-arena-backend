@@ -151,6 +151,44 @@ final class CharacterService {
         }
     }
 
+    // MARK: - Prestige
+
+    struct PrestigeResult {
+        let prestigeLevel: Int
+        let statBonusPercent: Double
+        let message: String
+    }
+
+    /// POST /api/prestige — level → 1, XP → 0, talents wiped, +prestige.
+    /// Server validates max level (400 otherwise). Reloads the character.
+    /// Until AUDIT-2026-10-13 H12 the endpoint existed but no screen called it.
+    func prestige() async -> PrestigeResult? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
+        do {
+            let response: PrestigeResponse = try await APIClient.shared.post(
+                APIEndpoints.prestige,
+                body: CharacterIdBody(characterId: charId)
+            )
+            await loadCharacter()
+            appState.invalidateCache("quests")
+            return PrestigeResult(
+                prestigeLevel: response.prestigeLevel,
+                statBonusPercent: response.statBonusPercent,
+                message: response.message
+            )
+        } catch let error as APIError {
+            if case .clientError(_, let message, _) = error {
+                appState.showToast(message, type: .error)
+            } else {
+                appState.showToast("Prestige failed", subtitle: "Check connection and try again", type: .error)
+            }
+            return nil
+        } catch {
+            appState.showToast("Prestige failed", subtitle: "Check connection and try again", type: .error)
+            return nil
+        }
+    }
+
     // MARK: - Set Stance
 
     func setStance(attack: String, defense: String) async -> Bool {
@@ -192,6 +230,13 @@ private struct BuyStatPointsResponse: Decodable {
 
 private struct CharacterIdBody: Encodable {
     let characterId: String
+}
+
+private struct PrestigeResponse: Decodable {
+    let success: Bool
+    let prestigeLevel: Int
+    let statBonusPercent: Double
+    let message: String
 }
 
 /// `/api/stamina/refill` response. Backend sends snake_case; APIClient's

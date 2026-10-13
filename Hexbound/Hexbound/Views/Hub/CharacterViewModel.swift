@@ -9,6 +9,7 @@ final class CharacterViewModel {
     var pendingChanges: [StatType: Int] = [:]
     var isSaving = false
     var isRespeccing = false
+    var isPrestiging = false
     var errorMessage: String?
 
     var hasChanges: Bool {
@@ -135,6 +136,23 @@ final class CharacterViewModel {
         case .charisma:
             return ["+\(fmt(n))% Gold"]
         }
+    }
+
+    /// Prestige: server-authoritative, no optimistic update (level reset +
+    /// talent wipe is too wide to fake). Ceremony: rankUp haptic + toast.
+    func prestige() async {
+        guard !isPrestiging else { return }
+        isPrestiging = true
+        defer { isPrestiging = false }
+        pendingChanges.removeAll()
+        guard let result = await service.prestige() else { return }
+        HapticManager.rankUp()
+        SFXManager.shared.play(.uiSuccess)
+        appState.showToast(
+            "Prestige \(result.prestigeLevel)!",
+            subtitle: "+\(Int(result.statBonusPercent.rounded()))% all stats · level reset to 1, gear kept",
+            type: .rankUp
+        )
     }
 
     func respecStats() {

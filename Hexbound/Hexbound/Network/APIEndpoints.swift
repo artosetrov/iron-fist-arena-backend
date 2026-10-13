@@ -27,6 +27,7 @@ enum APIEndpoints {
     // MARK: - Combat
     static let combatStatus = "/api/combat/status"
     static let staminaRefill = "/api/stamina/refill"
+    static let prestige = "/api/prestige"
 
     // MARK: - PvP
     static let pvpFight = "/api/pvp/fight"

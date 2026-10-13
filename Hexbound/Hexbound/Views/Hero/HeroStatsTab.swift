@@ -70,6 +70,9 @@ extension HeroDetailView {
             // Extra bottom padding — always reserve when stat points exist to prevent scroll jump
             .padding(.bottom, (appState.currentCharacter?.statPoints ?? 0) > 0 ? 80 : 0)
 
+            // Prestige — only at max level (endgame exit; AUDIT-2026-10-13 H12)
+            prestigeCard(vm: vm)
+
             // Respec Stats — directly after stat list
             respecStatsCard(vm: vm)
 
@@ -444,6 +447,100 @@ extension HeroDetailView {
         )
         .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+    }
+
+    // MARK: - Prestige Card
+
+    /// Shown only when the character sits at the level cap. Everything else
+    /// about prestige (eligibility, reset, bonus) is server-authoritative.
+    @ViewBuilder
+    func prestigeCard(vm: CharacterViewModel) -> some View {
+        let maxLevel = cache.gameConfig?.maxLevel ?? 50
+        let level = appState.currentCharacter?.level ?? 0
+        let currentPrestige = appState.currentCharacter?.prestige ?? 0
+
+        if level >= maxLevel {
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Text("PRESTIGE")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if showPrestigeConfirm {
+                    VStack(spacing: LayoutConstants.spaceSM) {
+                        Text("Reach Prestige \(currentPrestige + 1)? Level resets to 1 and talents are cleared. You keep gear, gold and gems, and gain a permanent all-stats bonus.")
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .multilineTextAlignment(.center)
+
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            Button("CANCEL") {
+                                showPrestigeConfirm = false
+                            }
+                            .buttonStyle(.ghost)
+
+                            Button {
+                                showPrestigeConfirm = false
+                                Task { await vm.prestige() }
+                            } label: {
+                                if vm.isPrestiging {
+                                    HexPulseLoader.onGold()
+                                } else {
+                                    Text("ASCEND")
+                                        .font(DarkFantasyTheme.body)
+                                }
+                            }
+                            .buttonStyle(.primary)
+                            .disabled(vm.isPrestiging)
+                        }
+                    }
+                } else {
+                    Button {
+                        HapticManager.light()
+                        showPrestigeConfirm = true
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image("icon-pvp-rating")
+                                .resizable()
+                                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                                Text(currentPrestige > 0 ? "PRESTIGE \(currentPrestige + 1)" : "PRESTIGE")
+                                    .font(DarkFantasyTheme.body)
+                                Text("Max level reached — ascend for a permanent stat bonus")
+                                    .font(DarkFantasyTheme.caption)
+                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(DarkFantasyTheme.body.bold())
+                                .foregroundStyle(DarkFantasyTheme.gold)
+                        }
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .padding(LayoutConstants.cardPadding)
+                        .background(
+                            RadialGlowBackground(
+                                baseColor: DarkFantasyTheme.bgSecondary,
+                                glowColor: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMedium),
+                                glowIntensity: 0.5,
+                                cornerRadius: LayoutConstants.panelRadius
+                            )
+                        )
+                        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+                        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                                .stroke(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                        )
+                        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), length: 12, thickness: 1.5)
+                        .compositingGroup()
+                        .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMedium), radius: 6, y: 0)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+                    }
+                    .buttonStyle(.scalePress(0.95))
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
     }
 
     // MARK: - Respec Stats Card
