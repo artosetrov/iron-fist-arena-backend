@@ -44,6 +44,8 @@ vi.mock('@/lib/game/stamina', () => ({
 vi.mock('@/lib/game/live-config', () => ({
   getStaminaConfig: mockGetStaminaConfig,
   getGemCostsConfig: mockGetGemCostsConfig,
+  // Live DR config (AUDIT-2026-10-13 H7) — defaults mirror balance.ts.
+  getStaminaRefillDRConfig: vi.fn(async () => ({ DAILY_CAP: 4, COST_MULTIPLIERS: [1, 1.6, 2.8, 4.8] })),
 }))
 
 import { POST } from '@/app/api/stamina/refill/route'

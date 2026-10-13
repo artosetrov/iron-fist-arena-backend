@@ -3,8 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { getStaminaConfig, getGemCostsConfig } from '@/lib/game/live-config'
-import { staminaRefillGemCost, STAMINA_REFILL_DR } from '@/lib/game/balance'
+import { getStaminaConfig, getGemCostsConfig, getStaminaRefillDRConfig } from '@/lib/game/live-config'
+import { staminaRefillGemCost } from '@/lib/game/balance'
 import { currentDailyValue } from '@/lib/game/daily-counter'
 
 /**
@@ -19,6 +19,10 @@ export async function POST(req: NextRequest) {
   if (!(await rateLimit(`stamina-refill:${user.id}`, 5, 10_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
+
+  // Live: admin stamina_refill_dr.* (was a phantom key before AUDIT-2026-10-13 H7).
+  // Resolved outside try so the cap is available to the 429 response below.
+  const STAMINA_REFILL_DR = await getStaminaRefillDRConfig()
 
   try {
     const [STAMINA, GEM_COSTS] = await Promise.all([
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
         now,
       )
 
-      const dynamicCost = staminaRefillGemCost(BASE_GEMS_PER_REFILL, refillsUsedToday)
+      const dynamicCost = staminaRefillGemCost(BASE_GEMS_PER_REFILL, refillsUsedToday, STAMINA_REFILL_DR)
       if (dynamicCost === null) throw new Error('REFILL_CAP_REACHED')
       if (!userRecord || userRecord.gems < dynamicCost) throw new Error('NOT_ENOUGH_GEMS')
 

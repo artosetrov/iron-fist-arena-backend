@@ -9,6 +9,7 @@ import {
   getXpRewardsConfig,
   getFirstWinBonusConfig,
   getBattlePassConfig,
+  getTrainingXpDRConfig,
 } from '@/lib/game/live-config'
 import {
   chaGoldBonus,
@@ -315,7 +316,7 @@ export async function POST(req: NextRequest) {
         new Date(),
       )
       dungeonClearsAfter = clearsUsedToday + 1
-      dungeonXpMultiplier = trainingXpMultiplier(clearsUsedToday)
+      dungeonXpMultiplier = trainingXpMultiplier(clearsUsedToday, await getTrainingXpDRConfig())
 
       const baseGold = dungeonFloorGoldReward(currentFloor, dungeonRun.difficulty)
       rawXpReward = dungeonFloorXpReward(currentFloor, dungeonRun.difficulty)

@@ -76,11 +76,14 @@ export const TRAINING_XP_DR = {
  *
  * @param clearsToday Number of dungeon clears already counted today (pre-increment).
  */
-export function trainingXpMultiplier(clearsToday: number): number {
+export function trainingXpMultiplier(
+  clearsToday: number,
+  cfg: { FULL_XP_CLEARS: number; HALF_XP_CLEARS: number; FLOOR_MULTIPLIER: number } = TRAINING_XP_DR,
+): number {
   if (clearsToday < 0) return 1;
-  if (clearsToday < TRAINING_XP_DR.FULL_XP_CLEARS) return 1;
-  if (clearsToday < TRAINING_XP_DR.FULL_XP_CLEARS + TRAINING_XP_DR.HALF_XP_CLEARS) return 0.5;
-  return TRAINING_XP_DR.FLOOR_MULTIPLIER;
+  if (clearsToday < cfg.FULL_XP_CLEARS) return 1;
+  if (clearsToday < cfg.FULL_XP_CLEARS + cfg.HALF_XP_CLEARS) return 0.5;
+  return cfg.FLOOR_MULTIPLIER;
 }
 
 /**
@@ -90,13 +93,23 @@ export function trainingXpMultiplier(clearsToday: number): number {
  * @param baseCost       The base gem cost from GEM_COSTS.STAMINA_REFILL.
  * @param refillsToday   Number of refills already used today (pre-increment).
  */
-export function staminaRefillGemCost(baseCost: number, refillsToday: number): number | null {
+export function staminaRefillGemCost(
+  baseCost: number,
+  refillsToday: number,
+  cfg: { DAILY_CAP: number; COST_MULTIPLIERS: readonly number[] } = STAMINA_REFILL_DR,
+): number | null {
   if (refillsToday < 0) refillsToday = 0;
-  if (refillsToday >= STAMINA_REFILL_DR.DAILY_CAP) return null;
-  const mult = STAMINA_REFILL_DR.COST_MULTIPLIERS[refillsToday]
-    ?? STAMINA_REFILL_DR.COST_MULTIPLIERS[STAMINA_REFILL_DR.COST_MULTIPLIERS.length - 1];
+  if (refillsToday >= cfg.DAILY_CAP) return null;
+  const mults = cfg.COST_MULTIPLIERS.length > 0 ? cfg.COST_MULTIPLIERS : STAMINA_REFILL_DR.COST_MULTIPLIERS;
+  const mult = mults[refillsToday] ?? mults[mults.length - 1];
   return Math.ceil(baseCost * mult);
 }
+
+// --- Matchmaking (live-tunable via live-config `matchmaking.*`) ---
+export const MATCHMAKING = {
+  LEVEL_RANGE: 10,            // ± levels for opponent search
+  GEAR_SCORE_TOLERANCE: 0.8,  // ± fraction of the player's gear score
+} as const;
 
 // --- HP Regen ---
 export const HP_REGEN = {

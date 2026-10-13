@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { shouldFaceBots, generateBotOpponentCard, NPC_FIGHT_THRESHOLD } from '@/lib/game/npc-bots'
 import type { CharacterClassType } from '@/lib/game/combat'
 import { excludeOwnCharacters } from '@/lib/game/pvp-opponent'
+import { getMatchmakingConfig } from '@/lib/game/live-config'
 
-const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 5
 const MIN_OPPONENTS = 3 // sparse-pool floor — if fewer real candidates match, backfill with bots
-const GEAR_SCORE_TOLERANCE = 0.8 // ±80% gear score range
+// LEVEL_RANGE / GEAR_SCORE_TOLERANCE come from live-config `matchmaking.*`
+// (admin Game Balance → Matchmaking). Hardcoded until AUDIT-2026-10-13 H7.
 const RATING_RANGE = 200 // ±200 ELO for Phase 1 matchmaking
 
 export async function GET(req: NextRequest) {
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { LEVEL_RANGE, GEAR_SCORE_TOLERANCE } = await getMatchmakingConfig()
     const minLevel = Math.max(1, character.level - LEVEL_RANGE)
     const maxLevel = character.level + LEVEL_RANGE
 

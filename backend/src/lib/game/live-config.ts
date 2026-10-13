@@ -10,6 +10,7 @@ import {
   COMBAT, ELO, PRESTIGE, BATTLE_PASS, SKILLS, PASSIVES,
   GEM_COSTS, INVENTORY, EXTRA_PVP, DROP_CHANCES, RARITY_DISTRIBUTION,
   UPGRADE_CHANCES, WIN_STREAK_BONUSES, DAILY_LOGIN_REWARDS, PVP_RANKS,
+  STAMINA_REFILL_DR, TRAINING_XP_DR, MATCHMAKING,
   type DailyLoginRewardDef,
 } from './balance'
 
@@ -393,5 +394,47 @@ export async function getExtraPvpConfig() {
   })
   return {
     STAMINA_GRANTED: configs['extra_pvp.stamina_granted'] as number,
+  }
+}
+
+// --- Stamina refill diminishing returns (admin: stamina_refill_dr.*) ---
+export async function getStaminaRefillDRConfig() {
+  const configs = await getGameConfigs({
+    'stamina_refill_dr.daily_cap': STAMINA_REFILL_DR.DAILY_CAP,
+    'stamina_refill_dr.cost_multipliers': [...STAMINA_REFILL_DR.COST_MULTIPLIERS],
+  })
+  const rawMults = configs['stamina_refill_dr.cost_multipliers']
+  const mults = Array.isArray(rawMults)
+    ? rawMults.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+    : [...STAMINA_REFILL_DR.COST_MULTIPLIERS]
+  return {
+    DAILY_CAP: Math.max(0, Number(configs['stamina_refill_dr.daily_cap']) || STAMINA_REFILL_DR.DAILY_CAP),
+    COST_MULTIPLIERS: mults.length > 0 ? mults : [...STAMINA_REFILL_DR.COST_MULTIPLIERS],
+  }
+}
+
+// --- Training XP diminishing returns (admin: training_xp_dr.*) ---
+export async function getTrainingXpDRConfig() {
+  const configs = await getGameConfigs({
+    'training_xp_dr.full_xp_clears': TRAINING_XP_DR.FULL_XP_CLEARS,
+    'training_xp_dr.half_xp_clears': TRAINING_XP_DR.HALF_XP_CLEARS,
+    'training_xp_dr.floor_multiplier': TRAINING_XP_DR.FLOOR_MULTIPLIER,
+  })
+  return {
+    FULL_XP_CLEARS: configs['training_xp_dr.full_xp_clears'] as number,
+    HALF_XP_CLEARS: configs['training_xp_dr.half_xp_clears'] as number,
+    FLOOR_MULTIPLIER: configs['training_xp_dr.floor_multiplier'] as number,
+  }
+}
+
+// --- Matchmaking (admin: matchmaking.*) ---
+export async function getMatchmakingConfig() {
+  const configs = await getGameConfigs({
+    'matchmaking.level_range': MATCHMAKING.LEVEL_RANGE,
+    'matchmaking.gear_score_tolerance': MATCHMAKING.GEAR_SCORE_TOLERANCE,
+  })
+  return {
+    LEVEL_RANGE: configs['matchmaking.level_range'] as number,
+    GEAR_SCORE_TOLERANCE: configs['matchmaking.gear_score_tolerance'] as number,
   }
 }

@@ -174,7 +174,6 @@ const BALANCE_TABS: TabDef[] = [
         title: 'Charisma Economy Guardrails',
         description: 'Cap for the gold-bonus side of CHA after the combat rework',
         fields: [
-          { key: 'cha.gold_bonus_cap', label: 'Gold Bonus Cap', description: 'Maximum multiplier returned by the charisma gold bonus helper', defaultValue: 0.8, unit: 'x', step: 0.05, min: 0 },
         ],
       },
       {
@@ -182,8 +181,6 @@ const BALANCE_TABS: TabDef[] = [
         title: 'Repair Costs',
         description: 'Primary gold sink for damaged gear upkeep',
         fields: [
-          { key: 'repair.base_cost', label: 'Base Repair Cost', description: 'Base gold cost per item repair', defaultValue: 120, unit: 'gold', step: 10, min: 0 },
-          { key: 'repair.per_level', label: 'Repair Cost/Level', description: 'Additional gold cost per item level', defaultValue: 20, unit: 'gold', step: 5, min: 0 },
         ],
       },
       {
@@ -311,8 +308,8 @@ const BALANCE_TABS: TabDef[] = [
         title: 'Matchmaking',
         description: 'Opponent selection parameters',
         fields: [
-          { key: 'matchmaking.level_range', label: 'Level Range', description: 'Level range for opponent matching (\u00b1)', defaultValue: 3, unit: '\u00b1 lvl', step: 1, min: 1 },
-          { key: 'matchmaking.gear_score_tolerance', label: 'Gear Score Tolerance', description: 'Gear score tolerance range (0.3 = \u00b130%)', defaultValue: 0.3, unit: '\u00b1%', step: 0.05, min: 0, max: 1 },
+          { key: 'matchmaking.level_range', label: 'Level Range', description: 'Level range for opponent matching (\u00b1). Read live by /api/pvp/opponents', defaultValue: 10, unit: '\u00b1 lvl', step: 1, min: 1 },
+          { key: 'matchmaking.gear_score_tolerance', label: 'Gear Score Tolerance', description: 'Gear score tolerance range (0.8 = \u00b180%). Read live by /api/pvp/opponents', defaultValue: 0.8, unit: '\u00b1%', step: 0.05, min: 0, max: 1 },
         ],
       },
       {

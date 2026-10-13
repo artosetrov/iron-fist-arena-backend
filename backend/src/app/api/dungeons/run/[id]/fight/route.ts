@@ -9,8 +9,8 @@ import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { getBattlePassConfig } from '@/lib/game/live-config'
-import { chaGoldBonus, trainingXpMultiplier, TRAINING_XP_DR } from '@/lib/game/balance'
+import { getBattlePassConfig, getTrainingXpDRConfig } from '@/lib/game/live-config'
+import { chaGoldBonus, trainingXpMultiplier } from '@/lib/game/balance'
 import { currentDailyValue } from '@/lib/game/daily-counter'
 import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
@@ -185,7 +185,8 @@ export async function POST(
       character.dungeonClearsDate,
       now,
     )
-    const xpMultiplier = trainingXpMultiplier(clearsUsedToday)
+    const TRAINING_XP_DR = await getTrainingXpDRConfig() // live: admin training_xp_dr.*
+    const xpMultiplier = trainingXpMultiplier(clearsUsedToday, TRAINING_XP_DR)
 
     // W3.D5 — Premium Forever +10% gold applied LAST (after CHA) to avoid
     // compounding with the W3.D3 CHA cap (sink ratio protection).
