@@ -234,6 +234,14 @@ private struct DungeonStartRequest: Encodable {
     let difficulty: String
 }
 
+private struct DungeonAbandonRequest: Encodable {
+    let characterId: String
+}
+
+private struct DungeonAbandonResponse: Decodable {
+    let success: Bool
+}
+
 private struct DungeonFightRequest: Encodable {
     let characterId: String
     let runId: String
@@ -453,6 +461,29 @@ final class DungeonService {
 
     // MARK: - Start Dungeon
 
+    /// POST /api/dungeons/abandon — deletes the character's active structured
+    /// run (not Dungeon Rush; see `rushAbandon`). Returns true on success.
+    func abandon() async -> Bool {
+        guard let charId = appState.currentCharacter?.id else { return false }
+        do {
+            let response: DungeonAbandonResponse = try await APIClient.shared.post(
+                APIEndpoints.dungeonsAbandon,
+                body: DungeonAbandonRequest(characterId: charId)
+            )
+            return response.success
+        } catch let error as APIError {
+            if case .clientError(404, _, _) = error {
+                // Nothing to abandon — treat as success so the player can retry.
+                return true
+            }
+            appState.showToast("Couldn't abandon run", subtitle: "Check connection and try again", type: .error)
+            return false
+        } catch {
+            appState.showToast("Couldn't abandon run", subtitle: "Check connection and try again", type: .error)
+            return false
+        }
+    }
+
     func start(dungeonId: String, difficulty: String) async -> DungeonStartResponse? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
@@ -467,7 +498,22 @@ final class DungeonService {
         } catch let error as APIError {
             switch error {
             case .clientError(409, _, _):
-                appState.showToast("Active run exists — continue or abandon first", type: .error)
+                // Offer the exit right in the toast — before AUDIT-2026-10-13
+                // H10 nothing on iOS called /dungeons/abandon, so a stuck run
+                // locked every dungeon with no way out.
+                appState.showToast(
+                    "Active run exists",
+                    subtitle: "Continue it, or abandon to start fresh",
+                    type: .error,
+                    actionLabel: "Abandon"
+                ) { [weak self] in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        if await self.abandon() {
+                            self.appState.showToast("Run abandoned", subtitle: "Tap Fight to start a new one", type: .info)
+                        }
+                    }
+                }
             case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:

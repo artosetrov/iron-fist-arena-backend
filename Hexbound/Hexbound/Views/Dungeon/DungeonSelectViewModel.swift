@@ -106,13 +106,23 @@ final class DungeonSelectViewModel {
         // Process dungeon list
         if let serverDungeonList = await serverDungeons, !serverDungeonList.isEmpty {
                 // Merge: prefer server data, but keep rich client data for known dungeons
-                dungeons = serverDungeonList.map { serverDungeon in
+                var merged = serverDungeonList.map { serverDungeon in
                     // If we have a hardcoded version with richer data (loot, portraits), use it
                     if let local = DungeonInfo.fallback.first(where: { $0.id == serverDungeon.id }) {
                         return local
                     }
                     return serverDungeon
                 }
+                // The three starter dungeons (levels 1–29) live only in code —
+                // backend `DUNGEON_BOSSES` + this fallback — and are not in any
+                // DB seed. Replacing the list wholesale with the server's made a
+                // fresh DB show zero low-level dungeons (AUDIT-2026-10-13 H11).
+                let serverIds = Set(serverDungeonList.map(\.id))
+                let starters = DungeonInfo.fallback.filter { !serverIds.contains($0.id) }
+                if !starters.isEmpty {
+                    merged = (starters + merged).sorted { $0.minLevel < $1.minLevel }
+                }
+                dungeons = merged
                 cache.cacheDungeonList(dungeons)
         }
 

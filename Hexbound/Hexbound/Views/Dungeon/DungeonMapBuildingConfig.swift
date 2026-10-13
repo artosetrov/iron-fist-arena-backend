@@ -73,7 +73,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         id: "scorched_mines",
         imageName: "building-dungeon-scorched-mines",
         label: "Scorched Mines",
-        minLevel: 40,
+        minLevel: 35,
         relativeX: 0.52,
         relativeY: 0.60,
         relativeSize: 0.18,
@@ -85,7 +85,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         id: "frozen_abyss",
         imageName: "building-dungeon-frozen-abyss",
         label: "Frozen Abyss",
-        minLevel: 50,
+        minLevel: 40,
         relativeX: 0.62,
         relativeY: 0.30,
         relativeSize: 0.18,
@@ -97,7 +97,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         id: "realm_of_light",
         imageName: "building-dungeon-realm-of-light",
         label: "Realm of Light",
-        minLevel: 60,
+        minLevel: 45,
         relativeX: 0.72,
         relativeY: 0.55,
         relativeSize: 0.18,
@@ -106,10 +106,10 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         sortOrder: 6
     ),
     DungeonMapBuilding(
-        id: "shadow_depths",
+        id: "shadow_realm",   // DB slug (was "shadow_depths" — never matched a dungeon; AUDIT-2026-10-13 H11)
         imageName: "building-dungeon-shadow-depths",
-        label: "Shadow Depths",
-        minLevel: 70,
+        label: "Shadow Realm",
+        minLevel: 50,
         relativeX: 0.80,
         relativeY: 0.40,
         relativeSize: 0.18,
@@ -121,7 +121,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         id: "clockwork_citadel",
         imageName: "building-dungeon-clockwork-citadel",
         label: "Clockwork Citadel",
-        minLevel: 80,
+        minLevel: 55,
         relativeX: 0.88,
         relativeY: 0.60,
         relativeSize: 0.18,
@@ -133,7 +133,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         id: "infernal_throne",
         imageName: "building-dungeon-infernal-throne",
         label: "Infernal Throne",
-        minLevel: 90,
+        minLevel: 65,
         relativeX: 0.94,
         relativeY: 0.35,
         relativeSize: 0.20,
@@ -148,9 +148,19 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
 @MainActor
 func resolvedDungeonMapBuildings(from cache: GameDataCache) -> [DungeonMapBuilding] {
     let overrides = cache.dungeonMapLayout
-    guard !overrides.isEmpty else { return defaultDungeonMapBuildings }
 
-    return defaultDungeonMapBuildings.map { building in
+    // Hide buildings for dungeons the server no longer serves (is_active=false,
+    // e.g. the over-level-cap ones). Only when we actually have a server list —
+    // an empty/expired cache must not blank the map.
+    let active: Set<String>? = cache.cachedDungeonList().map { Set($0.map(\.id)) }
+    let visible = defaultDungeonMapBuildings.filter { b in
+        guard let active, !active.isEmpty else { return true }
+        return active.contains(b.id)
+    }
+
+    guard !overrides.isEmpty else { return visible }
+
+    return visible.map { building in
         var b = building
         if let o = overrides[building.id] {
             b.relativeX = o.x
