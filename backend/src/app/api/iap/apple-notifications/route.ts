@@ -29,6 +29,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { IAP_PRODUCTS } from '@/lib/game/balance'
 import {
   isSignedDataVerificationConfigured,
   signedDataVerifierError,
@@ -210,6 +211,34 @@ export async function POST(req: NextRequest) {
         where: { id: sub.id },
         data: updates,
       })
+    }
+
+    // Renewal gems. The Premium Pass is sold as "+300 gems per renewal"
+    // (IAP_PRODUCTS.premium_pass_monthly.subscription.monthlyGems); the first
+    // allotment is credited by /verify-receipt, every later one here.
+    // Idempotent against Apple retries: grant only when this renewal's
+    // transactionId was not yet recorded on the row (AUDIT-2026-10-13 H4).
+    if (notificationType === 'DID_RENEW' && sub.latestTransactionId !== tx.transactionId) {
+      const monthlyGems = IAP_PRODUCTS[sub.productId]?.subscription?.monthlyGems ?? 0
+      if (monthlyGems > 0) {
+        await prisma.$transaction(async (dbTx) => {
+          // Re-check under the row to beat a concurrent duplicate delivery.
+          const claimed = await dbTx.$executeRawUnsafe(
+            `UPDATE "premium_subscriptions"
+                SET "renewal_gems_tx_id" = $2
+              WHERE "id" = $1
+                AND ("renewal_gems_tx_id" IS NULL OR "renewal_gems_tx_id" <> $2)`,
+            sub.id,
+            tx.transactionId,
+          )
+          if (claimed === 1) {
+            await dbTx.user.update({
+              where: { id: sub.userId },
+              data: { gems: { increment: monthlyGems } },
+            })
+          }
+        })
+      }
     }
 
     return NextResponse.json({ ok: true })
