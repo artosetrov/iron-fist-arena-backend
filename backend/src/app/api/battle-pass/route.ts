@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getOrRolloverActiveSeason } from '@/lib/game/battle-pass'
 import { bpXpForLevel } from '@/lib/game/balance'
 import { formatRewardTypeName } from '@/lib/game/reward-display'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
@@ -48,14 +49,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Find active season
-    const now = new Date()
-    const activeSeason = await prisma.season.findFirst({
-      where: {
-        startAt: { lte: now },
-        endAt: { gte: now },
-      },
-    })
+    // Find active season — or roll a new one over (lazy, lock-protected).
+    const activeSeason = await getOrRolloverActiveSeason()
 
     if (!activeSeason) {
       return NextResponse.json({ error: 'No active season' }, { status: 404 })
