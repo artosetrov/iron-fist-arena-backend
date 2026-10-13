@@ -367,6 +367,11 @@ model Character {
   dungeonClearsDate   DateTime? @map("dungeon_clears_date")
   staminaRefillsToday Int       @default(0) @map("stamina_refills_today")
   staminaRefillsDate  DateTime? @map("stamina_refills_date")
+  // Stamina potions drunk today. Stamina is the only throttle on session
+  // length, and a large potion restores the whole bar — without a cap,
+  // contraband hands out enough potions for ~430 fights/day instead of ~21.
+  staminaPotionsToday Int       @default(0) @map("stamina_potions_today")
+  staminaPotionsDate  DateTime? @map("stamina_potions_date")
 
   // Loot Relevance v1 — gear-aware pity + shard fallback
   // Pity: trash_loot_streak bumps rarity at 5/10/15 consecutive irrelevant drops.
@@ -706,6 +711,12 @@ model GoldMineSession {
   @@index([characterId])
   @@index([characterId, collected])
   @@index([characterId, endsAt])
+  // NOTE: a partial UNIQUE index on (character_id, slot_index) WHERE
+  // collected = false also exists in the database. Prisma's schema language
+  // cannot express a partial index, so it is created in
+  // migrations/20260912_gold_mine_active_slot_unique. It is what actually
+  // prevents two concurrent /gold-mine/start calls from opening two sessions
+  // on one slot — do not drop it.
   @@map("gold_mine_sessions")
 }
 
