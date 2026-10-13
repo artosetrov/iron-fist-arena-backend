@@ -354,6 +354,24 @@ struct FortuneWheelDetailView: View {
                 }
             }
 
+            // Odds disclosure — App Store 3.1.1. Server-published, never hardcoded.
+            if !vm.odds.isEmpty {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("Odds")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    ForEach(vm.odds) { odd in
+                        Text("\(odd.displayLabel) \(odd.displayPercent)")
+                            .foregroundStyle(odd.multiplier == 0 ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textSecondary)
+                    }
+                }
+                .font(DarkFantasyTheme.body)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Odds: " + vm.odds.map { "\($0.displayLabel) \($0.displayPercent)" }.joined(separator: ", "))
+            }
+
             // Gold Divider before SPIN button (per Figma State=Wheel)
             GoldDivider()
 

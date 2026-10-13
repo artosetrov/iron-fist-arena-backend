@@ -53,6 +53,8 @@ final class FortuneWheelViewModel {
 
     // Daily limit
     var spinsRemaining: Int = 10
+    /// Published odds from /status; empty until loaded.
+    var odds: [FortuneWheelOdd] = []
     var spinsLimit: Int = 10
     var isLoading = true
 
@@ -150,6 +152,7 @@ final class FortuneWheelViewModel {
             )
             spinsRemaining = data.spinsRemaining
             spinsLimit = data.spinsLimit
+            odds = data.odds ?? []
         } catch {
             // Default to showing wheel, backend will enforce limits
         }

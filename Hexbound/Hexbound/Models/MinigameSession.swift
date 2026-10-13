@@ -269,6 +269,17 @@ struct FortuneWheelStatusResponse: Codable {
     let spinsLimit: Int
     let spinsRemaining: Int
     let gold: Int?
+    /// Server-published outcome probabilities (App Store 3.1.1 odds disclosure).
+    let odds: [FortuneWheelOdd]?
+}
+
+struct FortuneWheelOdd: Codable, Identifiable {
+    let label: String
+    let multiplier: Double
+    let percent: Double
+    var id: Double { multiplier }
+    var displayLabel: String { multiplier == 0 ? "Lose" : "×\(multiplier.formatted(.number.precision(.fractionLength(0...1))))" }
+    var displayPercent: String { "\(percent.formatted(.number.precision(.fractionLength(0...1))))%" }
 }
 
 struct FortuneWheelSpinRequest: Encodable {

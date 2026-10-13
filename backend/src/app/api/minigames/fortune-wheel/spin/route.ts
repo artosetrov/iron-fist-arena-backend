@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { WHEEL_SECTORS } from '@/lib/game/fortune-wheel'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
@@ -9,28 +10,7 @@ const MIN_BET = 50
 const MAX_BET = 1000
 const DAILY_SPIN_LIMIT = 10
 
-// Fortune Wheel sectors — server-authoritative
-// Each sector: { multiplier, weight }
-// Weighted random selection (not uniform — allows fine-tuning RTP)
-const WHEEL_SECTORS = [
-  { index: 0, multiplier: 0,   label: 'LOSE',  weight: 40 },  // 💀
-  { index: 1, multiplier: 1.5, label: 'x1.5',  weight: 25 },  // 🪙
-  { index: 2, multiplier: 0,   label: 'LOSE',  weight: 40 },  // 💀
-  { index: 3, multiplier: 2,   label: 'x2',    weight: 20 },  // 💰
-  { index: 4, multiplier: 0,   label: 'LOSE',  weight: 40 },  // 💀
-  { index: 5, multiplier: 1.5, label: 'x1.5',  weight: 25 },  // 🪙
-  { index: 6, multiplier: 0,   label: 'LOSE',  weight: 40 },  // 💀
-  { index: 7, multiplier: 3,   label: 'x3',    weight: 10 },  // 💎
-  { index: 8, multiplier: 0,   label: 'LOSE',  weight: 40 },  // 💀
-  { index: 9, multiplier: 1.5, label: 'x1.5',  weight: 25 },  // 🪙
-  { index: 10, multiplier: 0,  label: 'LOSE',  weight: 40 },  // 💀
-  { index: 11, multiplier: 5,  label: 'x5',    weight: 5  },  // 👑 JACKPOT
-]
-// RTP calculation:
-// Total weight = 40*6 + 25*3 + 20 + 10 + 5 = 240 + 75 + 20 + 10 + 5 = 350
-// EV = (75/350)*1.5 + (20/350)*2 + (10/350)*3 + (5/350)*5
-//    = 0.321 + 0.114 + 0.086 + 0.071 = 0.593 → 59.3% RTP
-// House edge ~40% — aggressive but typical for mobile game gold sink
+// Sector table lives in lib/game/fortune-wheel.ts (shared with /status for odds).
 
 function pickWinningSector(): number {
   const totalWeight = WHEEL_SECTORS.reduce((sum, s) => sum + s.weight, 0)

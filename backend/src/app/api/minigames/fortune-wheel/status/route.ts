@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { wheelOdds } from '@/lib/game/fortune-wheel'
 
 const DAILY_SPIN_LIMIT = 10
 
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest) {
       spins_limit: DAILY_SPIN_LIMIT,
       spins_remaining: Math.max(0, DAILY_SPIN_LIMIT - spinsToday),
       gold: dbUser?.gold ?? 0,
+      // Odds disclosure (App Store 3.1.1) — shown under the wager buttons.
+      odds: wheelOdds(),
     })
   } catch (error) {
     console.error('fortune-wheel status error:', error)
