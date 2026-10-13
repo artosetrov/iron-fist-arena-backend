@@ -523,7 +523,9 @@ class GuildHallViewModel {
         // still authoritative, but this avoids the spinner → error round-trip.
         let staminaCost = AppConstants.pvpStaminaCost
         if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
-            return "Not enough stamina — wait for regen or use a potion"
+            // Toast with a Refill action instead of a dead-end error string.
+            CharacterService.showOutOfStamina(appState: appState, refillGemCost: nil)
+            return nil
         }
         processingChallengeId = challenge.id
         defer { processingChallengeId = nil }

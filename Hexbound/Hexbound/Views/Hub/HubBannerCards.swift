@@ -268,7 +268,7 @@ struct BattleInviteBanner: View {
         // Client-side stamina pre-check
         let staminaCost = cache.gameConfig?.pvpStaminaCost ?? AppConstants.pvpStaminaCost
         if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
-            appState.showToast("Not enough stamina", subtitle: "Wait for regen or use a potion", type: .error)
+            CharacterService.showOutOfStamina(appState: appState, refillGemCost: cache.gameConfig?.staminaRefillGems)
             return
         }
 

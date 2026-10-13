@@ -25,9 +25,8 @@ enum APIEndpoints {
     static func changeAppearance(_ id: String) -> String { "/api/characters/\(id)/appearance" }
 
     // MARK: - Combat
-    static let combatSimulate = "/api/combat/simulate"
     static let combatStatus = "/api/combat/status"
-    static let combatBuyExtra = "/api/combat/buy-extra"
+    static let staminaRefill = "/api/stamina/refill"
 
     // MARK: - PvP
     static let pvpFight = "/api/pvp/fight"
@@ -85,6 +84,7 @@ enum APIEndpoints {
     static let dungeonsList = "/api/dungeons/list"
     static let dungeonsStart = "/api/dungeons/start"
     static let dungeonsFight = "/api/dungeons/fight"
+    static let dungeonsAbandon = "/api/dungeons/abandon"
 
     // MARK: - Push Notifications
     static let pushRegister = "/api/push/register"

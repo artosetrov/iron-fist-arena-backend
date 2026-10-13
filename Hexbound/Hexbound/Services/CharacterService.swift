@@ -93,6 +93,64 @@ final class CharacterService {
         }
     }
 
+    // MARK: - Stamina Refill (gems)
+
+    /// POST /api/stamina/refill — full refill for gems with diminishing
+    /// daily cost. Server is authoritative; this only mirrors the response.
+    /// Until AUDIT-2026-10-13 H9 the route existed but nothing on iOS called
+    /// it, so an empty bar was a dead end ("No dead ends" rule).
+    @discardableResult
+    func refillStamina() async -> Bool {
+        guard let charId = appState.currentCharacter?.id else { return false }
+        do {
+            let response: StaminaRefillResponse = try await APIClient.shared.post(
+                APIEndpoints.staminaRefill,
+                body: CharacterIdBody(characterId: charId)
+            )
+            if var char = appState.currentCharacter {
+                char.currentStamina = response.stamina.after
+                char.gems = response.gemsRemaining
+                appState.currentCharacter = char
+            }
+            HapticManager.success()
+            SFXManager.shared.play(.uiSuccess)
+            let left = max(0, response.dailyCap - response.refillIndex)
+            appState.showToast(
+                "Stamina refilled!",
+                subtitle: "-\(response.gemsSpent) gems · \(left) refill\(left == 1 ? "" : "s") left today",
+                type: .reward
+            )
+            return true
+        } catch let error as APIError {
+            if case .clientError(_, let message, _) = error {
+                appState.showToast(message, type: .error)
+            } else {
+                appState.showToast("Refill failed", subtitle: "Check connection and try again", type: .error)
+            }
+            return false
+        } catch {
+            appState.showToast("Refill failed", subtitle: "Check connection and try again", type: .error)
+            return false
+        }
+    }
+
+    /// Shared "out of stamina" toast with a Refill action. Call sites that
+    /// pre-check stamina (Arena, Hub banner, Guild Hall duels) use this so the
+    /// player always has a next step.
+    static func showOutOfStamina(appState: AppState, refillGemCost: Int?) {
+        let cost = refillGemCost.map { " (\($0) gems)" } ?? ""
+        appState.showToast(
+            "Not enough stamina",
+            subtitle: "Wait for regen, use a potion, or refill now",
+            type: .error,
+            actionLabel: "Refill\(cost)"
+        ) {
+            Task { @MainActor in
+                await CharacterService(appState: appState).refillStamina()
+            }
+        }
+    }
+
     // MARK: - Set Stance
 
     func setStance(attack: String, defense: String) async -> Bool {
@@ -134,6 +192,21 @@ private struct BuyStatPointsResponse: Decodable {
 
 private struct CharacterIdBody: Encodable {
     let characterId: String
+}
+
+/// `/api/stamina/refill` response. Backend sends snake_case; APIClient's
+/// `.convertFromSnakeCase` maps it — camelCase keys only, no CodingKeys.
+private struct StaminaRefillResponse: Decodable {
+    struct Stamina: Decodable {
+        let before: Int
+        let after: Int
+        let max: Int
+    }
+    let stamina: Stamina
+    let gemsSpent: Int
+    let gemsRemaining: Int
+    let refillIndex: Int
+    let dailyCap: Int
 }
 
 private struct StanceSelectionBody: Encodable {
