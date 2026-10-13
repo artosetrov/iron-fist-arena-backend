@@ -1,83 +1,121 @@
 # Feature: Arena (PvP)
 
-> **Status:** Complete
+> **Status:** In production
 > **Owner:** Core gameplay
-> **Last updated:** 2026-03-26
-> **Source of truth:** `backend/src/app/api/pvp/` + `Hexbound/Hexbound/Views/Arena/`
+> **Last updated:** 2026-05-06
+> **Source of truth:** `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`, `backend/src/app/api/pvp/`, `wiki/features/pvp-combat.md`
 
 ---
 
 ## Overview
 
-Арена — основная PvP-система. Игроки сражаются в ранговых матчах, зарабатывают ELO-рейтинг, получают награды. Revenge-система позволяет отыграться в течение 72 часов.
+Arena is the live ranked PvP entry surface. Players browse recent opponents,
+launch fights, revisit revenge/history tabs, adjust combat stance from the
+same screen, and transition into either classic combat fallback or the newer
+Interactive Combat flow.
 
 ## User Value
 
-Конкурентная игра, рейтинговое продвижение, лучшие награды за PvP.
+- Competitive progression through PvP rating
+- Quick access to new opponents, revenge matches, and recent match history
+- Direct stance editing before queueing into a fight
 
 ## Systems Involved
 
 | System | Role | Source file |
-|--------|------|------------|
-| Arena screen | UI: opponents, revenge, history | `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift` |
-| PvP fight route | Combat execution | `backend/src/app/api/pvp/fight/route.ts` |
-| PvP resolve route | Result resolution | `backend/src/app/api/pvp/resolve/route.ts` |
-| PvP revenge route | Revenge matches | `backend/src/app/api/pvp/revenge/[id]/route.ts` |
-| Combat engine | Turn-based battle | `backend/src/lib/game/combat.ts` |
-| Matchmaking | Opponent selection | `backend/src/app/api/pvp/fight/route.ts` |
-| Leaderboard | Ranking display | `Hexbound/Hexbound/Views/Leaderboard/LeaderboardDetailView.swift` |
-| Admin PvP page | Config & monitoring | `admin/src/` |
+|--------|------|-------------|
+| Arena screen | Hero widget, compact rating summary, stance CTA, tabs | `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift` |
+| Arena VM | Loads opponents, history, revenge data, fight preparation | `Hexbound/Hexbound/Views/Arena/ArenaViewModel.swift` |
+| PvP opponents | Carousel list for the Arena screen | `backend/src/app/api/pvp/opponents/route.ts` |
+| PvP fight | Classic compatibility start path | `backend/src/app/api/pvp/fight/route.ts` |
+| Interactive start | Newer Interactive Combat match start | `backend/src/app/api/pvp/match/start/route.ts` |
+| PvP prepare | Pre-fight lock / validation | `backend/src/app/api/pvp/prepare/route.ts` |
+| PvP revenge | Rematch against prior opponent | `backend/src/app/api/pvp/revenge/route.ts` |
+| PvP history | Recent results for history/revenge tabs | `backend/src/app/api/pvp/history/route.ts` |
+| Leaderboard | Full rank table / drill-down destination | `Hexbound/Hexbound/Views/Leaderboard/LeaderboardDetailView.swift` |
+| Admin review | Match review, player drill-down, adjacent economy context | `admin/src/app/(dashboard)/matches/page.tsx`, `admin/src/app/(dashboard)/players/page.tsx`, `admin/src/app/(dashboard)/players/[id]/page.tsx`, `admin/src/app/(dashboard)/economy/page.tsx` |
 
 ## Key Files
 
-- iOS Views: `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`, `CombatDetailView.swift`, `CombatResultDetailView.swift`
-- iOS VMs: `ArenaViewModel.swift`, `CombatViewModel.swift`
-- iOS Models: `OpponentProfile.swift`, `PvPRank.swift`, `Character.swift` (contains `CombatStance` struct)
-- Backend: `backend/src/app/api/pvp/fight/route.ts` (reference implementation)
-- Game Logic: `backend/src/lib/game/combat.ts`, `balance.ts`, `progression.ts`
-- Components: `StanceDisplayView.swift`, `UnifiedHeroWidget(.arena)`, `ArenaOpponentCard.swift`
+- iOS views:
+  - `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`
+  - `Hexbound/Hexbound/Views/Arena/ArenaCarouselView.swift`
+  - `Hexbound/Hexbound/Views/Arena/ArenaOpponentCard.swift`
+  - `Hexbound/Hexbound/Views/Arena/ArenaComparisonSheet.swift`
+- iOS models/services:
+  - `Hexbound/Hexbound/Views/Arena/ArenaViewModel.swift`
+  - `Hexbound/Hexbound/Services/PvPService.swift`
+  - `Hexbound/Hexbound/Models/Character.swift`
+- Backend:
+  - `backend/src/app/api/pvp/opponents/route.ts`
+  - `backend/src/app/api/pvp/fight/route.ts`
+  - `backend/src/app/api/pvp/match/start/route.ts`
+  - `backend/src/app/api/pvp/prepare/route.ts`
+  - `backend/src/app/api/pvp/revenge/route.ts`
+  - `backend/src/app/api/pvp/history/route.ts`
+  - `backend/src/app/api/pvp/resolve/route.ts`
+  - `backend/src/lib/game/combat.ts`
+  - `backend/src/lib/game/elo.ts`
 
-## Game Design
+## Current Live Arena Layout
 
-- **ELO system:** Starting 1000, calibration phase, K-factor varies
-- **Matchmaking:** ±10 levels, ±80% gear score, 3-phase cascade
-- **Stance zones:** head/chest/legs, match bonus +15% DEF, miss bonus +5% OFF
-- **Revenge:** 72h expiry, tracked separately
-- **Stamina:** 1 stamina per fight
-- **Free fights:** `AppConstants.freePvpPerDay` free fights, then stamina cost
+- Sticky header: title + inline tab switcher (`OPPONENTS / REVENGE / HISTORY`)
+- Scrollable body:
+  - quest banner (when present)
+  - hero widget
+  - compact PvP rating summary widget
+  - dedicated combat stance CTA
+  - low-HP potion banner (when applicable)
+  - tab content
+- Opponents tab: carousel + fight CTA
+- Revenge tab: recent revenge candidates
+- History tab: recent match log
+
+This is no longer the older stance-preview-first layout. The summary slot now
+belongs to the compact PvP rating widget, while stance editing stays available
+as a smaller dedicated CTA beneath it.
+
+## Gameplay Rules
+
+- Rating is ELO-style and resolves server-side
+- Matchmaking uses the live widened search model described in `wiki/features/pvp-combat.md`
+- Revenge is its own server-backed flow, not just a local UI filter
+- Arena can still fall back through the classic fight path when that
+  compatibility route is needed
+- Interactive Combat is the primary modern combat branch behind the Arena flow,
+  but Arena remains the launcher surface for both modes
 
 ## API Endpoints
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/api/pvp/fight` | Start PvP match (matchmaking + combat) |
-| `POST` | `/api/pvp/resolve` | Resolve match, award ELO + rewards |
-| `POST` | `/api/pvp/revenge/:id` | Start revenge match |
-| `GET` | `/api/characters/:id/profile` | Opponent public profile |
-| `GET` | `/api/leaderboard` | Ranked leaderboard |
-
-## UI Layout (ArenaDetailView)
-
-- Sticky: OrnamentalTitle + TabSwitcher (OPPONENTS / REVENGE / HISTORY)
-- Scrollable: ActiveQuestBanner → UnifiedHeroWidget → PvP Stats Bar → LowHPBanner → StancePreview → Tab content
-- Bottom: Refresh button (opponents tab only)
+| `GET` | `/api/pvp/opponents` | Fetch Arena opponent list |
+| `POST` | `/api/pvp/fight` | Classic compatibility fight start |
+| `POST` | `/api/pvp/match/start` | Start interactive PvP match |
+| `POST` | `/api/pvp/prepare` | Validate/lock combat state before fight |
+| `POST` | `/api/pvp/revenge` | Start revenge rematch |
+| `GET` | `/api/pvp/history` | Fetch recent matches |
+| `POST` | `/api/pvp/resolve` | Resolve match and award rating/rewards |
+| `GET` | `/api/leaderboard` | Full ranking table |
 
 ## UI States
 
-- **Loading:** Skeleton cards
-- **Empty:** "No opponents found" + refresh
-- **Error:** Toast + retry
-- **Success:** Opponent cards with fight buttons
-- **Low HP:** Warning banner
+- **Loading:** skeleton/loading shell while Arena data is not ready
+- **Empty opponents:** no available opponents + refresh path
+- **Revenge/history empty:** tab-specific empty states
+- **Low HP:** warning banner and potion guidance
+- **Success:** compact rating summary, stance CTA, opponent/revenge/history content
 
 ## Dependencies
 
-- Depends on: Combat system, Character model, Stamina system, Equipment
-- Depended by: Achievements (PvP category), Leaderboard, Daily quests (pvp_wins)
+- Depends on: PvP combat, stamina, character/equipment stats, leaderboard
+- Adjacent systems: tutorial stance anchor, revenge history, admin match review
+- Depended by: achievements, quests, rating progression, social challenge context
 
 ## Related Docs
 
-- Rules: `docs/rules/rules-combat-pvp.md`
-- Combat deep-dive: `docs/06_game_systems/COMBAT.md`
-- Balance: `docs/06_game_systems/BALANCE_CONSTANTS.md`
-- Screen inventory: `docs/07_ui_ux/SCREEN_INVENTORY.md`
+- `wiki/features/pvp-combat.md`
+- `docs/06_game_systems/COMBAT.md`
+- `docs/06_game_systems/BALANCE_CONSTANTS.md`
+- `docs/07_ui_ux/SCREEN_INVENTORY.md`
+- `qa-reports/2026-05-04-arena-rating-widget-proposal.md` — historical restore proposal, not the live source of truth

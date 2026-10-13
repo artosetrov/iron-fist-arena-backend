@@ -3,7 +3,7 @@ title: File-By-File Project Audit
 category: audit
 tags: [audit, architecture, file-catalog, qa]
 sources: [wiki/audit/project-file-inventory.md]
-updated: 2026-05-04
+updated: 2026-05-06
 ---
 
 # File-By-File Project Audit
@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 5251
+- In-scope files: 5263
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -328,6 +328,19 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 306 | [[block-306-talent-modal-report-and-active-categories-boundary-sync]] — the 2026-05-01 talent-modal redesign report now stands on checked-in repo truth instead of external `feedback_*` note names, and the older `ACTIVE_CATEGORIES_V1` doc is now clearly framed as a historical proposal rather than a live combat contract | Fixed |
 | 307 | [[block-307-historical-design-doc-status-header-parity]] — several historical design docs now have header status lines that agree with their own archival boundaries, instead of still sounding like they are waiting for present-tense approval | Fixed |
 | 308 | [[block-308-historical-planning-header-parity-wave-two]] — the next cluster of historical W2/W3/combat planning docs now introduces itself in the same archival tense that its boundary notes already use, instead of sounding like approval or execution is still paused in the present | Fixed |
+| 309 | [[block-309-active-slot-reusability-memory-boundary-and-rollforward]] — the new `ActiveSlotTile` reuse wave and the fresh 2026-05-05 retro now preserve the reusability rule in checked-in repo prose instead of an external `feedback_*` token, and the inventory has been rolled forward to include the new tracked/untracked repo files from that wave | Fixed |
+| 310 | [[block-310-arena-rating-widget-restore-and-proposal-boundary-sync]] — Arena now restores the compact PvP rating widget in the summary slot while keeping stance access as a smaller dedicated CTA, and the adjacent restore proposal now reads as historical implementation context instead of a still-pending approval step | Fixed |
+| 311 | [[block-311-historical-route-less-building-wording-and-rollforward]] — the remaining historical building-gating and release-audit docs now use the cleaned route-less placeholder language instead of the older player-facing placeholder shorthand, and the inventory has been rolled forward to match the current tracked/untracked state again | Fixed |
+| 312 | [[block-312-retro-and-archive-placeholder-wording-parity]] — the remaining retro/archive docs now use the same placeholder-vs-superseded wording model as the rest of the repo, and the inventory has been rolled forward again for the new audit block | Fixed |
+| 313 | [[block-313-active-slot-shell-and-passive-tree-surface-parity]] — the Active Slot layer now distinguishes the Talents premium 4th slot from the combat HUD's locked consumable shell across code comments, retro notes, and passive-tree / interactive-combat maps, while the passive-tree feature map now points at the live slot surface instead of the orphaned `ActiveSlotsBar.swift` | Fixed |
+| 314 | [[block-314-combat-anatomy-generic-silhouette-boundary-sync]] — the live anatomy matrix, retro note, discussion prototype, and combat docs now share one explicit boundary: the spatial strike layout is shipped, while the remaining art follow-up is only the swap from the current generic silhouette to class-aware combat art | Fixed |
+| 315 | [[block-315-delete-orphan-active-slots-bar-and-doc-parity]] — the dead `ActiveSlotsBar.swift` orphan has now been removed from the working tree, and the remaining picker/combat/audit docs point at the live `TalentsSummaryCard` + `ActiveSlotTile` surface instead of the dead file | Fixed |
+| 316 | [[block-316-historical-active-slotsbar-naming-boundary-sync]] — the remaining historical picker/combat docs now mark `ActiveSlotsBar` explicitly as the old host/name rather than casually sounding like it is still the live surface after the orphan-file cleanup | Fixed |
+| 317 | [[block-317-delete-hub-building-lock-overlay-draft]] — the dead `Views/Hub/BuildingLockOverlay.swift` draft has now been removed from the working tree, leaving the reusable `Views/Components/BuildingLockOverlay.swift` file as the single obvious live source of truth | Fixed |
+| 318 | [[block-318-arena-overview-runtime-admin-parity]] — the standalone Arena feature doc now matches the live Arena screen, the current PvP route family, and the actual checked-in admin review surfaces instead of preserving an older stance-preview-first March snapshot | Fixed |
+| 319 | [[block-319-pre-release-audit-arena-font-warning-parity]] — the pre-release audit no longer reports two Arena system-font violations that the current checked-in `ArenaDetailView.swift` no longer contains | Fixed |
+| 320 | [[block-320-screen-entity-arena-flow-parity]] — the higher-level screen entity map now describes Arena as the broader rating / stance / opponents-revenge-history hub it has become, instead of the older comparison-only shorthand | Fixed |
+| 321 | [[block-321-project-overview-stamina-and-reward-bounds-parity]] — `PROJECT_OVERVIEW.md` now reflects the live 180-stamina / 1-per-8-min / free-then-10 PvP model and no longer freezes brittle reward ranges into the top-level overview | Fixed |
 
 ## Status Legend
 

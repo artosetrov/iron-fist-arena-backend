@@ -1,6 +1,6 @@
 # Hexbound — Project Overview (Source of Truth)
 
-*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-04-30.*
+*High-level architecture snapshot. For live file-by-file status, current audit progress, and detailed ownership notes, also use `wiki/index.md`, `wiki/log.md`, and `wiki/audit/audit-index.md`. Last verified against codebase: 2026-05-06.*
 
 ---
 
@@ -182,15 +182,16 @@ Hexbound is a **PvP-focused dark fantasy RPG** for iOS with a full backend admin
 - Gear score calculation (sum of equipped item levels)
 
 ### Stamina System
-- Max 120 (upgradeable), regenerates 1/min
-- PvP matches cost 20 stamina
-- Trainings cost 5 stamina
-- Potions restore (small 10, medium 30, large 50)
+- Max stamina: 180
+- Regen rate: 1 stamina per 8 minutes
+- PvP: first 3 fights per day are free, then 10 stamina per match
+- Training: 5 stamina
+- Dungeons: difficulty-based stamina costs
+- Stamina potions and gem refills remain part of the energy economy; exact live values belong to `BALANCE_CONSTANTS.md`, `ECONOMY.md`, and `wiki/systems/stamina.md`
 
 ### Experience & Rewards
-- PvP: 50–150 XP + 10–100 gold (Elo-scaled)
-- Dungeons: 100–500 XP + 50–500 gold (difficulty-scaled)
-- Training: 25–50 XP (opponent-scaled)
+- PvP, dungeons, and training all award server-authoritative XP / gold through live balance formulas
+- Exact reward values and scaling rules are balance-owned rather than overview-owned; use `docs/06_game_systems/BALANCE_CONSTANTS.md` and `docs/02_product_and_features/ECONOMY.md` for current numbers
 
 ---
 

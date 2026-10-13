@@ -40,7 +40,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
-| Arena | `ArenaDetailView.swift` | opponents, revenge, history tabs; loading, empty, list | PvP opponent selection |
+| Arena | `ArenaDetailView.swift` | hero widget, compact rating summary, stance CTA, opponents/revenge/history tabs; loading, empty, list | PvP opponent selection |
 | Arena Carousel | `ArenaCarouselView.swift` | default | Swipeable opponent carousel |
 | Arena Comparison | `ArenaComparisonSheet.swift` | default | Stat comparison vs opponent |
 | Opponent Card | `OpponentCardView.swift` | default, pressed, fighting | Opponent card with fight button |

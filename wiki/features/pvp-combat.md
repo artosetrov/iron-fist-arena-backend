@@ -60,7 +60,7 @@ Async PvP where players queue against like-rated opponents, resolve a multi-roun
 ### Views
 
 #### Arena
-- `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift` — main arena screen
+- `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift` — main arena screen; hero widget, compact PvP rating summary, dedicated stance CTA, opponent/revenge/history tabs
 - `Hexbound/Hexbound/Views/Arena/ArenaCarouselView.swift` — opponent carousel
 - `Hexbound/Hexbound/Views/Arena/ArenaOpponentCard.swift` — single opponent card
 - `Hexbound/Hexbound/Views/Arena/OpponentCardView.swift` — legacy/alternate variant

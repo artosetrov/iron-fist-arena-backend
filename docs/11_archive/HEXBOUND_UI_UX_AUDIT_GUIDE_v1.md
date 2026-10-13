@@ -483,7 +483,7 @@ While the system is well-architected, **4 critical files deviate significantly**
 | **Where Used** | Arena (Opponents/Revenge/History), Achievements (categories), Leaderboard (Rating/Level/Gold), Shop (categories) |
 | **Code** | `TabSwitcher(tabs: ["Tab1", "Tab2"], selectedIndex: $index)` |
 
-#### D.3.3 — Bottom Navigation (NOT IMPLEMENTED IN CODE)
+#### D.3.3 — Bottom Navigation (Design-Only; Superseded in Runtime)
 
 **CRITICAL FINDING:** The design document specifies a 3-tab bottom navigation bar (Hub / Hero / Leader) with 64px height, but the **actual implementation uses no bottom nav**. Instead, navigation is through the Hub's CityMapView (interactive city buildings) and HubLogoButton for back navigation.
 

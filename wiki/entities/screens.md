@@ -2,8 +2,8 @@
 title: Screen Inventory
 category: entities
 tags: [ui, screens, navigation, flows]
-sources: [docs/07_ui_ux/SCREEN_INVENTORY.md]
-updated: 2026-04-14
+sources: [docs/07_ui_ux/SCREEN_INVENTORY.md, docs/features/arena/ARENA_OVERVIEW.md, wiki/features/pvp-combat.md]
+updated: 2026-05-06
 ---
 
 # Screen Inventory
@@ -20,7 +20,7 @@ updated: 2026-04-14
 |------|---------|----------|
 | Auth | 6 | Welcome → Login/Register → Character Creation → Email Confirmation |
 | Hub | 8 | City Map, Hero Detail, Stance Selector, Dungeon Map |
-| Arena | 5 | Opponent selection → Comparison → Fight |
+| Arena | 5 | Arena overview → rating / stance drill-down → opponents / revenge / history → fight |
 | Combat | 4 + VFX | Active combat → Results → Loot |
 | Inventory | 2 | Equipment/Consumables tabs, Item Detail Sheet |
 | Shop | 4 | Equipment, Consumables, Premium, Currency |

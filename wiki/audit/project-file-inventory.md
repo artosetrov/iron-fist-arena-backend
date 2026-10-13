@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-05-04
+updated: 2026-05-06
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 5246
-- Untracked project-owned files: 5
-- In-scope files listed here: 5251
+- Tracked files: 5252
+- Untracked project-owned files: 15
+- In-scope files listed here: 5267
 
 ## Excluded Generated / Vendor Areas
 
@@ -35,17 +35,17 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin: 224
 - backend: 408
 - Buildings: 21
-- docs: 199
+- docs: 201
 - figma-assets: 333
 - graphify-out: 869
-- Hexbound: 1509
+- Hexbound: 1510
 - onboarding-assets: 10
-- prototypes: 12
-- qa-reports: 9
+- prototypes: 13
+- qa-reports: 10
 - scripts: 20
 - sounds: 33
 - User: 1059
-- wiki: 375
+- wiki: 392
 
 ## File List By Block
 
@@ -890,7 +890,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (200)
+### docs (201)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -1077,6 +1077,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-05-02.md
 - docs/retro/RETRO_2026-05-03.md
 - docs/retro/RETRO_2026-05-04.md
+- docs/retro/RETRO_2026-05-05.md _(untracked)_
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -3635,6 +3636,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Components/GuestGateCTA.swift
 - Hexbound/Hexbound/Views/Components/GuestGateView.swift
 - Hexbound/Hexbound/Views/Components/GuestNudgeBanner.swift
+- Hexbound/Hexbound/Views/Components/ActiveSlotTile.swift
 - Hexbound/Hexbound/Views/Components/HexPulseLoader.swift
 - Hexbound/Hexbound/Views/Components/HPBarView.swift
 - Hexbound/Hexbound/Views/Components/InlineFeedback.swift
@@ -3708,7 +3710,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Hero/HeroStatsTab.swift
 - Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift
 - Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift
-- Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift
+- Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift _(deleted in working tree)_
 - Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift
 - Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift
 - Hexbound/Hexbound/Views/Hero/Talents/TalentNodeView.swift
@@ -3716,7 +3718,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Hero/Talents/TalentsTabView.swift
 - Hexbound/Hexbound/Views/Hero/Talents/TalentTreeCanvas.swift
 - Hexbound/Hexbound/Views/Hub/BuildingBadge.swift
-- Hexbound/Hexbound/Views/Hub/BuildingLockOverlay.swift
+- Hexbound/Hexbound/Views/Hub/BuildingLockOverlay.swift _(deleted in working tree)_
 - Hexbound/Hexbound/Views/Hub/BuildingUnlockCatalog.swift
 - Hexbound/Hexbound/Views/Hub/BuildingUnlockCeremony.swift
 - Hexbound/Hexbound/Views/Hub/CharacterViewModel.swift
@@ -3842,9 +3844,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - prototypes/talents-screen.html
 - prototypes/victory-screen.html
 
-### qa-reports (9)
+### qa-reports (10)
 
 - qa-reports/2026-05-01_talent_modal_redesign.md
+- qa-reports/2026-05-04-arena-rating-widget-proposal.md _(untracked)_
 - qa-reports/prototypes/talents-horizontal-only-2026-04-29.html
 - qa-reports/prototypes/talents-wow-style-2026-04-29.html
 - qa-reports/QA_FIX_PLAN_2026-04-11.md
@@ -4975,7 +4978,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (379)
+### wiki (385)
 
 - wiki/_generated/api-routes.json
 - wiki/_generated/balance-constants.json
@@ -5287,11 +5290,24 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-301-talents-v2-polish-tail-boundary-sync.md
 - wiki/audit/block-302-inventory-rollforward-and-retro-prototype-boundary-sync.md
 - wiki/audit/block-303-combat-discussion-prototype-boundary-and-swift-comment-sync.md
-- wiki/audit/block-304-combat-v3-retro-boundary-and-feature-map-parity.md _(untracked)_
-- wiki/audit/block-305-inventory-rollforward-and-combat-strike-prototype-boundary-sync.md _(untracked)_
-- wiki/audit/block-306-talent-modal-report-and-active-categories-boundary-sync.md _(untracked)_
-- wiki/audit/block-307-historical-design-doc-status-header-parity.md _(untracked)_
-- wiki/audit/block-308-historical-planning-header-parity-wave-two.md _(untracked)_
+- wiki/audit/block-304-combat-v3-retro-boundary-and-feature-map-parity.md
+- wiki/audit/block-305-inventory-rollforward-and-combat-strike-prototype-boundary-sync.md
+- wiki/audit/block-306-talent-modal-report-and-active-categories-boundary-sync.md
+- wiki/audit/block-307-historical-design-doc-status-header-parity.md
+- wiki/audit/block-308-historical-planning-header-parity-wave-two.md
+- wiki/audit/block-309-active-slot-reusability-memory-boundary-and-rollforward.md _(untracked)_
+- wiki/audit/block-310-arena-rating-widget-restore-and-proposal-boundary-sync.md _(untracked)_
+- wiki/audit/block-311-historical-route-less-building-wording-and-rollforward.md _(untracked)_
+- wiki/audit/block-312-retro-and-archive-placeholder-wording-parity.md _(untracked)_
+- wiki/audit/block-313-active-slot-shell-and-passive-tree-surface-parity.md _(untracked)_
+- wiki/audit/block-314-combat-anatomy-generic-silhouette-boundary-sync.md _(untracked)_
+- wiki/audit/block-315-delete-orphan-active-slots-bar-and-doc-parity.md _(untracked)_
+- wiki/audit/block-316-historical-active-slotsbar-naming-boundary-sync.md _(untracked)_
+- wiki/audit/block-317-delete-hub-building-lock-overlay-draft.md _(untracked)_
+- wiki/audit/block-318-arena-overview-runtime-admin-parity.md _(untracked)_
+- wiki/audit/block-319-pre-release-audit-arena-font-warning-parity.md _(untracked)_
+- wiki/audit/block-320-screen-entity-arena-flow-parity.md _(untracked)_
+- wiki/audit/block-321-project-overview-stamina-and-reward-bounds-parity.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

@@ -1,6 +1,6 @@
 # Hexbound — Development Rules
 
-*Canonical rules document. Agent System Rules v3. Updated: 2026-04-20*
+*Canonical rules document. Agent System Rules v3. Updated: 2026-05-05*
 
 ---
 
@@ -92,6 +92,28 @@ After EVERY change to UI code:
 - Any enum, struct, or class that accesses `@MainActor`-isolated properties (e.g. `String.localized`, `LocalizationManager.shared`) MUST itself be marked `@MainActor`.
 - `L10n` enum is `@MainActor`. Any new type-safe key enums/extensions follow the same pattern.
 - When a function returns `T?` and you guard with `if (!result) throw` — always use a non-optional binding after the guard: `guard let safeResult = result else { throw ... }` in Swift. TypeScript strict mode may not narrow type after throw.
+
+---
+
+## Swift Generics — No `static let` Stored Properties (2026-05-04)
+
+Swift forbids **stored** static properties on **generic** types. Use computed `static var` instead.
+
+```swift
+// ❌ WRONG — fails build with "Static stored properties not supported in generic types"
+struct ActiveSlotTile<Overlay: View>: View {
+    static let premiumAccent: Color = Color(red: 0.71, green: 0.49, blue: 0.84)
+}
+
+// ✅ CORRECT — computed, zero runtime cost (compiler inlines).
+struct ActiveSlotTile<Overlay: View>: View {
+    static var premiumAccent: Color { Color(red: 0.71, green: 0.49, blue: 0.84) }
+}
+```
+
+The trap: `static let foo = ...` is the idiomatic way to host shared constants on a non-generic type. Adding generics later (e.g. introducing a `ViewBuilder` overlay parameter) silently turns every existing `static let` into a build break. Guardian's scanner now catches this in `check_design_system.sh` section 11.
+
+**Reference incident:** commit `20cdcea` (2026-05-04). `ActiveSlotTile` shipped in `6b5a72d` with `static let premiumAccent` on a generic type; build failed and was hotfixed 62 minutes later.
 
 ---
 

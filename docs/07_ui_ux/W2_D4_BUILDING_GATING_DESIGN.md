@@ -14,6 +14,11 @@
 >
 > The live schedule no longer exactly matches every proposed table below. This
 > document is retained as design rationale and tradeoff history.
+>
+> **Route-less boundary note:** the current normal hub path now hides the
+> route-less Black Market from the player-facing city map. Older references
+> below to a visible player-facing placeholder building belong to this
+> proposal's snapshot moment, not to the current shipped hub runtime.
 
 ---
 
@@ -51,7 +56,7 @@ enum BuildingUnlockConfig {
         "battlepass": 10,
         "ranks": 10,
         "guild-hall": 15,
-        "black-market": 99,  // Coming Soon
+        "black-market": 99,  // Route-less placeholder until a real runtime route exists
     ]
 
     static func isUnlocked(_ buildingId: String, characterLevel: Int) -> Bool { … }
@@ -132,7 +137,7 @@ private var unlocks: [String] {
 | **6** (~15 min) | **Tavern** ← *было Lv7* | ~15 | Social beat (NPCs, потенциально coop gathering) |
 | **8** (~25 min) | **Battle Pass + Ranks** ← *было Lv10* | ~25 | Long-term progression visible when игрок invested. Два unlock одновременно — «wow, куча всего открылось» moment |
 | **12** (~60 min) | **Guild Hall** ← *было Lv15* | ~60 | Social endgame hook. Сейчас Lv15 — слишком поздно; многие dropoff'ятся до этого |
-| **99** (never) | Black Market | — | Остаётся Coming Soon до actual implementation |
+| **99** (never) | Black Market | — | Остаётся route-less placeholder до actual implementation |
 
 ### Total delta
 
@@ -465,7 +470,7 @@ Image(building.imageName)
 4. tavern (locked pre-Lv6)
 5. battlepass, ranks (locked pre-Lv8)
 6. guild-hall (locked pre-Lv12)
-7. black-market (locked Lv99 — Coming Soon indicator, не LV pill)
+7. black-market (locked Lv99 — placeholder indicator, не обычная LV pill)
 
 Для black-market overlay должен показывать «SOON» вместо «LV.99». Add case in `BuildingLockOverlay`:
 
@@ -597,7 +602,7 @@ return {
 
 1. **Unlock schedule**: Согласен с предложенным Lv2/4/6/8/12? Или сохранить текущий Lv3/5/7/10/15? Есть ли retention data, по которой можно калибровать?
 
-2. **Tavern content readiness**: Tavern unlock на Lv6 — но есть ли там playable content сейчас, или это Coming Soon? Если пусто — оставить Lv7 или отложить до implementation.
+2. **Tavern content readiness**: Tavern unlock на Lv6 — но есть ли там playable content сейчас, или это пока пустой / non-playable surface? Если пусто — оставить Lv7 или отложить до implementation.
 
 3. **Gold Mine balance**: Gold Mine на Lv4 (~8 мин) вместо Lv5 (~12 мин). Скорее дать игроку idle reward — хорошо, но не сломает ли это early-game economy (слишком много gold у нового игрока)? Вопрос к `hexbound-studio:vault` (Economy Designer).
 

@@ -42,12 +42,22 @@
 - [x] `verify-receipt` branch for subscription: reads `appleResult.transactionInfo.expiresDate`, falls back to `purchaseDate + durationDays`, upserts `PremiumSubscription`, grants monthly gems on initial purchase.
 - [x] `hasPremium()` in `premium.ts` reads **either** `premiumUntil` OR `activeSubscriptionExpiresAt` (both optional — backward-compatible for legacy callers).
 - [x] Apple App Store Server Notifications v2 webhook handler (`/api/iap/apple-notifications`) — processes `DID_RENEW`, `SUBSCRIBED`, `OFFER_REDEEMED`, `DID_FAIL_TO_RENEW` (grace period), `EXPIRED`, `DID_CHANGE_RENEWAL_STATUS`, `REFUND`, `REVOKE`.
-- [ ] Apple StoreKit: create subscription group + product (`com.hexbound.premiumpassmonthly`) in App Store Connect.
+- [ ] Apple StoreKit: create subscription group + product **`com.hexbound.premium_pass_monthly`** in App Store Connect. The identifier must match exactly — it is pinned in three places: the iOS `IAPProduct` enum, `Hexbound/Hexbound/Resources/HexboundProducts.storekit`, and `APPLE_TO_INTERNAL_PRODUCT_ID` in `backend/src/lib/apple-iap.ts`.
 - [ ] Register webhook URL `https://api.hexboundapp.com/api/iap/apple-notifications` in App Store Connect.
-- [ ] Wire caller sites (`pvp/*`, `dungeons/*`, `daily-login/claim`) to pass `activeSubscriptionExpiresAt` from `PremiumSubscription` — otherwise subscription benefits won't apply at runtime. Currently only the legacy `premiumUntil` path is wired. **Blocker for launch.**
+- [x] Wire caller sites (`pvp/*`, `dungeons/*`, `daily-login/claim`) to pass `activeSubscriptionExpiresAt` from `PremiumSubscription`. Verified 2026-09-11: every `hasPremium()` caller selects `PREMIUM_ENTITLEMENT_USER_SELECT`, so pass benefits do apply.
 - [ ] iOS storefront: new "Premium Pass" card with 7-day free trial introductory offer.
 - [ ] Analytics: trial → paid conversion, renewal rate, refund rate.
-- [ ] Phase 3 hardening: verify Apple's JWS signature against their cert chain (webhook currently decodes payload-only).
+- [x] Phase 3 hardening: the webhook now verifies Apple's JWS against their
+  certificate chain via `@apple/app-store-server-library` (`backend/src/lib/apple-jws.ts`,
+  done 2026-09-11). Production and sandbox verifiers are both built and tried in
+  turn, since Apple posts both to the same URL.
+- [ ] **Deploy prerequisite for the above:** download the Apple root CA
+  certificate(s) from <https://www.apple.com/certificateauthority/> and supply
+  them as `APPLE_ROOT_CERTS` (comma-separated base64 DER) or drop the `.cer`
+  files into `backend/certs/apple/`. Also set `APPLE_APP_APPLE_ID` (numeric app
+  id from App Store Connect → App Information). Without these the webhook
+  answers 503 and Apple retries — no notification is lost, but renewals are not
+  applied until it is configured.
 
 ### Phase 3 — optional enhancements
 

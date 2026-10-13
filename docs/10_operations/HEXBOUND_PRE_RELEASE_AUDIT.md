@@ -136,7 +136,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | Invented font tokens | ✅ CLEAN | 0 violations |
 | Invented spacing tokens | ✅ CLEAN | 0 violations |
 | Hardcoded colors in Views | ✅ CLEAN | 0 `Color(hex:)` in Views/ |
-| System fonts in Views | ⚠️ 2 violations | ArenaDetailView lines 585, 660 |
+| System fonts in Views | ✅ CLEAN | 0 violations in current checked-in Views scan |
 | Raw Color usage | ✅ CLEAN | 0 `Color.red/blue/green` |
 | SF Symbol currency icons | ✅ CLEAN | 0 violations |
 | Hardcoded cornerRadius | ⚠️ 1 real violation | BuyStatPointsView:218 (8px) |
@@ -151,7 +151,6 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 
 | ID | Severity | Issue | File | Fix |
 |----|----------|-------|------|-----|
-| DS-1 | **P3** | 2 hardcoded `.font(.system(size:))` | `ArenaDetailView.swift:585, 660` | Заменить на `DarkFantasyTheme` tokens |
 | DS-2 | **P4** | 1 hardcoded `cornerRadius: 8` | `BuyStatPointsView.swift:218` | Заменить на `LayoutConstants.radiusXS` |
 | DS-3 | **P2** | DailyLoginDetailView — нет error/empty state fallback. Если API fail → blank screen | `DailyLoginDetailView.swift:25-30` | Добавить `else { ErrorStateView.loadFailed { ... } }` |
 | DS-4 | **P2** | 732 hardcoded strings, только 3.4% localized. Инфраструктура есть (LocalizationManager), но не используется | Все Views/ | Либо локализовать ВСЁ до релиза, либо задокументировать как post-launch + тегировать строки |
@@ -180,7 +179,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | ShellGameDetailView | ✅ | N/A | ✅ | ✅ | ✅ | PASS |
 | FortuneWheelDetailView | ✅ | N/A | ✅ | ✅ | ✅ | PASS |
 
-### "Coming Soon" features visible in production:
+### Snapshot-time route-less dead-end features visible in production:
 
 > Historical follow-up: at the time of this snapshot both Guild Hall and Black
 > Market behaved like dead-end buildings. The checked-in repo later fixed Guild
@@ -280,7 +279,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | AS-2 | **P0** | Gambling content not declared (Shell Game, Fortune Wheel, loot drops) | Задекларировать "Infrequent/Mild Simulated Gambling" в App Store Connect |
 | AS-3 | **P1** | Privacy Policy URL отсутствует | Создать и разместить на `hexboundapp.com/privacy`, добавить в Settings |
 | AS-4 | **P2** | IAP products (12 штук) не верифицированы в App Store Connect | Проверить что все `com.hexbound.*` ID существуют и в статусе "Ready to Submit" |
-| AS-5 | **P2** | "Coming Soon" buildings were fake buttons at snapshot time; Guild Hall was later fixed and Black Market was later hidden from the normal hub | Preserve the note as historical release context; only re-open if route-less buildings become visible again |
+| AS-5 | **P2** | Route-less dead-end buildings were fake buttons at snapshot time; Guild Hall was later fixed and Black Market was later hidden from the normal hub | Preserve the note as historical release context; only re-open if route-less buildings become visible again |
 | AS-6 | ✅ | Apple Sign-In | Реализован полностью |
 | AS-7 | ✅ | Offline handling | OfflineBannerView + NetworkMonitor |
 | AS-8 | ✅ | Push notifications | Proper permission flow + server registration |
@@ -320,7 +319,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 | 11 | Economy | Gold inflation risk (19% sink ratio) | Endgame economy collapse | 1-2 days (add cosmetic sinks) |
 | 12 | Balance | Mage damage 1.65x vs 1.3-1.5x other classes | Potential class imbalance | Monitor + hotfix ready |
 | 13 | PvP | Phase 4 matchmaking fallback dangerous on small pool | Level 50 vs Level 1 | 4h (add Tutorial Arena bracket) |
-| 14 | UX | Snapshot-time "Coming Soon" dead ends; Guild Hall was later fixed and Black Market was later removed from the normal hub path | Frustration from fake buttons | Later resolved in checked-in runtime |
+| 14 | UX | Snapshot-time route-less dead ends; Guild Hall was later fixed and Black Market was later removed from the normal hub path | Frustration from fake buttons | Later resolved in checked-in runtime |
 | 15 | Onboarding | Нет tutorial для character creation (class/race meaning) | New player confusion | 4h |
 | 16 | UX | Нет skip button для intro cinematic | Frustrated returning players | 1h |
 | 17 | App Store | 12 IAP products не верифицированы в App Store Connect | Purchases may not work | 1-2h (verify in ASC) |

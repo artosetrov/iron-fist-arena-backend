@@ -30,7 +30,7 @@ win.
 
 ### Current state (2026-04-13)
 - Players equip activatable talents via **TalentDetailSheet** (one-at-a-time, per talent).
-- The `+` button on an empty **ActiveSlotsBar** slot is a no-op — there is no entry point from the slot itself.
+- The `+` button on an empty **ActiveSlotsBar** slot (the historical pre-`TalentsSummaryCard` host) is a no-op — there is no entry point from the slot itself.
 - Consumables (`health_potion_small/medium/large`) exist in the inventory schema but are **not equipable** into combat slots. They can only be used from the inventory screen outside of battle.
 
 ### Goal
@@ -45,7 +45,7 @@ Unify the "combat loadout" composition into a single sheet the player opens from
 ## 2. UX Flow
 
 ### Entry points
-1. Tap any `+` on `ActiveSlotsBar` (Hero > Talents).
+1. Tap any `+` on the historical `ActiveSlotsBar` row (later replaced by `TalentsSummaryCard`) in Hero > Talents.
 2. Tap the "ACTIVE SKILLS" label / the row area itself.
 3. Tap a **filled** slot — opens the picker. **No fast-unequip-on-tap** (decided 2026-04-14). All clears happen via the preview `✕` inside the sheet. Rationale: single entry point = fewer modes to explain, no accidental unequip mid-flow.
 
@@ -330,7 +330,7 @@ Rationale: removing the context switch ("go to Shop, buy, come back") is a measu
 2. Extend `PassiveTreeViewModel`:
    - `var availableConsumables: [ConsumableEntry]` — derived from `InventoryViewModel` for 3 whitelisted HP potion types only.
    - `func saveLoadout(_ slots: [PendingSlot])` — optimistic update + batch POST + rollback.
-3. Wire `ActiveSlotsBar` — tap any slot (empty or filled) opens `ActiveSkillPickerSheet`. Remove the current fast-clear-on-tap (use preview `✕` instead).
+3. Wire the historical `ActiveSlotsBar` entry surface — tap any slot (empty or filled) opens `ActiveSkillPickerSheet`. Remove the current fast-clear-on-tap (use preview `✕` instead).
 4. Extend `InteractiveStrikeResponse` + HUD banner (`ConsumableFireBanner`).
 5. Register new file in `pbxproj` (4 sections per `CLAUDE.md` §Xcode Project File).
 
@@ -407,5 +407,5 @@ If fire rate <30% → potions too weak or too scarce → raise heal % by 5pt or 
 - Migration safety pattern: `wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md`, `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees.md`
 - Schema drift checker: `scripts/check_schema_drift.py`
 - Figma rules: `docs/07_ui_ux/FIGMA_SCREEN_RULES.md`
-- Current `ActiveSlotsBar`: `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift`
+- Current live active-slot host: `Hexbound/Hexbound/Views/Hero/Talents/TalentsSummaryCard.swift` + `Hexbound/Hexbound/Views/Components/ActiveSlotTile.swift`
 - Current native picker: `Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift`

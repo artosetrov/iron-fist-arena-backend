@@ -92,6 +92,8 @@ Optional combat mode where the player slots up to N "active skills" before the f
 - **Opponent AI.** Opponent actives fire deterministically based on match seed — classic flow doesn't need to care, but interactive preview shows upcoming opp active.
 - **Fire banner** was shipped 2026-04-13 as part of 3.B — iOS UI highlights which active just fired that round.
 - **v3.1 collapsed the duplicate reveal channel.** The live screen now prefers one channel per event: compact reveal/micro-log plus floating VFX, not a second full scroll log competing for attention.
+- **The 4th tile in the combat HUD is a locked consumable shell, not a live 4th talent slot.** The predict screen currently renders 3 active-talent buttons from `ActiveSkillsHUD` plus one non-tappable `.locked` tile to reserve space for a future consumable-in-combat path. Do not confuse that shell with the Talents tab's premium 4th active slot unlock.
+- **The anatomy middle-column art is still generic.** `BodySilhouettePath` / `BodySilhouetteView` currently provide a temporary neutral silhouette so the spatial zone matrix reads cleanly without waiting for class-aware combat art. Treat class-specific body art there as a bounded presentation follow-up, not as shipped parity today.
 - **Summary rating tile still pending.** `CombatResultInfo.ratingBefore` / `ratingAfter` already exist, but `BattleSummaryView` intentionally does not render them until `prefetchCompleteResult` is wired cleanly into that surface. Treat rating delta there as an open follow-up, not a shipped element.
 
 ## Tests / fixtures

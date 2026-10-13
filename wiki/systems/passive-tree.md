@@ -29,7 +29,7 @@ Some nodes grant active abilities (not just passives):
   - **Talents v2 ults:** `stealth` (next attack auto-crits — Rogue Vanish, CD 75), `aoe_damage` (1v1 alias of burst with distinct VFX — Mage Meteor, CD 90), `cooldown_reset` (zero other non-consumable slots — Mage Timewarp, CD 180), `aoe_stun` (multi-round opp stun via `interactiveActives.{p1,p2}_buffs.stunRoundsRemaining` — Tank Earthshatter, CD 120)
 - `activeCooldown` — turns between uses
 - `activeMagnitude` — power of the ability (interpretation depends on action type — fraction for damage, rounds for `aoe_stun`)
-- **3 active slots** by default; a 4th premium slot can be unlocked for **100 gems** (POST `/api/passives/active-slots/unlock-premium`). Per-character count lives on `Character.activeSlotCount` (max 4)
+- **3 active slots** by default; a 4th premium slot can be unlocked for **100 gems** (POST `/api/passives/active-slots/unlock-premium`). Per-character count lives on `Character.activeSlotCount` (max 4). This premium talents-page slot is separate from the combat HUD's locked consumable shell tile.
 - See `wiki/audit/block-262-talents-v2-ult-action-types-and-class-trees` for the strike-resolver handler details and `docs/06_game_systems/SKILL_TREE_DESIGN_V2.md` §8 for the action-type spec.
 
 ## Unlock Rules
@@ -50,7 +50,7 @@ Some nodes grant active abilities (not just passives):
 - `TalentNodeView` — square tile language (44×44, keystone 54×54), 3px gold left-bar on unlocked, rank/cost pill top-right; 4 states: `unlocked`, `pending`, `unlockable`, `locked`
 - Pending nodes pulse (gold dashed outline); unlockable nodes have a gold glow pulse
 - `TalentTreeCanvas` — radial top glow, 24pt grid backdrop, corner brackets, solid gold connections between unlocked nodes, animated dashed lines onto unlockable neighbors
-- `TalentsSummaryCard` — top card on the TALENTS tab (SP counter + 4 slot tiles); premium 4th slot shows purple gem + cost until bought
+- `TalentsSummaryCard` — top card on the TALENTS tab (SP counter + 4 slot tiles); premium 4th slot shows purple gem + cost until bought. Interactive Combat reuses the same `ActiveSlotTile` chrome for a separate locked consumable shell in the predict HUD.
 
 ## See Also
 

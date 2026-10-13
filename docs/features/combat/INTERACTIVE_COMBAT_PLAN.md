@@ -260,7 +260,7 @@ Stance tap → button highlight + haptic fires **immediately**. Network call sta
 | ActiveSlotButton | Empty, Ready, Cooldown(N), Firing — 4 | `Hexbound/Views/Combat/ActiveSlotButton.swift` | Buttons |
 | StanceBadge | Attack/Defend/Counter icon badge — 3 | `Hexbound/Views/Combat/StanceBadge.swift` | Badges & Pills |
 | RPSResultBanner | Hero wins / Enemy wins / Stalemate — 3 | `Hexbound/Views/Combat/RPSResultBanner.swift` | Toast & Banners |
-| ActiveSlotsBar | 3-slot picker, empty vs populated — 2 | `Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` | Hero & Character |
+| ActiveSlotsBar (historical name) | 3-slot picker, empty vs populated — 2 | later superseded by `TalentsSummaryCard.swift` + shared `ActiveSlotTile.swift` | Hero & Character |
 
 All use existing tokens (DarkFantasyTheme + LayoutConstants + existing Button/Card instances). No new colors. No new spacing.
 
@@ -304,8 +304,8 @@ Tune via admin panel after first playtest.
 - DB: `active_action_type`, `active_cooldown`, `active_magnitude`, `is_activatable` on PassiveNode; `character_active_slots` table.
 - Seed: mark 8 nodes as activatable.
 - Backend: `/passives/active-slots` CRUD.
-- iOS: `ActiveSlotsBarView` + tree node "Equip" button.
-- Figma: `ActiveSlotButton`, `ActiveSlotsBar`.
+- iOS: historical `ActiveSlotsBarView` + tree node "Equip" button (later superseded by `TalentsSummaryCard` + shared `ActiveSlotTile`).
+- Figma: `ActiveSlotButton`, historical `ActiveSlotsBar` component naming (later superseded in runtime by `TalentsSummaryCard` + `ActiveSlotTile`).
 - **Ship standalone** — talents now feel ownable even without combat changes.
 
 ### Phase 2 — Combat Session & RPS (6-8 days)
@@ -371,7 +371,7 @@ Tune via admin panel after first playtest.
 - `Hexbound/Models/ActiveSlot.swift` (new)
 - `Hexbound/Models/CombatStance.swift` (new)
 - `Hexbound/Models/CombatSession.swift` (new)
-- `Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` (new)
+- `Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` (historical draft file; later superseded by `TalentsSummaryCard.swift` + `ActiveSlotTile.swift`, then removed from the working tree)
 - `Hexbound/Views/Hero/Talents/ActiveSlotPickerSheet.swift` (new)
 - `Hexbound/Views/Hero/Talents/TalentNodeView.swift` (edit — equipped-as-active visual)
 - `Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift` (edit — equipActive)
@@ -387,7 +387,7 @@ Tune via admin panel after first playtest.
 - `Hexbound/Hexbound.xcodeproj/project.pbxproj` (add ~11 new files, 4 sections each)
 
 ### Figma
-- DS file (uDjXIz7CdJxcEOI5jCBcjY): StanceButton (12v), ActiveSlotButton (4v), StanceBadge (3v), RPSResultBanner (3v), ActiveSlotsBar (2v)
+- DS file (uDjXIz7CdJxcEOI5jCBcjY): StanceButton (12v), ActiveSlotButton (4v), StanceBadge (3v), RPSResultBanner (3v), historical ActiveSlotsBar (2v)
 - Color tokens: stanceAttack / stanceDefend / stanceCounter aliases
 
 ### Docs

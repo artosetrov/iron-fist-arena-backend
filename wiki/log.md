@@ -1,5 +1,122 @@
 # Hexbound Wiki — Log
 
+## [2026-05-06] audit | Block 321 project overview stamina and reward bounds parity
+
+Closed a more meaningful source-of-truth drift right next to the Arena/PvP cleanup: `PROJECT_OVERVIEW.md` was still carrying the older `120 stamina / 1 per min / 20 stamina PvP` model and a set of brittle reward ranges that no longer belonged in the top-level overview.
+- **Created:** `[[block-321-project-overview-stamina-and-reward-bounds-parity]]`
+- **Files audited:** `docs/01_source_of_truth/PROJECT_OVERVIEW.md`, `docs/06_game_systems/BALANCE_CONSTANTS.md`, `docs/02_product_and_features/ECONOMY.md`, `wiki/systems/stamina.md`
+- **Fixes:** updated the overview to the live `180` stamina cap / `1 per 8 min` regen / `3` free PvP then `10` stamina model, removed the stale `20 stamina PvP` wording, and pushed exact mutable reward numbers back to the balance/economy source-of-truth layer instead of freezing them in the high-level overview
+- **Inventory refresh:** updated current counts to `5267` in-scope files and `387 in-scope wiki markdown files / 386 wiki pages` (`5252` tracked + `15` untracked)
+- **Verification:** source cross-check against balance/economy/stamina docs, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 320 screen entity Arena flow parity
+
+Closed the next tiny but real map drift right after the Arena doc refresh: the higher-level `wiki/entities/screens.md` page was still reducing Arena to the older opponent-pick funnel even though the live screen and newer docs now treat it as a broader PvP hub.
+- **Created:** `[[block-320-screen-entity-arena-flow-parity]]`
+- **Files audited:** `wiki/entities/screens.md`, `docs/07_ui_ux/SCREEN_INVENTORY.md`, `docs/features/arena/ARENA_OVERVIEW.md`, `wiki/features/pvp-combat.md`
+- **Fixes:** updated the Arena row in the screen-entity map from the older `Opponent selection → Comparison → Fight` shorthand to the broader rating / stance / opponents-revenge-history flow, refreshed the source list, and rolled the inventory/index counts forward again
+- **Inventory refresh:** updated current counts to `5266` in-scope files and `386 in-scope wiki markdown files / 385 wiki pages` (`5252` tracked + `14` untracked)
+- **Verification:** live git-state recount and `git diff --check`
+
+## [2026-05-06] audit | Block 319 pre-release audit Arena font warning parity
+
+Closed a small but real stale-audit seam right next to the Arena restore work: the pre-release audit was still warning about two `ArenaDetailView` system-font violations even though the current checked-in file no longer contains those calls.
+- **Created:** `[[block-319-pre-release-audit-arena-font-warning-parity]]`
+- **Files audited:** `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`, `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`
+- **Fixes:** cleared the stale `System fonts in Views` warning for Arena and removed the old `DS-1` issue row that still pointed at no-longer-relevant `ArenaDetailView.swift:585, 660` line refs
+- **Inventory refresh:** updated current counts to `5265` in-scope files and `385 in-scope wiki markdown files / 384 wiki pages` (`5252` tracked + `13` untracked)
+- **Verification:** direct grep for `.font(.system(size:` in `ArenaDetailView.swift`, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 318 Arena overview runtime / admin parity
+
+Closed the next truthful-doc seam around PvP: the standalone Arena feature file was still carrying a March snapshot even though the live Arena runtime had already moved to the compact rating summary + stance CTA layout and a more explicit admin review surface.
+- **Created:** `[[block-318-arena-overview-runtime-admin-parity]]`
+- **Files audited:** `docs/features/arena/ARENA_OVERVIEW.md`, `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`, `Hexbound/Hexbound/Views/Arena/ArenaViewModel.swift`, `backend/src/app/api/pvp/opponents/route.ts`, `backend/src/app/api/pvp/fight/route.ts`, `backend/src/app/api/pvp/match/start/route.ts`, `backend/src/app/api/pvp/prepare/route.ts`, `backend/src/app/api/pvp/revenge/route.ts`, `backend/src/app/api/pvp/history/route.ts`, `wiki/features/pvp-combat.md`
+- **Fixes:** rewrote `ARENA_OVERVIEW.md` into a live Arena overview, replaced the older stance-preview-first layout wording with the shipped compact rating summary + dedicated stance CTA model, refreshed the route list to the current Arena-adjacent PvP family, and narrowed the admin reference to the real checked-in `matches` / `players` / adjacent `economy` pages
+- **Inventory refresh:** updated current counts to `5264` in-scope files and `384 in-scope wiki markdown files / 383 wiki pages` (`5252` tracked + `12` untracked)
+- **Verification:** live git-state recount and `git diff --check`
+
+## [2026-05-06] audit | Block 317 delete Hub BuildingLockOverlay draft
+
+Closed the next dead-file seam in the iOS tree: there was still an empty `Views/Hub/BuildingLockOverlay.swift` draft sitting next to the real reusable lock overlay implementation, even though the draft had no live code or docs depending on it anymore.
+- **Created:** `[[block-317-delete-hub-building-lock-overlay-draft]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hub/BuildingLockOverlay.swift`, `Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift`, `Hexbound/Hexbound.xcodeproj/project.pbxproj`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** deleted the dead Hub draft from the working tree, preserved the reusable Components implementation as the sole live source of truth, and marked the removed draft explicitly in the inventory
+- **Inventory refresh:** updated current counts to `5263` in-scope files and `383 in-scope wiki markdown files / 382 wiki pages` (`5252` tracked + `11` untracked)
+- **Verification:** exact-path reference grep, project-file check, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 316 historical ActiveSlotsBar naming boundary sync
+
+Closed the next tiny documentation seam after the orphan-file deletion: a couple of historical specs were still saying `ActiveSlotsBar` in a tone that sounded current instead of explicitly historical.
+- **Created:** `[[block-316-historical-active-slotsbar-naming-boundary-sync]]`
+- **Files audited:** `docs/02_product_and_features/ACTIVE_SKILL_PICKER_SPEC.md`, `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** reworded the remaining historical picker/combat references so `ActiveSlotsBar` is clearly framed as the earlier host/name later replaced by `TalentsSummaryCard` + `ActiveSlotTile`, and rolled the inventory forward again for block `316`
+- **Inventory refresh:** updated current counts to `5262` in-scope files and `382 in-scope wiki markdown files / 381 wiki pages` (`5252` tracked + `10` untracked)
+- **Verification:** targeted `ActiveSlotsBar` naming grep, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 315 delete orphan ActiveSlotsBar and doc parity
+
+Closed the next concrete cleanup seam instead of just talking around it: the old `ActiveSlotsBar.swift` file was already dead in runtime, dead in `pbxproj`, and still physically sitting in the tree anyway.
+- **Created:** `[[block-315-delete-orphan-active-slots-bar-and-doc-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift`, `Hexbound/Hexbound.xcodeproj/project.pbxproj`, `docs/retro/RETRO_2026-05-05.md`, `docs/02_product_and_features/ACTIVE_SKILL_PICKER_SPEC.md`, `docs/features/combat/INTERACTIVE_COMBAT_PLAN.md`, `wiki/audit/block-022-ios-active-skill-picker-passive-tree-contracts.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** deleted the orphan `ActiveSlotsBar.swift` from the working tree, updated the retro so the cleanup is no longer phrased as a future manual Mac step, redirected stale picker/combat references to the live `TalentsSummaryCard` + `ActiveSlotTile` surface, and marked the deleted file explicitly in the inventory
+- **Inventory refresh:** updated current counts to `5261` in-scope files and `381 in-scope wiki markdown files / 380 wiki pages` (`5252` tracked + `9` untracked)
+- **Verification:** orphan-file grep / pbxproj ref check, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 314 combat anatomy generic silhouette boundary sync
+
+Closed the next bounded combat-follow-up seam after the anatomy matrix shipped: the runtime, retro note, prototype, and docs were all close, but not yet saying the same precise thing about the middle silhouette.
+- **Created:** `[[block-314-combat-anatomy-generic-silhouette-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift`, `docs/retro/RETRO_2026-05-05.md`, `docs/07_ui_ux/COMBAT_SCREEN_REDESIGN.md`, `prototypes/combat-strike-anatomy.html`, `wiki/features/interactive-combat.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rewrote the anatomy wording so the repo now consistently says the spatial strike matrix is shipped while the remaining art follow-up is only the swap from the current generic silhouette to class-aware combat art, and rolled the inventory forward again for block `314`
+- **Inventory refresh:** updated current counts to `5260` in-scope files and `380 in-scope wiki markdown files / 379 wiki pages` (`5252` tracked + `8` untracked)
+- **Verification:** targeted anatomy-wording grep, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 313 active-slot shell and passive-tree surface parity
+
+Closed the next live terminology seam in the Active Slot wave: the repo was already shipping two different "4th slot" surfaces, but code comments, retro notes, and feature maps were still loose enough to blur them together.
+- **Created:** `[[block-313-active-slot-shell-and-passive-tree-surface-parity]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Components/ActiveSlotTile.swift`, `Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift`, `docs/retro/RETRO_2026-05-05.md`, `wiki/features/interactive-combat.md`, `wiki/features/passive-tree.md`, `wiki/systems/passive-tree.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rewrote the remaining `stub` / placeholder wording around the combat HUD's 4th tile into the more accurate locked-consumable-shell model, made the distinction from the Talents premium 4th slot explicit in code/wiki/retro, replaced the passive-tree feature map's stale `ActiveSlotsBar.swift` pointer with the live `TalentsSummaryCard` + `ActiveSlotTile` surface, and rolled the inventory forward again for block `313`
+- **Inventory refresh:** updated current counts to `5259` in-scope files and `379 in-scope wiki markdown files / 378 wiki pages` (`5252` tracked + `7` untracked)
+- **Verification:** targeted slot-terminology grep, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 312 retro and archive placeholder wording parity
+
+Closed the next residual historical-language seam: one retro note and one archive guide were still phrasing older placeholder history more literally than the rest of the repo now does, even though their underlying meaning was already well understood.
+- **Created:** `[[block-312-retro-and-archive-placeholder-wording-parity]]`
+- **Files audited:** `docs/retro/RETRO_2026-03-25.md`, `docs/11_archive/HEXBOUND_UI_UX_AUDIT_GUIDE_v1.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rewrote the retro messaging-doc note so it now uses the repo's placeholder/future-stub wording model, renamed the archive bottom-navigation section to `Design-Only; Superseded in Runtime`, and rolled the inventory forward again to include block `312`
+- **Inventory refresh:** updated current counts to `5258` in-scope files and `378 in-scope wiki markdown files / 377 wiki pages` (`5252` tracked + `6` untracked)
+- **Verification:** targeted residual-phrase grep, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 311 historical route-less building wording and rollforward
+
+Closed the next tiny-but-real historical docs seam after the live hub already moved to the cleaner route-less placeholder model: a couple of older W2/release docs were still speaking in the older player-facing placeholder language, and the inventory had drifted again after the late tracked rollforward.
+- **Created:** `[[block-311-historical-route-less-building-wording-and-rollforward]]`
+- **Files audited:** `docs/07_ui_ux/W2_D4_BUILDING_GATING_DESIGN.md`, `docs/07_ui_ux/W2_D1_REVIEW.md`, `docs/10_operations/HEXBOUND_PRE_RELEASE_AUDIT.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rewrote the remaining historical building-gating and pre-release-audit wording to the repo's route-less placeholder model, added a clearer current-runtime boundary note to `W2_D4_BUILDING_GATING_DESIGN.md`, removed stale `_untracked_` markers from blocks `304–308`, and rolled the inventory forward to include block `311` plus the current tracked/untracked counts
+- **Inventory refresh:** updated current counts to `5257` in-scope files and `377 in-scope wiki markdown files / 376 wiki pages` (`5252` tracked + `5` untracked)
+- **Verification:** targeted wording grep, live git-state recount, and `git diff --check`
+
+## [2026-05-06] audit | Block 310 arena rating widget restore and proposal boundary sync
+
+Closed the next small product/runtime seam instead of leaving it as a dangling proposal: Arena now shows the compact PvP rating widget in that summary slot again, while stance editing survives as a smaller dedicated CTA so the tutorial hook and direct route do not disappear.
+- **Created:** `[[block-310-arena-rating-widget-restore-and-proposal-boundary-sync]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Arena/ArenaDetailView.swift`, `Hexbound/Hexbound/Views/Components/PvPStatsWidget.swift`, `Hexbound/Hexbound/Views/Hero/HeroDetailView.swift`, `qa-reports/2026-05-04-arena-rating-widget-proposal.md`, `wiki/features/pvp-combat.md`, `docs/07_ui_ux/SCREEN_INVENTORY.md`
+- **Fixes:** replaced the old Arena stance-summary slot with the compact PvP rating widget, retained a smaller dedicated stance CTA for direct editing plus the existing Arena tutorial anchor, and reframed the adjacent arena-rating proposal as historical implementation context instead of a waiting approval step
+- **Inventory refresh:** updated current counts to `5256` in-scope files and `376 in-scope wiki markdown files / 375 wiki pages` (`5252` tracked + `4` untracked)
+- **Verification:** simulator-targeted `xcodebuild`, targeted arena/wiki grep, and `git diff --check`
+
+## [2026-05-06] audit | Block 309 active-slot reusability memory boundary and rollforward
+
+Closed the next live inventory + memory-boundary seam after the ActiveSlotTile reuse wave and the new 2026-05-05 retro landed in the repo.
+- **Created:** `[[block-309-active-slot-reusability-memory-boundary-and-rollforward]]`
+- **Files audited:** `Hexbound/Hexbound/Views/Components/ActiveSlotTile.swift`, `docs/retro/RETRO_2026-05-05.md`, `qa-reports/2026-05-04-arena-rating-widget-proposal.md`, `wiki/audit/project-file-inventory.md`, live `git ls-files`, live `git ls-files --others --exclude-standard`
+- **Fixes:** rewrote the new ActiveSlotTile comment and the fresh 2026-05-05 retro so the reusability rule now stands in checked-in repo prose instead of an external reusability-note token, added the missing tracked `ActiveSlotTile.swift` and `RETRO_2026-05-05.md` inventory entries, and rolled the inventory forward to include the new untracked arena rating widget proposal
+- **Inventory refresh:** updated current counts to `5255` in-scope files and `375 in-scope wiki markdown files / 374 wiki pages` (`5252` tracked + `3` untracked)
+- **Verification:** live inventory-vs-git comparison, targeted `feedback_*` grep on the touched slice, and `git diff --check`
+
 ## [2026-05-04] audit | Block 308 historical planning-header parity wave two
 
 Closed the next tiny-but-real docs seam by aligning another cluster of historical planning files with the archival boundaries they already carried lower in the page.
