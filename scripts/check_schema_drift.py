@@ -430,6 +430,37 @@ def find_unexpected_migration_artifacts(migrations_dir: Path) -> List[str]:
     return unexpected
 
 
+# ---------------------------------------------------------------------------
+# SQL-only constraints
+# ---------------------------------------------------------------------------
+# Some constraints cannot be expressed in schema.prisma at all — a partial
+# unique index is the main one. They live in migration SQL, which means the
+# drift check above (schema -> migrations) will never notice if one is deleted,
+# and `prisma migrate dev` will happily emit a DROP for it because it isn't in
+# the schema. These are load-bearing, so assert they are still present.
+SQL_ONLY_CONSTRAINTS = [
+    (
+        "gold_mine_sessions_active_slot_uniq",
+        "One uncollected gold-mine session per (character, slot). Without it a "
+        "double-tap on /gold-mine/start opens two sessions on one slot and "
+        "/collect-all pays out for both.",
+    ),
+]
+
+
+def find_missing_sql_only_constraints(migrations_dir: Path) -> list[str]:
+    """Return a message per SQL-only constraint no longer present in any migration."""
+    all_sql = ""
+    for migration in sorted(migrations_dir.glob("*/migration.sql")):
+        all_sql += migration.read_text()
+
+    missing = []
+    for name, why in SQL_ONLY_CONSTRAINTS:
+        if name not in all_sql:
+            missing.append(f"{name} — {why}")
+    return missing
+
+
 def main() -> int:
     if not SCHEMA_PATH.is_file():
         print(f"ERROR: {SCHEMA_PATH} not found", file=sys.stderr)
@@ -440,6 +471,7 @@ def main() -> int:
         return 2
 
     unexpected_artifacts = find_unexpected_migration_artifacts(MIGRATIONS_DIR)
+    missing_sql_only = find_missing_sql_only_constraints(MIGRATIONS_DIR)
 
     schema_text = SCHEMA_PATH.read_text()
     expected = parse_schema(schema_text)
@@ -472,7 +504,7 @@ def main() -> int:
             f"{len(actual_enums)} enums / {sum(len(v) for v in actual_enums.values())} enum values"
         )
 
-    if not missing_cols and not missing_idx and not missing_tables and not missing_enums and not unexpected_artifacts:
+    if not missing_cols and not missing_idx and not missing_tables and not missing_enums and not unexpected_artifacts and not missing_sql_only:
         print(
             f"[schema-drift] OK — {len(expected)} models / "
             f"{total_expected_cols} columns and {total_expected_enum_values} enum values "
@@ -514,6 +546,12 @@ def main() -> int:
         print(f"UNEXPECTED MIGRATION ARTIFACTS ({len(unexpected_artifacts)}):")
         for artifact in unexpected_artifacts:
             print(f"  ✗ {artifact}")
+        print()
+
+    if missing_sql_only:
+        print(f"MISSING SQL-ONLY CONSTRAINTS ({len(missing_sql_only)}):")
+        for item in missing_sql_only:
+            print(f"  ✗ {item}")
         print()
 
     print("FIX:")

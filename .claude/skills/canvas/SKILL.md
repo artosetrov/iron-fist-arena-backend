@@ -55,6 +55,7 @@ Read and verify against:
 ### Design System: [Compliant / N violations]
 ### Readability: [Excellent / Good / Issues found]
 ### Consistency: [Consistent / N inconsistencies]
+### Art Polish: [Shipped / N asset defects — list]
 
 ### Visual Issues:
 1. [issue → fix with specific token/component]
@@ -62,6 +63,16 @@ Read and verify against:
 ### Polish Recommendations:
 1. [enhancement]
 ```
+
+### Step 6 — Art Asset Polish (the "shipped game, not AI slop" bar)
+Apply to every screen that shows generated art (characters, bosses, buildings, icons, FX plates). Judge **in the assembled screen at display size on a 3x device**, never the PNG alone. Rules: `docs/08_prompts/ART_STYLE_GUIDE.md` → *Generation Rules*.
+- One rendering family on screen — pen-and-ink lineart only; nothing painterly, 3D-glossy or pixel next to it
+- One texel density — line weights / art pixels the same size on screen across neighbours (no mixels, no runtime upscale > 1.0×; `@2x/@3x` slots filled)
+- One outline weight and one light direction (key from the upper left) across sprites, props and code-drawn pieces
+- Nothing baked that code owns: glow, cast shadow, **text**, particles, motion blur → flag the asset for regeneration
+- No generator artifacts: garbled glyphs/logos, halos or fringes at edges, cut edges, extra limbs, design drift between states of one character
+- No placeholder tells: default fonts, unstyled rectangles, programmer-coloured shapes, mixed languages
+- Report each item as pass/fail with the screen + asset name; one `Alert` to `@pulse` when the defect is motion, to `@chronicler` when it reveals a missing rule
 
 ---
 

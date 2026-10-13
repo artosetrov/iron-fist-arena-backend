@@ -118,6 +118,25 @@ git diff --cached --name-only | grep '\.env'
 
 **Why:** Temp files inside `.xcodeproj` bundle (e.g., `project.pbxproj.backup`, `file.tmp1`) break Xcode's project parsing, causing "Couldn't load project" error even if they're not referenced in the pbxproj file. Clean bundle must only contain: `project.pbxproj`, `project.xcworkspace/`, `xcshareddata/`, `xcuserdata/`.
 
+### 4b. Orphan Swift Files (on disk, not in pbxproj — 2026-05-04)
+
+After a refactor that *replaces* an old component with a new one, the old `.swift` file can stay on disk silently — Xcode doesn't compile it (no pbxproj entry), no other Swift file imports it, but the file still ships in git, clutters Finder, and confuses readers of the tree. Sandbox runs cannot delete files in the workspace mount, so deletes get queued for the human and frequently get forgotten.
+
+**Detection (now in `preflight_check.sh` section 9):**
+```bash
+# For each Swift file in Hexbound/Hexbound, count pbxproj refs AND symbol uses elsewhere.
+# 0 pbxproj refs + 0 non-comment call sites = orphan.
+```
+
+**Reference incident:** commit `6b5a72d` (2026-05-04). `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift` was supposed to be deleted when `TalentsSummaryCard` replaced it (per `wiki/log.md:497`) but the file physically remained. Zero call sites, zero pbxproj refs, zero symbols anywhere. Blacksmith caught it as "Swift files missing from pbxproj" but couldn't tell whether it was forgotten-add vs forgotten-delete. The orphan check disambiguates by also counting call sites.
+
+**Action when an orphan is found:**
+1. Confirm with `git log --diff-filter=D --follow -- <path>` shows it was renamed/replaced, not just newly created and pending pbxproj entry.
+2. Run from the Mac (sandbox cannot delete): `rm <path>`
+3. Commit the deletion with a one-line message like `chore: remove orphan ActiveSlotsBar.swift (replaced by TalentsSummaryCard)`.
+
+If the file IS supposed to compile, that's a missing pbxproj entry — Section 1 (full audit) catches that case separately.
+
 ### 5. Design System Quick Check (changed view files only)
 
 Run ONLY on changed `.swift` files in Views/:

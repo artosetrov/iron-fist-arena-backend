@@ -44,6 +44,7 @@ TEXT_FILE_SUFFIXES = {
     ".tsx",
     ".txt",
     ".xcconfig",
+    ".xcscheme",
     ".xml",
     ".yaml",
     ".yml",
@@ -52,7 +53,44 @@ TEXT_FILE_SUFFIXES = {
 CONTENT_PATTERNS = (
     (re.compile(rb"-----BEGIN (?:EC |RSA )?PRIVATE KEY-----"), "contains a private key block"),
     (re.compile(rb"\bghp_[A-Za-z0-9]{20,}\b"), "contains a GitHub token-like value"),
-    (re.compile(rb"\bvcp_[A-Za-z0-9]{20,}\b"), "contains a Vercel token-like value"),
+    (re.compile(rb"\bvcp_[A-Za-z0-9]{20,}\b"), "contains a Vercel token-like value")
+)
+
+# Config files declare values; source files mostly reference variables named
+# `password`. Scanning only config files for literal credentials keeps this
+# check quiet enough to stay switched on. This is the gap that let a real
+# account password live in Hexbound.xcscheme for months.
+CONFIG_FILE_SUFFIXES = {
+    ".conf",
+    ".json",
+    ".plist",
+    ".toml",
+    ".xcconfig",
+    ".xcscheme",
+    ".xml",
+    ".yaml",
+    ".yml",
+}
+
+CONFIG_CONTENT_PATTERNS = (
+    (
+        re.compile(
+            rb"""(?is)(?:key|name)\s*[:=]\s*["'][^"']*"""
+            rb"""(?:password|passwd|secret|api[_-]?key|access[_-]?token)"""
+            rb"""[^"']*["'].{0,200}?value\s*=\s*["']"""
+            rb"""(?!\s*(?:\$|\{|<|\*{3}|CHANGEME|changeme|your[-_]|placeholder|xxx|example)"""
+            rb"""|["'])[^"']{6,}["']"""
+        ),
+        "declares a literal credential value",
+    ),
+    (
+        re.compile(
+            rb"""(?i)["'](?:password|passwd|client[_-]?secret|api[_-]?key|access[_-]?token)["']\s*:\s*["']"""
+            rb"""(?!\s*(?:\$|\{|<|\*{3}|CHANGEME|changeme|your[-_]|placeholder|xxx|example)"""
+            rb"""|["'])[^"']{6,}["']"""
+        ),
+        "declares a literal credential value",
+    ),
 )
 
 
@@ -95,6 +133,12 @@ def scan_file_contents(path: Path) -> list[str]:
     for pattern, reason in CONTENT_PATTERNS:
         if pattern.search(data):
             findings.append(reason)
+
+    if path.suffix.lower() in CONFIG_FILE_SUFFIXES:
+        for pattern, reason in CONFIG_CONTENT_PATTERNS:
+            if pattern.search(data):
+                findings.append(reason)
+
     return findings
 
 

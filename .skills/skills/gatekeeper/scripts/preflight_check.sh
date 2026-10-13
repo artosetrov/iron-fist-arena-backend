@@ -174,6 +174,41 @@ if [ -n "$WIKI_GEN_CHANGED" ] && [ -f "scripts/wiki/check-drift.sh" ]; then
   echo ""
 fi
 
+# --- 9. Orphan Swift files (on disk, not in pbxproj) ---
+# Incident: 2026-05-04 commit 6b5a72d — `Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift`
+# was supposed to be deleted when TalentsSummaryCard replaced it (wiki/log.md:497) but the file
+# physically remained. Zero call sites, zero pbxproj refs — silent dead code on disk. Detect:
+# any .swift under Hexbound/Hexbound/ with 0 refs in pbxproj.
+PBXPROJ="Hexbound/Hexbound.xcodeproj/project.pbxproj"
+if [ -f "$PBXPROJ" ] && [ -d "Hexbound/Hexbound" ]; then
+  ORPHANS=""
+  while IFS= read -r f; do
+    base=$(basename "$f")
+    refs=$(grep -c "$base" "$PBXPROJ" 2>/dev/null)
+    refs=${refs:-0}
+    if [ "$refs" = "0" ]; then
+      # Confirm zero call sites — symbol grep on filename without .swift
+      sym=$(basename "$f" .swift)
+      # Count callers excluding the file itself AND comment-only mentions (lines starting with `//`).
+      callers=$(grep -rn --include="*.swift" "\b$sym\b" Hexbound/Hexbound 2>/dev/null \
+        | grep -v "^$f:" \
+        | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' \
+        | wc -l)
+      callers=${callers:-0}
+      if [ "$callers" = "0" ]; then
+        ORPHANS="$ORPHANS\n  - $f (0 pbxproj refs, 0 call sites)"
+      fi
+    fi
+  done < <(find Hexbound/Hexbound -type f -name "*.swift" 2>/dev/null)
+  if [ -n "$ORPHANS" ]; then
+    echo "## Orphan Swift Files (on disk, not in pbxproj, no call sites)"
+    echo -e "$ORPHANS"
+    echo "  → Delete via: rm <path>  (sandbox can't delete — run from Mac)"
+    WARNINGS="$WARNINGS\n  - Orphan .swift files on disk (see above)"
+    echo ""
+  fi
+fi
+
 # --- VERDICT ---
 echo "==============================="
 if [ "$VERDICT" = "BLOCKED" ]; then

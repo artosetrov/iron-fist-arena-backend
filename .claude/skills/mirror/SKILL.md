@@ -110,6 +110,9 @@ Before proposing any new UI element, verify these don't already solve the proble
 - Stroke with at least `opacity(0.5)` and `lineWidth: 1.5`
 - Interactive cards wrapped in `Button` with `.plain` style, chevron indicator, SFX + haptics
 
+- Every HUD/card text is checked at **worst-case strings** (longest localized label, 6-digit gold, 3-digit level, `99+` badges): text never touches or leaves its panel, never truncates a number
+- Panels are sized to content on a consistent grid; one type family in a small set of sizes
+
 ## Output Format
 
 ```

@@ -9,8 +9,8 @@ on:
       - 'Hexbound/Config/**'
       - 'Hexbound/fastlane/**'
       - 'Hexbound/scripts/**'
-      - 'Hexbound/Hexbound/App/AppConstants.swift'
-      - 'Hexbound/Hexbound/Info.plist'
+      - 'Hexbound/Hexbound/**'
+      - 'Hexbound/Hexbound.xcodeproj/**'
       - 'Hexbound/Hexbound.xcodeproj/project.pbxproj'
       - 'scripts/**'
       - 'docs/10_operations/RELEASE_IOS.md'
@@ -24,8 +24,8 @@ on:
       - 'Hexbound/Config/**'
       - 'Hexbound/fastlane/**'
       - 'Hexbound/scripts/**'
-      - 'Hexbound/Hexbound/App/AppConstants.swift'
-      - 'Hexbound/Hexbound/Info.plist'
+      - 'Hexbound/Hexbound/**'
+      - 'Hexbound/Hexbound.xcodeproj/**'
       - 'Hexbound/Hexbound.xcodeproj/project.pbxproj'
       - 'scripts/**'
       - 'docs/10_operations/RELEASE_IOS.md'
@@ -83,6 +83,14 @@ jobs:
       - name: Check Prisma migration drift
         run: python3 scripts/check_schema_drift.py
 
+  ladder-parity:
+    name: PvP Ladder Parity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check tier.ts, PvPLadder.fallback and the admin panel agree
+        run: python3 scripts/check_ladder_parity.py --verbose
+
   ios-release-config:
     name: iOS Release Config Preflight
     runs-on: ubuntu-latest
@@ -93,3 +101,52 @@ jobs:
       - uses: actions/checkout@v5
       - name: Check iOS runtime/release config
         run: python3 scripts/check_release_config.py --allow-missing-local-values
+
+  ios-build:
+    name: iOS Build (compile only)
+    # Nothing compiled Swift before this job existed: CI covered backend,
+    # admin and Prisma only, so a broken view or a file missing from
+    # project.pbxproj was found by whoever next opened Xcode.
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: Hexbound
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        # The default symlink, not a pinned point version: the macOS images
+        # ship Xcode_16.2/16.4/26.x, and a bare Xcode_16.app has not existed
+        # since 16.0 was rotated out. objectVersion = 77 needs Xcode 16+.
+        run: sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Provide placeholder runtime config
+        # Local.secrets.xcconfig is gitignored. The placeholders in the example
+        # file are enough to compile — the values only matter at runtime, where
+        # AppConstants refuses to launch on a missing key.
+        run: cp Config/Local.secrets.example.xcconfig Config/Local.secrets.xcconfig
+
+      - name: Verify every Swift file is in the Xcode project
+        # A .swift file that is not in project.pbxproj silently does not
+        # compile, so the build below would pass while shipping stale code.
+        run: |
+          on_disk=$(find Hexbound -name '*.swift' | wc -l | tr -d ' ')
+          in_proj=$(grep -c 'in Sources \*/ = {isa = PBXBuildFile' Hexbound.xcodeproj/project.pbxproj | tr -d ' ')
+          echo "on disk: $on_disk  in project: $in_proj"
+          if [ "$on_disk" != "$in_proj" ]; then
+            echo "::error::Swift file count mismatch — a file is missing from project.pbxproj"
+            exit 1
+          fi
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Hexbound.xcodeproj \
+            -scheme Hexbound \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify

@@ -54,6 +54,7 @@ Owns micro-interactions, responsive feel, hit feedback, transitions, juice, rewa
 ### Animation Compliance: [Clean / N violations]
 ### Reward Juice: [Exciting / Adequate / Flat]
 ### Performance: [Light / Moderate / Heavy — optimization needed?]
+### Effect Integrity: [Anchored & shaped / N issues]
 
 ### Issues:
 1. [feedback gap → fix]
@@ -61,6 +62,14 @@ Owns micro-interactions, responsive feel, hit feedback, transitions, juice, rewa
 ### Juice Opportunities:
 1. [where to add premium feel]
 ```
+
+### Step 6 — Effect & Motion Integrity
+- Every emitted effect starts at what emits it (weapon tip, hand, contact point, the HP bar that changed) in every state and facing — never "somewhere near"
+- Effects are shaped, layered and change over their life. Judge each on an **age strip** (frames sampled across its life, magnified): plain bars, flat rings, uniform lines and rectangles read as programmer art
+- No rigid-only motion: a whole sprite that only rotates, scales or bobs is a fake, not an animation (opacity/pulse emphasis is allowed by project rules; see Step 2)
+- Time-driven effects really move and don't sweep or jump when state changes; nothing freezes mid-life on `.onDisappear`
+- Text callouts in combat (DODGE / MISS / CRIT / numbers) are code-drawn typography from the design system, not PNGs (`docs/08_prompts/ART_STYLE_GUIDE.md` §1)
+- Close the class, not the instance: after fixing a reported motion defect, look for the same defect in every other emitter/screen and add the check to this list
 
 ---
 

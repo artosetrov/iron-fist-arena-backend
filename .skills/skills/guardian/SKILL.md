@@ -157,6 +157,40 @@ Button {
 
 **Review trigger:** flag any `Button { ... }` whose tap closure includes `forfeit`, `skip`, `sell`, `destroy`, `delete`, `quit`, `leave`, or `cancelMatch` and has no surrounding `.confirmationDialog` / `.alert` modifier.
 
+### 11. Static Stored Properties on Generic Types (2026-05-04)
+
+Swift forbids `static let` (and `static var` *stored*) properties on **generic** types. The compiler emits:
+
+```
+error: Static stored properties not supported in generic types
+```
+
+This is easy to miss because:
+- `static let foo = ...` on a non-generic struct is the idiomatic way to host shared constants.
+- Adding generics to a previously non-generic type (e.g. introducing a `ViewBuilder` overlay parameter) silently turns every existing `static let` into a build break.
+- The scanner does NOT currently detect it — only the Swift compiler does.
+
+**Pattern (CORRECT) for generic types:**
+
+```swift
+struct ActiveSlotTile<Overlay: View>: View {
+    // Computed — zero runtime cost, compiler inlines the constant.
+    static var premiumAccent: Color { Color(red: 0.71, green: 0.49, blue: 0.84) }
+}
+```
+
+**Anti-pattern (WRONG — build break):**
+
+```swift
+struct ActiveSlotTile<Overlay: View>: View {
+    static let premiumAccent: Color = Color(red: 0.71, green: 0.49, blue: 0.84) // ❌
+}
+```
+
+**Reference incident:** commit `20cdcea` (2026-05-04). The `ActiveSlotTile` unification in `6b5a72d` shipped with `static let premiumAccent: Color = ...` on a generic `ActiveSlotTile<Overlay: View>` struct. Build failed with "Static stored properties not supported in generic types". Hotfix 62 minutes later converted to `static var ... { ... }` (computed). Call sites unchanged because `Self.premiumAccent` reads identically.
+
+**Review trigger:** in any `struct Foo<...>: View` or `class Foo<...>` (or `enum`/`actor`) declaration, scan the body for `static let` or `static var XXX: Type =` (note: `=`, not `{`). Both must be converted to computed `static var XXX: Type { ... }`. Allowed exceptions: `static let` inside a non-generic *nested* type (the nested type itself isn't generic) is fine.
+
 ### 10. Fixed-Coord Canvas Edge Padding (2026-05-02)
 
 When a SwiftUI canvas lays out nodes from server-supplied `(x, y)` coords on a fixed range like `x ∈ [0, W]`, `y ∈ [0, H]` (e.g. `TalentTreeCanvas`), the canvas inset MUST satisfy:

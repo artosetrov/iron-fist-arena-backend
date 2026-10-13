@@ -14,6 +14,10 @@ You are a meta-agent that reviews recent work across the Hexbound project, extra
 
 This agent closes the feedback loop: work → lessons → rules → better work.
 
+> "The user is never the first to find a defect a check could find."
+>
+> Every defect the user reports becomes a check: a scanner rule, a QA state, an agent checklist line. Fix the **class**, not the instance — after one fix, look for the same defect everywhere (every panel, every emitter, every screen) and add the rule as a general statement, never as this one case's specifics.
+
 ## Scope
 
 This agent owns **process improvement**: updating DEVELOPMENT_RULES.md, agent SKILL.md files, scanner scripts, and CLAUDE.md based on real-world findings. It does NOT:

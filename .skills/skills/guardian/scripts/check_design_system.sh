@@ -287,4 +287,52 @@ if [ -d "Hexbound/Hexbound" ]; then
 fi
 
 echo ""
+echo "## 11. Static stored properties on generic types (build break)"
+# Incident: 2026-05-04 commit 20cdcea — ActiveSlotTile<Overlay: View> shipped with
+# `static let premiumAccent: Color = ...` in 6b5a72d. Swift forbids static stored
+# properties on generic types: "Static stored properties not supported in generic types".
+# Hotfix converted to `static var ... { ... }` (computed). Detect: any `static (let|var) X: T = ...`
+# inside a `struct/class/enum/actor Name<...>` declaration (generic type body).
+generic_static=""
+if [ -d "Hexbound/Hexbound" ]; then
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    # awk: track when we're inside a generic type body, flag `static let X = ...` / `static var X: T = ...` lines.
+    # Skips computed `static var X: T { ... }` (no `=` before brace).
+    hits=$(awk '
+      BEGIN { depth=0; gen=0; gen_depth=0 }
+      # Match generic type declaration: struct/class/enum/actor Foo<...>
+      /^[[:space:]]*(public|internal|fileprivate|private)?[[:space:]]*(final[[:space:]]+)?(struct|class|enum|actor)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*<[^>]+>/ {
+        if (gen == 0) { gen=1; gen_depth=depth }
+      }
+      {
+        # Count braces in this line (rough — ignores strings/comments but good enough for Swift style)
+        n_open = gsub(/\{/, "{", $0)
+        n_close = gsub(/\}/, "}", $0)
+        # Inside generic type body, look for static stored property:
+        if (gen == 1 && depth > gen_depth) {
+          if ($0 ~ /^[[:space:]]*(public|internal|fileprivate|private)?[[:space:]]*static[[:space:]]+(let|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(:[^={]*)?=/ ) {
+            # static var X: T { ... } has no `=` before `{`, so the regex above with `=` only matches stored.
+            print FILENAME ":" NR ": " $0
+          }
+        }
+        depth += n_open - n_close
+        if (gen == 1 && depth <= gen_depth) { gen=0 }
+      }
+    ' "$f" 2>/dev/null)
+    if [ -n "$hits" ]; then
+      generic_static="$generic_static
+$hits"
+    fi
+  done < <(find Hexbound/Hexbound -type f -name "*.swift" 2>/dev/null)
+fi
+generic_static=$(echo "$generic_static" | grep -v '^$')
+if [ -n "$generic_static" ]; then
+  echo "⚠️  Static stored properties inside generic types — Swift will reject. Convert to computed (static var X: T { ... }):"
+  echo "$generic_static"
+else
+  echo "✅ No static stored properties on generic types"
+fi
+
+echo ""
 echo "=== SCAN COMPLETE ==="
