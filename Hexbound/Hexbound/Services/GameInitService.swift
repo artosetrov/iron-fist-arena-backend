@@ -29,6 +29,7 @@ final class GameInitService {
 
             appState.currentCharacter = response.character
             appState.currentUser = response.user
+            StoreKitService.shared.appAccountToken = response.user.flatMap { UUID(uuidString: $0.id) }
             // Tie crash reports to the session that produced them — account id
             // only, no email or display name.
             ObservabilityService.setUser(id: response.user?.id)

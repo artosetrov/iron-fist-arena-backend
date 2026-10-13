@@ -83,6 +83,11 @@ final class StoreKitService: ObservableObject {
     @Published var products: [Product] = []
     @Published var purchasedProductIDs: Set<String> = []
 
+    /// Hexbound user id, attached to every purchase as StoreKit's
+    /// `appAccountToken` so the server can refuse receipts redeemed from a
+    /// different account. Set by GameInitService once the user is known.
+    var appAccountToken: UUID?
+
     private var transactionListener: Task<Void, Error>?
 
     private init() {
@@ -121,7 +126,8 @@ final class StoreKitService: ObservableObject {
     }
 
     private func executePurchase(_ product: Product) async throws -> Transaction {
-        let result = try await product.purchase()
+        let options: Set<Product.PurchaseOption> = appAccountToken.map { [.appAccountToken($0)] } ?? []
+        let result = try await product.purchase(options: options)
 
         switch result {
         case .success(let verification):

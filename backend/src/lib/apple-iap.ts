@@ -38,6 +38,10 @@ export interface AppleTransactionInfo {
   expiresDate?: number       // ms since epoch — renewal boundary
   revocationDate?: number    // ms since epoch — refund/family-revoke timestamp
   revocationReason?: 0 | 1   // 0=app issue, 1=other (refund)
+  // UUID the client attached at purchase time (StoreKit `appAccountToken`).
+  // iOS sets it to the Hexbound user id so a receipt can be bound to the
+  // account that bought it (AUDIT-2026-10-13 H8). Absent on older builds.
+  appAccountToken?: string
 }
 
 export interface AppleVerifyResult {

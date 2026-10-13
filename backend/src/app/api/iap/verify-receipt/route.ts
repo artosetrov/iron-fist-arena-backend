@@ -80,6 +80,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Bind the receipt to the buying account. Without this, anyone who learns
+    // a transaction id first could redeem a purchase made on another Apple ID
+    // (AUDIT-2026-10-13 H8). Older builds send no token — allowed, logged.
+    const boundToken = appleResult.transactionInfo?.appAccountToken
+    if (boundToken && boundToken.toLowerCase() !== user.id.toLowerCase()) {
+      console.warn('[iap] appAccountToken mismatch', { user: user.id, transaction_id })
+      return NextResponse.json(
+        { error: 'This purchase belongs to a different account', code: 'ACCOUNT_MISMATCH' },
+        { status: 403 }
+      )
+    }
+
     // ──────────────────────────────────────────────
     // Resolve WHAT WAS ACTUALLY BOUGHT from Apple, not from the client.
     //
