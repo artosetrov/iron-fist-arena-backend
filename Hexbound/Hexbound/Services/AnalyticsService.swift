@@ -15,10 +15,10 @@ import Foundation
 /// signup flow (before the user creates a character) and IAP purchase started
 /// (before StoreKit verification).
 ///
-/// Current boundary: this service is still a dormant scaffold. The typed event
-/// mirror exists, but there are no live call-sites wired into production UI
-/// flows yet. Backend analytics and tutorial structured logs remain the active
-/// instrumentation paths today.
+/// Client events (`ClientAnalyticsEvent`) are buffered and POSTed in batches to
+/// `/api/analytics/events`, where they land in `analytics_events` next to the
+/// server-side funnel events (since 2026-10-13 — before that, `track()` had
+/// zero call sites and nothing was persisted).
 enum AnalyticsAuthProvider: String, Sendable {
     case email
     case guest
@@ -97,13 +97,109 @@ struct NoopAnalyticsBackend: AnalyticsBackend {
     }
 }
 
+// MARK: - Client events (iOS → POST /api/analytics/events)
+
+/// JSON-safe property value for client events.
+enum AnalyticsValue: Encodable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, ExpressibleByBooleanLiteral {
+    case string(String), int(Int), double(Double), bool(Bool)
+
+    init(stringLiteral value: String) { self = .string(value) }
+    init(integerLiteral value: Int) { self = .int(value) }
+    init(booleanLiteral value: Bool) { self = .bool(value) }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .string(let v): try c.encode(v)
+        case .int(let v): try c.encode(v)
+        case .double(let v): try c.encode(v)
+        case .bool(let v): try c.encode(v)
+        }
+    }
+}
+
+/// Client-originated funnel events. Allowlisted on the server
+/// (`CLIENT_EVENT_NAMES` in backend/src/lib/analytics.ts) — add there first.
+enum ClientAnalyticsEvent: String {
+    case sessionStart = "session_start"
+    case screenView = "screen_view"
+    case onboardingStep = "onboarding_step"
+    case tutorialComplete = "tutorial_complete"
+    case iapStarted = "iap_started"
+    case iapFailed = "iap_failed"
+    case dungeonRunStart = "dungeon_run_start"
+    case dungeonRunEnd = "dungeon_run_end"
+    case shopPurchase = "shop_purchase"
+    case pvpFightStart = "pvp_fight_start"
+}
+
+private struct ClientEventPayload: Encodable {
+    let name: String
+    let characterId: String?
+    let props: [String: AnalyticsValue]
+    let ts: Int
+}
+
+private struct ClientEventBatch: Encodable {
+    let events: [ClientEventPayload]
+}
+
+private struct ClientEventAck: Decodable {
+    let accepted: Int
+}
+
 @MainActor
 final class AnalyticsService {
     static let shared = AnalyticsService()
 
     private var backend: any AnalyticsBackend = NoopAnalyticsBackend()
 
+    // Client-event buffer. Flushed every `flushInterval`, when it reaches
+    // `flushThreshold`, or explicitly via `flush()` (app background).
+    private var buffer: [ClientEventPayload] = []
+    private var flushTask: Task<Void, Never>?
+    private let flushThreshold = 20
+    private let flushInterval: Duration = .seconds(15)
+    /// Set by GameInitService once a character is active.
+    var currentCharacterId: String?
+
     private init() {}
+
+    /// Queue a client event. Never throws, never blocks the caller.
+    /// Props must not contain PII — ids, enums and numbers only.
+    func track(_ event: ClientAnalyticsEvent, _ props: [String: AnalyticsValue] = [:]) {
+        buffer.append(ClientEventPayload(
+            name: event.rawValue,
+            characterId: currentCharacterId,
+            props: props,
+            ts: Int(Date().timeIntervalSince1970 * 1000)
+        ))
+        #if DEBUG
+        print("[analytics] \(event.rawValue) \(props)")
+        #endif
+        if buffer.count >= flushThreshold {
+            flush()
+        } else if flushTask == nil {
+            flushTask = Task { [weak self] in
+                try? await Task.sleep(for: self?.flushInterval ?? .seconds(15))
+                await MainActor.run { self?.flush() }
+            }
+        }
+    }
+
+    /// Send whatever is buffered. Safe to call any time (e.g. on background).
+    func flush() {
+        flushTask?.cancel()
+        flushTask = nil
+        guard !buffer.isEmpty else { return }
+        let batch = ClientEventBatch(events: buffer)
+        buffer.removeAll()
+        Task.detached(priority: .utility) {
+            // Fire-and-forget: a lost batch is acceptable, a visible error is not.
+            guard await APIClient.shared.getAuthToken() != nil else { return }
+            let _: ClientEventAck? = try? await APIClient.shared.post(APIEndpoints.analyticsEvents, body: batch)
+        }
+    }
 
     /// Swap in a real SDK backend at app startup. Typically called once from
     /// `HexboundApp` after auth is wired (so we can attach userId to session).

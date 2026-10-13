@@ -4,7 +4,7 @@ import {
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
   FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,
-  Map, MessageSquare, Paintbrush, Package, Target, UserPlus,
+  Map, MessageSquare, Paintbrush, Package, Target, UserPlus, BarChart3,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -21,6 +21,7 @@ export interface NavGroup {
 /** Flat list for backwards compat */
 export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   { label: 'Tables', href: '/tables', icon: Database },
   { label: 'Players', href: '/players', icon: Users },
   { label: 'Arena', href: '/matches', icon: Swords },
@@ -61,6 +62,7 @@ export const navGroups: NavGroup[] = [
     label: 'Overview',
     items: [
       { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { label: 'Analytics', href: '/analytics', icon: BarChart3 },
       { label: 'Players', href: '/players', icon: Users },
       { label: 'Arena', href: '/matches', icon: Swords },
       { label: 'Matchmaking', href: '/matchmaking', icon: Target },

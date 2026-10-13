@@ -10,6 +10,7 @@ struct HexboundApp: App {
     @State private var pushService = PushNotificationService()
     @State private var isCheckingAuth = true
     @State private var showSplash = true
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -133,7 +134,14 @@ struct HexboundApp: App {
             .onOpenURL { url in
                 _ = GoogleSignInHelper.handle(url)
             }
+            .onChange(of: scenePhase) { _, phase in
+                // Don't lose buffered analytics when the app is suspended.
+                if phase == .background || phase == .inactive {
+                    AnalyticsService.shared.flush()
+                }
+            }
             .onChange(of: appState.currentScreen) { oldScreen, screen in
+                AnalyticsService.shared.track(.screenView, ["screen": .string(String(describing: screen))])
                 if screen == .game {
                     // Entering game — request push, check tutorial
                     Task { await pushService.requestPermissionAndRegister() }

@@ -30,6 +30,11 @@ final class GameInitService {
             appState.currentCharacter = response.character
             appState.currentUser = response.user
             StoreKitService.shared.appAccountToken = response.user.flatMap { UUID(uuidString: $0.id) }
+            AnalyticsService.shared.currentCharacterId = response.character.id
+            AnalyticsService.shared.track(.sessionStart, [
+                "level": .int(response.character.level),
+                "class": .string(response.character.characterClass.rawValue),
+            ])
             // Tie crash reports to the session that produced them — account id
             // only, no email or display name.
             ObservabilityService.setUser(id: response.user?.id)

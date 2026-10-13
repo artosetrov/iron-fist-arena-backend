@@ -592,6 +592,11 @@ final class ShopViewModel {
             }
 
             if success {
+                AnalyticsService.shared.track(.shopPurchase, [
+                    "catalogId": .string(ct.isEmpty ? (item.catalogId ?? item.id) : ct),
+                    "qty": .int(qty),
+                    "kind": isGemPack ? "gem_pack" : (item.isConsumable ? "consumable" : "equipment"),
+                ])
                 let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "\(item.itemName) purchased!"
                 appState.showToast(toastMsg, type: .reward)
             } else {

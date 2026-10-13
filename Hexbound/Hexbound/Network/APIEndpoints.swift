@@ -126,6 +126,9 @@ enum APIEndpoints {
     static let leaderboard = "/api/leaderboard"
     static let leaderboardSearch = "/api/leaderboard/search"
 
+    // MARK: - Analytics
+    static let analyticsEvents = "/api/analytics/events"
+
     // MARK: - Game Init
     static let gameInit = "/api/game/init"
 

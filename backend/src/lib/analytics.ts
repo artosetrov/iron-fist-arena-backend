@@ -6,14 +6,10 @@
  * exactly one place — `setAnalyticsBackend()` — and does not require touching
  * call-sites.
  *
- * Defaults to `NoopBackend`, which logs to stdout when
- * `ANALYTICS_DEBUG=true` and is silent otherwise. Chosen so the event schema
- * can ship to production before the SDK decision lands.
- *
- * Current boundary: this generic analytics layer is still a dormant scaffold.
- * The typed event contract exists, but there are no live backend emitters
- * wired into request/runtime flows yet. The active instrumentation path today
- * is `backend/src/lib/game/tutorial-analytics.ts`.
+ * Default backend is `PrismaBackend` → `analytics_events` table (since
+ * 2026-10-13; before that events went to a NoopBackend and were lost).
+ * `ANALYTICS_BACKEND=noop` disables persistence; tests always use Noop.
+ * The admin "Analytics" page reads the table for funnels and retention.
  *
  * Call-site rule: `track()` is fire-and-forget. Never await it, never let it
  * throw into request handlers. A failed analytics write must not degrade user
@@ -86,8 +82,37 @@ export type AnalyticsEvent =
 
 export type EventName = AnalyticsEvent['name']
 
+/**
+ * Client-originated events (iOS). Allowlisted so the public ingest route
+ * cannot be used to pollute the table. Keep in sync with
+ * `Hexbound/Hexbound/Services/AnalyticsService.swift` ClientEvent.
+ */
+export const CLIENT_EVENT_NAMES = [
+  'session_start',
+  'screen_view',
+  'onboarding_step',
+  'tutorial_complete',
+  'iap_started',
+  'iap_failed',
+  'dungeon_run_start',
+  'dungeon_run_end',
+  'shop_purchase',
+  'pvp_fight_start',
+] as const
+export type ClientEventName = (typeof CLIENT_EVENT_NAMES)[number]
+
+export interface ClientEvent {
+  name: ClientEventName
+  userId: string
+  characterId?: string | null
+  props?: Record<string, unknown>
+  /** Client timestamp (ms). Clamped server-side to ±1 day. */
+  ts?: number
+}
+
 export interface AnalyticsBackend {
   track(event: AnalyticsEvent): Promise<void>
+  trackClient?(events: ClientEvent[]): Promise<void>
 }
 
 class NoopBackend implements AnalyticsBackend {
@@ -96,9 +121,56 @@ class NoopBackend implements AnalyticsBackend {
       console.log(`[analytics] ${event.name}`, event)
     }
   }
+  async trackClient(): Promise<void> {}
 }
 
-let backend: AnalyticsBackend = new NoopBackend()
+/**
+ * Default production backend: one row per event in `analytics_events`.
+ * Prisma is imported lazily so unit tests that never touch the DB (and mock
+ * `@/lib/prisma`) are unaffected. Set ANALYTICS_BACKEND=noop to disable.
+ */
+class PrismaBackend implements AnalyticsBackend {
+  private async db() {
+    const { prisma } = await import('@/lib/prisma')
+    return prisma
+  }
+
+  async track(event: AnalyticsEvent): Promise<void> {
+    const { name, userId, ...rest } = event
+    const characterId = 'characterId' in rest ? (rest as { characterId?: string }).characterId ?? null : null
+    const prisma = await this.db()
+    await prisma.analyticsEvent.create({
+      data: { name, userId, characterId, source: 'server', props: rest as object },
+    })
+    if (process.env.ANALYTICS_DEBUG === 'true') console.log(`[analytics] ${name}`, event)
+  }
+
+  async trackClient(events: ClientEvent[]): Promise<void> {
+    if (events.length === 0) return
+    const now = Date.now()
+    const dayMs = 24 * 60 * 60 * 1000
+    const prisma = await this.db()
+    await prisma.analyticsEvent.createMany({
+      data: events.map((e) => ({
+        name: e.name,
+        userId: e.userId,
+        characterId: e.characterId ?? null,
+        source: 'ios',
+        props: (e.props ?? {}) as object,
+        createdAt: new Date(
+          typeof e.ts === 'number' ? Math.min(now + dayMs, Math.max(now - dayMs, e.ts)) : now,
+        ),
+      })),
+    })
+  }
+}
+
+const useNoop =
+  process.env.ANALYTICS_BACKEND === 'noop' ||
+  process.env.NODE_ENV === 'test' ||
+  process.env.VITEST === 'true'
+
+let backend: AnalyticsBackend = useNoop ? new NoopBackend() : new PrismaBackend()
 
 /**
  * Swap in a real SDK backend (Firebase / Mixpanel / Segment / Amplitude) at
@@ -114,6 +186,20 @@ export function setAnalyticsBackend(b: AnalyticsBackend): void {
  * Prisma transactions (though track() should generally be called *after* the
  * transaction commits so we don't emit events for rolled-back operations).
  */
+/**
+ * Ingest client-originated events (see POST /api/analytics/events).
+ * Fire-and-forget like `track()`.
+ */
+export function trackClientEvents(events: ClientEvent[]): void {
+  try {
+    void backend.trackClient?.(events).catch((err) => {
+      console.error('[analytics] client batch failed:', err)
+    })
+  } catch (err) {
+    console.error('[analytics] client batch synchronous error:', err)
+  }
+}
+
 export function track(event: AnalyticsEvent): void {
   try {
     void backend.track(event).catch((err) => {

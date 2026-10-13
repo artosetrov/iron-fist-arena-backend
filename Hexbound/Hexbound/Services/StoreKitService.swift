@@ -127,7 +127,14 @@ final class StoreKitService: ObservableObject {
 
     private func executePurchase(_ product: Product) async throws -> Transaction {
         let options: Set<Product.PurchaseOption> = appAccountToken.map { [.appAccountToken($0)] } ?? []
-        let result = try await product.purchase(options: options)
+        AnalyticsService.shared.track(.iapStarted, ["product": .string(product.id)])
+        let result: Product.PurchaseResult
+        do {
+            result = try await product.purchase(options: options)
+        } catch {
+            AnalyticsService.shared.track(.iapFailed, ["product": .string(product.id), "stage": "storekit"])
+            throw error
+        }
 
         switch result {
         case .success(let verification):
@@ -155,6 +162,7 @@ final class StoreKitService: ObservableObject {
             return transaction
 
         case .userCancelled:
+            AnalyticsService.shared.track(.iapFailed, ["product": .string(product.id), "stage": "cancelled"])
             throw StoreKitError.purchaseCancelled
 
         case .pending:

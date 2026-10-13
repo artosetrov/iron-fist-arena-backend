@@ -198,6 +198,7 @@ final class ArenaViewModel {
             CharacterService.showOutOfStamina(appState: appState, refillGemCost: cache.gameConfig?.staminaRefillGems)
             return
         }
+        AnalyticsService.shared.track(.pvpFightStart, ["bot": .bool(opponentId.hasPrefix("npc_"))])
 
         // Interactive Combat v1 routing — when server flag is on
         // (INTERACTIVE_COMBAT_V1 → GameConfig.interactiveCombatEnabled), route

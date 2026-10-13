@@ -207,6 +207,7 @@ final class DungeonRoomViewModel {
             let startResult = await service.start(dungeonId: dungeon?.id ?? "", difficulty: "normal")
             if let result = startResult {
                 runId = result.runId
+                AnalyticsService.shared.track(.dungeonRunStart, ["dungeon": .string(dungeon?.id ?? "")])
             }
         }
 

@@ -499,6 +499,10 @@ final class TutorialManager {
                 body: TutorialStepRequest(characterId: characterId, step: nextStep)
             )
             serverTutorialStep = response.tutorialStep
+            AnalyticsService.shared.track(.onboardingStep, ["step": .int(response.tutorialStep)])
+            if response.tutorialStep >= 3 {
+                AnalyticsService.shared.track(.tutorialComplete, ["skipped": false])
+            }
             return true
         } catch {
             #if DEBUG
@@ -517,6 +521,7 @@ final class TutorialManager {
             )
             serverTutorialStep = response.tutorialStep
             tutorialSkipped = response.tutorialSkipped
+            AnalyticsService.shared.track(.tutorialComplete, ["skipped": true])
             return true
         } catch {
             #if DEBUG

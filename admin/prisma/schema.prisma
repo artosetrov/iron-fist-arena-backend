@@ -1633,3 +1633,23 @@ model Challenge {
   @@index([expiresAt])
   @@map("challenges")
 }
+
+// --- Analytics ---
+// Product-analytics events (funnels, retention). Written by
+// backend/src/lib/analytics.ts (PrismaAnalyticsBackend) and by iOS via
+// POST /api/analytics/events. Read by the admin "Analytics" page.
+// Never store email/PII in props — ids only.
+model AnalyticsEvent {
+  id          String   @id @default(uuid())
+  name        String
+  userId      String?  @map("user_id")
+  characterId String?  @map("character_id")
+  source      String   @default("server") // server | ios
+  props       Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
