@@ -55,6 +55,12 @@ vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock,
 }))
 
+// Kill switch (AUDIT-2026-10-13): default on; the route reads it before
+// touching prisma, so tests that don't seed featureFlag keep working.
+vi.mock('@/lib/game/feature-flags', () => ({
+  isKillSwitchOn: vi.fn(async () => true),
+}))
+
 vi.mock('@/lib/apple-iap', () => ({
   verifyAppleTransaction: mockVerifyAppleTransaction,
   // Rewards are resolved from Apple's product id, never the client's — the

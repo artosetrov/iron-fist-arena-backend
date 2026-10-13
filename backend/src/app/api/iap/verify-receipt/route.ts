@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isKillSwitchOn } from '@/lib/game/feature-flags'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
 import { verifyAppleTransaction, internalProductIdFromApple } from '@/lib/apple-iap'
 import { track as trackAnalytics } from '@/lib/analytics'
@@ -56,6 +57,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid product_id', code: 'RECEIPT_REJECTED' },
         { status: 400 }
+      )
+    }
+
+    // Kill switch (admin → Feature Flags → iap_enabled). Lets us stop
+    // granting purchases if Apple verification misbehaves, without a deploy.
+    if (!(await isKillSwitchOn('iap_enabled', user.id))) {
+      return NextResponse.json(
+        { error: 'Purchases are temporarily unavailable. Please try again later.', code: 'IAP_DISABLED' },
+        { status: 503 },
       )
     }
 

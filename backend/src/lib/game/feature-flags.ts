@@ -173,3 +173,23 @@ function simpleHash(str: string): number {
   }
   return Math.abs(hash)
 }
+
+/**
+ * Kill-switch read for server routes (AUDIT-2026-10-13: flags were resolved
+ * for the client but nothing on the server ever gated on one).
+ *
+ * Returns `true` unless an ACTIVE flag with this key resolves to boolean
+ * `false` for the given context — so a missing or inactive flag never turns a
+ * feature off by accident. Uses the same 5-min cache as resolveAllFlags.
+ */
+export async function isKillSwitchOn(
+  key: string,
+  userId: string,
+  character: CharacterCtx = null,
+): Promise<boolean> {
+  const flags = await getActiveFlags()
+  const flag = flags.find((f) => f.key === key)
+  if (!flag) return true
+  const value = resolveFlag(flag, userId, character, getRuntimeFlagEnvironment())
+  return value !== false
+}

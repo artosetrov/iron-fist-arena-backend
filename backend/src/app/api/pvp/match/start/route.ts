@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isKillSwitchOn } from '@/lib/game/feature-flags'
 import { rateLimit } from '@/lib/rate-limit'
 import { initCombatConfig, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
@@ -88,6 +89,14 @@ export async function POST(req: NextRequest) {
 
   if (!(await rateLimit(`pvp-match-start:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
+  // Kill switch (admin → Feature Flags → pvp_enabled).
+  if (!(await isKillSwitchOn('pvp_enabled', user.id))) {
+    return NextResponse.json(
+      { error: 'The Arena is closed for maintenance. Please try again soon.', code: 'PVP_DISABLED' },
+      { status: 503 },
+    )
   }
 
   try {

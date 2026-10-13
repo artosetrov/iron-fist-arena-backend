@@ -6,6 +6,7 @@ import StoreKit
 struct CurrencyPurchaseView: View {
     var initialTab: Int = 0
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var selectedTab: Int = 0
     @State private var purchaseState: PurchaseState = .idle
     @State private var showSuccessOverlay = false
@@ -94,6 +95,27 @@ struct CurrencyPurchaseView: View {
                 // Content
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: LayoutConstants.spaceMD) {
+                        // Kill switch (admin → Feature Flags → iap_enabled). The
+                        // server rejects receipts too; this keeps the player from
+                        // paying Apple for something we cannot grant right now.
+                        if !cache.isKillSwitchOn("iap_enabled") {
+                            Text("Purchases are temporarily unavailable. Please check back soon.")
+                                .font(DarkFantasyTheme.body)
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(LayoutConstants.cardPadding)
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                                        .fill(DarkFantasyTheme.bgSecondary)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                                )
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                        }
+
                         if selectedTab < 2 {
                             // Gold / Gems tab
                             currencyHeader
@@ -280,6 +302,10 @@ struct CurrencyPurchaseView: View {
 
     private func buyPackage(_ pkg: CurrencyPackage) {
         guard purchaseState == .idle else { return }
+        guard cache.isKillSwitchOn("iap_enabled") else {
+            appState.showToast("Purchases unavailable", subtitle: "Please check back soon", type: .info)
+            return
+        }
 
         withAnimation { purchaseState = .purchasing(packageId: pkg.id) }
         successMessage = pkg.successSummary.map { "\($0) have been added to your account." }
@@ -313,6 +339,10 @@ struct CurrencyPurchaseView: View {
 
     private func buyMonthlyGemCard() {
         guard purchaseState == .idle else { return }
+        guard cache.isKillSwitchOn("iap_enabled") else {
+            appState.showToast("Purchases unavailable", subtitle: "Please check back soon", type: .info)
+            return
+        }
 
         withAnimation { purchaseState = .purchasing(packageId: "monthly_gem_card") }
         successMessage = "50 gems added now! You'll receive 10 gems daily for 30 days."

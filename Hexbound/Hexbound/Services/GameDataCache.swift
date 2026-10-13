@@ -78,8 +78,16 @@ final class GameDataCache {
 
     private(set) var featureFlags: [String: Bool] = [:]
 
+    /// Opt-in flags (rollouts): absent → off.
     func isFeatureEnabled(_ key: String) -> Bool {
         featureFlags[key] ?? false
+    }
+
+    /// Kill switches (`pvp_enabled`, `iap_enabled`, …): absent → on. The
+    /// server enforces the same flags; this only hides the entry point so the
+    /// player gets a message instead of a 503.
+    func isKillSwitchOn(_ key: String) -> Bool {
+        featureFlags[key] ?? true
     }
 
     func cacheFeatureFlags(_ flags: [String: Bool]) {

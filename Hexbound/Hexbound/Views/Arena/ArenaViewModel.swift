@@ -191,6 +191,12 @@ final class ArenaViewModel {
     // MARK: - Fight (Instant Battle Flow)
 
     func fight(opponentId: String, forceClassic: Bool = false) async {
+        // Kill switch — mirrors the server-side check in /pvp/match/start.
+        if !cache.isKillSwitchOn("pvp_enabled") {
+            appState.showToast("Arena closed", subtitle: "Back soon — try a dungeon meanwhile", type: .info)
+            return
+        }
+
         // Client-side stamina pre-check: avoid "Preparing..." spinner
         // when we already know the fight will fail due to low stamina.
         let staminaCost = cache.gameConfig?.pvpStaminaCost ?? 10
