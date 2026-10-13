@@ -113,7 +113,7 @@ final class CharacterService {
                 appState.currentCharacter = char
             }
             HapticManager.success()
-            SFXManager.shared.play(.uiSuccess)
+            SFXManager.shared.play(.uiPurchase)
             let left = max(0, response.dailyCap - response.refillIndex)
             appState.showToast(
                 "Stamina refilled!",

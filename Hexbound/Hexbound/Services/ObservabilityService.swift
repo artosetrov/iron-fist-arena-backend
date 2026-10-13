@@ -36,7 +36,7 @@ enum ObservabilityService {
 
         SentrySDK.start { options in
             options.dsn = dsn
-            options.environment = AppConstants.environment.rawValue
+            options.environment = AppConstants.Environment.current.rawValue
             options.releaseName = "\(AppConstants.bundleIdentifier)@\(AppConstants.appVersion)+\(AppConstants.buildNumber)"
 
             // Never attach IP address, username, or request bodies.

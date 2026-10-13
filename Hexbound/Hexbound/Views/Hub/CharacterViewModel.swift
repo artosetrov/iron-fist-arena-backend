@@ -147,7 +147,7 @@ final class CharacterViewModel {
         pendingChanges.removeAll()
         guard let result = await service.prestige() else { return }
         HapticManager.rankUp()
-        SFXManager.shared.play(.uiSuccess)
+        SFXManager.shared.play(.uiLevelUp)
         appState.showToast(
             "Prestige \(result.prestigeLevel)!",
             subtitle: "+\(Int(result.statBonusPercent.rounded()))% all stats · level reset to 1, gear kept",

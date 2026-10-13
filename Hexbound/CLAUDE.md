@@ -367,7 +367,7 @@ All `@State var vm: VM?` screens MUST add `.transaction { $0.animation = nil }` 
 - `stride(from:to:by:)` → wrap in `Array()` for `ForEach`
 - `.stroke()` has no `dash:` — use `StrokeStyle(lineWidth:dash:)`
 - Never ternary between different `ButtonStyle` types — use `if/else` with full `Button` in each branch
-- `SFX` cases: `.uiTap`, `.uiConfirm`, `.uiSuccess`, `.uiError` (NOT `.tap`, `.confirm`)
+- `SFX` cases: `.uiTap`, `.uiConfirm`, `.uiError`, `.uiPurchase`, `.uiLevelUp`, `.uiRewardClaim` — there is NO `.uiSuccess` / `.tap` / `.confirm`; verify in `Persistence/SFXCatalog.swift`
 - `APIError.serverError` has 2 values: `(statusCode: Int, message: String)` — always destructure both
 - Complex `body` → break into sub-methods with `: some View` return type
 
