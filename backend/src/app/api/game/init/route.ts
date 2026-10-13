@@ -21,6 +21,7 @@ import {
 } from '@/lib/game/live-config'
 import { getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { resolveAllFlags } from '@/lib/game/feature-flags'
+import { grantDailyGemCard } from '@/lib/game/gem-card'
 import { QuestType } from '@prisma/client'
 import { getUpgradeStatBonus } from '@/lib/game/item-balance'
 import { buildEffectiveItemStats } from '@/lib/game/item-stats'
@@ -58,6 +59,13 @@ export async function GET(req: NextRequest) {
 
     const now = new Date()
     const today = getToday()
+
+    // Monthly Gem Card: pay out today's 10 gems (no-op for everyone else).
+    // Runs before the user read below so `gems` in the response is current.
+    const gemCardGemsAwarded = await grantDailyGemCard(user.id).catch((err: unknown) => {
+      console.error('gem card daily grant error:', err)
+      return 0
+    })
 
     // Run all queries in parallel for maximum speed
     const [
@@ -352,6 +360,8 @@ export async function GET(req: NextRequest) {
         gold: userRecord?.gold ?? 0,
         gems: userRecord?.gems ?? 0,
       },
+      // >0 only on the first launch of a UTC day for Monthly Gem Card holders.
+      gemCardGemsAwarded,
       equipment: equipmentWithEffectiveStats,
       consumables,
       quests: formattedQuests,

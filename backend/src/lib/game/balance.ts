@@ -104,6 +104,16 @@ export const HP_REGEN = {
   REGEN_INTERVAL_MINUTES: 5,  // every 5 minutes
 } as const;
 
+// --- Monthly Gem Card ---
+// Sold as "50 gems now + 10 gems a day for 30 days". The instant 50 come from
+// IAP_PRODUCTS.monthly_gem_card.gems; the daily part is claimed lazily by
+// `grantDailyGemCard` on /api/game/init (nothing paid it out before
+// AUDIT-2026-10-13 H3).
+export const MONTHLY_GEM_CARD = {
+  DAILY_GEMS: 10,
+  DAYS: 30,
+} as const;
+
 // --- XP ---
 /**
  * Cumulative XP threshold for a level: `100N + 20N²` (BALANCE_CONSTANTS.md
@@ -269,7 +279,8 @@ export const IAP_PRODUCTS: Record<string, IapProduct> = {
     items: [{ type: 'protection_scroll', quantity: 3 }, { type: 'legendary_shard', quantity: 1 }] },
   adventurer_bundle_III: { gems: 3200, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99,
     items: [{ type: 'protection_scroll', quantity: 5 }, { type: 'legendary_shard', quantity: 5 }] },
-  // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry)
+  // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry;
+  // the 10/day is granted lazily by /api/game/init — see MONTHLY_GEM_CARD)
   monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
   // Starter Bundle — one-time purchase for new players (best value, creates habit)
   starter_bundle: { gems: 200, gold: 3000, premium: false, monthlyGemCard: false, price: 2.99 },
