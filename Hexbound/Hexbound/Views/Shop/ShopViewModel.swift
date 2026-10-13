@@ -569,7 +569,11 @@ final class ShopViewModel {
         selectedItem = nil
         lastPurchasedItemId = item.id
         appState.invalidateCache("inventory")
-        appState.invalidateCache("quests")
+        // NOTE: do NOT invalidate "quests" here. Nil-ing the cache before the
+        // POST makes every ActiveQuestBanner refetch *pre-purchase* progress,
+        // which could land after the post-purchase refresh and show stale
+        // 0/N on the Big Spender banner (AUDIT-2026-10-13 H14). ShopService
+        // refreshes quests stale-while-revalidate once the server confirms.
 
         // ── Fire API in background ──
         Task { [weak self] in
@@ -588,7 +592,7 @@ final class ShopViewModel {
             }
 
             if success {
-                let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "Item purchased!"
+                let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "\(item.itemName) purchased!"
                 appState.showToast(toastMsg, type: .reward)
             } else {
                 // Revert optimistic state using a fresh struct copy for the

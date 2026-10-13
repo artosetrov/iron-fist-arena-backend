@@ -182,6 +182,8 @@ final class ShopService {
             )
             // Flat response: { gold, gems, goldSpent, gemsReceived, catalogId }
             updateCharacter(from: response)
+            // Gem packs spend gold → server bumps Big Spender; refresh like buy().
+            refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
             if case .clientError(_, let message, _) = error {
