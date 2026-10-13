@@ -44,3 +44,10 @@ archive/
 graphify-out/cache/
 graphify-out/cost.json
 graphify-out/manifest.json
+
+# Personal files moved out of prototypes/ (not game-related)
+_personal/
+# Temporary audit archives
+_audit_tmp/
+# Never commit PDFs/reports dropped into prototypes
+prototypes/*.pdf
