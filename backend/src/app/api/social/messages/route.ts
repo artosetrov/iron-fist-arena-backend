@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { containsBlockedWords } from '@/lib/moderation'
 import type { DirectMessage } from '@prisma/client'
 
 const MAX_MESSAGES_PER_DAY = 50
@@ -303,6 +304,13 @@ async function handleSend(senderId: string, body: MessagesBody) {
   if (content.length > MAX_CONTENT_LENGTH) {
     return NextResponse.json(
       { error: `Content exceeds ${MAX_CONTENT_LENGTH} characters` },
+      { status: 400 }
+    )
+  }
+  // UGC filter (App Store 1.2). Quick messages are presets and skip this.
+  if (containsBlockedWords(content)) {
+    return NextResponse.json(
+      { error: 'Your message contains words that are not allowed.' },
       { status: 400 }
     )
   }

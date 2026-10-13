@@ -4,7 +4,7 @@ import {
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
   FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,
-  Map, MessageSquare, Paintbrush, Package, Target, UserPlus, BarChart3,
+  Map, MessageSquare, Paintbrush, Package, Target, UserPlus, BarChart3, ShieldAlert,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -26,6 +26,7 @@ export const navItems: NavItem[] = [
   { label: 'Players', href: '/players', icon: Users },
   { label: 'Arena', href: '/matches', icon: Swords },
   { label: 'Social', href: '/social', icon: MessageSquare },
+  { label: 'Moderation', href: '/moderation', icon: ShieldAlert },
   { label: 'Dungeons', href: '/dungeons', icon: Castle },
   { label: 'Economy', href: '/economy', icon: Coins },
   { label: 'Items', href: '/items', icon: ScrollText },
@@ -67,6 +68,7 @@ export const navGroups: NavGroup[] = [
       { label: 'Arena', href: '/matches', icon: Swords },
       { label: 'Matchmaking', href: '/matchmaking', icon: Target },
       { label: 'Social', href: '/social', icon: MessageSquare },
+      { label: 'Moderation', href: '/moderation', icon: ShieldAlert },
       { label: 'Referrals', href: '/referrals', icon: UserPlus },
     ],
   },

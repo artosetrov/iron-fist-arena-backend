@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isCharacterNameAllowed } from '@/lib/moderation'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -9,6 +10,9 @@ export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get('name')
   if (!name || name.length < 3 || name.length > 16) {
     return NextResponse.json({ available: false, reason: 'invalid' })
+  }
+  if (!isCharacterNameAllowed(name)) {
+    return NextResponse.json({ available: false, reason: 'blocked' })
   }
 
   try {

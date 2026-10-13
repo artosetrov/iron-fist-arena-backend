@@ -202,6 +202,16 @@ extension GuildHallDetailView {
                         .padding(.bottom, LayoutConstants.spaceSM)
                     }
                     .defaultScrollAnchor(.bottom)
+                    .reportPlayerDialog(
+                        isPresented: Binding(
+                            get: { reportedMessage != nil },
+                            set: { if !$0 { reportedMessage = nil } }
+                        ),
+                        targetId: reportedMessage?.senderId ?? "",
+                        targetName: vm.activeThreadCharacterName ?? "player",
+                        context: .message,
+                        contextId: reportedMessage?.id
+                    )
                     .onChange(of: vm.activeThread.count) { _, _ in
                         // Auto-scroll to newest message
                         if let lastId = vm.activeThread.last?.id {
@@ -494,6 +504,15 @@ extension GuildHallDetailView {
             }
             .shadow(color: isMine ? DarkFantasyTheme.gold.opacity(0.12) : Color.clear, radius: 6)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
+            .contextMenu {
+                if !isMine {
+                    Button(role: .destructive) {
+                        reportedMessage = msg
+                    } label: {
+                        Label("Report message", systemImage: "flag")
+                    }
+                }
+            }
 
             if !isMine { Spacer(minLength: 32) }
         }

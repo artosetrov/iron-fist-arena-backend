@@ -6,6 +6,40 @@ private struct SocialFriendActionRequest: Encodable {
     let action: String
 }
 
+private struct SocialReportRequest: Encodable {
+    let characterId: String
+    let targetId: String
+    let category: String
+    let reason: String?
+    let contextType: String
+    let contextId: String?
+}
+
+private struct SocialReportResponse: Decodable {
+    let reported: Bool
+    let duplicate: Bool
+}
+
+/// Report categories — must match `REPORT_CATEGORIES` in backend/src/lib/moderation.ts.
+enum ReportCategory: String, CaseIterable, Identifiable {
+    case harassment, hate, spam, cheating, inappropriateName = "inappropriate_name", other
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .harassment: return "Harassment or bullying"
+        case .hate: return "Hate speech"
+        case .spam: return "Spam"
+        case .cheating: return "Cheating or exploits"
+        case .inappropriateName: return "Inappropriate name"
+        case .other: return "Something else"
+        }
+    }
+}
+
+enum ReportContext: String {
+    case profile, message, challenge, leaderboard
+}
+
 private struct SocialActionResponse: Decodable {
     let message: String?
 }
@@ -28,6 +62,40 @@ class SocialService {
             params: ["character_id": characterId]
         )
         return response
+    }
+
+    // MARK: - Report (UGC moderation — App Store 1.2)
+
+    /// Files a report against `targetId`. Returns true when accepted
+    /// (including the "already reported today" case — the player should not
+    /// be told their report was ignored).
+    func report(
+        characterId: String,
+        targetId: String,
+        category: ReportCategory,
+        context: ReportContext = .profile,
+        contextId: String? = nil,
+        reason: String? = nil
+    ) async -> Bool {
+        do {
+            let response: SocialReportResponse = try await APIClient.shared.post(
+                APIEndpoints.socialReport,
+                body: SocialReportRequest(
+                    characterId: characterId,
+                    targetId: targetId,
+                    category: category.rawValue,
+                    reason: reason,
+                    contextType: context.rawValue,
+                    contextId: contextId
+                )
+            )
+            return response.reported
+        } catch {
+            #if DEBUG
+            print("[SocialService] report error: \(error)")
+            #endif
+            return false
+        }
     }
 
     // MARK: - Friend Actions
@@ -147,5 +215,74 @@ class SocialService {
             #endif
             return .none
         }
+    }
+}
+
+
+// MARK: - Report dialog (SwiftUI)
+
+import SwiftUI
+
+/// `confirmationDialog` listing report categories; on pick → `SocialService.report`
+/// → toast. Use via `.reportPlayerDialog(isPresented:targetId:targetName:context:contextId:)`.
+/// Lives here (not its own file) so it needs no project.pbxproj entry.
+struct ReportPlayerDialogModifier: ViewModifier {
+    @Environment(AppState.self) private var appState
+    @Binding var isPresented: Bool
+    let targetId: String
+    let targetName: String
+    let context: ReportContext
+    let contextId: String?
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(
+            "Report \(targetName)",
+            isPresented: $isPresented,
+            titleVisibility: .visible
+        ) {
+            ForEach(ReportCategory.allCases) { category in
+                Button(category.label) { submit(category) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Reports are reviewed by the Hexbound team. Abuse of reporting may be actioned.")
+        }
+    }
+
+    private func submit(_ category: ReportCategory) {
+        guard let charId = appState.currentCharacter?.id else { return }
+        HapticManager.light()
+        Task { @MainActor in
+            let ok = await SocialService.shared.report(
+                characterId: charId,
+                targetId: targetId,
+                category: category,
+                context: context,
+                contextId: contextId
+            )
+            if ok {
+                appState.showToast("Report sent", subtitle: "Thanks — we'll take a look.", type: .info)
+            } else {
+                appState.showToast("Couldn't send report", subtitle: "Check connection and try again", type: .error)
+            }
+        }
+    }
+}
+
+extension View {
+    func reportPlayerDialog(
+        isPresented: Binding<Bool>,
+        targetId: String,
+        targetName: String,
+        context: ReportContext = .profile,
+        contextId: String? = nil
+    ) -> some View {
+        modifier(ReportPlayerDialogModifier(
+            isPresented: isPresented,
+            targetId: targetId,
+            targetName: targetName,
+            context: context,
+            contextId: contextId
+        ))
     }
 }

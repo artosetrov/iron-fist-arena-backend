@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isCharacterNameAllowed } from '@/lib/moderation'
 import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
@@ -290,6 +291,13 @@ export async function POST(req: NextRequest) {
     if (!/^[a-zA-Z0-9]+$/.test(character_name)) {
       return NextResponse.json(
         { error: 'Character name must contain only letters and numbers' },
+        { status: 400 }
+      )
+    }
+
+    if (!isCharacterNameAllowed(character_name)) {
+      return NextResponse.json(
+        { error: 'That name is not allowed. Please choose another.' },
         { status: 400 }
       )
     }

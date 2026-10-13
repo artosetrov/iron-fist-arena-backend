@@ -10,6 +10,8 @@ struct GuildHallDetailView: View {
     @Environment(AppState.self) var appState
     @Environment(GameDataCache.self) var cache
     @State var vm: GuildHallViewModel?
+    /// Received message picked from the context menu for reporting.
+    @State var reportedMessage: DirectMessageItem?
     @FocusState var isComposeFieldFocused: Bool
 
     var body: some View {

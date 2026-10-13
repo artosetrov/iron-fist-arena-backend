@@ -158,6 +158,7 @@ enum APIEndpoints {
     static let socialStatus = "/api/social/status"
     static let socialChallenges = "/api/social/challenges"
     static let socialRelationship = "/api/social/relationship"
+    static let socialReport = "/api/social/report"
 
     // MARK: - Admin
     static let adminHubLayout = "/api/admin/hub-layout"

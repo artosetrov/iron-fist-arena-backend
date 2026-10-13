@@ -18,6 +18,7 @@ struct LeaderboardPlayerDetailSheet: View {
     @State private var errorMessage: String?
     @State private var friendshipState: FriendshipButtonState = .none
     @State private var challengeSent = false
+    @State private var showReportDialog = false
 
     // Item detail inspection
     @State private var selectedOpponentItem: Item?
@@ -155,6 +156,29 @@ struct LeaderboardPlayerDetailSheet: View {
 
                 // Action Buttons — right under equipment
                 actionButtons
+
+                // Report / block — low-emphasis, required for UGC (App Store 1.2)
+                Button {
+                    showReportDialog = true
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image(systemName: "flag")
+                        Text("Report player")
+                    }
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LayoutConstants.buttonHeightMD)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Report this player")
+                .reportPlayerDialog(
+                    isPresented: $showReportDialog,
+                    targetId: profile.id,
+                    targetName: profile.characterName,
+                    context: .profile
+                )
 
                 // PvP Section
                 pvpSection(profile)
