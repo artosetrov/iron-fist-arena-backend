@@ -455,7 +455,7 @@ final class TutorialManager {
     func fetchTutorialState(characterId: String) async {
         do {
             let response: TutorialStateResponse = try await APIClient.shared.get(
-                "/tutorial",
+                "/api/tutorial",
                 params: ["character_id": characterId]
             )
             serverTutorialStep = response.tutorialStep
@@ -476,7 +476,7 @@ final class TutorialManager {
     func initializeTutorial(characterId: String, referralCode: String? = nil) async -> Bool {
         do {
             let response: TutorialInitResponse = try await APIClient.shared.post(
-                "/tutorial",
+                "/api/tutorial",
                 body: TutorialInitRequest(characterId: characterId, referralCode: referralCode)
             )
             serverTutorialStep = response.tutorialStep
@@ -495,7 +495,7 @@ final class TutorialManager {
         guard nextStep <= 3 else { return false }
         do {
             let response: TutorialStepResponse = try await APIClient.shared.post(
-                "/tutorial/step",
+                "/api/tutorial/step",
                 body: TutorialStepRequest(characterId: characterId, step: nextStep)
             )
             serverTutorialStep = response.tutorialStep
@@ -512,7 +512,7 @@ final class TutorialManager {
     func skipTutorial(characterId: String, referralCode: String? = nil) async -> Bool {
         do {
             let response: TutorialSkipResponse = try await APIClient.shared.post(
-                "/tutorial/skip",
+                "/api/tutorial/skip",
                 body: TutorialInitRequest(characterId: characterId, referralCode: referralCode)
             )
             serverTutorialStep = response.tutorialStep
@@ -530,7 +530,7 @@ final class TutorialManager {
     func updateQuestProgress(characterId: String, questId: String, amount: Int = 1) async {
         do {
             let _: TutorialQuestProgressResponse = try await APIClient.shared.post(
-                "/tutorial/quest",
+                "/api/tutorial/quest",
                 body: TutorialQuestRequest(
                     characterId: characterId,
                     questId: questId,
@@ -551,7 +551,7 @@ final class TutorialManager {
     func claimQuestReward(characterId: String, questId: String) async -> TutorialQuestClaimResponse? {
         do {
             let response: TutorialQuestClaimResponse = try await APIClient.shared.post(
-                "/tutorial/quest",
+                "/api/tutorial/quest",
                 body: TutorialQuestRequest(
                     characterId: characterId,
                     questId: questId,

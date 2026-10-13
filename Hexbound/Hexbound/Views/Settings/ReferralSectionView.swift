@@ -268,7 +268,7 @@ struct ReferralSectionView: View {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
             let response: ReferralStatusResponse = try await APIClient.shared.get(
-                "/tutorial/referral",
+                "/api/tutorial/referral",
                 params: ["character_id": charId]
             )
             self.referralCode = response.referralCode
@@ -292,7 +292,7 @@ struct ReferralSectionView: View {
 
         do {
             let response: ReferralApplyResponse = try await APIClient.shared.post(
-                "/tutorial/referral",
+                "/api/tutorial/referral",
                 body: ReferralApplyRequest(characterId: charId, referralCode: code)
             )
             applyResult = .success(bonusGold: response.bonusGold)

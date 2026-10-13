@@ -74,8 +74,11 @@ actor APIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch let decodeErr {
+            #if DEBUG
+            // Body may carry emails/tokens — never print it in release builds.
             let bodyPreview = String(data: data, encoding: .utf8)?.prefix(500) ?? ""
             print("[APIClient] decode failed \(endpoint): \(decodeErr)\nbody: \(bodyPreview)")
+            #endif
             throw APIError.decodingError(decodeErr)
         }
     }
@@ -128,6 +131,11 @@ actor APIClient {
         params: [String: String] = [:],
         body: Encodable? = nil
     ) async throws -> Data {
+        // Every backend route lives under /api — base URL carries no prefix.
+        // Ten tutorial/referral call sites once used "/tutorial…" and 404'd
+        // in prod (AUDIT-2026-10-13 C2). Catch regressions at dev time.
+        assert(endpoint.hasPrefix("/api/"), "[APIClient] endpoint missing /api prefix: \(endpoint)")
+
         // Build URL
         guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint), resolvingAgainstBaseURL: false) else {
             throw APIError.invalidURL

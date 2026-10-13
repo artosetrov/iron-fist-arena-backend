@@ -63,7 +63,7 @@ final class TutorialService {
     func preloadScriptedFight(characterId: String) async -> PreloadResult? {
         do {
             let response: ScriptedFightPreloadResponse = try await APIClient.shared.post(
-                "/tutorial/scripted-fight/preload",
+                "/api/tutorial/scripted-fight/preload",
                 body: ScriptedFightPreloadRequest(characterId: characterId)
             )
 
@@ -119,7 +119,7 @@ final class TutorialService {
     ) async -> ResolveResult? {
         do {
             let response: ScriptedFightResolveResponse = try await APIClient.shared.post(
-                "/tutorial/scripted-fight/resolve",
+                "/api/tutorial/scripted-fight/resolve",
                 body: ScriptedFightResolveRequest(
                     characterId: characterId,
                     stance: stance

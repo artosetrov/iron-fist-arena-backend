@@ -34,11 +34,38 @@ struct CombatFighter: Codable, Identifiable {
     let id: String
     let characterName: String
     let characterClass: CharacterClass
-    let origin: CharacterOrigin
+    /// Optional: `/pvp/match/complete` sends `origin: null` for bot and
+    /// dungeon_boss opponents (their snapshot has no origin). A non-optional
+    /// field here made every bot/boss fight fail to decode (AUDIT-2026-10-13 C1).
+    let origin: CharacterOrigin?
     let level: Int
     let maxHp: Int
     let currentHp: Int?
     let avatar: String?
+
+    init(id: String, characterName: String, characterClass: CharacterClass, origin: CharacterOrigin?, level: Int, maxHp: Int, currentHp: Int?, avatar: String?) {
+        self.id = id
+        self.characterName = characterName
+        self.characterClass = characterClass
+        self.origin = origin
+        self.level = level
+        self.maxHp = maxHp
+        self.currentHp = currentHp
+        self.avatar = avatar
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        characterName = try container.decode(String.self, forKey: .characterName)
+        characterClass = try container.decode(CharacterClass.self, forKey: .characterClass)
+        // Tolerate null AND unknown origin strings — origin is display-only here.
+        origin = (try? container.decodeIfPresent(CharacterOrigin.self, forKey: .origin)) ?? nil
+        level = try container.decode(Int.self, forKey: .level)
+        maxHp = try container.decode(Int.self, forKey: .maxHp)
+        currentHp = try container.decodeIfPresent(Int.self, forKey: .currentHp)
+        avatar = try container.decodeIfPresent(String.self, forKey: .avatar)
+    }
 
     // CodingKeys use camelCase raw values to work with .convertFromSnakeCase decoder.
     // The strategy converts JSON snake_case keys (character_name → characterName, max_hp → maxHp)
