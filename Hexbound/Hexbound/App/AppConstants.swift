@@ -102,6 +102,12 @@ enum AppConstants {
     // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4
     static let pvpStaminaCost = 10
 
+    // MARK: - Public links (shown in Settings → Legal). Must be live before
+    // App Store review: privacy, terms, and a support/contact page.
+    static let privacyURL = "https://hexboundapp.com/privacy"
+    static let termsURL = "https://hexboundapp.com/terms"
+    static let supportURL = "https://hexboundapp.com/support"
+
     // MARK: - Observability
 
     /// Sentry project DSN, or nil when crash reporting is intentionally off.

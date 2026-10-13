@@ -86,7 +86,7 @@ struct LoginView: View {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "apple.logo")
                                         .font(DarkFantasyTheme.section.weight(.medium))
-                                    Text("Apple")
+                                    Text("Sign in with Apple")
                                         .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -113,7 +113,7 @@ struct LoginView: View {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Text("G")
                                         .font(DarkFantasyTheme.googleLogo)
-                                    Text("Google")
+                                    Text("Sign in with Google")
                                         .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)

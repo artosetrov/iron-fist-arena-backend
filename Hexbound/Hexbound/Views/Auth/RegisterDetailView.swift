@@ -84,7 +84,7 @@ struct RegisterDetailView: View {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
                                     .font(DarkFantasyTheme.cardTitle.weight(.medium))
-                                Text("Apple")
+                                Text("Sign in with Apple")
                                     .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -117,7 +117,7 @@ struct RegisterDetailView: View {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Text("G")
                                     .font(DarkFantasyTheme.googleLogo)
-                                Text("Google")
+                                Text("Sign in with Google")
                                     .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)

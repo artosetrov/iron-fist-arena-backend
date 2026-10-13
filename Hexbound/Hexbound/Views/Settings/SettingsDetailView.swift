@@ -332,7 +332,7 @@ struct SettingsDetailView: View {
             sectionHeader("Legal")
 
             Button {
-                if let url = URL(string: "https://hexboundapp.com/privacy") {
+                if let url = URL(string: AppConstants.privacyURL) {
                     UIApplication.shared.open(url)
                 }
             } label: {
@@ -353,7 +353,7 @@ struct SettingsDetailView: View {
             .accessibilityLabel("Open privacy policy")
 
             Button {
-                if let url = URL(string: "https://hexboundapp.com/terms") {
+                if let url = URL(string: AppConstants.termsURL) {
                     UIApplication.shared.open(url)
                 }
             } label: {
@@ -372,6 +372,28 @@ struct SettingsDetailView: View {
             }
             .buttonStyle(.scalePress(0.97))
             .accessibilityLabel("Open terms of service")
+
+            // App Store review requires a reachable support contact inside the app.
+            Button {
+                if let url = URL(string: AppConstants.supportURL) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "questionmark.circle.fill")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Help & Support")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(height: LayoutConstants.buttonHeightMD)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.scalePress(0.97))
+            .accessibilityLabel("Open help and support")
         }
     }
 
