@@ -63,6 +63,15 @@ Repo-wide summary:
 - Use `LayoutConstants` spacing/radius tokens
 - Confirm token names in source before use; do not guess
 
+## Art Assets (AI-generated)
+
+Canonical rules: `docs/08_prompts/ART_STYLE_GUIDE.md` (Visual DNA + *Generation Rules*). Repo-wide invariants:
+
+- **AI paints, code rules.** Never bake into a PNG: glow, cast shadows, **text**, particles, motion blur. Those are SwiftUI/VFX code.
+- The style bible (prompt template + the fixed light sentence) goes on every generation call **verbatim**; an approved asset of the same class rides along as the golden anchor.
+- Generate at ≥ 3× display size in points, fill `@1x/@2x/@3x`; no 1x-only imagesets.
+- Key out a magenta background, not white. Approve only in the assembled screen at display size (`canvas` agent, Step 6).
+
 ## Figma
 
 Two-file rule:
