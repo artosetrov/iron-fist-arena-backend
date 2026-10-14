@@ -117,32 +117,20 @@ struct ShopDetailView: View {
                 .padding(.top, LayoutConstants.spaceSM)
                 .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Contraband widget — "The Scavenger" timed loot drops (always visible)
-            ContrabandWidget(
-                state: vm.contrabandState,
-                canAfford: vm.canAffordContraband,
-                isClaiming: vm.isClaimingContraband,
-                onClaim: { Task { await vm.claimContraband() } },
-                onRefresh: { Task { await vm.loadContraband() } }
-            )
-            .padding(.bottom, LayoutConstants.spaceSM)
-
-            // Special Offers carousel — sequential display: visible only AFTER
-            // Scavenger is claimed or in cooldown. Prevents two widgets competing.
-            // Also hide fully claimed offers (purchase limit reached).
-            if vm.shouldShowOffers {
-                let activeOffers = vm.offers.filter { $0.canPurchase }
-                if !activeOffers.isEmpty {
-                    ShopOfferBannerView(
-                        offers: activeOffers,
-                        canAfford: { vm.canAffordOffer($0) },
-                        buyingId: vm.buyingOfferId,
-                        onBuy: { offer in Task { await vm.buyOffer(offer) } }
-                    )
-                    .padding(.bottom, LayoutConstants.spaceSM)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                    .animation(MotionConstants.snappy, value: vm.shouldShowOffers)
-                }
+            // Special Offers carousel. It used to be hidden until "The
+            // Scavenger" above it had been claimed, so the two widgets would
+            // not compete; the Scavenger now has its own screen
+            // (BlackMarketDetailView), so offers show whenever there are any
+            // left to buy.
+            let activeOffers = vm.offers.filter { $0.canPurchase }
+            if !activeOffers.isEmpty {
+                ShopOfferBannerView(
+                    offers: activeOffers,
+                    canAfford: { vm.canAffordOffer($0) },
+                    buyingId: vm.buyingOfferId,
+                    onBuy: { offer in Task { await vm.buyOffer(offer) } }
+                )
+                .padding(.bottom, LayoutConstants.spaceSM)
             }
 
             // Tab switcher
@@ -168,7 +156,7 @@ struct ShopDetailView: View {
         // Item detail modal (unified template)
         itemDetailOverlay(vm)
 
-        // Claim reward ceremony modal (contraband / offers)
+        // Claim reward ceremony modal (offer purchases)
         if let rewardConfig = vm.claimRewardConfig {
             ClaimRewardModalView(config: rewardConfig) {
                 rewardConfig.onDismiss?()

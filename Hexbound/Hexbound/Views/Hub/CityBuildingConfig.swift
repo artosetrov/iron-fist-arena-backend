@@ -122,7 +122,7 @@ let defaultCityBuildings: [CityBuilding] = [
         id: "black-market",
         imageName: "building-black-market",
         label: "BLACK MARKET",
-        route: nil,
+        route: .blackMarket,
         relativeX: 0.78,
         relativeY: 0.75,
         relativeSize: 0.24,
@@ -136,9 +136,10 @@ let defaultCityBuildings: [CityBuilding] = [
 @MainActor
 func resolvedCityBuildings(from cache: GameDataCache, includeComingSoon: Bool = false) -> [CityBuilding] {
     let overrides = cache.hubLayout
-    // В редакторе хаба показываем все здания, включая route-less surfaces
-    // вроде Black Market, чтобы их можно было позиционировать заранее.
-    // В обычном хабе скрываем здания без route.
+    // В редакторе хаба показываем все здания, включая route-less surfaces,
+    // чтобы их можно было позиционировать заранее. В обычном хабе скрываем
+    // здания без route. (Black Market получил свой экран 2026-10-14 и больше
+    // здесь не фильтруется.)
     let base = includeComingSoon
         ? defaultCityBuildings
         : defaultCityBuildings.filter { $0.route != nil }

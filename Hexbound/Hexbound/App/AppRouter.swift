@@ -47,6 +47,7 @@ enum AppRoute: Hashable, Codable {
 
     // Shop
     case shop
+    case blackMarket
     case currencyPurchase(initialTab: Int = 0)
     case premiumPurchase
 
@@ -126,6 +127,8 @@ extension AppRoute {
             return .arena
         case "shop":
             return .shop
+        case "black-market", "blackmarket":
+            return .blackMarket
         case "guild-hall", "guildhall":
             return .guildHall
         case "tavern":
@@ -199,6 +202,7 @@ struct MainRouterView: View {
         
         // Shop
         case .shop: ShopDetailView()
+        case .blackMarket: BlackMarketDetailView()
         case .currencyPurchase(let tab): CurrencyPurchaseView(initialTab: tab)
         case .premiumPurchase: PremiumPurchaseView()
         

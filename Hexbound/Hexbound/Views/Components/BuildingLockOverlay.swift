@@ -125,7 +125,7 @@ enum BuildingUnlockConfig {
         "battlepass": 8,       // long-term progression
         "ranks": 8,            // leaderboard layer
         "guild-hall": 12,      // social hub
-        "black-market": 99,    // route-less placeholder — effectively locked ("SOON")
+        "black-market": 12,    // contraband drops — shipped as its own screen 2026-10-14
     ]
 
     /// Check if building is unlocked for given character level

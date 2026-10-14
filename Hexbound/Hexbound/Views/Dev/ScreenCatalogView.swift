@@ -175,6 +175,7 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
         case .shop:
             return [
                 CatalogItem(id: "shop", name: "Shop", icon: "cart.fill", route: .shop),
+                CatalogItem(id: "black-market", name: "Black Market (The Scavenger)", icon: "eye.slash", route: .blackMarket),
             ]
         case .dungeon:
             return [

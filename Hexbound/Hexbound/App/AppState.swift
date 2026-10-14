@@ -285,8 +285,9 @@ final class AppState {
     }
 
     /// W2.D4 — queue building unlock ceremonies for any threshold crossed
-    /// between `fromLevel` (exclusive) and `toLevel` (inclusive). Skips the
-    /// Lv99 route-less placeholder buildings and dedupes against already-pending.
+    /// between `fromLevel` (exclusive) and `toLevel` (inclusive), deduped
+    /// against already-pending. Lv 12 now crosses two thresholds at once
+    /// (guild hall + black market), which the queue already handles.
     func enqueueBuildingUnlocks(fromLevel: Int, toLevel: Int) {
         guard toLevel > fromLevel else { return }
         var newUnlocks: [String] = []

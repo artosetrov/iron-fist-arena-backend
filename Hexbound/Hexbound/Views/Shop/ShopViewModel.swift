@@ -27,16 +27,10 @@ final class ShopViewModel {
     /// page is for the case where the screen would otherwise be blank.
     var showsErrorState: Bool { errorMessage != nil && items.isEmpty }
 
-    // Contraband (timed loot drops from "The Scavenger")
-    var contrabandState: ContrabandUIState = .loading
-    var isClaimingContraband = false
-
-    // Claim reward modal — shown after any CLAIM action (contraband, offers)
+    // Claim reward modal — shown after a successful offer purchase.
+    // "The Scavenger" moved to BlackMarketDetailView on 2026-10-14 and keeps
+    // its own copy of this.
     var claimRewardConfig: ClaimRewardConfig?
-
-    // Sequential widgets: track whether Scavenger has been claimed this session
-    // so SPECIAL OFFERS only appear after Scavenger is claimed/cooldown
-    var scavengerClaimedThisSession = false
 
     // Detail modal
     var selectedItem: ShopItem?
@@ -64,16 +58,6 @@ final class ShopViewModel {
         self.cache = cache
         self.service = ShopService(appState: appState)
         self.inventoryService = InventoryService(appState: appState)
-        // Hydrate contraband from cache instantly so the widget renders the
-        // cooldown ticker / available card on shop entry without waiting for
-        // the network. The actual loadContraband() call will revalidate in
-        // the background.
-        if let cached = cache.cachedContraband() {
-            contrabandState = ContrabandUIState.from(cached)
-            if case .cooldown = contrabandState {
-                scavengerClaimedThisSession = true
-            }
-        }
     }
 
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
@@ -160,13 +144,11 @@ final class ShopViewModel {
             isLoading = true
         }
         errorMessage = nil
-        // Load items, offers, and contraband in parallel
+        // Load items and offers in parallel
         async let itemsTask = service.getItems()
         async let offersTask: Void = loadOffers()
-        async let contrabandTask: Void = loadContraband()
         let outcome = await itemsTask
         _ = await offersTask
-        _ = await contrabandTask
         outcome.apply(
             assign: { self.items = $0 },
             cache: { self.cache.cacheShop($0) },
@@ -205,126 +187,6 @@ final class ShopViewModel {
             print("[ShopVM] Failed to load offers: \(error)")
             #endif
         }
-    }
-
-    // MARK: - Contraband
-
-    func loadContraband() async {
-        guard let charId = appState.currentCharacter?.id else { return }
-        do {
-            let response: ContrabandResponse = try await APIClient.shared.get(
-                APIEndpoints.shopContraband,
-                params: ["character_id": charId]
-            )
-            cache.cacheContraband(response)
-            contrabandState = ContrabandUIState.from(response)
-            // If Scavenger is in cooldown on load, it was already claimed —
-            // so unlock SPECIAL OFFERS immediately.
-            if case .cooldown = contrabandState {
-                scavengerClaimedThisSession = true
-            }
-        } catch {
-            #if DEBUG
-            print("[ShopVM] Failed to load contraband: \(error)")
-            #endif
-            // Keep stale cache visible if we already had one — don't blank
-            // the widget on a transient network error. Only flip to .error
-            // when there is no cache to fall back to.
-            if cache.cachedContraband() == nil {
-                contrabandState = .error
-            }
-            // On error, don't block offers
-            scavengerClaimedThisSession = true
-        }
-    }
-
-    func claimContraband() async {
-        guard !isClaimingContraband else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-
-        // Check affordability for paid drops
-        if case .available(let offer) = contrabandState, !offer.isFree {
-            guard gold >= offer.price else {
-                HapticManager.error()
-                appState.showToast("Not enough gold!", type: .error,
-                    actionLabel: "GET MORE",
-                    action: { [weak appState] in
-                        appState?.mainPath.append(AppRoute.currencyPurchase())
-                    }
-                )
-                return
-            }
-        }
-
-        isClaimingContraband = true
-
-        // Optimistic: deduct gold for paid drops
-        let savedGold = appState.currentCharacter?.gold ?? 0
-        let savedGems = appState.currentCharacter?.gems ?? 0
-
-        if case .available(let offer) = contrabandState, !offer.isFree {
-            appState.currentCharacter?.gold = savedGold - offer.price
-        }
-        HapticManager.success()
-
-        defer { isClaimingContraband = false }
-        do {
-            let response: ContrabandClaimResponse = try await APIClient.shared.post(
-                APIEndpoints.shopContraband,
-                body: ["character_id": charId]
-            )
-            if response.success {
-                applyClaimedRewardState(
-                    gold: response.gold,
-                    gems: response.gems,
-                    xp: response.xp,
-                    leveledUp: response.leveledUp,
-                    newLevel: response.newLevel,
-                    statPointsAwarded: response.statPointsAwarded,
-                    passivePointsAwarded: response.passivePointsAwarded
-                )
-                scavengerClaimedThisSession = true
-                // Show reward modal instead of toast
-                claimRewardConfig = .fromOfferContents(
-                    title: "CLAIMED!",
-                    subtitle: "Drop #\(response.claimNumber)",
-                    contents: response.contents
-                )
-                // Cache is now stale — drop it so the next shop open doesn't
-                // serve the pre-claim "available" snapshot.
-                cache.invalidateContraband()
-                // Optimistic: flip to cooldown placeholder immediately so the
-                // widget switches state without waiting for a network trip.
-                // A fire-and-forget refresh syncs the exact `nextAvailableAt`.
-                contrabandState = .loading
-                Task { [weak self] in await self?.loadContraband() }
-            } else {
-                if var char = appState.currentCharacter {
-                    char.gold = savedGold; char.gems = savedGems
-                    appState.currentCharacter = char
-                }
-                appState.showToast("Claim failed", type: .error)
-            }
-        } catch {
-            if var char = appState.currentCharacter {
-                char.gold = savedGold; char.gems = savedGems
-                appState.currentCharacter = char
-            }
-            appState.showToast("Claim failed", type: .error)
-        }
-    }
-
-    /// SPECIAL OFFERS are visible only after Scavenger is claimed or in cooldown.
-    /// This prevents two widgets fighting for attention simultaneously.
-    var shouldShowOffers: Bool {
-        scavengerClaimedThisSession
-    }
-
-    var canAffordContraband: Bool {
-        if case .available(let offer) = contrabandState {
-            return offer.isFree || gold >= offer.price
-        }
-        return false
     }
 
     func canAffordOffer(_ offer: ShopOffer) -> Bool {

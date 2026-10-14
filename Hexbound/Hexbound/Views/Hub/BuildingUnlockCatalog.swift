@@ -19,7 +19,7 @@ enum BuildingUnlockCatalog {
     }
 
     /// Ordered by unlock level so the tone escalates from "small win" to
-    /// "endgame is yours". Seven ceremonial entries — one per unlock building.
+    /// "endgame is yours". One entry per unlock building.
     static let entries: [String: Entry] = [
         "shop": Entry(
             headline: "THE SHOP OPENS",
@@ -63,6 +63,20 @@ enum BuildingUnlockCatalog {
             icon: "trophy.fill",
             accent: DarkFantasyTheme.toastRankUp
         ),
+        // Both of these unlock at Lv 12 and both used to fall through to the
+        // generic "A new door creaks open" line.
+        "guild-hall": Entry(
+            headline: "THE GUILD HALL",
+            barkline: "Allies, duels, gossip. Pick your company carefully.",
+            icon: "person.3.fill",
+            accent: DarkFantasyTheme.toastReward
+        ),
+        "black-market": Entry(
+            headline: "THE BACK ALLEY",
+            barkline: "The Scavenger deals one crate a day. Don't ask where from.",
+            icon: "eye.slash",
+            accent: DarkFantasyTheme.contrabandAccent
+        ),
     ]
 
     /// Lookup with a sane fallback for unknown building IDs.
@@ -87,6 +101,8 @@ enum BuildingUnlockCatalog {
         case "tavern":      return "One more level — the tavern keeper unbars the door."
         case "battlepass":  return "One more level — the long road reveals itself."
         case "ranks":       return "One more level — the ladder descends for you."
+        case "guild-hall":  return "One more level — the guild unbolts its gate."
+        case "black-market": return "One more level — a lamp lights in the back alley."
         default:            return "One more level — \(fallbackLabel) awaits."
         }
     }

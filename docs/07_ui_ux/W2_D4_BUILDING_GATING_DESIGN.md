@@ -15,10 +15,20 @@
 > The live schedule no longer exactly matches every proposed table below. This
 > document is retained as design rationale and tradeoff history.
 >
-> **Route-less boundary note:** the current normal hub path now hides the
-> route-less Black Market from the player-facing city map. Older references
+> **Route-less boundary note:** the current normal hub path hides any
+> route-less building from the player-facing city map. Older references
 > below to a visible player-facing placeholder building belong to this
 > proposal's snapshot moment, not to the current shipped hub runtime.
+>
+> **Black Market note (2026-10-14):** the Black Market is no longer a
+> route-less placeholder. It has its own screen (`BlackMarketDetailView`,
+> `AppRoute.blackMarket`) hosting "The Scavenger" contraband drop, which
+> previously lived as a widget inside the shop. Its unlock level moved
+> **99 → 12**, so it now unlocks alongside the Guild Hall and fires a real
+> ceremony. Every "Lv99", "SOON" and "coming soon" reference to this
+> building below — the tables at §140 and §172, and the overlay/ceremony
+> special cases at §418, §473 and §594 — describes the retired state and
+> is kept only as history.
 
 ---
 
