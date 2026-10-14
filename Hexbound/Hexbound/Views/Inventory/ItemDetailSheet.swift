@@ -159,12 +159,17 @@ struct ItemDetailSheet: View {
     }
 
     var body: some View {
-        ZStack {
-            // Backdrop — tap to close
-            DarkFantasyTheme.bgModal
-                .ignoresSafeArea()
-                .onTapGesture { onClose() }
-
+        GameModal(
+            accent: rarityColor,
+            // The card scrolls. A swipe-down dismiss would compete with the
+            // ScrollView for the same drag, so the close button and a tap
+            // outside are the two ways out.
+            dismissOnSwipeDown: false,
+            // Full width, as before — the ornamental frame is wide enough that
+            // the default 320 would crop the stat chips.
+            maxWidth: .infinity,
+            onDismiss: onClose
+        ) {
             VStack(spacing: 0) {
                 // Top bar — close button only (mockup parity)
                 HStack {
@@ -175,8 +180,6 @@ struct ItemDetailSheet: View {
                     .buttonStyle(.closeButton)
                     .accessibilityLabel("Close item detail")
                 }
-                .padding(.horizontal, LayoutConstants.cardPadding)
-                .padding(.top, LayoutConstants.spaceMD)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
@@ -198,7 +201,6 @@ struct ItemDetailSheet: View {
                         // Twin meters: Durability | Upgrade (flexible)
                         twinMeters
                     }
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .padding(.vertical, LayoutConstants.spaceSM)
                 }
                 .scrollBounceBehavior(.basedOnSize)
@@ -206,29 +208,11 @@ struct ItemDetailSheet: View {
 
                 // Action buttons pinned to bottom
                 actionButtons
-                    .padding(.horizontal, LayoutConstants.cardPadding)
-                    .padding(.vertical, LayoutConstants.spaceMD)
+                    .padding(.top, LayoutConstants.spaceMD)
             }
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.14)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: rarityColor.opacity(0.12))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .stroke(rarityColor.opacity(0.5), lineWidth: 2)
-            )
-            .cornerBrackets(color: rarityColor.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: rarityColor.opacity(0.4), size: 6)
-            .shadow(color: rarityColor.opacity(0.18), radius: 10, y: 0)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
+            // Same 75%-of-screen cap as before, less the frame's own padding,
+            // so the card's total footprint is unchanged.
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.75 - LayoutConstants.spaceLG * 2)
             .fixedSize(horizontal: false, vertical: true)
         }
     }

@@ -22,10 +22,21 @@ struct TreasureRewardOverlay: View {
     private let animationDuration: Double = 0.8
 
     var body: some View {
-        ZStack {
-            DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
-                .onTapGesture { skipAnimation() }
-
+        GameModal(
+            accent: DarkFantasyTheme.gold,
+            // A tap beside the chest means "skip the count-up" while the
+            // animation runs, and only closes once it has finished — the
+            // reward must be on screen before it can be dismissed.
+            onBackdropTap: {
+                if animationDone { onDismiss() } else { skipAnimation() }
+            },
+            // Same reason: no swiping the reward away before it has shown.
+            dismissOnSwipeDown: animationDone,
+            // The chest bounce is the reward beat, not a generic entrance, so
+            // the frame scales with it.
+            cardScale: modalScale,
+            onDismiss: onDismiss
+        ) {
             VStack(spacing: LayoutConstants.spaceLG) {
                 // Chest image with particle burst
                 ZStack {
@@ -36,6 +47,7 @@ struct TreasureRewardOverlay: View {
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 24)
                         .rewardBurst(isActive: $showBurst, style: .gold)
                 }
+                .accessibilityHidden(true)
 
                 Text("TREASURE!")
                     .font(DarkFantasyTheme.title)
@@ -71,7 +83,6 @@ struct TreasureRewardOverlay: View {
                 }
 
                 GoldDivider()
-                    .padding(.horizontal, LayoutConstants.spaceLG)
 
                 // Continue button — appears after animation or tap-to-skip
                 Button { onDismiss() } label: { Text("CONTINUE") }
@@ -80,24 +91,6 @@ struct TreasureRewardOverlay: View {
                     .opacity(animationDone ? 1 : 0)
                     .animation(.easeIn(duration: 0.2), value: animationDone)
             }
-            .padding(LayoutConstants.spaceXL)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 10)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .scaleEffect(modalScale)
         }
         .onAppear {
             guard !appeared else { return }

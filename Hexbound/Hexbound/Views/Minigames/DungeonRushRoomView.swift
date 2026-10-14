@@ -477,10 +477,16 @@ extension DungeonRushDetailView {
 
     // MARK: - Shop Overlay (large item cards)
 
+    /// Deliberately not a `GameModal`: the merchant is a full-screen takeover
+    /// with its own header, a scrolling item list and a LEAVE SHOP button —
+    /// there is no card, and no "outside" to tap. The other three rush
+    /// overlays are cards and use `GameModal` (migrated 2026-10-14).
     @ViewBuilder
     func shopOverlay(vm: DungeonRushViewModel) -> some View {
         ZStack {
             DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
+                // Swallows taps so the room behind cannot be acted on while
+                // the shop is up. Leaving is the button's job.
                 .onTapGesture {}
 
             VStack(spacing: 0) {
@@ -647,15 +653,20 @@ extension DungeonRushDetailView {
 
     @ViewBuilder
     func eventOverlay(vm: DungeonRushViewModel) -> some View {
-        ZStack {
-            DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
-
+        GameModal(
+            accent: DarkFantasyTheme.purple,
+            // A blessing is an announcement the player should read; tapping
+            // beside it must not clear it unseen.
+            dismissOnBackdropTap: false,
+            onDismiss: { vm.dismissEventResult() }
+        ) {
             VStack(spacing: LayoutConstants.spaceLG) {
                 Image("rush-event-blessing")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 80, height: 80)
                     .shadow(color: DarkFantasyTheme.purple.opacity(0.45), radius: 24)
+                    .accessibilityHidden(true)
 
                 Text(vm.eventResultTitle)
                     .font(DarkFantasyTheme.title)
@@ -665,31 +676,13 @@ extension DungeonRushDetailView {
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, LayoutConstants.spaceXL)
 
                 GoldDivider()
-                    .padding(.horizontal, LayoutConstants.spaceLG)
 
                 Button { vm.dismissEventResult() } label: { Text("CONTINUE") }
                     .buttonStyle(.primary)
+                    .accessibilityLabel("Continue")
             }
-            .padding(LayoutConstants.spaceXL)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.purple.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.purple.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.purple.opacity(0.4), size: 6)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.purple.opacity(0.18), radius: 10)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-            .padding(.horizontal, LayoutConstants.screenPadding)
         }
     }
 
@@ -709,16 +702,20 @@ extension DungeonRushDetailView {
 
     @ViewBuilder
     func abandonConfirmOverlay(vm: DungeonRushViewModel) -> some View {
-        ZStack {
-            DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
-                .onTapGesture { vm.showAbandonConfirm = false }
-
+        GameModal(
+            accent: DarkFantasyTheme.stamina,
+            // Dismissing this means STAY — the branch with no consequence —
+            // so a tap outside or a swipe down is a cancel affordance here,
+            // not an answer to the question.
+            onDismiss: { vm.showAbandonConfirm = false }
+        ) {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Image(systemName: "door.left.hand.open")
                     .font(DarkFantasyTheme.cinematicTitle) // SF Symbol decorative — 40pt
                     .foregroundStyle(DarkFantasyTheme.stamina)
                     .frame(width: 56, height: 56)
                     .shadow(color: DarkFantasyTheme.stamina.opacity(0.4), radius: 16)
+                    .accessibilityHidden(true)
 
                 Text("Escape the Rush?")
                     .font(DarkFantasyTheme.cardTitle)
@@ -756,21 +753,6 @@ extension DungeonRushDetailView {
                     .buttonStyle(.secondary)
                 }
             }
-            .padding(LayoutConstants.spaceXL)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.stamina.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.stamina.opacity(0.4), length: 16, thickness: 1.5)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-            .padding(.horizontal, LayoutConstants.screenPadding)
         }
     }
 

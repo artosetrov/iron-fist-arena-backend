@@ -28,10 +28,22 @@ import SwiftUI
 struct GameModal<Content: View>: View {
     var accent: Color = DarkFantasyTheme.goldBright
     /// Confirmations and anything with a consequence set this false, so a
-    /// stray tap outside cannot answer the question for the player.
+    /// stray tap outside cannot answer the question for the player. A tap that
+    /// cancels — "stay", "keep playing" — is not an answer in that sense and
+    /// can stay on.
     var dismissOnBackdropTap: Bool = true
+    /// Set when a backdrop tap means something other than dismissal. The
+    /// dungeon treasure modal uses it to skip its count-up animation. When
+    /// this is set it replaces the dismissal entirely, and
+    /// `dismissOnBackdropTap` no longer applies.
+    var onBackdropTap: (() -> Void)? = nil
     var dismissOnSwipeDown: Bool = true
     var maxWidth: CGFloat = 320
+    /// Scale applied to the whole card, frame included. Modals do not scale in
+    /// (see TalentsTabView's note on the no-scale rule) — this exists for the
+    /// dungeon treasure chest, where the bounce *is* the reward beat and the
+    /// ornamental frame has to bounce with it. Leave it at 1 everywhere else.
+    var cardScale: CGFloat = 1
     let onDismiss: () -> Void
     @ViewBuilder var content: () -> Content
 
@@ -46,6 +58,10 @@ struct GameModal<Content: View>: View {
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture {
+                    if let onBackdropTap {
+                        onBackdropTap()
+                        return
+                    }
                     guard dismissOnBackdropTap else { return }
                     onDismiss()
                 }
@@ -57,6 +73,7 @@ struct GameModal<Content: View>: View {
                 .modalOverlay(accent: accent)
                 .frame(maxWidth: maxWidth)
                 .padding(.horizontal, LayoutConstants.screenPadding)
+                .scaleEffect(cardScale)
                 .offset(y: dragOffset)
                 .gesture(dragGesture, including: dismissOnSwipeDown ? .all : .subviews)
         }
