@@ -71,9 +71,17 @@ final class NPCVoice {
     // MARK: - Internals
 
     nonisolated static func normalize(_ text: String) -> String {
-        String(text.lowercased().unicodeScalars.filter {
-            $0.isASCII && CharacterSet.alphanumerics.contains($0)
-        }.map(Character.init))
+        // Built scalar by scalar rather than filter().map(Character.init):
+        // filtering a UnicodeScalarView yields [Unicode.Scalar], and the
+        // unapplied `Character.init` over that array does not resolve — the
+        // compiler gives up on the surrounding String(...) and suggests
+        // String(describing:), which would have stringified the array.
+        var kept = String.UnicodeScalarView()
+        for scalar in text.lowercased().unicodeScalars
+        where scalar.isASCII && CharacterSet.alphanumerics.contains(scalar) {
+            kept.append(scalar)
+        }
+        return String(kept)
     }
 
     private static func loadManifest() -> [String: String] {
