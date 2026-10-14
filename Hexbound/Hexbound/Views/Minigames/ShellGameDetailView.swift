@@ -470,10 +470,15 @@ struct ShellGameDetailView: View {
     // MARK: - Result Modal (ornamental — matches Fortune Wheel)
 
     @ViewBuilder
+    /// `isWin` is computed in the signature rather than as a `let` in the body:
+    /// a statement before the view expression forces an explicit `return`, and
+    /// that silently turns the ViewBuilder off for the whole function.
     private func resultModal(_ vm: ShellGameViewModel, result: String) -> some View {
-        let isWin = result == "win"
+        resultModal(vm, isWin: result == "win")
+    }
 
-        return GameModal(
+    private func resultModal(_ vm: ShellGameViewModel, isWin: Bool) -> some View {
+        GameModal(
             accent: MinigameResultAccent.color(isWin: isWin),
             maxWidth: 300,
             onDismiss: { dismissModal(vm) }
