@@ -138,6 +138,7 @@ Minimum repo-wide sanity checks:
 ```bash
 python3 scripts/check_schema_drift.py
 python3 scripts/check_a11y.py          # icon-only buttons must carry a VoiceOver label
+python3 scripts/check_building_unlocks.py  # hub unlock levels: iOS table == backend table
 git diff --check
 grep -rn '^<<<<<<<\\|^=======$\\|^>>>>>>>' . --include='*.swift' --include='*.ts' --include='*.prisma' | grep -v node_modules
 ```
