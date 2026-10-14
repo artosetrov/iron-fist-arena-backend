@@ -144,6 +144,27 @@ export function getMaxRank(totalCost: number): number {
   return getRankCosts(totalCost).length
 }
 
+/**
+ * Total SP a character has sunk into the tree: the sum of the first
+ * `currentRank` entries of every unlocked node's rank-cost schedule. This is
+ * exactly what /passives/respec refunds, so "spent" and "refund" never drift.
+ *
+ * Used by /passives/unlock to enforce PASSIVES.MAX_PASSIVE_POINTS as a cap on
+ * TOTAL investment, not just on points in hand: since prestige (2026-10-14)
+ * keeps the tree instead of wiping it, a replayed 1→50 would otherwise earn a
+ * second 49 SP on top of a tree that already holds 49.
+ */
+export function spentPassivePoints(
+  passives: ReadonlyArray<{ currentRank: number; node: { cost: number } }>,
+): number {
+  return passives.reduce((sum, p) => {
+    const schedule = getRankCosts(p.node.cost)
+    const paidRanks = Math.max(0, Math.min(p.currentRank, schedule.length))
+    for (let i = 0; i < paidRanks; i++) sum += schedule[i]
+    return sum
+  }, 0)
+}
+
 // --- Tree Validation ---
 
 /**

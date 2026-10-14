@@ -228,7 +228,7 @@ struct StashDetailView: View {
             onUpgrade: { _ in },
             onRepair: {},
             onClose: { vm.showItemDetail = false },
-            playerLevel: appState.currentCharacter?.level ?? 1,
+            playerLevel: appState.currentCharacter?.gearLevel ?? 1,
             playerClass: appState.currentCharacter?.characterClass,
             viewMode: true
         )

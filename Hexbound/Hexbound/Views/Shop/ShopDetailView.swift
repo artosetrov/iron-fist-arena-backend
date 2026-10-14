@@ -366,7 +366,7 @@ struct ShopDetailView: View {
                     playerGold: vm.gold,
                     onBuy: { qty in vm.requestBuy(shopItem, quantity: qty) }
                 ),
-                playerLevel: vm.playerLevel
+                playerLevel: vm.gearLevel
             )
             .transition(.opacity)
             .animation(MotionConstants.snappy, value: vm.showItemDetail)

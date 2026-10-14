@@ -46,8 +46,20 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/prestige
- * Perform prestige: reset level to 1, keep items, gain prestige level.
+ * Perform prestige: reset level to 1, gain a prestige level, keep everything
+ * else — gear, allocated stats, the talent tree and unspent points.
  * Body: { character_id }
+ *
+ * Design (2026-10-14 balance batch, docs/06_game_systems/PROGRESSION.md):
+ * prestige used to wipe every unlocked passive and zero the passive points,
+ * which at L50 was a ~27% damage loss for a +5% stat bonus — nobody rational
+ * pressed the button. Prestige is now a replay of the 1→50 curve with the
+ * build intact; the bonus per prestige is PRESTIGE.STAT_BONUS_PER_PRESTIGE
+ * (live-config `prestige.*`). The re-earned talent points cannot double the
+ * tree because /passives/unlock caps TOTAL investment at
+ * PASSIVES.MAX_PASSIVE_POINTS; the re-earned stat points do stack, as they
+ * always did. Gear gates (equip, shop, loot) use gear-level.ts so a P1 at
+ * level 1 keeps full access to the ladder it has already climbed.
  */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -87,23 +99,18 @@ export async function POST(req: NextRequest) {
 
       const newPrestigeLevel = character.prestige_level + 1
 
-      // Reset level to 1, keep XP at 0, increment prestige
-      // Also wipe unlocked passives — player re-earns them via leveling
-      const [updated] = await Promise.all([
-        tx.character.update({
-          where: { id: character_id },
-          data: {
-            level: 1,
-            currentXp: 0,
-            prestigeLevel: newPrestigeLevel,
-            statPointsAvailable: PRESTIGE_CONFIG.STAT_POINTS_PER_LEVEL, // start with points for level 1
-            passivePointsAvailable: 0, // reset passive points — earned again via leveling
-          },
-        }),
-        tx.characterPassive.deleteMany({
-          where: { characterId: character_id },
-        }),
-      ])
+      // Reset level to 1, keep XP at 0, increment prestige. The talent tree,
+      // allocated stats and unspent points are NOT touched (see header).
+      const updated = await tx.character.update({
+        where: { id: character_id },
+        data: {
+          level: 1,
+          currentXp: 0,
+          prestigeLevel: newPrestigeLevel,
+          // Points for "level 1" of the replay, on top of whatever is unspent.
+          statPointsAvailable: { increment: PRESTIGE_CONFIG.STAT_POINTS_PER_LEVEL },
+        },
+      })
 
       await recalculateDerivedStats(character_id, tx)
 

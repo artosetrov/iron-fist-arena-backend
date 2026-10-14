@@ -9,6 +9,8 @@ import {
   getConsumablePriceMap,
   isDirectPurchaseConsumableType,
 } from '@/lib/game/consumable-pricing'
+import { wearableRestrictions } from '@/lib/game/class-compat'
+import { effectiveGearLevel } from '@/lib/game/gear-level'
 
 // Gem pack required levels and fallback prices are now the single source of truth
 // in @/lib/game/gem-packs — shared with /api/shop/buy-gems so listing and transaction
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { id: true, userId: true, level: true, class: true },
+      select: { id: true, userId: true, level: true, prestigeLevel: true, class: true },
     })
 
     if (!character || character.userId !== user.id) {
@@ -62,12 +64,12 @@ export async function GET(req: NextRequest) {
       rarity?: Rarity
       itemLevel?: { lte: number }
       equipment?: { none: { characterId: string } }
-      OR?: Array<{ classRestriction: null } | { classRestriction: string }>
+      OR?: Array<{ classRestriction: null } | { classRestriction: { in: string[] } }>
     } = {
       itemType: { not: ItemType.consumable },
       OR: [
-        { classRestriction: null },          // universal items
-        { classRestriction: character.class }, // items for player's class
+        { classRestriction: null },                                        // universal items
+        { classRestriction: { in: wearableRestrictions(character.class) } }, // same matrix as loot + equip
       ],
     }
 
@@ -91,7 +93,7 @@ export async function GET(req: NextRequest) {
       equipWhere.rarity = rarityParam as Rarity
     }
 
-    equipWhere.itemLevel = { lte: character.level + 2 }
+    equipWhere.itemLevel = { lte: effectiveGearLevel(character.level, character.prestigeLevel) + 2 }
     equipWhere.equipment = { none: { characterId } }
 
     const equipmentItems = await prisma.item.findMany({

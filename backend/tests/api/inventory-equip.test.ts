@@ -133,3 +133,56 @@ describe('POST /api/inventory/equip', () => {
     })
   })
 })
+
+describe('POST /api/inventory/equip — class matrix and prestige gear level (2026-10-14)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
+    mockRateLimit.mockResolvedValue(true)
+    mockRecalculateDerivedStats.mockResolvedValue({ maxHp: 100, armor: 10, magicResist: 5 })
+    mockBuildInventoryResponse.mockResolvedValue({ equipment: [], consumables: [], inventorySlots: 28 })
+  })
+
+  function txFor(character: { level: number; prestigeLevel: number; class: string }, item: { itemLevel: number; classRestriction: string | null }) {
+    const tx = makeTx()
+    tx.character.findUnique = vi.fn(async () => ({ userId: 'user-1', ...character }))
+    tx.$queryRawUnsafe = vi
+      .fn()
+      .mockResolvedValueOnce([
+        { id: 'inv-1', characterId: 'char-1', isEquipped: false, equippedSlot: null, durability: 100, itemType: 'weapon', catalogId: 'wpn_x', ...item },
+      ])
+      .mockResolvedValueOnce([])
+    mockTransaction(tx)
+    return tx
+  }
+
+  const equip = () =>
+    POST(makeNextRequest('http://localhost/api/inventory/equip', { method: 'POST', body: JSON.stringify({ character_id: 'char-1', inventory_id: 'inv-1' }) }))
+
+  it('lets a tank equip a warrior-restricted weapon (shared melee pool, same matrix as loot)', async () => {
+    txFor({ level: 20, prestigeLevel: 0, class: 'tank' }, { itemLevel: 10, classRestriction: 'warrior' })
+    expect((await equip()).status).toBe(200)
+  })
+
+  it('still refuses a mage holding a rogue weapon', async () => {
+    const tx = txFor({ level: 20, prestigeLevel: 0, class: 'mage' }, { itemLevel: 10, classRestriction: 'rogue' })
+    const response = await equip()
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({ error: 'This item is class-restricted' })
+    expect(tx.equipmentInventory.update).not.toHaveBeenCalled()
+  })
+
+  it('lets a prestiged level-1 character re-equip its level-40 gear', async () => {
+    txFor({ level: 1, prestigeLevel: 1, class: 'warrior' }, { itemLevel: 40, classRestriction: 'warrior' })
+    expect((await equip()).status).toBe(200)
+  })
+
+  it('still gates an un-prestiged character on item level', async () => {
+    const response = (await (async () => {
+      txFor({ level: 1, prestigeLevel: 0, class: 'warrior' }, { itemLevel: 40, classRestriction: null })
+      return equip()
+    })())
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({ error: 'Character level too low for this item' })
+  })
+})

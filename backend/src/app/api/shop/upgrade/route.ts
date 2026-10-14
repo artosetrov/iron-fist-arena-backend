@@ -76,10 +76,6 @@ export async function POST(req: NextRequest) {
       if (!userRow) throw new Error('USER_NOT_FOUND')
       if (userRow.gold < upgradeCost) throw new Error('NOT_ENOUGH_GOLD')
 
-      if (use_protection && userRow.gems < protectionCost) {
-        throw new Error('NOT_ENOUGH_GEMS')
-      }
-
       // Verify character ownership
       const character = await tx.character.findUnique({
         where: { id: character_id },
@@ -89,6 +85,25 @@ export async function POST(req: NextRequest) {
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
+      // Protection source. A Protection Scroll in the character's consumable
+      // inventory (Adventurer's Bundles grant them; nothing consumed them
+      // before 2026-10-14) is used first; gems are the fallback. The scroll
+      // row is locked so two concurrent attempts cannot both spend the last
+      // scroll. Like the gem path, nothing is charged on a successful roll.
+      let scrollsOwned = 0
+      if (use_protection) {
+        const [scrollRow] = await tx.$queryRawUnsafe<Array<{ quantity: number }>>(
+          `SELECT quantity FROM consumable_inventory
+            WHERE character_id = $1 AND consumable_type = 'protection_scroll'::"ConsumableType"
+            FOR UPDATE`,
+          character_id
+        )
+        scrollsOwned = scrollRow?.quantity ?? 0
+        if (scrollsOwned <= 0 && userRow.gems < protectionCost) {
+          throw new Error('NOT_ENOUGH_GEMS')
+        }
+      }
+
       // Deduct gold
       let updatedUser = await tx.user.update({
         where: { id: user.id },
@@ -97,6 +112,8 @@ export async function POST(req: NextRequest) {
 
       let updatedItem = inventoryItem
       let protectionUsed = false
+      let protectionSource: 'scroll' | 'gems' | null = null
+      let scrollsRemaining = scrollsOwned
       let levelLost = false
 
       if (success) {
@@ -109,11 +126,21 @@ export async function POST(req: NextRequest) {
       } else {
         // Upgrade failed
         if (use_protection) {
-          // Protection scroll consumed — deduct gems, level stays the same
-          updatedUser = await tx.user.update({
-            where: { id: user.id },
-            data: { gems: { decrement: protectionCost } },
-          })
+          // Protection consumed — level stays the same. Scroll first, gems second.
+          if (scrollsOwned > 0) {
+            await tx.consumableInventory.update({
+              where: { characterId_consumableType: { characterId: character_id, consumableType: 'protection_scroll' } },
+              data: { quantity: { decrement: 1 } },
+            })
+            scrollsRemaining = scrollsOwned - 1
+            protectionSource = 'scroll'
+          } else {
+            updatedUser = await tx.user.update({
+              where: { id: user.id },
+              data: { gems: { decrement: protectionCost } },
+            })
+            protectionSource = 'gems'
+          }
           protectionUsed = true
         } else if (currentLevel >= downgradeThreshold) {
           // No protection and level is at/above threshold — lose one level
@@ -127,7 +154,7 @@ export async function POST(req: NextRequest) {
         // If currentLevel < threshold and no protection, nothing extra happens (gold already spent)
       }
 
-      return { updatedUser, updatedItem, protectionUsed, levelLost }
+      return { updatedUser, updatedItem, protectionUsed, protectionSource, scrollsRemaining, levelLost }
     })
 
     // Non-critical post-transaction work — daily + weekly quest progress
@@ -209,6 +236,8 @@ export async function POST(req: NextRequest) {
       upgradeCost,
       newLevel,
       protection_used: result.protectionUsed,
+      protection_source: result.protectionSource,
+      protection_scrolls_remaining: result.scrollsRemaining,
       level_lost: result.levelLost,
       effectiveStats,
       previousEffectiveStats,

@@ -132,6 +132,26 @@ struct Character: Codable, Identifiable {
     /// Mirrors backend `XP_CURVE_SCALE`. Change both or the XP bar lies.
     static let xpCurveScale = 3
 
+    /// Mirrors backend `PRESTIGE.MAX_LEVEL` and `gear-level.ts`.
+    static let maxLevel = 50
+
+    /// The level this character may equip / shop gear at. Prestige resets
+    /// `level` to 1 but keeps the gear earned, so every client-side level gate
+    /// on gear (shop, inventory equip) uses this, not `level`. Mirrors backend
+    /// `effectiveGearLevel`.
+    var gearLevel: Int { (prestige ?? 0) > 0 ? max(level, Character.maxLevel) : level }
+
+    /// Mirrors backend `class-compat.ts` CLASS_COMPAT: warrior ↔ tank share
+    /// weapons; rogue and mage gear is their own. nil/empty/"none" = universal.
+    static func canWear(characterClass: String, restriction: String?) -> Bool {
+        guard let r = restriction?.trimmingCharacters(in: .whitespaces).lowercased(),
+              !r.isEmpty, r != "none" else { return true }
+        let own = characterClass.lowercased()
+        if r == own { return true }
+        let melee: Set<String> = ["warrior", "tank"]
+        return melee.contains(own) && melee.contains(r)
+    }
+
     static func xpToNextLevel(_ level: Int) -> Int { (120 + 40 * level) * xpCurveScale }
 
     var xpPercentage: Double {

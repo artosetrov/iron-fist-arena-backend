@@ -60,8 +60,10 @@ struct ItemDetailSheet: View {
     // MARK: - Equip eligibility (BUG-63)
     //
     // Mirrors the server-side checks in `backend/src/app/api/inventory/equip/route.ts`:
-    //   - character.level < item.itemLevel → LEVEL_TOO_LOW
-    //   - classRestriction && classRestriction !== character.class → CLASS_RESTRICTED
+    //   - effectiveGearLevel(level, prestige) < item.itemLevel → LEVEL_TOO_LOW
+    //     (callers pass `Character.gearLevel`, which is prestige-aware)
+    //   - !canClassWear(class, classRestriction) → CLASS_RESTRICTED
+    //     (Character.canWear mirrors class-compat.ts: warrior ↔ tank share)
     //   - broken (durability == 0) → cannot equip
     //
     // Doing the check client-side lets us paint the item level red and disable
@@ -83,11 +85,8 @@ struct ItemDetailSheet: View {
 
     var classMet: Bool {
         guard shouldCheckEquipEligibility else { return true }
-        guard let restriction = item.classRestriction?.lowercased(),
-              !restriction.isEmpty,
-              restriction != "none" else { return true }
         guard let playerClass else { return true }
-        return restriction == playerClass.rawValue.lowercased()
+        return Character.canWear(characterClass: playerClass.rawValue, restriction: item.classRestriction)
     }
 
     /// Overall: can this item be equipped right now?

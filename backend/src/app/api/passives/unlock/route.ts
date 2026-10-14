@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { canUnlockNode, getRankCosts, getMaxRank } from '@/lib/game/passives'
+import { canUnlockNode, getRankCosts, getMaxRank, spentPassivePoints } from '@/lib/game/passives'
+import { getPassivesConfig } from '@/lib/game/live-config'
 import { recalculateFullDerivedStats } from '@/lib/game/build-stats'
 import { cacheDelete } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
@@ -66,6 +67,18 @@ export async function POST(req: NextRequest) {
       // Check passive points
       if (character.passivePointsAvailable < spCost) {
         throw new Error('NOT_ENOUGH_POINTS')
+      }
+
+      // Cap on TOTAL investment. A normal 1→50 earns 49 SP; prestige keeps the
+      // tree and re-earns points on the replay, so without this cap a P1 would
+      // hold a double tree. The cap is live-config `passives.max_passive_points`.
+      const passivesConfig = await getPassivesConfig()
+      const invested = await tx.characterPassive.findMany({
+        where: { characterId: character_id },
+        select: { currentRank: true, node: { select: { cost: true } } },
+      })
+      if (spentPassivePoints(invested) + spCost > passivesConfig.MAX_PASSIVE_POINTS) {
+        throw new Error('TREE_CAP_REACHED')
       }
 
       const existing = await tx.characterPassive.findUnique({
@@ -149,6 +162,7 @@ export async function POST(req: NextRequest) {
         RANK_OUT_OF_RANGE: { msg: 'Rank exceeds this node\'s maximum rank', status: 400 },
         NOT_ENOUGH_POINTS: { msg: 'Not enough passive points', status: 400 },
         NOT_CONNECTED: { msg: 'Node is not connected to any unlocked node', status: 400 },
+        TREE_CAP_REACHED: { msg: 'Your talent tree is fully invested — respec to move points', status: 400 },
       }
       const mapped = map[error.message]
       if (mapped) return NextResponse.json({ error: mapped.msg }, { status: mapped.status })

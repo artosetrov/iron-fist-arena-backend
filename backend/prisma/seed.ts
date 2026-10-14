@@ -180,14 +180,14 @@ async function main() {
     // ══════════════════════════════════════════════════════════
 
     // ── WEAPONS ──────────────────────────────────────────────
-    { catalogId: 'wpn_rusty_sword', itemName: 'Rusty Sword', itemType: 'weapon', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: { str: 3, agi: 1 }, description: 'A worn blade, still sharp enough.', dropChance: 1 },
-    { catalogId: 'wpn_wooden_staff', itemName: 'Wooden Staff', itemType: 'weapon', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: { int: 3, wis: 1 }, description: 'A simple mage staff.', dropChance: 1 },
-    { catalogId: 'wpn_iron_dagger', itemName: 'Iron Dagger', itemType: 'weapon', rarity: 'common', itemLevel: 1, buyPrice: 120, sellPrice: 30, baseStats: { agi: 3, luk: 1 }, description: 'Quick and deadly.', dropChance: 1 },
-    { catalogId: 'wpn_training_mace', itemName: 'Training Mace', itemType: 'weapon', rarity: 'common', itemLevel: 1, buyPrice: 110, sellPrice: 28, baseStats: { str: 2, vit: 2 }, description: 'Heavy but reliable.', dropChance: 1 },
-    { catalogId: 'wpn_steel_longsword', itemName: 'Steel Longsword', itemType: 'weapon', rarity: 'uncommon', itemLevel: 3, buyPrice: 350, sellPrice: 88, baseStats: { str: 6, agi: 2 }, description: 'A well-forged blade.', dropChance: 1 },
-    { catalogId: 'wpn_arcane_wand', itemName: 'Arcane Wand', itemType: 'weapon', rarity: 'uncommon', itemLevel: 3, buyPrice: 350, sellPrice: 88, baseStats: { int: 6, wis: 2 }, description: 'Pulses with arcane energy.', dropChance: 1 },
-    { catalogId: 'wpn_shadow_knife', itemName: 'Shadow Knife', itemType: 'weapon', rarity: 'uncommon', itemLevel: 3, buyPrice: 380, sellPrice: 95, baseStats: { agi: 5, luk: 3 }, description: 'Vanishes into shadow mid-strike.', dropChance: 1 },
-    { catalogId: 'wpn_war_hammer', itemName: 'War Hammer', itemType: 'weapon', rarity: 'uncommon', itemLevel: 4, buyPrice: 400, sellPrice: 100, baseStats: { str: 7, end: 2 }, description: 'Crushes armor on impact.', dropChance: 1 },
+    { catalogId: 'wpn_rusty_sword', itemName: 'Rusty Sword', itemType: 'weapon', classRestriction: 'warrior', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: { str: 3, agi: 1 }, description: 'A worn blade, still sharp enough.', dropChance: 1 },
+    { catalogId: 'wpn_wooden_staff', itemName: 'Wooden Staff', itemType: 'weapon', classRestriction: 'mage', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: { int: 3, wis: 1 }, description: 'A simple mage staff.', dropChance: 1 },
+    { catalogId: 'wpn_iron_dagger', itemName: 'Iron Dagger', itemType: 'weapon', classRestriction: 'rogue', rarity: 'common', itemLevel: 1, buyPrice: 120, sellPrice: 30, baseStats: { agi: 3, luk: 1 }, description: 'Quick and deadly.', dropChance: 1 },
+    { catalogId: 'wpn_training_mace', itemName: 'Training Mace', itemType: 'weapon', classRestriction: 'tank', rarity: 'common', itemLevel: 1, buyPrice: 110, sellPrice: 28, baseStats: { str: 2, vit: 2 }, description: 'Heavy but reliable.', dropChance: 1 },
+    { catalogId: 'wpn_steel_longsword', itemName: 'Steel Longsword', itemType: 'weapon', classRestriction: 'warrior', rarity: 'uncommon', itemLevel: 3, buyPrice: 350, sellPrice: 88, baseStats: { str: 6, agi: 2 }, description: 'A well-forged blade.', dropChance: 1 },
+    { catalogId: 'wpn_arcane_wand', itemName: 'Arcane Wand', itemType: 'weapon', classRestriction: 'mage', rarity: 'uncommon', itemLevel: 3, buyPrice: 350, sellPrice: 88, baseStats: { int: 6, wis: 2 }, description: 'Pulses with arcane energy.', dropChance: 1 },
+    { catalogId: 'wpn_shadow_knife', itemName: 'Shadow Knife', itemType: 'weapon', classRestriction: 'rogue', rarity: 'uncommon', itemLevel: 3, buyPrice: 380, sellPrice: 95, baseStats: { agi: 5, luk: 3 }, description: 'Vanishes into shadow mid-strike.', dropChance: 1 },
+    { catalogId: 'wpn_war_hammer', itemName: 'War Hammer', itemType: 'weapon', classRestriction: 'tank', rarity: 'uncommon', itemLevel: 4, buyPrice: 400, sellPrice: 100, baseStats: { str: 7, end: 2 }, description: 'Crushes armor on impact.', dropChance: 1 },
 
     // ── HELMETS ──────────────────────────────────────────────
     { catalogId: 'helm_leather_cap', itemName: 'Leather Cap', itemType: 'helmet', rarity: 'common', itemLevel: 1, buyPrice: 80, sellPrice: 20, baseStats: { vit: 2 }, description: 'Basic head protection.', dropChance: 1 },
@@ -239,9 +239,9 @@ async function main() {
     // ══════════════════════════════════════════════════════════
 
     // ── WEAPONS ──────────────────────────────────────────────
-    { catalogId: 'wpn_flamebrand', itemName: 'Flamebrand', itemType: 'weapon', rarity: 'rare', itemLevel: 6, buyPrice: 900, sellPrice: 225, baseStats: { str: 10, agi: 4 }, description: 'Burns with eternal flame.', specialEffect: '+10% fire damage', dropChance: 1 },
-    { catalogId: 'wpn_frostbite_staff', itemName: 'Frostbite Staff', itemType: 'weapon', rarity: 'rare', itemLevel: 6, buyPrice: 900, sellPrice: 225, baseStats: { int: 10, wis: 4 }, description: 'Chills the air around it.', specialEffect: '+10% ice damage', dropChance: 1 },
-    { catalogId: 'wpn_venom_fang', itemName: 'Venom Fang', itemType: 'weapon', rarity: 'rare', itemLevel: 7, buyPrice: 1100, sellPrice: 275, baseStats: { agi: 8, luk: 5 }, description: 'Drips with deadly poison.', specialEffect: '5% poison on hit', dropChance: 1 },
+    { catalogId: 'wpn_flamebrand', itemName: 'Flamebrand', itemType: 'weapon', classRestriction: 'warrior', rarity: 'rare', itemLevel: 6, buyPrice: 900, sellPrice: 225, baseStats: { str: 10, agi: 4 }, description: 'Burns with eternal flame.', specialEffect: '+10% fire damage', dropChance: 1 },
+    { catalogId: 'wpn_frostbite_staff', itemName: 'Frostbite Staff', itemType: 'weapon', classRestriction: 'mage', rarity: 'rare', itemLevel: 6, buyPrice: 900, sellPrice: 225, baseStats: { int: 10, wis: 4 }, description: 'Chills the air around it.', specialEffect: '+10% ice damage', dropChance: 1 },
+    { catalogId: 'wpn_venom_fang', itemName: 'Venom Fang', itemType: 'weapon', classRestriction: 'rogue', rarity: 'rare', itemLevel: 7, buyPrice: 1100, sellPrice: 275, baseStats: { agi: 8, luk: 5 }, description: 'Drips with deadly poison.', specialEffect: '5% poison on hit', dropChance: 1 },
 
     // ── HELMETS ──────────────────────────────────────────────
     { catalogId: 'helm_dragon_visage', itemName: 'Dragon Visage', itemType: 'helmet', rarity: 'rare', itemLevel: 7, buyPrice: 850, sellPrice: 213, baseStats: { vit: 8, str: 4, end: 3 }, description: 'Forged from dragon scales.', specialEffect: '+5% fire resist', dropChance: 1 },
@@ -279,10 +279,10 @@ async function main() {
     // ══════════════════════════════════════════════════════════
 
     // ── WEAPONS ──────────────────────────────────────────────
-    { catalogId: 'wpn_stormbringer', itemName: 'Stormbringer', itemType: 'weapon', rarity: 'epic', itemLevel: 10, buyPrice: 2500, sellPrice: 625, baseStats: { str: 16, agi: 8, luk: 4 }, description: 'Thunder follows every strike.', specialEffect: '+15% crit chance', dropChance: 0.8 },
-    { catalogId: 'wpn_void_scepter', itemName: 'Void Scepter', itemType: 'weapon', rarity: 'epic', itemLevel: 10, buyPrice: 2500, sellPrice: 625, baseStats: { int: 16, wis: 8, luk: 4 }, description: 'Channels the power of the void.', specialEffect: '+15% spell power', dropChance: 0.8 },
-    { catalogId: 'wpn_bonecleaver', itemName: 'Bonecleaver', itemType: 'weapon', rarity: 'epic', itemLevel: 15, buyPrice: 3200, sellPrice: 800, baseStats: { str: 20, agi: 10, vit: 5 }, description: 'Cleaves through bone and steel alike.', specialEffect: '+12% armor penetration', dropChance: 0.7 },
-    { catalogId: 'wpn_nightmare_staff', itemName: 'Nightmare Staff', itemType: 'weapon', rarity: 'epic', itemLevel: 18, buyPrice: 3800, sellPrice: 950, baseStats: { int: 22, wis: 12, luk: 6 }, description: 'Channels the terrors of the dreaming.', specialEffect: '+12% fear chance', dropChance: 0.6 },
+    { catalogId: 'wpn_stormbringer', itemName: 'Stormbringer', itemType: 'weapon', classRestriction: 'warrior', rarity: 'epic', itemLevel: 10, buyPrice: 2500, sellPrice: 625, baseStats: { str: 16, agi: 8, luk: 4 }, description: 'Thunder follows every strike.', specialEffect: '+15% crit chance', dropChance: 0.8 },
+    { catalogId: 'wpn_void_scepter', itemName: 'Void Scepter', itemType: 'weapon', classRestriction: 'mage', rarity: 'epic', itemLevel: 10, buyPrice: 2500, sellPrice: 625, baseStats: { int: 16, wis: 8, luk: 4 }, description: 'Channels the power of the void.', specialEffect: '+15% spell power', dropChance: 0.8 },
+    { catalogId: 'wpn_bonecleaver', itemName: 'Bonecleaver', itemType: 'weapon', classRestriction: 'tank', rarity: 'epic', itemLevel: 15, buyPrice: 3200, sellPrice: 800, baseStats: { str: 20, agi: 10, vit: 5 }, description: 'Cleaves through bone and steel alike.', specialEffect: '+12% armor penetration', dropChance: 0.7 },
+    { catalogId: 'wpn_nightmare_staff', itemName: 'Nightmare Staff', itemType: 'weapon', classRestriction: 'mage', rarity: 'epic', itemLevel: 18, buyPrice: 3800, sellPrice: 950, baseStats: { int: 22, wis: 12, luk: 6 }, description: 'Channels the terrors of the dreaming.', specialEffect: '+12% fear chance', dropChance: 0.6 },
 
     // ── HELMETS ──────────────────────────────────────────────
     { catalogId: 'helm_crown_of_thorns', itemName: 'Crown of Thorns', itemType: 'helmet', rarity: 'epic', itemLevel: 10, buyPrice: 2200, sellPrice: 550, baseStats: { vit: 12, str: 6, end: 6 }, description: 'Pain grants power.', specialEffect: '+10% damage when HP < 50%', dropChance: 0.8 },
@@ -328,10 +328,10 @@ async function main() {
     // TIER 4 — Levels 20-35 (High epic / rare+)
     // ══════════════════════════════════════════════════════════
 
-    { catalogId: 'wpn_hellfire_blade', itemName: 'Hellfire Blade', itemType: 'weapon', rarity: 'epic', itemLevel: 22, buyPrice: 4500, sellPrice: 1125, baseStats: { str: 28, agi: 12, luk: 6 }, description: 'Forged in abyssal flames.', specialEffect: '+15% fire damage', dropChance: 0.6 },
-    { catalogId: 'wpn_crystalcore_staff', itemName: 'Crystalcore Staff', itemType: 'weapon', rarity: 'epic', itemLevel: 22, buyPrice: 4500, sellPrice: 1125, baseStats: { int: 28, wis: 14, luk: 5 }, description: 'A shard of pure mana crystallised.', specialEffect: '+15% spell power', dropChance: 0.6 },
-    { catalogId: 'wpn_serrated_cleaver', itemName: 'Serrated Cleaver', itemType: 'weapon', rarity: 'rare', itemLevel: 20, buyPrice: 2200, sellPrice: 550, baseStats: { str: 16, agi: 8 }, description: 'Its teeth never dull.', specialEffect: '+8% bleed chance', dropChance: 1 },
-    { catalogId: 'wpn_fey_bow', itemName: 'Feywisp Bow', itemType: 'weapon', rarity: 'rare', itemLevel: 20, buyPrice: 2200, sellPrice: 550, baseStats: { agi: 14, luk: 8, int: 4 }, description: 'Guided by woodland spirits.', specialEffect: '+8% accuracy', dropChance: 1 },
+    { catalogId: 'wpn_hellfire_blade', itemName: 'Hellfire Blade', itemType: 'weapon', classRestriction: 'warrior', rarity: 'epic', itemLevel: 22, buyPrice: 4500, sellPrice: 1125, baseStats: { str: 28, agi: 12, luk: 6 }, description: 'Forged in abyssal flames.', specialEffect: '+15% fire damage', dropChance: 0.6 },
+    { catalogId: 'wpn_crystalcore_staff', itemName: 'Crystalcore Staff', itemType: 'weapon', classRestriction: 'mage', rarity: 'epic', itemLevel: 22, buyPrice: 4500, sellPrice: 1125, baseStats: { int: 28, wis: 14, luk: 5 }, description: 'A shard of pure mana crystallised.', specialEffect: '+15% spell power', dropChance: 0.6 },
+    { catalogId: 'wpn_serrated_cleaver', itemName: 'Serrated Cleaver', itemType: 'weapon', classRestriction: 'warrior', rarity: 'rare', itemLevel: 20, buyPrice: 2200, sellPrice: 550, baseStats: { str: 16, agi: 8 }, description: 'Its teeth never dull.', specialEffect: '+8% bleed chance', dropChance: 1 },
+    { catalogId: 'wpn_fey_bow', itemName: 'Feywisp Bow', itemType: 'weapon', classRestriction: 'rogue', rarity: 'rare', itemLevel: 20, buyPrice: 2200, sellPrice: 550, baseStats: { agi: 14, luk: 8, int: 4 }, description: 'Guided by woodland spirits.', specialEffect: '+8% accuracy', dropChance: 1 },
 
     { catalogId: 'helm_warskull', itemName: 'Warskull Helm', itemType: 'helmet', rarity: 'epic', itemLevel: 22, buyPrice: 4000, sellPrice: 1000, baseStats: { vit: 20, str: 10, end: 8 }, description: 'Skull of a defeated champion.', specialEffect: '+12% damage when HP < 50%', dropChance: 0.6 },
     { catalogId: 'helm_moonveil', itemName: 'Moonveil Hood', itemType: 'helmet', rarity: 'rare', itemLevel: 20, buyPrice: 2000, sellPrice: 500, baseStats: { int: 10, wis: 8, vit: 4 }, description: 'Woven from moonlight.', specialEffect: '+6% magic resist', dropChance: 1 },
@@ -350,14 +350,14 @@ async function main() {
     { catalogId: 'acc_tower_shield', itemName: 'Obsidian Tower Shield', itemType: 'accessory', rarity: 'epic', itemLevel: 22, buyPrice: 4000, sellPrice: 1000, baseStats: { vit: 14, end: 12, str: 6 }, description: 'An immovable wall of volcanic glass.', specialEffect: '+15% block chance', dropChance: 0.6 },
 
     // ══════════════════════════════════════════════════════════
-    // TIER 5 — Levels 30-50 (Legendary zone)
+    // TIER 5 — Levels 30-40 (Legendary zone)
     // ══════════════════════════════════════════════════════════
 
     // Legendary weapons
-    { catalogId: 'wpn_excalibur', itemName: 'Excalibur', itemType: 'weapon', rarity: 'legendary', itemLevel: 15, buyPrice: 8000, sellPrice: 2000, baseStats: { str: 25, agi: 12, vit: 8, luk: 5 }, description: 'The legendary sword of kings.', specialEffect: '+20% all damage, +10% crit', dropChance: 0.3 },
-    { catalogId: 'wpn_worldbreaker', itemName: 'Worldbreaker', itemType: 'weapon', rarity: 'legendary', itemLevel: 30, buyPrice: 15000, sellPrice: 3750, baseStats: { str: 40, agi: 18, vit: 12, luk: 8 }, description: 'Shatters the fabric of reality.', specialEffect: '+25% all damage, +15% armor pen', dropChance: 0.2 },
-    { catalogId: 'wpn_soulreaver', itemName: 'Soulreaver', itemType: 'weapon', rarity: 'legendary', itemLevel: 40, buyPrice: 22000, sellPrice: 5500, baseStats: { str: 50, agi: 22, luk: 15, vit: 10 }, description: 'Consumes the essence of the fallen.', specialEffect: '+8% lifesteal, +20% crit', dropChance: 0.1 },
-    { catalogId: 'wpn_astral_codex', itemName: 'Astral Codex', itemType: 'weapon', rarity: 'legendary', itemLevel: 35, buyPrice: 18000, sellPrice: 4500, baseStats: { int: 45, wis: 25, luk: 12, cha: 8 }, description: 'Written by the gods themselves.', specialEffect: '+25% spell power, +15% mana regen', dropChance: 0.15 },
+    { catalogId: 'wpn_excalibur', itemName: 'Excalibur', itemType: 'weapon', classRestriction: 'warrior', rarity: 'legendary', itemLevel: 15, buyPrice: 8000, sellPrice: 2000, baseStats: { str: 25, agi: 12, vit: 8, luk: 5 }, description: 'The legendary sword of kings.', specialEffect: '+20% all damage, +10% crit', dropChance: 0.3 },
+    { catalogId: 'wpn_worldbreaker', itemName: 'Worldbreaker', itemType: 'weapon', classRestriction: 'warrior', rarity: 'legendary', itemLevel: 30, buyPrice: 15000, sellPrice: 3750, baseStats: { str: 40, agi: 18, vit: 12, luk: 8 }, description: 'Shatters the fabric of reality.', specialEffect: '+25% all damage, +15% armor pen', dropChance: 0.2 },
+    { catalogId: 'wpn_soulreaver', itemName: 'Soulreaver', itemType: 'weapon', classRestriction: 'warrior', rarity: 'legendary', itemLevel: 40, buyPrice: 22000, sellPrice: 5500, baseStats: { str: 50, agi: 22, luk: 15, vit: 10 }, description: 'Consumes the essence of the fallen.', specialEffect: '+8% lifesteal, +20% crit', dropChance: 0.1 },
+    { catalogId: 'wpn_astral_codex', itemName: 'Astral Codex', itemType: 'weapon', classRestriction: 'mage', rarity: 'legendary', itemLevel: 35, buyPrice: 18000, sellPrice: 4500, baseStats: { int: 45, wis: 25, luk: 12, cha: 8 }, description: 'Written by the gods themselves.', specialEffect: '+25% spell power, +15% mana regen', dropChance: 0.15 },
 
     // Legendary armor
     { catalogId: 'helm_abyssal_crown', itemName: 'Abyssal Crown', itemType: 'helmet', rarity: 'legendary', itemLevel: 30, buyPrice: 12000, sellPrice: 3000, baseStats: { vit: 28, str: 14, end: 12, int: 8 }, description: 'Crown of the abyss lords.', specialEffect: '+15% all resist, +10% max HP', dropChance: 0.2 },
@@ -374,6 +374,44 @@ async function main() {
     { catalogId: 'neck_soulbinder', itemName: 'Soulbinder Chain', itemType: 'necklace', rarity: 'legendary', itemLevel: 32, buyPrice: 14000, sellPrice: 3500, baseStats: { wis: 18, int: 12, vit: 10, cha: 8 }, description: 'Chains that bind the spirit world.', specialEffect: '+15% magic resist, +10% HP regen', dropChance: 0.2 },
     { catalogId: 'relic_orb_of_ages', itemName: 'Orb of Ages', itemType: 'relic', rarity: 'legendary', itemLevel: 15, buyPrice: 7500, sellPrice: 1875, baseStats: { int: 15, wis: 12, luk: 8 }, description: 'Contains the wisdom of millennia.', specialEffect: '+15% all magic, +10% XP', dropChance: 0.3 },
     { catalogId: 'relic_crown_of_ashes', itemName: 'Crown of Ashes', itemType: 'relic', rarity: 'legendary', itemLevel: 40, buyPrice: 20000, sellPrice: 5000, baseStats: { int: 20, wis: 18, luk: 12, cha: 10 }, description: 'Remains of a burnt god.', specialEffect: '+20% all magic, +15% XP, +10% crit', dropChance: 0.1 },
+
+    // ══════════════════════════════════════════════════════════
+    // TIER 6 — Levels 41-50 (Ascendant zone)
+    //
+    // The catalog used to stop at itemLevel 40 against a level cap of 50, so
+    // the last ten levels (a third of the ×3 XP curve in wall-clock) had no
+    // gear to chase. One L44 and one L50 weapon per class, a universal armor
+    // set at L42–46 and accessories at L44–50. Art: no dedicated PNGs yet —
+    // imageKey borrows a legendary sibling of the same slot on purpose, so
+    // the client renders real art instead of a placeholder.
+    // ══════════════════════════════════════════════════════════
+
+    // Ascendant weapons — L44 (one per class)
+    { catalogId: 'wpn_dawnbreaker', itemName: 'Dawnbreaker', itemType: 'weapon', rarity: 'legendary', itemLevel: 44, buyPrice: 25000, sellPrice: 6250, baseStats: { str: 54, agi: 24, vit: 14, luk: 10 }, description: 'Forged in the first light after the long night. It does not dull.', specialEffect: '+25% all damage, +15% crit, +10% armor pen', classRestriction: 'warrior', dropChance: 0.1, imageKey: 'wpn_soulreaver' },
+    { catalogId: 'wpn_colossus_maul', itemName: 'Colossus Maul', itemType: 'weapon', rarity: 'legendary', itemLevel: 44, buyPrice: 25000, sellPrice: 6250, baseStats: { str: 46, vit: 28, end: 18, luk: 6 }, description: 'Too heavy for anyone who has not spent a lifetime holding a line.', specialEffect: '+20% all damage, +15% max HP', classRestriction: 'tank', dropChance: 0.1, imageKey: 'wpn_worldbreaker' },
+    { catalogId: 'wpn_eclipse_fangs', itemName: 'Eclipse Fangs', itemType: 'weapon', rarity: 'legendary', itemLevel: 44, buyPrice: 25000, sellPrice: 6250, baseStats: { agi: 52, luk: 26, str: 12, vit: 8 }, description: 'Twin blades that bite between heartbeats.', specialEffect: '+25% crit, +15% crit damage, +10% dodge', classRestriction: 'rogue', dropChance: 0.1, imageKey: 'wpn_soulreaver' },
+    { catalogId: 'wpn_starfall_codex', itemName: 'Starfall Codex', itemType: 'weapon', rarity: 'legendary', itemLevel: 44, buyPrice: 25000, sellPrice: 6250, baseStats: { int: 54, wis: 28, luk: 14, cha: 8 }, description: 'Every page is a sky that has already fallen.', specialEffect: '+30% spell power, +15% crit', classRestriction: 'mage', dropChance: 0.1, imageKey: 'wpn_astral_codex' },
+
+    // Ascendant weapons — L50 capstones (one per class)
+    { catalogId: 'wpn_ascendant_blade', itemName: 'Ascendant Blade', itemType: 'weapon', rarity: 'legendary', itemLevel: 50, buyPrice: 32000, sellPrice: 8000, baseStats: { str: 62, agi: 26, vit: 16, luk: 12 }, description: 'Carried by the last fighter to leave the arena standing.', specialEffect: '+30% all damage, +20% crit, +15% armor pen', classRestriction: 'warrior', dropChance: 0.08, imageKey: 'wpn_soulreaver' },
+    { catalogId: 'wpn_ascendant_bulwark', itemName: 'Ascendant Bulwark', itemType: 'weapon', rarity: 'legendary', itemLevel: 50, buyPrice: 32000, sellPrice: 8000, baseStats: { str: 52, vit: 32, end: 22, luk: 8 }, description: 'Half hammer, half wall. Both halves win.', specialEffect: '+25% all damage, +20% max HP, +10% all resist', classRestriction: 'tank', dropChance: 0.08, imageKey: 'wpn_worldbreaker' },
+    { catalogId: 'wpn_ascendant_edge', itemName: 'Ascendant Edge', itemType: 'weapon', rarity: 'legendary', itemLevel: 50, buyPrice: 32000, sellPrice: 8000, baseStats: { agi: 60, luk: 28, str: 14, vit: 10 }, description: 'You will not see it. That is the point.', specialEffect: '+30% crit, +20% crit damage, +10% lifesteal', classRestriction: 'rogue', dropChance: 0.08, imageKey: 'wpn_soulreaver' },
+    { catalogId: 'wpn_ascendant_staff', itemName: 'Ascendant Staff', itemType: 'weapon', rarity: 'legendary', itemLevel: 50, buyPrice: 32000, sellPrice: 8000, baseStats: { int: 62, wis: 30, luk: 16, cha: 10 }, description: 'The staff remembers every spell ever cast through it.', specialEffect: '+35% spell power, +20% crit, +15% mana regen', classRestriction: 'mage', dropChance: 0.08, imageKey: 'wpn_astral_codex' },
+
+    // Ascendant armor — universal, L42-46
+    { catalogId: 'helm_ascendant_crown', itemName: 'Ascendant Crown', itemType: 'helmet', rarity: 'legendary', itemLevel: 42, buyPrice: 20000, sellPrice: 5000, baseStats: { vit: 32, str: 16, end: 14, int: 10 }, description: 'Worn by those who stopped asking permission.', specialEffect: '+15% all resist, +12% max HP', dropChance: 0.1, imageKey: 'helm_abyssal_crown' },
+    { catalogId: 'glove_ascendant_grips', itemName: 'Ascendant Grips', itemType: 'gloves', rarity: 'legendary', itemLevel: 42, buyPrice: 20000, sellPrice: 5000, baseStats: { str: 24, agi: 18, luk: 12, vit: 10 }, description: 'They do not let go.', specialEffect: '+15% crit damage, +10% attack speed', dropChance: 0.1, imageKey: 'glove_demongrasps' },
+    { catalogId: 'boot_ascendant_treads', itemName: 'Ascendant Treads', itemType: 'boots', rarity: 'legendary', itemLevel: 43, buyPrice: 21000, sellPrice: 5250, baseStats: { agi: 26, vit: 14, luk: 12, end: 10 }, description: 'Every step lands where the ground is strongest.', specialEffect: '+15% dodge, +10% movement', dropChance: 0.1, imageKey: 'boot_eternaltread' },
+    { catalogId: 'legs_ascendant_greaves', itemName: 'Ascendant Greaves', itemType: 'legs', rarity: 'legendary', itemLevel: 45, buyPrice: 24000, sellPrice: 6000, baseStats: { vit: 30, agi: 18, end: 14, luk: 10 }, description: 'Plated for the climb, not the parade.', specialEffect: '+15% dodge, +10% max HP', dropChance: 0.1, imageKey: 'legs_voidwalker' },
+    { catalogId: 'chest_ascendant_plate', itemName: 'Ascendant Plate', itemType: 'chest', rarity: 'legendary', itemLevel: 46, buyPrice: 26000, sellPrice: 6500, baseStats: { vit: 42, end: 24, str: 14, agi: 10 }, description: 'Dented in a hundred places. Pierced in none.', specialEffect: '+20% max HP, +15% all resist', dropChance: 0.1, imageKey: 'chest_godplate' },
+
+    // Ascendant accessories — universal, L44-50
+    { catalogId: 'belt_titanbind', itemName: 'Titanbind', itemType: 'belt', rarity: 'legendary', itemLevel: 44, buyPrice: 22000, sellPrice: 5500, baseStats: { end: 24, vit: 18, str: 12, agi: 10 }, description: 'Cut from a chain that once held something much larger.', specialEffect: '+15% max stamina, +12% all resist', dropChance: 0.1, imageKey: 'belt_worldserpent' },
+    { catalogId: 'neck_starbound_chain', itemName: 'Starbound Chain', itemType: 'necklace', rarity: 'legendary', itemLevel: 46, buyPrice: 25000, sellPrice: 6250, baseStats: { wis: 22, int: 14, vit: 12, cha: 10 }, description: 'Each link is a night you did not give up.', specialEffect: '+15% magic resist, +12% HP regen', dropChance: 0.1, imageKey: 'neck_soulbinder' },
+    { catalogId: 'acc_aegis_of_dawn', itemName: 'Aegis of Dawn', itemType: 'accessory', rarity: 'legendary', itemLevel: 48, buyPrice: 28000, sellPrice: 7000, baseStats: { vit: 24, end: 22, wis: 12, str: 10 }, description: 'It has never been raised in vain.', specialEffect: '25% reflect physical damage', dropChance: 0.08, imageKey: 'acc_mirror_shield' },
+    { catalogId: 'amu_eye_of_the_ascendant', itemName: 'Eye of the Ascendant', itemType: 'amulet', rarity: 'legendary', itemLevel: 48, buyPrice: 28000, sellPrice: 7000, baseStats: { vit: 22, wis: 18, cha: 14, luk: 12 }, description: 'It has seen the end of the climb. It is not impressed.', specialEffect: 'Revive with 60% HP once per battle', dropChance: 0.08, imageKey: 'amu_heart_of_eternity' },
+    { catalogId: 'ring_singularity', itemName: 'Ring of Singularity', itemType: 'ring', rarity: 'legendary', itemLevel: 48, buyPrice: 27000, sellPrice: 6750, baseStats: { int: 22, luk: 18, agi: 12, wis: 10 }, description: 'Everything bends toward it, eventually.', specialEffect: '+25% magic pen, +15% crit', dropChance: 0.08, imageKey: 'ring_oblivion' },
+    { catalogId: 'relic_heart_of_the_void', itemName: 'Heart of the Void', itemType: 'relic', rarity: 'legendary', itemLevel: 50, buyPrice: 32000, sellPrice: 8000, baseStats: { int: 24, wis: 22, luk: 15, cha: 12 }, description: 'Still beating. Nobody knows for whom.', specialEffect: '+25% all magic, +15% XP, +12% crit', dropChance: 0.08, imageKey: 'relic_crown_of_ashes' },
 
     // ══════════════════════════════════════════════════════════
     // CONSUMABLES (shop-only, dropChance: 0)

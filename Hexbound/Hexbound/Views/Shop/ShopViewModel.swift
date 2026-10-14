@@ -79,6 +79,8 @@ final class ShopViewModel {
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
     var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
+    /// Level gate for gear — prestige-aware (Character.gearLevel).
+    var gearLevel: Int { appState.currentCharacter?.gearLevel ?? 1 }
     var playerClass: String { appState.currentCharacter?.characterClass.rawValue ?? "warrior" }
 
     private func applyClaimedRewardState(
@@ -110,11 +112,8 @@ final class ShopViewModel {
     /// Items filtered by level and class restriction (base for all display)
     private var equippableItems: [ShopItem] {
         items.filter { item in
-            if item.requiredLevel > playerLevel { return false }
-            if let restriction = item.classRestriction, !restriction.isEmpty {
-                return restriction == playerClass
-            }
-            return true
+            if item.requiredLevel > gearLevel { return false }
+            return Character.canWear(characterClass: playerClass, restriction: item.classRestriction)
         }
     }
 
@@ -454,7 +453,7 @@ final class ShopViewModel {
     }
 
     func meetsLevel(_ item: ShopItem) -> Bool {
-        playerLevel >= item.requiredLevel
+        gearLevel >= item.requiredLevel
     }
 
     /// Gate purchases: gem items require confirmation, gold items go through directly.

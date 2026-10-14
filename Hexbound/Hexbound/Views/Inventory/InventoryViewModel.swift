@@ -91,18 +91,11 @@ final class InventoryViewModel {
         guard item.isEquipped != true else { return true }
         guard let char = appState.currentCharacter else { return true }
 
-        // Level check
-        if char.level < item.itemLevel { return false }
+        // Level check — prestige-aware, mirrors backend /inventory/equip
+        if char.gearLevel < item.itemLevel { return false }
 
-        // Class restriction check
-        if let restriction = item.classRestriction?.lowercased(),
-           !restriction.isEmpty,
-           restriction != "none",
-           restriction != char.characterClass.rawValue.lowercased() {
-            return false
-        }
-
-        return true
+        // Class restriction check — same matrix as the server (warrior ↔ tank share)
+        return Character.canWear(characterClass: char.characterClass.rawValue, restriction: item.classRestriction)
     }
 
     /// Grid slots: items + empty placeholders up to totalSlots

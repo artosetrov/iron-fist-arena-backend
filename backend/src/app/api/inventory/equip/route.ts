@@ -7,6 +7,8 @@ import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-
 import { rateLimit } from '@/lib/rate-limit'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 import { buildInventoryResponse } from '@/lib/game/inventory-response'
+import { canClassWear } from '@/lib/game/class-compat'
+import { effectiveGearLevel } from '@/lib/game/gear-level'
 
 // Map item types to possible equipment slots (priority order).
 // Universal slots: amulet accepts necklace, relic accepts accessory + weapon (off-hand).
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
       // Step 1: Lock character + verify ownership
       const character = await tx.character.findUnique({
         where: { id: charId },
-        select: { userId: true, level: true, class: true },
+        select: { userId: true, level: true, prestigeLevel: true, class: true },
       })
 
       if (!character) throw new Error('CHARACTER_NOT_FOUND')
@@ -109,10 +111,15 @@ export async function POST(req: NextRequest) {
 
       // Validate: broken, level, class
       if (inventoryItem.durability === 0) throw new Error('ITEM_BROKEN')
-      if (character.level < inventoryItem.itemLevel) throw new Error('LEVEL_TOO_LOW')
+      // Prestige resets level to 1 but keeps the gear earned — gate on the
+      // level the character has actually reached (gear-level.ts).
+      if (effectiveGearLevel(character.level, character.prestigeLevel) < inventoryItem.itemLevel) {
+        throw new Error('LEVEL_TOO_LOW')
+      }
 
-      const classRestriction = inventoryItem.classRestriction?.toLowerCase()
-      if (classRestriction && classRestriction !== character.class) throw new Error('CLASS_RESTRICTED')
+      // Same matrix as loot (warrior ↔ tank share weapons), so a dropped item
+      // is always equippable by the character it dropped for.
+      if (!canClassWear(character.class, inventoryItem.classRestriction)) throw new Error('CLASS_RESTRICTED')
 
       // Determine possible slots
       const possibleSlots = ITEM_TYPE_TO_SLOTS[inventoryItem.itemType as ItemType]

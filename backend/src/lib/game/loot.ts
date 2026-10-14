@@ -34,6 +34,9 @@ import { PrismaClient, CharacterClass, Prisma } from '@prisma/client';
  */
 type PrismaLike = PrismaClient | Prisma.TransactionClient;
 import { getDropTuningConfig, calculateItemPowerScore } from './item-balance';
+import { rollItemStats } from './item-stats';
+import { effectiveGearLevel } from './gear-level';
+import { CLASS_COMPAT } from './class-compat';
 
 // --- Types ---
 
@@ -69,6 +72,8 @@ export interface LootResponseItem {
   item_level: number;
   upgrade_level: number;
   base_stats: Record<string, number>;
+  /** Per-copy bonus rolled at drop time (item-stats.ts rollItemStats). Empty for shop copies. */
+  rolled_stats: Record<string, number>;
   image_key: string | null;
   image_url: string | null;
   sell_price: number;
@@ -97,19 +102,9 @@ const ITEM_TYPES: ItemType[] = [
 
 // --- Class compatibility matrix ---
 //
-// Which classRestriction values a given character class can wear. NULL is
-// universal and always allowed — handled separately in SQL with an OR clause.
-// Keeping this as a const lets admin tools / balance sims import it directly.
-//
-// Rationale: warrior and tank are both str/vit melee classes, so they share
-// armor. Rogue and mage have their own unique stat profiles (agi / int) and
-// their gear does not carry meaningful value for anyone else.
-export const CLASS_COMPAT: Record<CharacterClass, CharacterClass[]> = {
-  warrior: ['warrior', 'tank'],
-  tank: ['warrior', 'tank'],
-  rogue: ['rogue'],
-  mage: ['mage'],
-};
+// Lives in class-compat.ts so equip and the shop use the same matrix as loot.
+// Re-exported here because admin tools / balance sims import it from loot.
+export { CLASS_COMPAT };
 
 // --- Pity thresholds ---
 //
@@ -479,6 +474,7 @@ export async function persistLoot(
     select: {
       id: true,
       class: true,
+      prestigeLevel: true,
       inventorySlots: true,
       trashLootStreak: true,
       equipment: {
@@ -523,11 +519,14 @@ export async function persistLoot(
   const pityBump = pityBumpForStreak(character.trashLootStreak);
   const effectiveRarity = bumpRarity(drop.rarity, pityBump);
 
+  // A prestiged character is level 1 again on paper but has earned the whole
+  // ladder once; dropping it L1 whites would all be shard-converted by the
+  // gear-aware filter anyway. Roll against the level it can actually equip.
   const catalogItem = await pickRelevantCatalogItem(
     prisma,
     effectiveRarity,
     drop.itemType,
-    playerLevel,
+    effectiveGearLevel(playerLevel, character.prestigeLevel),
     character.class,
     equippedPowerBySlot,
   );
@@ -545,6 +544,8 @@ export async function persistLoot(
     rarity: catalogItem.rarity,
   });
 
+  const rolledStats = rollItemStats(catalogItem.baseStats, catalogItem.rarity);
+
   const equipment = await prisma.equipmentInventory.create({
     data: {
       characterId,
@@ -553,6 +554,7 @@ export async function persistLoot(
       durability: 100,
       maxDurability: 100,
       isEquipped: false,
+      rolledStats: Object.keys(rolledStats).length > 0 ? rolledStats : Prisma.JsonNull,
     },
   });
 
@@ -565,6 +567,7 @@ export async function persistLoot(
     item_level: catalogItem.itemLevel,
     upgrade_level: 0,
     base_stats: (catalogItem.baseStats as Record<string, number>) ?? {},
+    rolled_stats: rolledStats,
     image_key: resolvedImage.imageKey,
     image_url: resolvedImage.imageUrl,
     sell_price: catalogItem.sellPrice,
@@ -661,6 +664,7 @@ export async function rollAndPersistLoot(
       item_level: playerLevel,
       upgrade_level: 0,
       base_stats: {},
+      rolled_stats: {},
       image_key: null,
       image_url: null,
       sell_price: 0,

@@ -54,7 +54,7 @@ struct HeroDetailView: View {
                         // BUG-63: pass player level + class so the sheet can
                         // paint the required-level / class-restriction red and
                         // disable EQUIP before the user taps it.
-                        playerLevel: char.level,
+                        playerLevel: char.gearLevel,
                         playerClass: char.characterClass,
                         onDeposit: item.isEquipped != true && item.itemType != .consumable
                             ? { let _ = Task { await vm.depositToStash(item) } }
