@@ -48,6 +48,9 @@ struct NPCSpeechBubble: View {
                 }
                 .id(messageId)
                 .transition(.opacity)
+                .task(id: message) {
+                    NPCVoice.shared.speak(message)
+                }
                 .onAppear {
                     if typewriterEnabled { startTypewriter() }
                 }
@@ -57,6 +60,7 @@ struct NPCSpeechBubble: View {
                 .onDisappear {
                     typewriterTask?.cancel()
                     typewriterTask = nil
+                    NPCVoice.shared.stop(message)
                 }
             }
         }

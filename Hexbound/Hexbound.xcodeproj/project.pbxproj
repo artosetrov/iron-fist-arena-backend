@@ -463,6 +463,8 @@
 		E55080DD83E15810D7C63678 /* SegmentedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB613DE56FBC3B40EBE42011 /* SegmentedProgressBar.swift */; };
 		E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47BF69C872101A05B35E80C /* Character.swift */; };
 		E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6D /* SFXManager.swift */; };
+		400DE0D28671AC2FF26BACC1 /* NPCVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18F3753DE5E978AC04E16D7 /* NPCVoice.swift */; };
+		323EA23823BB05539DECD532 /* NPC in Resources */ = {isa = PBXBuildFile; fileRef = 0E2421E5C30AF36A0D15710B /* NPC */; };
 		E769609CAAA4399CC60C2541 /* SFXCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6E /* SFXCatalog.swift */; };
 		E7A0397200D276BA4EC1669F /* shell_shuffle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 029AA9A175D862EBED174221 /* shell_shuffle.wav */; };
 		E8A745114C6558E972DA5AD0 /* hit_true_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = DD2B68A87A3919594D4C98CD /* hit_true_2.wav */; };
@@ -660,6 +662,8 @@
 		3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectDetailView.swift; sourceTree = "<group>"; };
 		408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintOverlay.swift; sourceTree = "<group>"; };
 		41D739E061B444DC46FF0A6D /* SFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXManager.swift; sourceTree = "<group>"; };
+		F18F3753DE5E978AC04E16D7 /* NPCVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCVoice.swift; sourceTree = "<group>"; };
+		0E2421E5C30AF36A0D15710B /* NPC */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NPC; sourceTree = "<group>"; };
 		41D739E061B444DC46FF0A6E /* SFXCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXCatalog.swift; sourceTree = "<group>"; };
 		4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterClass.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingConfig.swift; sourceTree = "<group>"; };
@@ -1638,6 +1642,7 @@
 				79F022C8EB7B52576FEE27CC /* KeychainManager.swift */,
 				41D739E061B444DC46FF0A6E /* SFXCatalog.swift */,
 				41D739E061B444DC46FF0A6D /* SFXManager.swift */,
+				F18F3753DE5E978AC04E16D7 /* NPCVoice.swift */,
 				F9C1475B1BBD153D131D99EA /* SettingsManager.swift */,
 			);
 			path = Persistence;
@@ -1649,6 +1654,7 @@
 				0EAF143E730E3F6B3856DDFE /* Ambient */,
 				1D449A3516530C16CEC35B1C /* SFX */,
 				4A263CB963FA763A7BC76EBD /* Voice */,
+				0E2421E5C30AF36A0D15710B /* NPC */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -2278,6 +2284,7 @@
 				11DF803A7BBA3E64FE6A9260 /* main-theme.mp3 in Resources */,
 				F6C73BF38E24A42D5BCBA3A5 /* onboarding-voice-blood-glory.mp3 in Resources */,
 				9E53737295B5E84D82D6C1C2 /* onboarding-voice-welcome.mp3 in Resources */,
+				323EA23823BB05539DECD532 /* NPC in Resources */,
 				007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */,
 				E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */,
 				L10N002BLD000000000000A3 /* Localizable.strings in Resources */,
@@ -2578,6 +2585,7 @@
 				B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */,
 				E769609CAAA4399CC60C2541 /* SFXCatalog.swift in Sources */,
 				E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */,
+				400DE0D28671AC2FF26BACC1 /* NPCVoice.swift in Sources */,
 				3A90425A6C1B65E59C7BB32A /* AmbientManager.swift in Sources */,
 				467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */,
 				A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */,

@@ -1,0 +1,890 @@
+[
+ {
+  "id": "npc_tavern_6ddb07eb",
+  "speaker": "tavern",
+  "text": "Welcome, adventurer! Tap any building on the map to explore. Start with the Arena to earn gold and climb the ranks!",
+  "tts": "Welcome, adventurer! Tap any building on the map to explore. Start with the Arena to earn gold and climb the ranks!",
+  "source": "hint:hub_welcome",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_arena_19d02c5a",
+  "speaker": "arena",
+  "text": "Choose your opponent wisely! You get free fights daily. Keep your HP above 10% or you won't be able to fight.",
+  "tts": "Choose your opponent wisely! You get free fights daily. Keep your health above ten percent or you won't be able to fight.",
+  "source": "hint:arena_intro",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_sage_59e9057c",
+  "speaker": "sage",
+  "text": "You have stat points to spend! Go to the STATUS tab and allocate them to make your hero stronger.",
+  "tts": "You have stat points to spend! Go to the Status tab and allocate them to make your hero stronger.",
+  "source": "hint:hero_stats",
+  "voice": "d9d5c263-f84e-4752-97b5-3750fcc6fd2f"
+ },
+ {
+  "id": "npc_merchant_80ab6d1c",
+  "speaker": "merchant",
+  "text": "Browse my wares! Health potions restore HP, stamina potions let you fight more. Upgrade your gear for better stats.",
+  "tts": "Browse my wares! Health potions restore health, stamina potions let you fight more. Upgrade your gear for better stats.",
+  "source": "hint:shop_intro",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_dungeon_e0f799bb",
+  "speaker": "dungeon",
+  "text": "Each dungeon has bosses of increasing difficulty. Defeat them for rare loot and XP! Choose your battles carefully.",
+  "tts": "Each dungeon has bosses of increasing difficulty. Defeat them for rare loot and X P! Choose your battles carefully.",
+  "source": "hint:dungeon_intro",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_mine_6d03133a",
+  "speaker": "mine",
+  "text": "Start mining to earn gold passively! Each slot takes 4 hours. Come back when it's ready to collect your earnings.",
+  "tts": "Start mining to earn gold passively! Each slot takes 4 hours. Come back when it's ready to collect your earnings.",
+  "source": "hint:gold_mine_intro",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_herald_5f74ecac",
+  "speaker": "herald",
+  "text": "Complete daily quests and battles to earn Battle Pass XP. Each tier unlocks rewards — premium tier has even more!",
+  "tts": "Complete daily quests and battles to earn Battle Pass X P. Each tier unlocks rewards — premium tier has even more!",
+  "source": "hint:battlepass_intro",
+  "voice": "573e5163-59b3-4926-aab1-951ef2985f81"
+ },
+ {
+  "id": "npc_chronicler_1deea4ee",
+  "speaker": "chronicler",
+  "text": "Track your progress here! Claim rewards when you reach milestones. PvP, Progression, and Ranking achievements await.",
+  "tts": "Track your progress here! Claim rewards when you reach milestones. PvP, Progression, and Ranking achievements await.",
+  "source": "hint:achievements_intro",
+  "voice": "ef70cc83-3015-4bad-9359-0ea968c43ec0"
+ },
+ {
+  "id": "npc_healer_18b8f06c",
+  "speaker": "healer",
+  "text": "Your health is low! Use a health potion from your inventory to restore HP before your next battle.",
+  "tts": "Your health is low! Use a health potion from your inventory to restore health before your next battle.",
+  "source": "hint:use_potion",
+  "voice": "3811e986-0891-47cf-a1f5-78a1d62a547a"
+ },
+ {
+  "id": "npc_sage_e4bfaf3d",
+  "speaker": "sage",
+  "text": "You leveled up! Don't forget to allocate your new stat points in the STATUS tab on the Hero page.",
+  "tts": "You leveled up! Don't forget to allocate your new stat points in the Status tab on the Hero page.",
+  "source": "hint:level_up_stats",
+  "voice": "d9d5c263-f84e-4752-97b5-3750fcc6fd2f"
+ },
+ {
+  "id": "npc_sage_ef4fdf87",
+  "speaker": "sage",
+  "text": "You have no gear yet! Visit the Shop and buy some equipment — you'll need it to survive in the Arena.",
+  "tts": "You have no gear yet! Visit the Shop and buy some equipment — you'll need it to survive in the Arena.",
+  "source": "hint:inventory_empty",
+  "voice": "d9d5c263-f84e-4752-97b5-3750fcc6fd2f"
+ },
+ {
+  "id": "npc_sage_79fe891d",
+  "speaker": "sage",
+  "text": "You're going into battle... naked? Bold strategy. Might I suggest visiting the Shop before someone mistakes you for a training dummy?",
+  "tts": "You're going into battle... naked? Bold strategy. Might I suggest visiting the Shop before someone mistakes you for a training dummy?",
+  "source": "hint:hero_no_gear",
+  "voice": "d9d5c263-f84e-4752-97b5-3750fcc6fd2f"
+ },
+ {
+  "id": "npc_healer_f11f7ad3",
+  "speaker": "healer",
+  "text": "You look like you lost a fight with a staircase. Good news — you've got potions! Drink one before something finishes the job.",
+  "tts": "You look like you lost a fight with a staircase. Good news — you've got potions! Drink one before something finishes the job.",
+  "source": "hint:hero_low_hp_potions",
+  "voice": "3811e986-0891-47cf-a1f5-78a1d62a547a"
+ },
+ {
+  "id": "npc_healer_3e65e6d6",
+  "speaker": "healer",
+  "text": "Barely alive AND no potions? That's not bravery, that's a death wish. The Shop has what you need. Run. Don't walk.",
+  "tts": "Barely alive And no potions? That's not bravery, that's a death wish. The Shop has what you need. Run. Don't walk.",
+  "source": "hint:hero_low_hp_no_potions",
+  "voice": "3811e986-0891-47cf-a1f5-78a1d62a547a"
+ },
+ {
+  "id": "npc_smith_c00b7cfa",
+  "speaker": "smith",
+  "text": "Is that a sword or a butter knife? Your gear's falling apart! Tap an item and hit Repair before it crumbles to dust.",
+  "tts": "Is that a sword or a butter knife? Your gear's falling apart! Tap an item and hit Repair before it crumbles to dust.",
+  "source": "hint:hero_damaged_gear",
+  "voice": "66469f5a-10db-586a-bab1-72f6ee66ba69"
+ },
+ {
+  "id": "npc_smith_4db060ff",
+  "speaker": "smith",
+  "text": "Got a quest to upgrade, eh? Pick any item, hit Upgrade, and pray to the RNG gods. I've seen grown warriors cry at this screen.",
+  "tts": "Got a quest to upgrade, eh? Pick any item, hit Upgrade, and pray to the R-N-G gods. I've seen grown warriors cry at this screen.",
+  "source": "hint:hero_upgrade_quest",
+  "voice": "66469f5a-10db-586a-bab1-72f6ee66ba69"
+ },
+ {
+  "id": "npc_smith_cb90c690",
+  "speaker": "smith",
+  "text": "Can't upgrade what you don't have, genius. Pop over to the Shop, grab some gear, then come back. I'll keep the forge warm.",
+  "tts": "Can't upgrade what you don't have, genius. Pop over to the Shop, grab some gear, then come back. I'll keep the forge warm.",
+  "source": "hint:hero_upgrade_no_item",
+  "voice": "66469f5a-10db-586a-bab1-72f6ee66ba69"
+ },
+ {
+  "id": "npc_sage_a317e128",
+  "speaker": "sage",
+  "text": "You have stat points gathering dust! Switch to the STATUS tab and make yourself less... mediocre. No offense.",
+  "tts": "You have stat points gathering dust! Switch to the Status tab and make yourself less... mediocre. No offense.",
+  "source": "hint:hero_stat_points",
+  "voice": "d9d5c263-f84e-4752-97b5-3750fcc6fd2f"
+ },
+ {
+  "id": "npc_healer_ee3a528a",
+  "speaker": "healer",
+  "text": "Your quest says 'use a consumable.' I know it hurts to waste a perfectly good potion, but science demands sacrifice.",
+  "tts": "Your quest says 'use a consumable.' I know it hurts to waste a perfectly good potion, but science demands sacrifice.",
+  "source": "hint:hero_consumable_quest",
+  "voice": "3811e986-0891-47cf-a1f5-78a1d62a547a"
+ },
+ {
+  "id": "npc_tavern_967066e5",
+  "speaker": "tavern",
+  "text": "Exhausted already? Even my cat has more stamina. Wait for it to recover, or throw some gems at the problem in the Shop.",
+  "tts": "Exhausted already? Even my cat has more stamina. Wait for it to recover, or throw some gems at the problem in the Shop.",
+  "source": "hint:hub_no_stamina",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_arena_d44efe70",
+  "speaker": "arena",
+  "text": "Hey, you! Yeah, the one who's never fought anyone. The Arena awaits! Pick someone your size and show them what you... probably can't do yet.",
+  "tts": "Hey, you! Yeah, the one who's never fought anyone. The Arena awaits! Pick someone your size and show them what you... probably can't do yet.",
+  "source": "hint:hub_first_pvp",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_dungeon_7c2aaa1d",
+  "speaker": "dungeon",
+  "text": "The dungeons aren't going to clear themselves. Well, technically the monsters live there, so... they already have. But YOU haven't.",
+  "tts": "The dungeons aren't going to clear themselves. Well, technically the monsters live there, so... they already have. But You haven't.",
+  "source": "hint:hub_first_dungeon",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_mine_72feec76",
+  "speaker": "mine",
+  "text": "Free gold, just sitting there, and you haven't visited the mine? It's like finding money on the ground and walking over it.",
+  "tts": "Free gold, just sitting there, and you haven't visited the mine? It's like finding money on the ground and walking over it.",
+  "source": "hint:hub_first_mine",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_mine_29aab8c0",
+  "speaker": "mine",
+  "text": "Your miners struck pay-dirt! There's gold ready to collect at the mine. Get it before someone else notices.",
+  "tts": "Your miners struck pay-dirt! There's gold ready to collect at the mine. Get it before someone else notices.",
+  "source": "hint:hub_mine_ready",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_herald_5d0742a4",
+  "speaker": "herald",
+  "text": "You've got unclaimed rewards just... sitting there. Rotting. Gathering cobwebs. Please claim them before I have a breakdown.",
+  "tts": "You've got unclaimed rewards just... sitting there. Rotting. Gathering cobwebs. Please claim them before I have a breakdown.",
+  "source": "hint:hub_unclaimed_rewards",
+  "voice": "573e5163-59b3-4926-aab1-951ef2985f81"
+ },
+ {
+  "id": "npc_medic_5f5c7f37",
+  "speaker": "medic",
+  "text": "Walking into the Arena at death's door? At least chug a potion first. I'm a medic, not a miracle worker.",
+  "tts": "Walking into the Arena at death's door? At least chug a potion first. I'm a medic, not a miracle worker.",
+  "source": "hint:arena_low_hp_potions",
+  "voice": "9eb5a147-c322-4f8a-8bc5-a30679dfaf5c"
+ },
+ {
+  "id": "npc_medic_f01f0053",
+  "speaker": "medic",
+  "text": "No health, no potions, still wants to fight. You're either incredibly brave or profoundly unwise. Shop's that way.",
+  "tts": "No health, no potions, still wants to fight. You're either incredibly brave or profoundly unwise. Shop's that way.",
+  "source": "hint:arena_low_hp_no_potions",
+  "voice": "9eb5a147-c322-4f8a-8bc5-a30679dfaf5c"
+ },
+ {
+  "id": "npc_arena_8e7bbe05",
+  "speaker": "arena",
+  "text": "First blood! Pick the greenest opponent — that means weak, not literally green. Well, some ARE literally green. Orcs, you know.",
+  "tts": "First blood! Pick the greenest opponent — that means weak, not literally green. Well, some Are literally green. Orcs, you know.",
+  "source": "hint:arena_first_fight",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_arena_49f63f88",
+  "speaker": "arena",
+  "text": "Rough patch, eh? Try someone with a lower rating, or switch your Combat Stance. Sometimes offense IS the best defense. Or the worst. Who knows.",
+  "tts": "Rough patch, eh? Try someone with a lower rating, or switch your Combat Stance. Sometimes offense Is the best defense. Or the worst. Who knows.",
+  "source": "hint:arena_loss_streak",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_arena_55ab1626",
+  "speaker": "arena",
+  "text": "You're running on fumes! Can't fight without stamina — even legends need to rest. Or buy some energy in the Shop, like a proper pay-to-win player.",
+  "tts": "You're running on fumes! Can't fight without stamina — even legends need to rest. Or buy some energy in the Shop, like a proper pay-to-win player.",
+  "source": "hint:arena_low_stamina",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_arena_ada72153",
+  "speaker": "arena",
+  "text": "PSA: Your first win today gets BONUS rewards! That's free money. Well, free-ish. You still have to win. Minor detail.",
+  "tts": "Listen up: Your first win today gets Bonus rewards! That's free money. Well, free-ish. You still have to win. Minor detail.",
+  "source": "hint:arena_first_win",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_merchant_247a235e",
+  "speaker": "merchant",
+  "text": "Ah, the Healer sent you? Smart. Health potions are in the Potions tab. Buy two — one for now, one for when you inevitably get hit again.",
+  "tts": "Ah, the Healer sent you? Smart. Health potions are in the Potions tab. Buy two — one for now, one for when you inevitably get hit again.",
+  "source": "hint:shop_redirect_potions",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_fc967e3f",
+  "speaker": "merchant",
+  "text": "Looking for upgrade material? Check the Equipment tab! Anything you buy can be upgraded later. The Blacksmith loves fresh victims... I mean, customers.",
+  "tts": "Looking for upgrade material? Check the Equipment tab! Anything you buy can be upgraded later. The Blacksmith loves fresh victims... I mean, customers.",
+  "source": "hint:shop_redirect_gear",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_be2f9c03",
+  "speaker": "merchant",
+  "text": "Empty pockets, huh? Can't help you there. Go win some Arena fights or dig up gold in the Mine. Come back when you can actually afford something.",
+  "tts": "Empty pockets, huh? Can't help you there. Go win some Arena fights or dig up gold in the Mine. Come back when you can actually afford something.",
+  "source": "hint:shop_broke",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_9125d7ca",
+  "speaker": "merchant",
+  "text": "A quest to spend gold? Finally, a quest I can get behind! Buy anything — gear, potions, a nice hat. It all counts!",
+  "tts": "A quest to spend gold? Finally, a quest I can get behind! Buy anything — gear, potions, a nice hat. It all counts!",
+  "source": "hint:shop_gold_quest",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_dungeon_95125581",
+  "speaker": "dungeon",
+  "text": "You need stamina to enter, and you're running on empty. Come back when you've recharged, or buy some in the Shop. The monsters aren't going anywhere.",
+  "tts": "You need stamina to enter, and you're running on empty. Come back when you've recharged, or buy some in the Shop. The monsters aren't going anywhere.",
+  "source": "hint:dungeon_low_stamina",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_dungeon_6e38e9dd",
+  "speaker": "dungeon",
+  "text": "Going into a dungeon at half health? I admire your confidence. I question your judgment. Maybe drink a potion first?",
+  "tts": "Going into a dungeon at half health? I admire your confidence. I question your judgment. Maybe drink a potion first?",
+  "source": "hint:dungeon_low_hp",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_dungeon_7d68819a",
+  "speaker": "dungeon",
+  "text": "Got a dungeon quest? Pick any floor and clear it. Pro tip: the difficulty tag isn't a suggestion, it's a warning.",
+  "tts": "Got a dungeon quest? Pick any floor and clear it. Pro tip: the difficulty tag isn't a suggestion, it's a warning.",
+  "source": "hint:dungeon_quest",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_mine_59ab6fe7",
+  "speaker": "mine",
+  "text": "Your miners found gold! Tap the slot to collect before they spend it all at the tavern. Trust me, they will.",
+  "tts": "Your miners found gold! Tap the slot to collect before they spend it all at the tavern. Trust me, they will.",
+  "source": "hint:mine_ready_collect",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_mine_caa79c3f",
+  "speaker": "mine",
+  "text": "Everything's running smoothly. Go do something else — fight, shop, stare at your equipment. I'll hold down the fort.",
+  "tts": "Everything's running smoothly. Go do something else — fight, shop, stare at your equipment. I'll hold down the fort.",
+  "source": "hint:mine_all_busy",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_mine_1d01d707",
+  "speaker": "mine",
+  "text": "Quest says collect from the mine? Start a slot if you haven't, then come back when it's done. Patience, grasshopper.",
+  "tts": "Quest says collect from the mine? Start a slot if you haven't, then come back when it's done. Patience, grasshopper.",
+  "source": "hint:mine_collect_quest",
+  "voice": "d603a8cd-3fe1-55e0-9245-617a2589131e"
+ },
+ {
+  "id": "npc_herald_b60df433",
+  "speaker": "herald",
+  "text": "You've passed tiers with unclaimed rewards! That's like leaving money on the table, except the table is on fire and the money is getting crispy.",
+  "tts": "You've passed tiers with unclaimed rewards! That's like leaving money on the table, except the table is on fire and the money is getting crispy.",
+  "source": "hint:bp_unclaimed_rewards",
+  "voice": "573e5163-59b3-4926-aab1-951ef2985f81"
+ },
+ {
+  "id": "npc_chronicler_8a20dcf4",
+  "speaker": "chronicler",
+  "text": "You've EARNED glory and you haven't COLLECTED it? That's like slaying a dragon and forgetting to loot the hoard. Tap and claim!",
+  "tts": "You've Earned glory and you haven't Collected it? That's like slaying a dragon and forgetting to loot the hoard. Tap and claim!",
+  "source": "hint:achievement_unclaimed",
+  "voice": "ef70cc83-3015-4bad-9359-0ea968c43ec0"
+ },
+ {
+  "id": "npc_finch_1955eadb",
+  "speaker": "finch",
+  "text": "Got a quest to play my game? Excellent! Watch the shells, pick the right one, and try not to blink. Or cry. Crying is also common.",
+  "tts": "Got a quest to play my game? Excellent! Watch the shells, pick the right one, and try not to blink. Or cry. Crying is also common.",
+  "source": "hint:shell_game_quest",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_tavern_5f75897e",
+  "speaker": "tavern",
+  "text": "Welcome, adventurer! Head to the Arena and prove your mettle in combat. Even a loss teaches you something.",
+  "tts": "Welcome, adventurer! Head to the Arena and prove your mettle in combat. Even a loss teaches you something.",
+  "source": "ftue",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_a1a52759",
+  "speaker": "tavern",
+  "text": "Well done! Now visit the Shop and equip something useful. Even the simplest armor is better than bare skin!",
+  "tts": "Well done! Now visit the Shop and equip something useful. Even the simplest armor is better than bare skin!",
+  "source": "ftue",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_40384a66",
+  "speaker": "tavern",
+  "text": "You're getting stronger! The Dungeons hold rare treasures and powerful foes. Complete Floor 1 to earn Gems.",
+  "tts": "You're getting stronger! The Dungeons hold rare treasures and powerful foes. Complete Floor 1 to earn Gems.",
+  "source": "ftue",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_57d8344b",
+  "speaker": "tavern",
+  "text": "Tap your hero card to see stats, equipment, and inventory.",
+  "tts": "Tap your hero card to see stats, equipment, and inventory.",
+  "source": "tooltip:hubCharacterCard",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_97710cfb",
+  "speaker": "tavern",
+  "text": "Tap buildings to visit the Arena, Shop, Dungeons, and more.",
+  "tts": "Tap buildings to visit the Arena, Shop, Dungeons, and more.",
+  "source": "tooltip:hubCityMap",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_5b1d4462",
+  "speaker": "tavern",
+  "text": "Claim free rewards every day — streaks give bonus loot!",
+  "tts": "Claim free rewards every day — streaks give bonus loot!",
+  "source": "tooltip:hubDailyLogin",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_94903792",
+  "speaker": "tavern",
+  "text": "Stamina refills over time. Tap here to buy potions when you run low.",
+  "tts": "Stamina refills over time. Tap here to buy potions when you run low.",
+  "source": "tooltip:hubStamina",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_arena_fa4ea013",
+  "speaker": "arena",
+  "text": "Choose an opponent wisely — check their level and class before fighting.",
+  "tts": "Choose an opponent wisely — check their level and class before fighting.",
+  "source": "tooltip:arenaOpponent",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_arena_b7b62330",
+  "speaker": "arena",
+  "text": "Your stance affects attack and defense zones. Tap to change it before battle.",
+  "tts": "Your stance affects attack and defense zones. Tap to change it before battle.",
+  "source": "tooltip:arenaStance",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_merchant_3f8bbbf7",
+  "speaker": "merchant",
+  "text": "Gems buy rare items. Spend wisely — the game will ask you to confirm gem purchases.",
+  "tts": "Gems buy rare items. Spend wisely — the game will ask you to confirm gem purchases.",
+  "source": "tooltip:shopGems",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_dungeon_be569b43",
+  "speaker": "dungeon",
+  "text": "Clear dungeon floors for XP, gold, and unique equipment drops.",
+  "tts": "Clear dungeon floors for X P, gold, and unique equipment drops.",
+  "source": "tooltip:dungeonEntry",
+  "voice": "ed69c516-92d2-4b30-a967-617737a342e5"
+ },
+ {
+  "id": "npc_fortuna_1b3c5d0b",
+  "speaker": "fortuna",
+  "text": "Spin the wheel, brave soul! Fortune favors the bold.",
+  "tts": "Spin the wheel, brave soul! Fortune favors the bold.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_a42b6124",
+  "speaker": "fortuna",
+  "text": "Feeling lucky? The wheel knows no mercy.",
+  "tts": "Feeling lucky? The wheel knows no mercy.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_eb66b710",
+  "speaker": "fortuna",
+  "text": "Gold in, glory out. Or... nothing. Let's see!",
+  "tts": "Gold in, glory out. Or... nothing. Let's see!",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_7b8896d9",
+  "speaker": "fortuna",
+  "text": "Lady Fortuna smiles upon the daring.",
+  "tts": "Lady Fortuna smiles upon the daring.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_75a43b6f",
+  "speaker": "fortuna",
+  "text": "Every spin tells a story. What will yours be?",
+  "tts": "Every spin tells a story. What will yours be?",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_878e5c0a",
+  "speaker": "fortuna",
+  "text": "The wheel turns. Destinies are forged.",
+  "tts": "The wheel turns. Destinies are forged.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_26187854",
+  "speaker": "fortuna",
+  "text": "The wheel rewards the worthy!",
+  "tts": "The wheel rewards the worthy!",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_8effd4bf",
+  "speaker": "fortuna",
+  "text": "Gold flows to those who dare!",
+  "tts": "Gold flows to those who dare!",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_33686479",
+  "speaker": "fortuna",
+  "text": "Fortune smiles upon you, champion!",
+  "tts": "Fortune smiles upon you, champion!",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_19cbbdbd",
+  "speaker": "fortuna",
+  "text": "A splendid spin! Try your luck again?",
+  "tts": "A splendid spin! Try your luck again?",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_bc2a41de",
+  "speaker": "fortuna",
+  "text": "The wheel is cruel... but persistence pays.",
+  "tts": "The wheel is cruel... but persistence pays.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_d9a39808",
+  "speaker": "fortuna",
+  "text": "Not this time. But the next spin could change everything.",
+  "tts": "Not this time. But the next spin could change everything.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_d3288e88",
+  "speaker": "fortuna",
+  "text": "Even heroes stumble. Spin again!",
+  "tts": "Even heroes stumble. Spin again!",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_c268e7a6",
+  "speaker": "fortuna",
+  "text": "The wheel giveth and taketh. Such is fate.",
+  "tts": "The wheel giveth and taketh. Such is fate.",
+  "source": "fortuna",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_fortuna_c56b90f0",
+  "speaker": "fortuna",
+  "text": "The wheel needs rest... come back tomorrow.",
+  "tts": "The wheel needs rest... come back tomorrow.",
+  "source": "fortuna:limit",
+  "voice": "c3204739-4084-41a3-9dc5-c805b307ec18"
+ },
+ {
+  "id": "npc_finch_f8846f43",
+  "speaker": "finch",
+  "text": "Step right up! Find the golden ball, double your gold...",
+  "tts": "Step right up! Find the golden ball, double your gold...",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_e61d60b8",
+  "speaker": "finch",
+  "text": "Think you've got sharp eyes? Let's put them to the test!",
+  "tts": "Think you've got sharp eyes? Let's put them to the test!",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_12262bca",
+  "speaker": "finch",
+  "text": "The cups move fast, but your wits must be faster.",
+  "tts": "The cups move fast, but your wits must be faster.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_7f4ee140",
+  "speaker": "finch",
+  "text": "A simple game... for those with a keen eye.",
+  "tts": "A simple game... for those with a keen eye.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_f12e4463",
+  "speaker": "finch",
+  "text": "Fortune favors the brave. Place your bet!",
+  "tts": "Fortune favors the brave. Place your bet!",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_7fdf28d5",
+  "speaker": "finch",
+  "text": "My cups have fooled kings and thieves alike.",
+  "tts": "My cups have fooled kings and thieves alike.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_2b80ddb0",
+  "speaker": "finch",
+  "text": "Well played! Sharp eyes you have, adventurer!",
+  "tts": "Well played! Sharp eyes you have, adventurer!",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_458ae25c",
+  "speaker": "finch",
+  "text": "Impressive! Not many can track my shuffle.",
+  "tts": "Impressive! Not many can track my shuffle.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_0358a992",
+  "speaker": "finch",
+  "text": "A worthy winner! The gold is yours.",
+  "tts": "A worthy winner! The gold is yours.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_a670e655",
+  "speaker": "finch",
+  "text": "You've bested me... this time.",
+  "tts": "You've bested me... this time.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_6ab2ca65",
+  "speaker": "finch",
+  "text": "So close! The ball was hiding elsewhere...",
+  "tts": "So close! The ball was hiding elsewhere...",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_afa2a232",
+  "speaker": "finch",
+  "text": "Better luck next time, adventurer!",
+  "tts": "Better luck next time, adventurer!",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_9d6aa3d8",
+  "speaker": "finch",
+  "text": "The cups are tricky, aren't they?",
+  "tts": "The cups are tricky, aren't they?",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_finch_5460ebce",
+  "speaker": "finch",
+  "text": "Don't feel bad — even rogues miss sometimes.",
+  "tts": "Don't feel bad — even rogues miss sometimes.",
+  "source": "finch",
+  "voice": "858499d9-fef5-40e1-bc29-b4dc661dc283"
+ },
+ {
+  "id": "npc_tavern_96f755f9",
+  "speaker": "tavern",
+  "text": "This is your Hub — the center of your journey.",
+  "tts": "This is your Hub — the center of your journey.",
+  "source": "hub_onboarding",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_12259865",
+  "speaker": "tavern",
+  "text": "Visit the SHOP to gear up, the ARENA to fight other players, or the DUNGEON to explore.",
+  "tts": "Visit the Shop to gear up, the Arena to fight other players, or the Dungeon to explore.",
+  "source": "hub_onboarding",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_4110bb0d",
+  "speaker": "tavern",
+  "text": "Check the GOLD MINE to earn gold, and don't forget your DAILY LOGIN rewards!",
+  "tts": "Check the Gold Mine to earn gold, and don't forget your Daily Login rewards!",
+  "source": "hub_onboarding",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_78ef39f9",
+  "speaker": "tavern",
+  "text": "You have a weapon, but your defense is lacking. Visit the Shop.",
+  "tts": "You have a weapon, but your defense is lacking. Visit the Shop.",
+  "source": "quest:equip_gear",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_a3f33e55",
+  "speaker": "tavern",
+  "text": "Win 3 more arena fights to gain experience.",
+  "tts": "Win 3 more arena fights to gain experience.",
+  "source": "quest:win_3_pvp",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_598b9905",
+  "speaker": "tavern",
+  "text": "Dungeons lurk beneath the city. Defeat the first floor boss.",
+  "tts": "Dungeons lurk beneath the city. Defeat the first floor boss.",
+  "source": "quest:first_dungeon",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_a96f2f81",
+  "speaker": "tavern",
+  "text": "The mine earns gold while you sleep. Start mining.",
+  "tts": "The mine earns gold while you sleep. Start mining.",
+  "source": "quest:start_mining",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_22dc9164",
+  "speaker": "tavern",
+  "text": "They gamble for gold at the tavern. Give it a try.",
+  "tts": "They gamble for gold at the tavern. Give it a try.",
+  "source": "quest:try_tavern",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_19fbe93e",
+  "speaker": "tavern",
+  "text": "The battle pass holds treasures. The leaderboard shows what you're made of.",
+  "tts": "The battle pass holds treasures. The leaderboard shows what you're made of.",
+  "source": "quest:explore_endgame",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_tavern_ff388e1f",
+  "speaker": "tavern",
+  "text": "A lone wolf won't make it far. Join a guild.",
+  "tts": "A lone wolf won't make it far. Join a guild.",
+  "source": "quest:join_guild",
+  "voice": "549ff70a-3ee7-4f04-a4d9-89a24fab7709"
+ },
+ {
+  "id": "npc_merchant_d327ab22",
+  "speaker": "merchant",
+  "text": "Welcome, adventurer!",
+  "tts": "Welcome, adventurer!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_630d8912",
+  "speaker": "merchant",
+  "text": "Not enough gems? Tap GET MORE above — I'll hold your items!",
+  "tts": "Not enough gems? Tap Get More above — I'll hold your items!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_e8211f2b",
+  "speaker": "merchant",
+  "text": "Not enough gold? Tap GET MORE above — I'll hold your items!",
+  "tts": "Not enough gold? Tap Get More above — I'll hold your items!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_3e1317c3",
+  "speaker": "merchant",
+  "text": "Looking for a new weapon? The swords in row two are popular with warriors.",
+  "tts": "Looking for a new weapon? The swords in row two are popular with warriors.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_c086d14f",
+  "speaker": "merchant",
+  "text": "Short on gems? Tap GET MORE above!",
+  "tts": "Short on gems? Tap Get More above!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_239501af",
+  "speaker": "merchant",
+  "text": "The legendary gear at the bottom is worth saving up for.",
+  "tts": "The legendary gear at the bottom is worth saving up for.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_2c7def13",
+  "speaker": "merchant",
+  "text": "Don't forget potions before heading into the arena!",
+  "tts": "Don't forget potions before heading into the arena!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_ba3c47a5",
+  "speaker": "merchant",
+  "text": "A fine warrior needs a fine blade. These are my sharpest.",
+  "tts": "A fine warrior needs a fine blade. These are my sharpest.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_8ce63e48",
+  "speaker": "merchant",
+  "text": "The purple wand there? Best for mage class. Very popular.",
+  "tts": "The purple wand there? Best for mage class. Very popular.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_0a18f64d",
+  "speaker": "merchant",
+  "text": "Legendary weapons deal massive damage — worth the investment.",
+  "tts": "Legendary weapons deal massive damage — worth the investment.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_6e157395",
+  "speaker": "merchant",
+  "text": "Good armor saves lives. Chest pieces give the most defense.",
+  "tts": "Good armor saves lives. Chest pieces give the most defense.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_dc4395f4",
+  "speaker": "merchant",
+  "text": "Don't overlook boots — speed wins fights in the arena.",
+  "tts": "Don't overlook boots — speed wins fights in the arena.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_0398651c",
+  "speaker": "merchant",
+  "text": "Match your armor to your class for hidden bonuses!",
+  "tts": "Match your armor to your class for hidden bonuses!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_569cdddf",
+  "speaker": "merchant",
+  "text": "Stock up on health potions before dungeon runs!",
+  "tts": "Stock up on health potions before dungeon runs!",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_1806c481",
+  "speaker": "merchant",
+  "text": "The XP boost potion? 30 minutes of double experience.",
+  "tts": "The X P boost potion? 30 minutes of double experience.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_92ceaa45",
+  "speaker": "merchant",
+  "text": "Gold boost potions pay for themselves in 2–3 battles.",
+  "tts": "Gold boost potions pay for themselves in two or three battles.",
+  "source": "merchant_tip",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_arena_0078cbab",
+  "speaker": "arena",
+  "text": "Pick an opponent and fight to climb the ranks.",
+  "tts": "Pick an opponent and fight to climb the ranks.",
+  "source": "arena_widget",
+  "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ }
+]

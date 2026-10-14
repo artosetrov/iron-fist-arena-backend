@@ -44,6 +44,19 @@ final class SettingsViewModel {
         }
     }
 
+    var npcVoiceEnabled: Bool {
+        get { settings.npcVoiceEnabled }
+        set {
+            settings.npcVoiceEnabled = newValue
+            if !newValue { NPCVoice.shared.stop() }
+        }
+    }
+
+    var voiceVolume: Double {
+        get { Double(settings.voiceVolume) * 100 }
+        set { settings.voiceVolume = Float(newValue / 100) }
+    }
+
     var pushNotifications: Bool {
         get { settings.pushNotifications }
         set { settings.pushNotifications = newValue }

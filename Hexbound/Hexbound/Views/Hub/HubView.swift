@@ -50,8 +50,8 @@ struct HubView: View {
         if let activeQuest = quests.first(where: { quest in
             !quest.rewardClaimed
         }),
-           let title = activeQuest.title ?? questTitle(for: activeQuest.questId),
-           let npcMessage = activeQuest.npcMessage ?? questNpcMessage(for: activeQuest.questId) {
+           let title = questTitle(for: activeQuest.questId) ?? activeQuest.title,
+           let npcMessage = questNpcMessage(for: activeQuest.questId) ?? activeQuest.npcMessage {
             TutorialQuestBanner(
                 questId: activeQuest.questId,
                 title: title,
@@ -160,7 +160,10 @@ struct HubView: View {
         return titles[questId]
     }
 
-    /// Fallback NPC messages (matches backend TUTORIAL_QUESTS)
+    /// NPC lines for tutorial quests. Preferred over the server's `npcMessage`:
+    /// these are the English lines that have voice-over (the backend shipped
+    /// Russian copy here until 2026-10-14). Server text is the fallback for
+    /// quest ids the client doesn't know yet.
     private func questNpcMessage(for questId: String) -> String? {
         let messages: [String: String] = [
             "equip_gear": "You have a weapon, but your defense is lacking. Visit the Shop.",

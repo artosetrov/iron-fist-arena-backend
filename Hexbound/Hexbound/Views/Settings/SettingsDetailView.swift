@@ -116,6 +116,33 @@ struct SettingsDetailView: View {
                         .frame(width: 40)
                 }
             }
+
+            toggleRow("NPC Voices", isOn: Binding(
+                get: { vm.npcVoiceEnabled },
+                set: { vm.npcVoiceEnabled = $0 }
+            ))
+
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                Text("Voice Volume")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Slider(
+                        value: Binding(
+                            get: { vm.voiceVolume },
+                            set: { vm.voiceVolume = $0 }
+                        ),
+                        in: 0...100
+                    )
+                    .tint(DarkFantasyTheme.gold)
+
+                    Text("\(Int(vm.voiceVolume))%")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .frame(width: 40)
+                }
+            }
         }
     }
 

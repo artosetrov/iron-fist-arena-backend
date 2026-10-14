@@ -93,6 +93,13 @@ struct NPCGuideWidget: View {
         typewriterEnabled && plainMessage?.isEmpty == false
     }
 
+    /// The line this NPC is saying, for voice-over (plain or attributed text).
+    private var spokenText: String? {
+        if let plainMessage, !plainMessage.isEmpty { return plainMessage }
+        if let attributedMessage { return String(attributedMessage.characters) }
+        return nil
+    }
+
     var body: some View {
         // Full mode: gradient overlay + peek-behind NPC avatar.
         // Used for every NPC coach presentation (onboarding, fortune wheel,
@@ -136,6 +143,14 @@ struct NPCGuideWidget: View {
                 // Layer 2 (front): speech card widget
                 speechCard
             }
+        }
+        // NPC voice-over: re-fires when the line changes (tip cycling,
+        // wheel results). Lines without a recording stay silent.
+        .task(id: spokenText) {
+            if let spokenText { NPCVoice.shared.speak(spokenText) }
+        }
+        .onDisappear {
+            NPCVoice.shared.stop(spokenText)
         }
     }
 

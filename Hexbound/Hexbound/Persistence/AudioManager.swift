@@ -127,10 +127,13 @@ final class AudioManager {
             return
         }
 
-        let name = (filename as NSString).deletingPathExtension
-        let ext = (filename as NSString).pathExtension.isEmpty ? "mp3" : (filename as NSString).pathExtension
+        // "NPC/npc_merchant_ab12cd34.m4a" → subdirectory "NPC" (folder reference)
+        let path = filename as NSString
+        let dir = path.deletingLastPathComponent
+        let name = (path.lastPathComponent as NSString).deletingPathExtension
+        let ext = path.pathExtension.isEmpty ? "mp3" : path.pathExtension
 
-        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: dir.isEmpty ? nil : dir) else {
             #if DEBUG
             print("[AudioManager] Voice file not found: \(filename)")
             #endif
@@ -141,8 +144,8 @@ final class AudioManager {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
             let player = try AVAudioPlayer(contentsOf: url)
-            // Voice uses full bgmVolume level — sits above ducked BGM
-            player.volume = settings.bgmVolume
+            // Speech has its own level; BGM is ducked underneath it
+            player.volume = settings.voiceVolume
             player.numberOfLoops = 0
             player.prepareToPlay()
             voicePlayer = player
@@ -150,17 +153,18 @@ final class AudioManager {
             duckBGM()
             player.play()
 
-            if let onFinish {
-                let duration = player.duration
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(duration))
-                    // Only call if this is still the active track
-                    if self.currentVoice == filename {
-                        self.restoreBGM()
-                        self.currentVoice = nil
-                        self.voicePlayer = nil
-                        onFinish()
-                    }
+            // Always un-duck BGM when the line ends naturally — previously this
+            // only happened when a completion handler was passed, so a voice
+            // played without one left the music quiet until the next stop.
+            let duration = player.duration
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(duration))
+                // Only if this exact player is still the active track
+                if self.voicePlayer === player {
+                    self.restoreBGM()
+                    self.currentVoice = nil
+                    self.voicePlayer = nil
+                    onFinish?()
                 }
             }
         } catch {

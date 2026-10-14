@@ -175,60 +175,63 @@ export type ReferralQualificationExecutor = {
   referralRewardClaim: ReferralQualificationClaimWriter
 }
 
+// Player-facing copy is English (the game is English-only). The iOS client
+// keeps the same lines locally because they carry NPC voice-over — change
+// both together (Hexbound/Views/Hub/HubView.swift questNpcMessage/questTitle).
 export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
   {
     id: 'equip_gear',
     unlockLevel: 1,
-    title: 'Снаряжение воина',
-    npcMessage: 'У тебя есть оружие, но защита хромает. Загляни в Лавку — подбери себе доспех.',
+    title: "Warrior's Gear",
+    npcMessage: 'You have a weapon, but your defense is lacking. Visit the Shop.',
     target: 1, // buy 1 item
     rewards: { gold: 200 },
   },
   {
     id: 'win_3_pvp',
     unlockLevel: 1,
-    title: 'Боевая закалка',
-    npcMessage: 'Один бой — это начало. Выиграй ещё 3 боя на арене чтобы набраться опыта.',
+    title: 'Battle Hardened',
+    npcMessage: 'Win 3 more arena fights to gain experience.',
     target: 3, // win 3 PvP
     rewards: { gold: 300, consumable_type: 'health_potion_medium', consumable_amount: 1 },
   },
   {
     id: 'first_dungeon',
     unlockLevel: 3,
-    title: 'Тьма подземелий',
-    npcMessage: 'Под городом скрываются подземелья. Победи босса первого этажа.',
+    title: 'Into the Depths',
+    npcMessage: 'Dungeons lurk beneath the city. Defeat the first floor boss.',
     target: 1, // complete dungeon floor 1
     rewards: { gold: 200 },
   },
   {
     id: 'start_mining',
     unlockLevel: 5,
-    title: 'Золотая жила',
-    npcMessage: 'Шахта приносит золото, пока ты спишь. Запусти добычу.',
+    title: 'Gold Vein',
+    npcMessage: 'The mine earns gold while you sleep. Start mining.',
     target: 1, // start 1 mining session
     rewards: { instant_mine: true },
   },
   {
     id: 'try_tavern',
     unlockLevel: 7,
-    title: 'Испытай удачу',
-    npcMessage: 'В таверне играют на золото. Shell Game — угадай где шарик. Попробуй разок.',
+    title: 'Try Your Luck',
+    npcMessage: 'They gamble for gold at the tavern. Give it a try.',
     target: 1, // play 1 shell game
     rewards: { gold: 100 },
   },
   {
     id: 'explore_endgame',
     unlockLevel: 10,
-    title: 'Путь славы',
-    npcMessage: 'Ты вырос. Боевой пропуск хранит сокровища. Таблица лидеров покажет на что ты способен.',
+    title: 'Path of Glory',
+    npcMessage: "The battle pass holds treasures. The leaderboard shows what you're made of.",
     target: 1, // open BP or leaderboard
     rewards: { bp_levels: 1 },
   },
   {
     id: 'join_guild',
     unlockLevel: 15,
-    title: 'Братство',
-    npcMessage: 'Одинокий волк далеко не уйдёт. Вступи в гильдию — или создай свою.',
+    title: 'Brotherhood',
+    npcMessage: "A lone wolf won't make it far. Join a guild.",
     target: 1, // join a guild
     rewards: { gold: 500 },
   },

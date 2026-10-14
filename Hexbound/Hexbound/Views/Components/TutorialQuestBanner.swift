@@ -72,6 +72,7 @@ struct TutorialQuestBanner: View {
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, LayoutConstants.spaceMD)
+                            .task(id: npcMessage) { NPCVoice.shared.speakOnce(npcMessage) }
 
                         // Progress bar
                         HStack(spacing: LayoutConstants.spaceSM) {

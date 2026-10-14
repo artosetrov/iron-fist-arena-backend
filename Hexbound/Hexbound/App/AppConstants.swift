@@ -73,6 +73,8 @@ enum AppConstants {
     static let udBGMVolume = "bgm_volume"
     static let udSFXVolume = "sfx_volume"
     static let udIsMuted = "is_muted"
+    static let udVoiceVolume = "voice_volume"
+    static let udNPCVoiceEnabled = "npc_voice_enabled"
     static let udLanguage = "language"
     static let udPushNotifications = "push_notifications"
     static let udTutorialCompleted = "tutorial_completed_steps"
