@@ -46,7 +46,7 @@ struct NPCHintOverlay: ViewModifier {
                         )
                     }
                     .transition(.opacity)
-                    .zIndex(100)
+                    .zIndex(ZLayer.modal)
                 }
             }
             .onChange(of: isReady) { _, ready in

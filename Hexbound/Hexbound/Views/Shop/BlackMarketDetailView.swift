@@ -42,7 +42,7 @@ struct BlackMarketDetailView: View {
                         vm.claimRewardConfig = nil
                     }
                     .transition(.opacity)
-                    .zIndex(200)
+                    .zIndex(ZLayer.ceremony)
                 }
             } else {
                 HexPulseLoader(.compact)

@@ -142,7 +142,7 @@ struct ArenaDetailView: View {
                             )
                         }
                         .transition(.opacity)
-                        .zIndex(100)
+                        .zIndex(ZLayer.modal)
                     }
 
                     // Collapsed NPC mini avatar (hidden when HP is critical)

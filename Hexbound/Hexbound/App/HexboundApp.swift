@@ -39,10 +39,26 @@ struct HexboundApp: App {
             .environment(appState)
             .environment(cache)
             .environment(pushService)
+            // ── Root overlay stack ───────────────────────────────────────
+            // Each `.overlay` is its own stacking context, so a `.zIndex`
+            // written inside one is compared against nothing. The order
+            // these modifiers appear in IS the stacking order — later is on
+            // top — and the numbers that used to sit here (150/170/180/200)
+            // decided nothing. See `Theme/ZLayer.swift`.
+            //
+            // Bottom to top:
+            //   banners → ceremonies → toasts → blocking overlays
+            //
+            // Toasts sit above the ceremonies on purpose: a "Claim failed"
+            // notice fired while a reward modal is up used to render behind
+            // it and never be seen. Blocking overlays stay on top because
+            // while one of them is up nothing else is actionable.
+
+            // Banners — passive, never block input
             .overlay(alignment: .top) { OfflineBannerView() }
             .overlay(alignment: .top) { CelebrationBannerOverlay().environment(appState) }
-            .overlay(alignment: .bottom) { ToastOverlayView().environment(appState) }
-            .overlay { if appState.isLoading { LoadingOverlay() } }
+
+            // Ceremonies — one at a time, governed by AppState's modal queue
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
             .overlay {
                 // BUG-53: Daily Login lives at root level so its lifetime is
@@ -57,11 +73,20 @@ struct HexboundApp: App {
                         .environment(appState)
                         .environment(cache)
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                        .zIndex(150)
                 }
             }
-            .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
             .overlay {
+                // Boss Reveal ceremony. Driven by AppState.presentBossReveal /
+                // dismissBossReveal.
+                if appState.isBossRevealing, let reveal = appState.pendingBossReveal {
+                    BossRevealOverlayView(data: reveal)
+                        .environment(appState)
+                        .transition(.opacity)
+                }
+            }
+            .overlay {
+                // Above the boss reveal, which is what the old numbers said
+                // (180 vs 170) and the old modifier order did not do.
                 if let cfg = appState.claimRewardConfig {
                     ClaimRewardModalView(config: cfg) {
                         cfg.onDismiss?()
@@ -69,21 +94,15 @@ struct HexboundApp: App {
                     }
                     .environment(appState)
                     .transition(.opacity)
-                    .zIndex(180)
                 }
             }
-            .overlay {
-                // Boss Reveal ceremony — mounted between DailyLogin (150)
-                // and HeroForge (200) so it sits above routine HUD modals
-                // but below blocking session/auth overlays. Driven by
-                // AppState.presentBossReveal / dismissBossReveal.
-                if appState.isBossRevealing, let reveal = appState.pendingBossReveal {
-                    BossRevealOverlayView(data: reveal)
-                        .environment(appState)
-                        .transition(.opacity)
-                        .zIndex(170)
-                }
-            }
+
+            // Toasts — above every ceremony, see the note above
+            .overlay(alignment: .bottom) { ToastOverlayView().environment(appState) }
+
+            // Blocking — nothing underneath is actionable while these are up
+            .overlay { if appState.isLoading { LoadingOverlay() } }
+            .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
             .overlay {
                 // BUG-08: Hero forge loading overlay owned at root so it
                 // survives the `.loreIntro` / `.characterSelect` transition.
@@ -93,7 +112,6 @@ struct HexboundApp: App {
                 if appState.isForgingHero {
                     HeroForgeOverlayView()
                         .transition(.opacity)
-                        .zIndex(200)
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)

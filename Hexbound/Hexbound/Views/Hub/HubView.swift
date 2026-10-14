@@ -208,7 +208,7 @@ struct HubView: View {
                     .padding(.horizontal, LayoutConstants.screenPadding)
             }
             .background(DarkFantasyTheme.bgPrimary)
-            .zIndex(10) // Keep HUD above map transitions
+            .zIndex(ZLayer.hud)
 
             // Map area — CityMap and DungeonMap with parallax + fade transition
             ZStack {
@@ -334,7 +334,7 @@ struct HubView: View {
             // and consumes `appState.pendingBuildingUnlocks` one at a time.
             BuildingUnlockCeremonyHost()
                 .allowsHitTesting(!appState.pendingBuildingUnlocks.isEmpty)
-                .zIndex(200)
+                .zIndex(ZLayer.ceremony)
         }
         .overlay {
             // Onboarding NPCGuideWidget overlay (first-time visit)
@@ -352,7 +352,7 @@ struct HubView: View {
                     )
                 }
                 .transition(.opacity)
-                .zIndex(100)
+                .zIndex(ZLayer.modal)
             }
         }
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])

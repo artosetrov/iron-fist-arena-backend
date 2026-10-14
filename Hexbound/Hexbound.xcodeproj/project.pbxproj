@@ -90,6 +90,7 @@
 		28CD06D3FB21ED92CBBDC3CA /* SkeletonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */; };
 		291EFF46B7F8D6F2B69E7CA3 /* ui_back.wav in Resources */ = {isa = PBXBuildFile; fileRef = 52F198420AC576D003898FEA /* ui_back.wav */; };
 		294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */; };
+		F89D630AE59E3BED969056B0 /* ZLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C35ED5B2B0062810232D52 /* ZLayer.swift */; };
 		29F455B2B3B5C6A6EFEDE32E /* dungeon_enter_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = B78C08ED37B1F1173273C580 /* dungeon_enter_2.wav */; };
 		2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */; };
 		2AE128C15635F40A7E2C67D6 /* scroll_unfurl.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */; };
@@ -663,6 +664,7 @@
 		4B8DD10D38C3C6619DCDD923 /* Quest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quest.swift; sourceTree = "<group>"; };
 		4D4A3C24C0F1AEDC429F38EA /* anvil_strike.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = anvil_strike.wav; sourceTree = "<group>"; };
 		4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutConstants.swift; sourceTree = "<group>"; };
+		30C35ED5B2B0062810232D52 /* ZLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLayer.swift; sourceTree = "<group>"; };
 		4DB29A5904727560971AAF5D /* ReferralSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralSectionView.swift; sourceTree = "<group>"; };
 		4E1229239D447F7D8DC2DB37 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonService.swift; sourceTree = "<group>"; };
@@ -1773,6 +1775,7 @@
 				ACF33E718E8879D96022545A /* CardStyles.swift */,
 				E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */,
 				4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */,
+				30C35ED5B2B0062810232D52 /* ZLayer.swift */,
 				A2B3C4D5E6F7A8B9C0D1E2F4 /* HapticManager.swift */,
 				A3B4C5D6E7F8A9B0C1D2E3F5 /* MotionConstants.swift */,
 				B8D0E2F4A6B8C0D2E4F6A8BA /* OrnamentalStyles.swift */,
@@ -2469,6 +2472,7 @@
 				B462F6D95352576B0B7E627A /* KeychainManager.swift in Sources */,
 				L10N001BLD000000000000A1 /* L10n.swift in Sources */,
 				294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */,
+				F89D630AE59E3BED969056B0 /* ZLayer.swift in Sources */,
 				41CB9B1A5E08848F14AC6F83 /* LeaderboardDetailView.swift in Sources */,
 				BBC6BB5227401094D31E5273 /* LeaderboardEntry.swift in Sources */,
 				8A9D4C7B52EB4E15E20C6E9D /* LeaderboardRowView.swift in Sources */,

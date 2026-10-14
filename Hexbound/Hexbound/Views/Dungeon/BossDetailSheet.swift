@@ -98,7 +98,7 @@ struct BossDetailSheet: View {
                     }
                 })
                 .transition(.opacity)
-                .zIndex(100)
+                .zIndex(ZLayer.modal)
             }
         }
         .navigationBarBackButtonHidden(true)

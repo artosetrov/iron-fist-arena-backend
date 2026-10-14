@@ -428,7 +428,10 @@ extension View {
                 }
                 .transition(.opacity)
                 .animation(MotionConstants.snappy, value: config.wrappedValue != nil)
-                .zIndex(999)
+                // No .zIndex here: this is a single-child .overlay, its own
+                // stacking context, so a zIndex would be compared against
+                // nothing. It sits above whatever it is attached to because
+                // an overlay always does. (Was .zIndex(999) — see ZLayer.)
             }
         }
     }

@@ -56,7 +56,7 @@ struct ContextualHintOverlay: ViewModifier {
                         )
                     }
                     .transition(.opacity)
-                    .zIndex(100)
+                    .zIndex(ZLayer.modal)
                 }
             }
             // Repeat-visit compact bar — stays inline (safeAreaInset) because

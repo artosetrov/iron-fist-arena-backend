@@ -75,7 +75,7 @@ struct DungeonRoomDetailView: View {
                             vm.dismissBossUnlock()
                         }
                         .transition(.opacity)
-                        .zIndex(100)
+                        .zIndex(ZLayer.modal)
                     }
                 }
                 }

@@ -163,7 +163,7 @@ struct ShopDetailView: View {
                 vm.claimRewardConfig = nil
             }
             .transition(.opacity)
-            .zIndex(200)
+            .zIndex(ZLayer.ceremony)
         }
     }
 
@@ -389,7 +389,7 @@ struct ShopDetailView: View {
                 )
             }
             .transition(.opacity)
-            .zIndex(100)
+            .zIndex(ZLayer.modal)
         }
 
         // Collapsed merchant mini avatar

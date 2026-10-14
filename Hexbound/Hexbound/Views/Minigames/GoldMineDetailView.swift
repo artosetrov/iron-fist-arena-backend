@@ -86,7 +86,7 @@ struct GoldMineDetailView: View {
                             onCancel: { vm.showShaftPicker = false }
                         )
                         .transition(.opacity)
-                        .zIndex(900)
+                        .zIndex(ZLayer.takeover)
                     }
                 }
                 .animation(MotionConstants.snappy, value: vm.showShaftPicker)
