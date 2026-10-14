@@ -18,7 +18,6 @@ final class ShellGameViewModel {
     var playsRemaining: Int = 20
     var playsLimit: Int = 20
 
-    var isLoadingStatus = false
     var errorMessage: String?
 
     /// The status call is what tells the player how many plays are left. When
@@ -88,7 +87,6 @@ final class ShellGameViewModel {
 
     func loadStatus() async {
         guard let charId = appState.currentCharacter?.id else { return }
-        if !hasLoadedStatus { isLoadingStatus = true }
         errorMessage = nil
         do {
             let data: ShellGameStatusResponse = try await APIClient.shared.get(
@@ -102,7 +100,6 @@ final class ShellGameViewModel {
             errorMessage = (error as? APIError)?.userMessage
                 ?? "Couldn't reach the table. Check your connection and try again."
         }
-        isLoadingStatus = false
     }
 
     // MARK: - Step 1: Start session

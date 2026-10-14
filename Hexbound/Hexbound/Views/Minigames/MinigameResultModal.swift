@@ -35,18 +35,25 @@ struct MinigameResultModal<Illustration: View>: View {
                 .padding(.bottom, LayoutConstants.spaceMD)
                 .accessibilityHidden(true)
 
-            Text(title)
-                .font(DarkFantasyTheme.title)
-                .foregroundStyle(isWin ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
-                .padding(.bottom, LayoutConstants.spaceXS)
+            // Title and amount read as one announcement; the button below
+            // stays its own element, so VoiceOver can still reach it.
+            VStack(spacing: 0) {
+                Text(title)
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(isWin ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
+                    .padding(.bottom, LayoutConstants.spaceXS)
 
-            Text(amountText)
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .lineLimit(amountLineLimit)
-                .minimumScaleFactor(0.85)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, LayoutConstants.spaceLG)
+                Text(amountText)
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .lineLimit(amountLineLimit)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.center)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(title). \(amountText)")
+            .accessibilityAddTraits(.isStaticText)
+            .padding(.bottom, LayoutConstants.spaceLG)
 
             Button(action: onContinue) {
                 Text("CONTINUE")
@@ -58,7 +65,5 @@ struct MinigameResultModal<Illustration: View>: View {
             .buttonStyle(isWin ? AnyButtonStyle(PrimaryButtonStyle()) : AnyButtonStyle(DangerButtonStyle()))
             .accessibilityLabel("Continue")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(amountText)")
     }
 }
