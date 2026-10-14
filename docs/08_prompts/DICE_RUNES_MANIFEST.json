@@ -1,0 +1,325 @@
+[
+  {
+    "asset": "dice-face-attack",
+    "job_id": "21069059-e2bf-4019-9c54-392059ae351f",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_164600_21069059-e2bf-4019-9c54-392059ae351f.png",
+    "pt": 104,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-face-guard",
+    "job_id": "dca9152a-eb3d-45a1-8f15-14b9e388c501",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165305_dca9152a-eb3d-45a1-8f15-14b9e388c501.png",
+    "pt": 104,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-showcase-attack",
+    "job_id": "17b8cc75-838a-495a-a068-62335941249f",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165928_17b8cc75-838a-495a-a068-62335941249f.png",
+    "pt": 200,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-showcase-guard",
+    "job_id": "b3108cab-01e5-4931-917f-266f438b85d9",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165928_b3108cab-01e5-4931-917f-266f438b85d9.png",
+    "pt": 200,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-zone-head",
+    "job_id": "1a9e78c7-c853-407a-bd5e-d4a199828e73",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165113_1a9e78c7-c853-407a-bd5e-d4a199828e73.png",
+    "pt": 48,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-zone-body",
+    "job_id": "7869c146-ab8a-4854-8345-1616ed3fe5fb",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165306_7869c146-ab8a-4854-8345-1616ed3fe5fb.png",
+    "pt": 48,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "dice-zone-legs",
+    "job_id": "eb54e524-6a05-4be3-b04a-3a68a4f1b156",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165307_eb54e524-6a05-4be3-b04a-3a68a4f1b156.png",
+    "pt": 48,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-socket-empty",
+    "job_id": "8712e8cf-2b98-42c7-a9aa-79e188681d7d",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165113_8712e8cf-2b98-42c7-a9aa-79e188681d7d.png",
+    "pt": 40,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-socket-locked",
+    "job_id": "9b2d6070-ba89-459f-9732-2e3223b768d9",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165306_9b2d6070-ba89-459f-9732-2e3223b768d9.png",
+    "pt": 40,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-wrath",
+    "job_id": "fb74e566-f132-4288-80f6-70c27320ee46",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_164637_fb74e566-f132-4288-80f6-70c27320ee46.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-beast",
+    "job_id": "ae96d9a9-4ca9-4547-a712-1f50045ceb0d",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165736_ae96d9a9-4ca9-4547-a712-1f50045ceb0d.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-blade",
+    "job_id": "dab22ea5-b8f2-413b-81ef-4c5f16c6b7cf",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165114_dab22ea5-b8f2-413b-81ef-4c5f16c6b7cf.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-mail",
+    "job_id": "1240972f-6c4c-4747-9001-1c98e1f0b9ba",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165114_1240972f-6c4c-4747-9001-1c98e1f0b9ba.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-endurance",
+    "job_id": "1dc353d6-0609-4315-aaa4-0495ccb08995",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165114_1dc353d6-0609-4315-aaa4-0495ccb08995.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-bloodletting",
+    "job_id": "5da67340-b79b-44c7-ad1f-d2ed81a79b74",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165115_5da67340-b79b-44c7-ad1f-d2ed81a79b74.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-smoke",
+    "job_id": "a3b59d61-3b75-4183-b492-66972fecbc5f",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165113_a3b59d61-3b75-4183-b492-66972fecbc5f.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-warrior-frenzy",
+    "job_id": "427c4613-6793-4f65-891f-d348d78b464b",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165307_427c4613-6793-4f65-891f-d348d78b464b.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-evasion",
+    "job_id": "a0b21c1b-6826-46ba-8cae-9c00769bd00a",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165306_a0b21c1b-6826-46ba-8cae-9c00769bd00a.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-dagger",
+    "job_id": "0fcecc8c-9a6e-4473-ad1b-d0ca50fd7f50",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165433_0fcecc8c-9a6e-4473-ad1b-d0ca50fd7f50.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-mage-mana",
+    "job_id": "f233e93d-83cc-4920-8123-f40e8419db3d",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_172834_f233e93d-83cc-4920-8123-f40e8419db3d.png",
+    "pt": 64,
+    "key": "00FF00",
+    "job_id_v1": "a0fc9417-09ca-421a-8c4e-a3196fe43347",
+    "glyph": "v2"
+  },
+  {
+    "asset": "rune-mage-mirror",
+    "job_id": "cc5ee620-4d3d-461b-9a33-9983c5276261",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165432_cc5ee620-4d3d-461b-9a33-9983c5276261.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-tank-ram",
+    "job_id": "54c96477-af19-4dde-a8be-921eea0b2afe",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165432_54c96477-af19-4dde-a8be-921eea0b2afe.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-tank-stone",
+    "job_id": "9cb5c4b9-b13f-4782-aba5-bcd8163e3d34",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165434_9cb5c4b9-b13f-4782-aba5-bcd8163e3d34.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-tank-thorns",
+    "job_id": "2d257c8a-e116-43be-8cfd-7a51028776ce",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165433_2d257c8a-e116-43be-8cfd-7a51028776ce.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-tank-fortify",
+    "job_id": "0160e299-14e7-42ae-a8fe-3f32aea5b475",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_172835_0160e299-14e7-42ae-a8fe-3f32aea5b475.png",
+    "pt": 64,
+    "key": "FF00FF",
+    "job_id_v1": "9060e3b2-0cae-4d09-af4c-f2fbabc4243d",
+    "glyph": "v2"
+  },
+  {
+    "asset": "rune-mage-spark",
+    "job_id": "3b41a6ec-9b61-49c9-8482-8e9b80adfc38",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165639_3b41a6ec-9b61-49c9-8482-8e9b80adfc38.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-mage-barrier",
+    "job_id": "b1228dd4-5340-4654-a572-8e8deda84c17",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165641_b1228dd4-5340-4654-a572-8e8deda84c17.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-warrior-bulwark",
+    "job_id": "42a04ed2-9391-4003-8536-7d788ec4876f",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_172835_42a04ed2-9391-4003-8536-7d788ec4876f.png",
+    "pt": 64,
+    "key": "FF00FF",
+    "job_id_v1": "f4f16dbb-d23f-4586-ad0a-01f8053a6c03",
+    "glyph": "v2"
+  },
+  {
+    "asset": "rune-warrior-headsman",
+    "job_id": "47211a9d-2ecd-4d54-8510-526c86a36004",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165640_47211a9d-2ecd-4d54-8510-526c86a36004.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-shadowstrike",
+    "job_id": "9d614bb7-86f3-44d9-9d13-cf7dd5e5bfe5",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165638_9d614bb7-86f3-44d9-9d13-cf7dd5e5bfe5.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-riposte",
+    "job_id": "2b12791d-bd19-45af-84dd-6866ded9b66d",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165640_2b12791d-bd19-45af-84dd-6866ded9b66d.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-venom",
+    "job_id": "a8384978-a0cf-4767-9543-832894aa9cba",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165639_a8384978-a0cf-4767-9543-832894aa9cba.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-mage-flow",
+    "job_id": "d38474e4-bea5-42c5-8981-0d4aa4d6a877",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165736_d38474e4-bea5-42c5-8981-0d4aa4d6a877.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-tank-wall",
+    "job_id": "3ad17e9d-b3a1-42a5-a45f-2ff897d60b01",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165735_3ad17e9d-b3a1-42a5-a45f-2ff897d60b01.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-tank-unbreakable",
+    "job_id": "f0759bba-eb46-475f-82ef-d0eca88f28cb",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165736_f0759bba-eb46-475f-82ef-d0eca88f28cb.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-mage-flame",
+    "job_id": "9d9e3381-6b93-4e42-8620-c2485d331b56",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165927_9d9e3381-6b93-4e42-8620-c2485d331b56.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-mage-frost",
+    "job_id": "2c6aab07-bbcb-4b27-8154-060927409293",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165928_2c6aab07-bbcb-4b27-8154-060927409293.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-tank-challenge",
+    "job_id": "e6ba0bc9-74bb-4a0d-ae31-c5f1be2bd14a",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_165929_e6ba0bc9-74bb-4a0d-ae31-c5f1be2bd14a.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-vanish",
+    "job_id": "9442dc45-6d22-464f-b6af-75b8aeeddc4f",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170043_9442dc45-6d22-464f-b6af-75b8aeeddc4f.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-rogue-reaper",
+    "job_id": "00e09def-2459-427a-9f05-547903347852",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170042_00e09def-2459-427a-9f05-547903347852.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-mage-meteor",
+    "job_id": "c427fdbf-6878-4c2f-a751-f82d1e9ce04e",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170042_c427fdbf-6878-4c2f-a751-f82d1e9ce04e.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-mage-time",
+    "job_id": "946b28de-a624-4f9f-a437-1d3f57d6ff62",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170042_946b28de-a624-4f9f-a437-1d3f57d6ff62.png",
+    "pt": 64,
+    "key": "00FF00"
+  },
+  {
+    "asset": "rune-tank-earthshatter",
+    "job_id": "7bd7378e-2609-4fcd-a473-e914f109a387",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_172836_7bd7378e-2609-4fcd-a473-e914f109a387.png",
+    "pt": 64,
+    "key": "FF00FF",
+    "job_id_v1": "400ebe3c-4244-4211-bb3b-8e95b629360c",
+    "glyph": "v2"
+  },
+  {
+    "asset": "rune-warrior-oath",
+    "job_id": "67cc7918-6987-4e0f-afe6-af0ecbd06f19",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170124_67cc7918-6987-4e0f-afe6-af0ecbd06f19.png",
+    "pt": 64,
+    "key": "FF00FF"
+  },
+  {
+    "asset": "rune-tank-bastion",
+    "job_id": "43a86aa8-921c-4427-9bc9-d5ebf4eac184",
+    "raw_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37tZgqm2g7MCfz186sGRW3qGd5P/hf_20261014_170124_43a86aa8-921c-4427-9bc9-d5ebf4eac184.png",
+    "pt": 64,
+    "key": "FF00FF"
+  }
+]

@@ -8,6 +8,7 @@ import type { CharacterStats, DamageType } from './combat'
 import type { SkillDefinition } from './skills'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
 import { calculateCurrentHp } from './hp-regen'
+import { policyForCharacter } from './zone-policy'
 
 /**
  * Load a character with all combat-relevant data: base stats, equipped skills, passive bonuses.
@@ -29,6 +30,7 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
       armor: true, magicResist: true,
       avatar: true,
       combatStance: true,
+      zoneProfile: true,
       characterSkills: {
         where: { isEquipped: true },
         orderBy: { slotIndex: 'asc' },
@@ -131,6 +133,9 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
     combatStance: character.combatStance as Record<string, unknown> | null,
     equippedSkills,
     passiveBonuses,
+    // Combat v2 — how this character fights when nobody is tapping for them
+    // (ghost of their recorded zone habits, else a stable personality).
+    zonePolicy: policyForCharacter(character.id, character.zoneProfile),
   }
 }
 

@@ -136,6 +136,17 @@ export async function seedDefaultConfigs() {
     // W3.D2 — Rogue Execute finisher
     { key: 'combat.rogue_execute_hp_threshold', value: 0.35, category: 'combat', description: 'Defender HP ratio that arms Rogue Execute (W3.D2)' },
     { key: 'combat.rogue_execute_damage_bonus', value: 0.15, category: 'combat', description: 'Final damage bonus when Rogue Execute triggers (W3.D2)' },
+    // Dice combat (DICE_RUNES_DESIGN.md) — mirrors DICE in backend balance.ts
+    { key: 'dice.damage_scale', value: 1.4, category: 'combat', description: 'Dice: global strike scale (fight length knob)' },
+    { key: 'dice.head_mult', value: 1.6, category: 'combat', description: 'Dice: head (crit) multiplier' },
+    { key: 'dice.chest_mult', value: 1.0, category: 'combat', description: 'Dice: body multiplier' },
+    { key: 'dice.legs_mult', value: 0.9, category: 'combat', description: 'Dice: legs (sweep) multiplier' },
+    { key: 'dice.focus_start', value: 2, category: 'combat', description: 'Dice: Focus at round 1' },
+    { key: 'dice.focus_max', value: 5, category: 'combat', description: 'Dice: Focus cap' },
+    { key: 'dice.reroll_cost', value: 2, category: 'combat', description: 'Dice: reroll cost (Focus)' },
+    { key: 'dice.set_face_cost', value: 4, category: 'combat', description: 'Dice: set-face cost (Focus)' },
+    { key: 'dice.max_rounds', value: 15, category: 'combat', description: 'Dice: round cap' },
+    { key: 'dice.window_ms', value: 8000, category: 'combat', description: 'Dice: client decision window (ms)' },
 
     // W3.D4 — Daily training XP diminishing returns (LoL FWoTD + RAID pattern)
     { key: 'training_xp_dr.full_xp_clears', value: 6, category: 'training_xp_dr', description: 'First N dungeon clears/day award 100% XP (W3.D4)' },

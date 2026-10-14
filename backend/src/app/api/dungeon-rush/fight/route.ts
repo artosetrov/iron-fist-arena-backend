@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
+import type { DiceState } from '@/lib/game/dice'
 import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { character_id, run_id } = body
+    const { character_id, run_id, match_id } = body
 
     if (!character_id || !run_id) {
       return NextResponse.json(
@@ -158,26 +159,101 @@ export async function POST(req: NextRequest) {
       magicResist: enemy.magicResist,
     }
 
-    const combatResult = await runCombat(playerStatsForCombat, enemyStats)
-    const playerWon = combatResult.winnerId === playerStatsForCombat.id
+    // Two ways to fight a rush room:
+    //  • dice (current clients): the room was played on /pvp/dice/* as a
+    //    `dungeon_rush` match; `match_id` settles it here with the dice result.
+    //  • classic auto-combat (old clients): runCombat right here.
+    let playerWon: boolean
+    let winnerId: string
+    let totalTurns: number
+    let remainingHp: number
+    let combat_log: Array<Record<string, unknown>>
 
-    // Build combat_log for iOS client animation
-    const combat_log = combatResult.turns.map((t) => ({
-      attacker_id: t.attackerId,
-      action: t.isDodge ? 'dodge' : (t.skillUsed ? 'skill' : 'attack'),
-      damage: t.damage,
-      is_crit: t.isCrit,
-      is_miss: false,
-      is_dodge: t.isDodge,
-      is_blocked: false,
-      target_zone: t.targetZone ?? null,
-      defend_zone: t.defendZone ?? null,
-      status_applied: null,
-      heal: t.healAmount ?? null,
-      skill_used: t.skillUsed ?? null,
-      skill_key: t.skillKey ?? null,
-      damage_type: t.damageType ?? null,
-    }))
+    if (typeof match_id === 'string') {
+      const match = await prisma.pvpMatch.findUnique({ where: { id: match_id } })
+      const snap = match?.opponentSnapshot as unknown as { rush_room?: { index: number; seed: number; type: string } } | null
+      const dice = (match?.interactiveActives as unknown as { dice?: DiceState } | null)?.dice
+      if (
+        !match || match.player1Id !== character_id || match.opponentType !== 'dungeon_rush' ||
+        match.dungeonRunId !== run.id || !snap?.rush_room || !dice
+      ) {
+        return NextResponse.json({ error: 'Rush match not found' }, { status: 404 })
+      }
+      if (snap.rush_room.index !== currentRoom.index || snap.rush_room.seed !== currentRoom.seed) {
+        return NextResponse.json({ error: 'This match belongs to another room' }, { status: 409 })
+      }
+      if (!dice.finished) {
+        return NextResponse.json({ error: 'Match is still being fought' }, { status: 409 })
+      }
+      // Single settle: flip the match to completed before any reward moves.
+      const closed = await prisma.pvpMatch.updateMany({
+        where: { id: match.id, status: 'in_progress' },
+        data: {
+          status: 'completed',
+          winnerId: dice.winner === 'p' ? character_id : null,
+          loserId: dice.winner === 'p' ? null : character_id,
+        },
+      })
+      if (closed.count !== 1) {
+        return NextResponse.json({ error: 'Rush match already settled' }, { status: 409 })
+      }
+      playerWon = dice.winner === 'p'
+      winnerId = playerWon ? playerStatsForCombat.id : enemy.id
+      totalTurns = Math.min(dice.round, dice.cfg.MAX_ROUNDS)
+      remainingHp = Math.max(0, dice.p.hp)
+      type StoredStrike = { damage: number; isCrit: boolean; outcome?: string; targetZone?: string; defendZone?: string; healAmount?: number }
+      const rounds = Array.isArray(match.interactiveChoices)
+        ? (match.interactiveChoices as unknown as Array<{ player_strike: StoredStrike; opp_strike: StoredStrike | null }>)
+        : []
+      const row = (who: string, st: StoredStrike) => ({
+        attacker_id: who,
+        action: 'attack',
+        damage: st.damage,
+        is_crit: st.isCrit,
+        is_miss: st.outcome === 'miss',
+        is_dodge: false,
+        is_blocked: st.outcome === 'blocked',
+        target_zone: st.targetZone ?? null,
+        defend_zone: st.defendZone ?? null,
+        status_applied: null,
+        heal: st.healAmount ?? null,
+        skill_used: null,
+        skill_key: null,
+        damage_type: null,
+      })
+      combat_log = rounds.flatMap((r) => [
+        row(playerStatsForCombat.id, r.player_strike),
+        ...(r.opp_strike ? [row(enemy.id, r.opp_strike)] : []),
+      ])
+    } else {
+      const combatResult = await runCombat(playerStatsForCombat, enemyStats)
+      playerWon = combatResult.winnerId === playerStatsForCombat.id
+      winnerId = combatResult.winnerId
+      totalTurns = combatResult.totalTurns
+      remainingHp = playerCurrentHp
+      for (const turn of combatResult.turns) {
+        if (turn.attackerId !== playerStatsForCombat.id) {
+          remainingHp = Math.max(0, remainingHp - turn.damage)
+        }
+      }
+      // Build combat_log for iOS client animation
+      combat_log = combatResult.turns.map((t) => ({
+        attacker_id: t.attackerId,
+        action: t.isDodge ? 'dodge' : (t.skillUsed ? 'skill' : 'attack'),
+        damage: t.damage,
+        is_crit: t.isCrit,
+        is_miss: false,
+        is_dodge: t.isDodge,
+        is_blocked: false,
+        target_zone: t.targetZone ?? null,
+        defend_zone: t.defendZone ?? null,
+        status_applied: null,
+        heal: t.healAmount ?? null,
+        skill_used: t.skillUsed ?? null,
+        skill_key: t.skillKey ?? null,
+        damage_type: t.damageType ?? null,
+      }))
+    }
 
     // Build CombatData payload for the client animation
     const combatDataPayload = {
@@ -247,10 +323,10 @@ export async function POST(req: NextRequest) {
         ...combatDataPayload,
         result: {
           is_win: false,
-          winner_id: combatResult.winnerId,
+          winner_id: winnerId,
           gold_reward: 0,
           xp_reward: 0,
-          turns_taken: combatResult.totalTurns,
+          turns_taken: totalTurns,
         },
         victory: false,
         message: 'You have been defeated. The dungeon rush is over.',
@@ -267,15 +343,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Grant gold and xp, save post-combat HP to the character (atomic increment)
-    const playerPostCombatHp = Math.max(combatResult.finalHp[playerStatsForCombat.id] ?? 0, 0)
+    const playerPostCombatHp = remainingHp
 
-    // Convert remaining combat HP back into persisted rush HP%.
-    let remainingHp = playerCurrentHp
-    for (const turn of combatResult.turns) {
-      if (turn.attackerId !== playerStatsForCombat.id) {
-        remainingHp = Math.max(0, remainingHp - turn.damage)
-      }
-    }
     let newHpPercent = hpPercentAfterCombat(remainingHp, playerEffectiveMaxHp)
 
     // Apply heal-on-kill artifact
@@ -445,7 +514,7 @@ export async function POST(req: NextRequest) {
           winner_id: character.id,
           gold_reward: goldReward,
           xp_reward: xpReward,
-          turns_taken: combatResult.totalTurns,
+          turns_taken: totalTurns,
           leveled_up: updatedRushState.leveled_up,
         },
         victory: true,
@@ -476,7 +545,7 @@ export async function POST(req: NextRequest) {
         winner_id: character.id,
         gold_reward: goldReward,
         xp_reward: xpReward,
-        turns_taken: combatResult.totalTurns,
+        turns_taken: totalTurns,
         leveled_up: updatedRushState.leveled_up,
       },
       victory: true,

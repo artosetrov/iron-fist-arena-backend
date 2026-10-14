@@ -4,18 +4,25 @@ import { freePvpPerDay, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premi
 import { prisma } from '@/lib/prisma'
 import { isKillSwitchOn } from '@/lib/game/feature-flags'
 import { rateLimit } from '@/lib/rate-limit'
-import { initCombatConfig, type CharacterStats } from '@/lib/game/combat'
+import { createSeededRng, diceHitProfile, initCombatConfig, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { getStaminaConfig } from '@/lib/game/live-config'
-import { getHpRestoreFraction, isHealthPotion } from '@/lib/game/consumable-effects'
+import { getDiceConfig, getStaminaConfig } from '@/lib/game/live-config'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 import type { Enemy } from '@/lib/game/dungeon'
-import { ConsumableType, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
+import { randomUUID } from 'crypto'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
+import { createDiceState, publicView, rollRound } from '@/lib/game/dice'
+import { botDiceLoadout, emptyLoadout, loadDiceLoadout, runeInfoFor } from '@/lib/game/dice-loadout'
+import { deriveCombatSeed } from '@/lib/game/combat-seed'
+import {
+  applyArtifactStatBoosts, applyRushBuffs, effectiveHp, generateRushEnemy, isCombatRoom,
+  RUSH_ARTIFACTS, type RushArtifact, type RushState,
+} from '@/lib/game/dungeon-rush'
 
-type OpponentType = 'pvp' | 'bot' | 'dungeon_boss'
-const VALID_OPPONENT_TYPES: readonly OpponentType[] = ['pvp', 'bot', 'dungeon_boss']
+type OpponentType = 'pvp' | 'bot' | 'dungeon_boss' | 'dungeon_rush'
+const VALID_OPPONENT_TYPES: readonly OpponentType[] = ['pvp', 'bot', 'dungeon_boss', 'dungeon_rush']
 function isOpponentType(v: unknown): v is OpponentType {
   return typeof v === 'string' && (VALID_OPPONENT_TYPES as readonly string[]).includes(v)
 }
@@ -57,8 +64,9 @@ function dungeonEnemyToCharacterStats(enemy: Enemy): CharacterStats {
  *
  * Creates an in-progress pvp_matches row. Reserves stamina / free-pvp slot
  * inside the same transaction as /pvp/fight does. Does NOT run combat —
- * combat happens round-by-round via /pvp/strike, then is finalized via
- * /pvp/match/complete (ELO + rewards).
+ * dice combat (DICE_RUNES_DESIGN.md) runs round-by-round via
+ * /pvp/dice/act + /pvp/dice/resolve, then is finalized via
+ * /pvp/match/complete (ELO + rewards). Round 1 is rolled here.
  *
  * Gate: `INTERACTIVE_COMBAT_V1` env flag. 404 when off.
  *
@@ -126,9 +134,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot fight yourself' }, { status: 400 })
     }
 
-    if (opponentType === 'dungeon_boss' && typeof dungeon_run_id !== 'string') {
+    if ((opponentType === 'dungeon_boss' || opponentType === 'dungeon_rush') && typeof dungeon_run_id !== 'string') {
       return NextResponse.json(
-        { error: 'dungeon_run_id required for dungeon_boss opponent_type' },
+        { error: `dungeon_run_id required for ${opponentType} opponent_type` },
         { status: 400 },
       )
     }
@@ -188,20 +196,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dungeon floor has no boss to fight' }, { status: 409 })
     }
 
+    // Dungeon Rush — the current combat room of the caller's rush run. The
+    // fight is played on dice here and settled by /dungeon-rush/fight with
+    // this match_id (rewards, HP%, next room stay in the rush route).
+    const rushRun =
+      opponentType === 'dungeon_rush'
+        ? await prisma.dungeonRun.findFirst({
+            where: { id: dungeon_run_id as string, characterId: attacker.id, difficulty: 'rush' },
+          })
+        : null
+    const rushState = rushRun ? (rushRun.state as unknown as RushState | null) : null
+    const rushRoom = rushState?.rooms?.[rushState.currentRoomIndex] ?? null
+    if (opponentType === 'dungeon_rush') {
+      if (!rushRun || !rushState || !Array.isArray(rushState.rooms)) {
+        return NextResponse.json({ error: 'No active dungeon rush found' }, { status: 404 })
+      }
+      if (!rushRoom || !isCombatRoom(rushRoom.type) || rushRoom.resolved) {
+        return NextResponse.json({ error: 'Current rush room is not an open combat room' }, { status: 409 })
+      }
+    }
+    const rushEnemy = rushRoom && opponentType === 'dungeon_rush'
+      ? generateRushEnemy(rushRoom.index, rushRoom.type, rushRoom.seed)
+      : null
+
     // Pre-check HP + stamina (authoritative re-check happens inside transaction).
     // Dungeon boss fights skip the PvP stamina gate — dungeon entry already
     // consumed its own resource (staminaless per-floor fights preserve parity
     // with the classic /dungeons/run/:id/fight endpoint).
     const preHp = attacker.currentHp
     const minHp = Math.ceil(attacker.maxHp * 0.3)
-    if (preHp < minHp) {
+    // Rush carries its own HP% between rooms — the character HP gate doesn't apply.
+    const isRush = opponentType === 'dungeon_rush'
+    if (!isRush && preHp < minHp) {
       return NextResponse.json(
         { error: 'Not enough health to fight. Use a health potion first!',
           currentHp: preHp, minHealthRequired: minHp, maxHp: attacker.maxHp },
         { status: 400 }
       )
     }
-    const skipStaminaGate = opponentType === 'dungeon_boss'
+    const skipStaminaGate = opponentType === 'dungeon_boss' || isRush
     const preStamina = await calculateCurrentStamina(
       attacker.currentStamina, attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()
@@ -217,132 +250,61 @@ export async function POST(req: NextRequest) {
     }
 
     await initCombatConfig()
-    const attackerStats = await loadCombatCharacter(attacker.id)
+    let attackerStats = await loadCombatCharacter(attacker.id)
+    // Rush: buffs + artifacts change the hero's stats, and HP% carries over.
+    let attackerMaxHp = attacker.maxHp
+    let attackerStartHp = attacker.maxHp
+    if (isRush && rushState) {
+      const artifacts: RushArtifact[] = (rushState.artifacts ?? []).map(
+        (a) => RUSH_ARTIFACTS.find((r) => r.id === a.id) ?? (a as RushArtifact),
+      )
+      attackerStats = applyArtifactStatBoosts(applyRushBuffs(attackerStats, rushState.buffs), artifacts)
+      attackerMaxHp = attackerStats.maxHp
+      attackerStartHp = effectiveHp(attackerMaxHp, rushState.currentHpPercent)
+    }
     const defenderStats: CharacterStats =
       opponentType === 'pvp' && defender
         ? await loadCombatCharacter(defender.id)
         : opponentType === 'dungeon_boss' && dungeonBoss
           ? dungeonEnemyToCharacterStats(dungeonBoss)
-          : generateBotCombatStats(opponent_id, attackerStats, attacker.pvpWins + attacker.pvpLosses)
+          : isRush && rushEnemy
+            ? dungeonEnemyToCharacterStats(rushEnemy)
+            : generateBotCombatStats(opponent_id, attackerStats, attacker.pvpWins + attacker.pvpLosses)
 
     const now = new Date()
     const timeoutAt = new Date(now.getTime() + MATCH_TIMEOUT_MS)
 
-    // Load equipped active-slot snapshot for both players. Snapshotted at
-    // match-start so mid-match equip changes (from another device) don't
-    // influence the current duel. All cooldowns start at 0 (ready).
-    //
-    // Phase 4.B: slots can be EITHER a talent (node_id set) OR a consumable
-    // (consumable_type set). Both kinds unify into the same ActiveSlotSnapshot
-    // shape downstream so the strike-resolver + client only see one list.
-    type TalentRow = {
-      slot_index: number
-      // passive_nodes.id is a UUID string (Prisma `String @id @default(uuid())`),
-      // NOT an integer. Typing it as `number` caused iOS /match/start to crash
-      // with "type mismatch Int at actives.p1.[0].nodeId" once any talent was
-      // equipped (incident 2026-04-14).
-      node_id: string
-      node_key: string
-      name: string
-      icon: string | null
-      active_action_type: string | null
-      active_cooldown: number | null
-      active_magnitude: number | null
-    }
-    type ConsumableRow = {
-      slot_index: number
-      consumable_type: string
-      name: string | null
-      icon: string | null
-    }
-    async function loadActives(charId: string) {
-      const [talentRows, consumableRows] = await Promise.all([
-        prisma.$queryRawUnsafe<TalentRow[]>(
-          `SELECT s.slot_index, n.id AS node_id, n.node_key, n.name, n.icon,
-                  n.active_action_type, n.active_cooldown, n.active_magnitude
-             FROM character_active_slots s
-             JOIN passive_nodes n ON n.id = s.node_id
-             WHERE s.character_id = $1 AND n.is_activatable = true
-             ORDER BY s.slot_index`,
-          charId
-        ),
-        prisma.$queryRawUnsafe<ConsumableRow[]>(
-          `SELECT s.slot_index, s.consumable_type::text AS consumable_type,
-                  COALESCE(i.item_name, s.consumable_type::text) AS name,
-                  i.image_key AS icon
-             FROM character_active_slots s
-             JOIN consumable_inventory ci
-               ON ci.character_id = s.character_id
-              AND ci.consumable_type = s.consumable_type
-             LEFT JOIN items i ON i.catalog_id = s.consumable_type::text
-             WHERE s.character_id = $1
-               AND s.consumable_type IS NOT NULL
-               AND ci.quantity > 0
-             ORDER BY s.slot_index`,
-          charId
-        ),
-      ])
-      return { talentRows, consumableRows }
-    }
-    // Bots have no equipped actives — empty snapshot keeps the strike-resolver happy.
-    const emptyBotSlots = { talentRows: [] as TalentRow[], consumableRows: [] as ConsumableRow[] }
-    const [p1Slots, p2Slots] = await Promise.all([
-      loadActives(attacker.id),
-      opponentType === 'pvp' && defender ? loadActives(defender.id) : Promise.resolve(emptyBotSlots),
+    // Dice combat (DICE_RUNES_DESIGN.md) — snapshot both fighters' dice, runes
+    // and per-strike hit at match start; the whole duel then runs on this
+    // state. Active slots / consumables don't exist in dice combat.
+    const DICE_CFG = await getDiceConfig()
+    const matchId = randomUUID()
+    const [hitP, hitO, loadoutP, loadoutO] = await Promise.all([
+      diceHitProfile(attackerStats, defenderStats),
+      diceHitProfile(defenderStats, attackerStats),
+      loadDiceLoadout(attacker.id, attacker.class, attacker.level),
+      opponentType === 'pvp' && defender
+        ? loadDiceLoadout(defender.id, defender.class, defender.level)
+        : opponentType === 'bot'
+          ? Promise.resolve(botDiceLoadout(opponent_id, defenderStats.class, defenderStats.level))
+          : Promise.resolve(emptyLoadout()),
     ])
-
-    // Pre-resolve heal fractions for consumables (magnitude snapshot: frozen for this duel).
-    const allConsumableTypes = [
-      ...p1Slots.consumableRows.map((r) => r.consumable_type),
-      ...p2Slots.consumableRows.map((r) => r.consumable_type),
-    ]
-    const uniqueConsumableTypes = [...new Set(allConsumableTypes)] as ConsumableType[]
-    const healFractionEntries = await Promise.all(
-      uniqueConsumableTypes.map(async (t) => [t, await getHpRestoreFraction(t)] as const)
+    const diceState = createDiceState(
+      {
+        id: attacker.id, name: attacker.characterName, maxHp: attackerMaxHp, hp: attackerStartHp,
+        hit: hitP.hit, lifesteal: hitP.lifesteal, agi: attackerStats.agi,
+        atk: loadoutP.atk, grd: loadoutP.grd,
+      },
+      {
+        id: defenderStats.id, name: defenderStats.name, maxHp: defenderStats.maxHp,
+        hit: hitO.hit, lifesteal: hitO.lifesteal, agi: defenderStats.agi,
+        atk: loadoutO.atk, grd: loadoutO.grd,
+        boss: opponentType === 'dungeon_boss' || (isRush && rushRoom?.type === 'miniboss'),
+      },
+      DICE_CFG,
     )
-    const healFractionByType = new Map(healFractionEntries)
-
-    const actorActivesSnapshot = (slots: { talentRows: TalentRow[]; consumableRows: ConsumableRow[] }) => {
-      const talentSnaps = slots.talentRows.map((r) => ({
-        slot_index: r.slot_index,
-        kind: 'talent' as const,
-        node_id: r.node_id as string | null,
-        node_key: r.node_key as string | null,
-        consumable_type: null as string | null,
-        name: r.name,
-        icon: r.icon,
-        action_type: r.active_action_type,
-        cooldown_max: r.active_cooldown ?? 0,
-        magnitude: r.active_magnitude ?? 0,
-        cooldown_remaining: 0,
-        consumed: false,
-      }))
-      const consumableSnaps = slots.consumableRows.map((r) => {
-        const ct = r.consumable_type as ConsumableType
-        const magnitude = isHealthPotion(ct) ? (healFractionByType.get(ct) ?? 0) : 0
-        return {
-          slot_index: r.slot_index,
-          kind: 'consumable' as const,
-          node_id: null as string | null,
-          node_key: null as string | null,
-          consumable_type: r.consumable_type,
-          name: r.name ?? r.consumable_type,
-          icon: r.icon,
-          // Reuse existing heal_self handler in strike-resolver — consumables
-          // behave identically to a heal_self talent in terms of HP math.
-          action_type: 'heal_self' as string | null,
-          cooldown_max: 0,          // no cooldown — gated by `consumed` instead
-          magnitude,
-          cooldown_remaining: 0,
-          consumed: false,
-        }
-      })
-      return [...talentSnaps, ...consumableSnaps].sort((a, b) => a.slot_index - b.slot_index)
-    }
-    const interactiveActives = {
-      p1: actorActivesSnapshot(p1Slots),
-      p2: actorActivesSnapshot(p2Slots),
-    }
+    rollRound(diceState, createSeededRng(deriveCombatSeed(matchId, 1, 'roll')))
+    const interactiveActives = { dice: diceState }
 
     const { match, newStamina } = await prisma.$transaction(async (tx) => {
       // Lock attacker row
@@ -358,7 +320,7 @@ export async function POST(req: NextRequest) {
       if (!locked) throw new Error('ATTACKER_NOT_FOUND')
 
       const lockedMinHp = Math.ceil(locked.max_hp * 0.3)
-      if (locked.current_hp < lockedMinHp) throw new Error('NOT_ENOUGH_HP')
+      if (!isRush && locked.current_hp < lockedMinHp) throw new Error('NOT_ENOUGH_HP')
 
       const lockedSt = await calculateCurrentStamina(
         locked.current_stamina, locked.max_stamina,
@@ -387,9 +349,9 @@ export async function POST(req: NextRequest) {
       // the match so /strike + /complete can reload them without touching
       // Character. For PvP, player2Id keeps the FK (legacy path).
       const opponentSnapshot =
-        opponentType === 'bot' || opponentType === 'dungeon_boss'
+        opponentType !== 'pvp'
           ? {
-              kind: opponentType === 'bot' ? 'bot' as const : 'dungeon_boss' as const,
+              kind: opponentType,
               id: defenderStats.id,
               character_name: defenderStats.name,
               class: defenderStats.class,
@@ -397,18 +359,24 @@ export async function POST(req: NextRequest) {
               avatar: defenderStats.avatar ?? null,
               max_hp: defenderStats.maxHp,
               combat_stats: defenderStats,
+              // Rush: pins the room this match was started for, so
+              // /dungeon-rush/fight can refuse a match from a stale room.
+              ...(isRush && rushRoom
+                ? { rush_room: { index: rushRoom.index, seed: rushRoom.seed, type: rushRoom.type } }
+                : {}),
             }
           : null
 
       const matchTypeForDb =
         opponentType === 'bot'
           ? 'bot'
-          : opponentType === 'dungeon_boss'
-            ? 'dungeon_boss'
+          : opponentType === 'dungeon_boss' || opponentType === 'dungeon_rush'
+            ? opponentType
             : 'ranked'
 
       const match = await tx.pvpMatch.create({
         data: {
+          id: matchId,
           player1Id: attacker.id,
           player2Id: opponentType === 'pvp' && defender ? defender.id : null,
           player1RatingBefore: attacker.pvpRating,
@@ -427,11 +395,11 @@ export async function POST(req: NextRequest) {
           interactiveStrikeIndex: 0,
           interactiveTimeoutAt: timeoutAt,
           interactiveChoices: [] as Prisma.JsonArray,
-          interactiveActives: interactiveActives as Prisma.InputJsonValue,
+          interactiveActives: interactiveActives as unknown as Prisma.InputJsonValue,
           opponentType,
           opponentSnapshot: opponentSnapshot as unknown as Prisma.InputJsonValue,
           botKey: opponentType === 'bot' ? opponent_id : null,
-          dungeonRunId: opponentType === 'dungeon_boss' ? (dungeon_run_id as string) : null,
+          dungeonRunId: opponentType === 'dungeon_boss' || isRush ? (dungeon_run_id as string) : null,
           bossKey: opponentType === 'dungeon_boss' ? defenderStats.id : null,
         },
       })
@@ -444,11 +412,8 @@ export async function POST(req: NextRequest) {
     // Interactive Combat shows the HP bar from round 0, so persisted damage
     // looks like "enemy HP dropped before first strike". Use maxHp for both.
     // The 30% HP gate on the attacker above still prevents near-death PvP.
-    const startAttackerHp = attacker.maxHp
+    const startAttackerHp = attackerStartHp
     const startDefenderHp = defenderStats.maxHp
-    // loadCombatCharacter kept the combat config warm above; defenderStats is
-    // consumed by the opponent-snapshot path (not re-used here).
-    void attackerStats
 
     const defenderPayload = opponentType === 'pvp' && defender
       ? {
@@ -484,12 +449,15 @@ export async function POST(req: NextRequest) {
         origin: attacker.origin,
         level: attacker.level,
         avatar: attacker.avatar,
-        max_hp: attacker.maxHp,
+        max_hp: attackerMaxHp,
         current_hp: startAttackerHp,
       },
       defender: defenderPayload,
       stamina: { current: newStamina, max: attacker.maxStamina },
-      actives: interactiveActives,
+      // Dice combat replaced active slots; kept empty for older clients' decoders.
+      actives: { p1: [], p2: [] },
+      dice: publicView(diceState),
+      rune_info: runeInfoFor(loadoutP, loadoutO),
     })
   } catch (error) {
     if (error instanceof Error) {

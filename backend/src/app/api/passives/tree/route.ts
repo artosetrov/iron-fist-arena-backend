@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { cacheGet, cacheSet } from '@/lib/cache'
 import { getRankCosts } from '@/lib/game/passives'
+import { runeByNodeKey } from '@/lib/game/runes'
 
 const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
 
@@ -21,9 +22,9 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // v6 — 2026-05-01 flavor copy populated for warrior/rogue/mage (60 rows).
-    // Bump invalidates v5 so the next /tree request fetches fresh rows.
-    const cacheKey = 'passives:tree:v6'
+    // v7 — 2026-10-14 dice runes: 16 Lesser rune nodes + a `rune` block on
+    // every node that grants one (keystones → Path, ultimates → Great).
+    const cacheKey = 'passives:tree:v7'
     let tree = await cacheGet<CachedTree>(cacheKey)
 
     if (!tree) {
@@ -47,7 +48,11 @@ export async function GET(req: NextRequest) {
 
       const withRankCosts = nodes.map((n) => {
         const schedule = getRankCosts(n.cost)
-        return { ...n, rank_costs: schedule, max_rank: schedule.length }
+        const r = runeByNodeKey(n.nodeKey)
+        const rune = r
+          ? { key: r.key, name: r.name, desc: r.desc, asset: r.asset, die: r.die, tier: r.tier }
+          : null
+        return { ...n, rank_costs: schedule, max_rank: schedule.length, rune }
       })
 
       tree = { nodes: withRankCosts, connections }

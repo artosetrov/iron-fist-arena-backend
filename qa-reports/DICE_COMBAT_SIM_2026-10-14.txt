@@ -1,0 +1,65 @@
+== Pure mirror, nobody spends ==
+winrate 0.503  rounds 7.9  omen/round 0.036
+
+== Value of decisions (P1 policy vs P2 never) ==
+random spend   0.515  rounds 8.4  spends/fight 3.4
+smart          0.860  rounds 7.9  spends/fight 4.1
+smart vs smart 0.507 (initiative alternation)
+
+== Gear faces (P1 smart+gear vs P2 smart base) ==
+Клинок Палача (chest→GOLD head)    0.594  rounds 7.8
+Сапоги Подсечки (chest→legs atk)   0.515  rounds 8.1
+Шлем Стража (chest→head def)       0.528  rounds 8.4
+Щит-Бастион (legs→WALL def)        0.618  rounds 8.6
+Бастион + Палач                    0.679  rounds 8.0
+
+== Stat edge vs dice: P1 +10% dmg, both smart ==
++10% dmg 0.615
++25% dmg 0.719
+
+
+== engine (backend/src/lib/game/dice.ts, 2026-10-14 balance pass) ==
+mirror L25: 900 HP, hit 100, agi 30; P1 smart Focus AI; 4000 fights each
+mirror smart vs smart                    49.0% rounds 6.5
+never vs smart                           16.6% rounds 6.4
+warrior full vs bare                     76.5% rounds 5.9
+rogue full vs bare                       74.5% rounds 6.2
+mage full vs bare                        79.2% rounds 6.4
+tank full vs bare                        78.1% rounds 6.5
+A: warrior.wrath                         52.5% rounds 6.5
+A: warrior.blade                         52.4% rounds 6.4
+A: warrior.frenzy                        56.0% rounds 6.4
+A: warrior.headsman                      56.4% rounds 6.3
+A: warrior.beast                         56.9% rounds 6.2
+A: rogue.dagger                          51.1% rounds 6.4
+A: rogue.bloodletting                    52.8% rounds 6.4
+A: rogue.shadowstrike                    58.1% rounds 6.2
+A: rogue.venom                           54.6% rounds 6.4
+A: rogue.reaper                          59.9% rounds 6.3
+A: mage.spark                            53.1% rounds 6.4
+A: mage.mana                             52.4% rounds 6.5
+A: mage.flame                            54.6% rounds 6.4
+A: mage.meteor                           58.6% rounds 6.2
+A: tank.ram                              52.4% rounds 6.4
+A: tank.challenge                        53.3% rounds 6.4
+A: tank.earthshatter                     56.7% rounds 6.6
+G: warrior.mail                          52.1% rounds 6.7
+G: warrior.endurance                     52.0% rounds 6.6
+G: warrior.bulwark                       53.1% rounds 6.5
+G: warrior.oath                          56.5% rounds 6.5
+G: rogue.evasion                         51.4% rounds 6.5
+G: rogue.smoke                           53.8% rounds 6.6
+G: rogue.riposte                         53.9% rounds 6.2
+G: rogue.vanish                          57.8% rounds 6.7
+G: mage.barrier                          54.4% rounds 6.8
+G: mage.mirror                           52.0% rounds 6.4
+G: mage.flow                             56.3% rounds 6.5
+G: mage.frost                            53.1% rounds 6.6
+G: mage.time                             55.0% rounds 6.5
+G: tank.stone                            54.4% rounds 6.8
+G: tank.thorns                           52.4% rounds 6.4
+G: tank.fortify                          52.0% rounds 6.6
+G: tank.wall                             56.0% rounds 6.7
+G: tank.unbreakable                      51.7% rounds 6.7
+G: tank.bastion                          58.3% rounds 6.4
+boss (2x hp, 1.2 hit) vs player          1.9% rounds 7.7

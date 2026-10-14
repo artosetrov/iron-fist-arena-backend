@@ -105,6 +105,11 @@ export async function POST(req: NextRequest) {
         where: { characterId: character_id },
       })
 
+      // Dice combat — runes come from tree nodes, so a respec pulls them out of the dice too.
+      await tx.characterDieRune.deleteMany({
+        where: { characterId: character_id },
+      })
+
       // Refund SP (+ stamp last_free_respec_at when consuming the free path)
       await tx.character.update({
         where: { id: character_id },

@@ -33,6 +33,7 @@ import { currentDailyValue } from '@/lib/game/daily-counter'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { Prisma } from '@prisma/client'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
+import { isZone, parseZoneProfile, updateZoneProfile, type ProfileRoundRecord } from '@/lib/game/zone-policy'
 
 interface DungeonRunFightState {
   enemies: Enemy[]
@@ -74,6 +75,8 @@ interface StoredRound {
     attackerId: string; defenderId: string; damage: number; isCrit: boolean
     isDodge?: boolean; skillUsed?: string; skillKey?: string
     targetZone?: string; defendZone?: string; healAmount?: number; damageType?: string
+    /** Combat v2 */
+    outcome?: string; counterDamage?: number
   }
   opp_strike: StoredRound['player_strike'] | null
   attacker_hp_after: number
@@ -119,7 +122,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Match is not in progress' }, { status: 409 })
     }
 
+    // Dice combat: the duel must actually be over — finalizing mid-match
+    // would let a losing player cash out on HP share.
+    const diceState = (match.interactiveActives as unknown as { dice?: { finished?: boolean } } | null)?.dice
+    if (diceState && diceState.finished !== true) {
+      return NextResponse.json({ error: 'Match is still being fought' }, { status: 409 })
+    }
+
     const opponentType = match.opponentType ?? 'pvp'
+    // Rush rooms are settled by /dungeon-rush/fight (rewards, HP%, next room).
+    if (opponentType === 'dungeon_rush') {
+      return NextResponse.json({ error: 'Rush fights finish via /api/dungeon-rush/fight', code: 'RUSH_MATCH' }, { status: 409 })
+    }
     const isBot = opponentType === 'bot'
     const isDungeonBoss = opponentType === 'dungeon_boss'
     const isPvp = opponentType === 'pvp'
@@ -161,6 +175,7 @@ export async function POST(req: NextRequest) {
       freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
       highestPvpRank: true,
       dungeonClearsToday: true, dungeonClearsDate: true,
+      zoneProfile: true,
       user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     } as const
     const attacker = await prisma.character.findUnique({ where: { id: match.player1Id }, select })
@@ -367,6 +382,24 @@ export async function POST(req: NextRequest) {
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
 
+    // Combat v2 — fold this match's zone picks into the player's ghost profile
+    // (COMBAT_V2_DESIGN §4.1). Only player1 made real choices; the opponent
+    // side was a policy, so it learns nothing here.
+    const profileRounds: ProfileRoundRecord[] = []
+    let hpBefore = attacker.maxHp
+    for (const r of choices) {
+      if (!isZone(r.player_atk) || !isZone(r.player_def)) continue
+      profileRounds.push({
+        attack: r.player_atk,
+        block: r.player_def,
+        hpPctBefore: attacker.maxHp > 0 ? hpBefore / attacker.maxHp : 1,
+        strikeBlocked: r.player_strike?.outcome === 'blocked',
+        tookCrit: r.opp_strike?.isCrit === true,
+      })
+      hpBefore = r.attacker_hp_after
+    }
+    const nextZoneProfile = updateZoneProfile(parseZoneProfile(attacker.zoneProfile), profileRounds)
+
     const baseAttackerUpdate: Record<string, unknown> = {
       currentHp: attackerFinalHp,
       lastHpUpdate: now,
@@ -374,6 +407,7 @@ export async function POST(req: NextRequest) {
       pvpCalibrationGames: { increment: 1 },
       currentXp: { increment: xpReward },
       lastPlayed: now,
+      zoneProfile: nextZoneProfile as unknown as Prisma.InputJsonValue,
     }
     if (attackerWon) {
       baseAttackerUpdate.pvpWins = { increment: 1 }

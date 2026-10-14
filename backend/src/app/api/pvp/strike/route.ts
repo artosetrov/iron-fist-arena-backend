@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput, type CharacterStats } from '@/lib/game/combat'
+import {
+  initCombatConfig,
+  resolveSingleStrike,
+  createSeededRng,
+  isZoneMatrixV2,
+  type SingleStrikeInput,
+  type CharacterStats,
+  type Turn,
+} from '@/lib/game/combat'
 import { getCombatConfig } from '@/lib/game/live-config'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
+import { tickCooldowns, type SkillCooldownState } from '@/lib/game/skills'
+import {
+  pickZones,
+  policyForCharacter,
+  personalityForKey,
+  type ZonePolicy,
+  type ZoneRoundContext,
+} from '@/lib/game/zone-policy'
 import {
   applyBurstDamage,
   applyShield,
@@ -33,8 +49,10 @@ interface OpponentSnapshot {
  *
  * Resolves ONE ROUND of a live interactive PvP match:
  *   1. Player attacks opponent (player-chosen zones).
- *   2. If opponent survives, opponent counter-strikes the player (server-picked
- *      zones derived from seeded RNG — AI defender for v1).
+ *   2. If opponent survives, opponent counter-strikes the player. Opponent
+ *      zones come from a ZONE POLICY (ghost of the real defender / bot
+ *      personality — see lib/game/zone-policy.ts), sampled with a secret-seeded
+ *      rng. Combat v2 (`combat.zone_matrix_v2`): higher AGI swings first.
  *
  * Both turns are persisted into pvp_matches.interactive_choices. The server is
  * authoritative for HP state. Client sends only its own zone choices.
@@ -93,16 +111,6 @@ function deriveSeed(matchId: string, strikeIndex: number, salt: string): number 
   return h | 0
 }
 
-/** Pick a zone from seeded RNG (0..3 → head/chest/legs). */
-function pickZoneFromSeed(seed: number): BodyZone {
-  // Mulberry32 single step, modulo 3
-  let t = (seed + 0x6D2B79F5) | 0
-  t = Math.imul(t ^ (t >>> 15), t | 1)
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-  const r = ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  return VALID_ZONES[Math.floor(r * 3)]
-}
-
 interface StoredRound {
   idx: number
   player_atk: BodyZone
@@ -116,6 +124,11 @@ interface StoredRound {
   // Phase 3: which actives fired this round (null if none)
   player_active: number | null    // slot_index of fired active, or null
   opponent_active: number | null
+  // Combat v2 (optional — absent on pre-v2 rounds)
+  /** Whose block is ignored NEXT round (legs landed this round). */
+  opened_next?: { player: boolean; opponent: boolean }
+  /** Who swung first this round. */
+  initiative?: 'player' | 'opponent'
 }
 
 interface ActiveSlotSnapshot {
@@ -160,6 +173,9 @@ interface ActiveBuffsState {
 interface InteractiveActivesState {
   p1: ActiveSlotSnapshot[]
   p2: ActiveSlotSnapshot[]
+  /** D4 — equipped-skill cooldowns per side, persisted across rounds (skill id → rounds left). */
+  p1_skill_cd?: SkillCooldownState
+  p2_skill_cd?: SkillCooldownState
   /** Buffs OWNED by p1 (negative effects applied TO p1 by an opposing aoe_stun). */
   p1_buffs?: ActiveBuffsState
   /** Buffs OWNED by p2 (negative effects applied TO p2 by p1's aoe_stun). */
@@ -177,6 +193,8 @@ function removePlayerActiveSlot(
     // grant the opponent free counters, which is gameplay-incorrect.
     p1_buffs: actives.p1_buffs,
     p2_buffs: actives.p2_buffs,
+    p1_skill_cd: actives.p1_skill_cd,
+    p2_skill_cd: actives.p2_skill_cd,
   }
 }
 
@@ -333,6 +351,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Match timed out' }, { status: 410 })
     }
 
+    // Dice combat matches resolve via /pvp/dice/act + /pvp/dice/resolve.
+    if ((match.interactiveActives as unknown as { dice?: unknown } | null)?.dice) {
+      return NextResponse.json({ error: 'Dice match — use /api/pvp/dice/resolve', code: 'DICE_MATCH' }, { status: 409 })
+    }
+
     const opponentType = match.opponentType ?? 'pvp'
 
     // For PvP, defender is a real character. For bot/dungeon, defender stats live
@@ -370,9 +393,9 @@ export async function POST(req: NextRequest) {
       opponentType === 'pvp' && match.player2Id
         ? await prisma.character.findUnique({
             where: { id: match.player2Id },
-            select: { maxHp: true, currentHp: true },
+            select: { maxHp: true, currentHp: true, zoneProfile: true },
           })
-        : { maxHp: opponentSnapshot!.max_hp, currentHp: opponentSnapshot!.max_hp }
+        : { maxHp: opponentSnapshot!.max_hp, currentHp: opponentSnapshot!.max_hp, zoneProfile: null as unknown }
     if (!defenderRow) {
       return NextResponse.json({ error: 'Characters missing' }, { status: 404 })
     }
@@ -403,13 +426,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Max rounds reached' }, { status: 409 })
     }
 
-    // Derive opponent zones deterministically from seed
-    const oppAtkZone = pickZoneFromSeed(deriveSeed(match_id, strikeIndex, 'opp-atk'))
-    const oppDefZone = pickZoneFromSeed(deriveSeed(match_id, strikeIndex, 'opp-def'))
+    // --- Combat v2 wiring ---------------------------------------------------
+    const combatCfg = await getCombatConfig()
+    const v2 = isZoneMatrixV2(combatCfg)
+
+    // Opponent zones come from a POLICY, never from a bare roll (COMBAT_V2_DESIGN §4).
+    //   pvp  → the defender's ghost (recorded habits) with a personality fallback
+    //   bot / dungeon_boss → a stable personality derived from the bot/boss key
+    // The rng is seeded with the server secret, so the pick stays unpredictable
+    // for a modified client even though the policy itself is readable.
+    const oppPolicy: ZonePolicy =
+      opponentType === 'pvp' && match.player2Id
+        ? policyForCharacter(match.player2Id, defenderRow.zoneProfile)
+        : { kind: 'personality', personality: personalityForKey(match.botKey ?? match.bossKey ?? opponentSnapshot!.id) }
+    const lastPlayerTurn = (last?.player_strike ?? null) as Turn | null
+    const lastOppTurn = (last?.opp_strike ?? null) as Turn | null
+    const oppCtx: ZoneRoundContext = {
+      roundIndex: strikeIndex,
+      myHpPct: defenderRow.maxHp > 0 ? curDefenderHp / defenderRow.maxHp : 0,
+      oppHpPct: attackerRow.maxHp > 0 ? curAttackerHp / attackerRow.maxHp : 0,
+      ...(last
+        ? {
+            last: {
+              myAttack: last.opp_atk,
+              myBlock: last.opp_def,
+              oppAttack: last.player_atk,
+              oppBlock: last.player_def,
+              myStrikeBlocked: lastOppTurn?.outcome === 'blocked',
+              iTookCrit: lastPlayerTurn?.isCrit === true,
+              iLandedCrit: lastOppTurn?.isCrit === true,
+            },
+          }
+        : {}),
+    }
+    const oppPick = pickZones(oppPolicy, oppCtx, createSeededRng(deriveSeed(match_id, strikeIndex, 'policy')))
+    const oppAtkZone: BodyZone = oppPick.attack
+    const oppDefZone: BodyZone = oppPick.block
+
+    // Legs landed last round → that side's block does not apply this round.
+    const playerOpened = last?.opened_next?.player === true
+    const opponentOpened = last?.opened_next?.opponent === true
+
+    // Initiative (D5): v1 always let the player swing first, which alone is a
+    // 62–67% edge in a mirror. v2: higher AGI first, ties alternate by round.
+    const playerFirst = !v2
+      || attackerStats.agi > defenderStats.agi
+      || (attackerStats.agi === defenderStats.agi && strikeIndex % 2 === 0)
 
     // --- Phase 3: validate + prepare active fire for this round ---
     const actives: InteractiveActivesState =
       (match.interactiveActives as unknown as InteractiveActivesState | null) ?? { p1: [], p2: [] }
+    // D4: skill cooldowns persist per side across rounds (was a fresh {} per strike).
+    const p1SkillCd: SkillCooldownState = { ...(actives.p1_skill_cd ?? {}) }
+    const p2SkillCd: SkillCooldownState = { ...(actives.p2_skill_cd ?? {}) }
     let firedPlayerActive: ActiveSlotSnapshot | null = null
     let firedIsConsumable = false
     if (firedSlotIndex !== null) {
@@ -434,210 +503,247 @@ export async function POST(req: NextRequest) {
       firedPlayerActive = slot
     }
 
-    // 1) Player attacks defender
-    const playerSeed = deriveSeed(match_id, strikeIndex, 'p')
-    const playerInput: SingleStrikeInput = {
-      attacker: attackerStats,
-      defender: defenderStats,
-      attackerZone: attacker_zone,
-      defenderZone: oppDefZone,
-      defenderHp: curDefenderHp,
-      seed: playerSeed,
-      turn: strikeIndex + 1,
-    }
-    const playerResult = await resolveSingleStrike(playerInput)
-
-    // --- Phase 3 + Talents v2: mutate player result per fired active ---
-    // Full support for all 9 action_types. Cooldown is consumed for every fire.
-    //
     // Carry-over state read from interactiveActives.{p1,p2}_buffs:
-    //   * p2.stunRoundsRemaining > 0 ⇒ opp must skip its counter THIS round
-    //     (consumed via opponentStunned, decremented at end-of-round)
+    //   * p2.stunRoundsRemaining > 0 ⇒ opp must skip its strike THIS round
     //   * p1.stunRoundsRemaining is read for symmetry but currently never set
     //     by the AI (see pickOpponentActive header). Reserved for human-vs-human PvP.
-    let mutatedPlayerTurn = playerResult.turn
-    let newDefenderHp = playerResult.newDefenderHp
-    let playerActiveLabel: string | null = null
-    let playerHasShield = false           // reduces next counter-strike damage
-    let playerExtraHeal = 0               // from heal_self active
     const incomingP2Stun = actives.p2_buffs?.stunRoundsRemaining ?? 0
     const incomingP1Stun = actives.p1_buffs?.stunRoundsRemaining ?? 0
-    let opponentStunned = incomingP2Stun > 0   // stun_enemy/aoe_stun suppresses counter this round
-    let newP2StunRoundsRemaining = incomingP2Stun  // mutated below if aoe_stun fires
-    const newP1StunRoundsRemaining = incomingP1Stun  // unchanged in v1 (AI doesn't aoe_stun)
+    let opponentStunned = incomingP2Stun > 0
+    let newP2StunRoundsRemaining = incomingP2Stun
+    const newP1StunRoundsRemaining = incomingP1Stun
 
-    // Pre-fetch crit multiplier only when stealth is firing — avoids the
-    // round-trip on every strike for an effect <1% of rounds will use.
+    // Pre-fetch crit multiplier only when stealth is firing.
     let stealthCritMultiplier = 2.0
     if (firedPlayerActive?.action_type === 'stealth') {
-      const cfg = await getCombatConfig()
-      stealthCritMultiplier = Math.max(1, cfg.CRIT_MULTIPLIER ?? 2.0)
+      stealthCritMultiplier = Math.max(1, combatCfg.CRIT_MULTIPLIER ?? 2.0)
     }
 
+    // Player's declared actives resolve at round start, whatever the strike
+    // order: a heal/shield/stun is a decision made before anyone swings.
+    let playerActiveLabel: string | null = null
+    let playerHasShield = false
+    let playerExtraHeal = 0
     if (firedPlayerActive) {
       playerActiveLabel = firedPlayerActive.action_type
       switch (firedPlayerActive.action_type) {
-        case 'burst_damage':
-        case 'aoe_damage': {
-          // aoe_damage is a 1v1 alias of burst_damage (Talents v2 §8). Same
-          // math, distinct VFX/label on the client. If/when multi-target combat
-          // ships, this case forks but the contract stays additive.
-          const originalDmg = playerResult.turn.damage
-          const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
-          const delta = boosted - originalDmg
-          mutatedPlayerTurn = { ...playerResult.turn, damage: boosted }
-          newDefenderHp = Math.max(0, newDefenderHp - delta)
-          break
-        }
-        case 'execute': {
-          if (shouldExecute(curDefenderHp, defenderRow.maxHp, firedPlayerActive.magnitude)) {
-            const finishingDmg = playerResult.turn.damage + Math.max(0, newDefenderHp)
-            mutatedPlayerTurn = { ...playerResult.turn, damage: finishingDmg }
-            newDefenderHp = 0
-          }
-          break
-        }
-        case 'heal_self': {
+        case 'heal_self':
           playerExtraHeal = healAmountFromActive(attackerRow.maxHp, firedPlayerActive.magnitude)
           break
-        }
-        case 'shield_self': {
+        case 'shield_self':
           playerHasShield = true
           break
-        }
-        case 'stun_enemy': {
+        case 'stun_enemy':
           // Single-round stun. Does NOT touch newP2StunRoundsRemaining — that
           // counter is for aoe_stun's multi-round persistence.
           opponentStunned = true
           break
-        }
-        case 'stealth': {
-          // Force-crit on the player's CURRENT-round attack. If RNG already
-          // rolled crit, no extra damage; otherwise rebuild with CRIT_MULTIPLIER.
-          // Talents v2 §8 spec uses "next attack auto-crits"; in this round-based
-          // engine the slot fires before the strike resolves on the same round,
-          // so "next" = "this".
-          if (!playerResult.turn.isCrit) {
-            const baseDmg = mutatedPlayerTurn.damage
-            const boostedDmg = Math.round(baseDmg * stealthCritMultiplier)
-            const delta = boostedDmg - baseDmg
-            mutatedPlayerTurn = { ...mutatedPlayerTurn, damage: boostedDmg, isCrit: true }
-            newDefenderHp = Math.max(0, newDefenderHp - delta)
-          }
-          break
-        }
-        case 'cooldown_reset': {
-          // No on-strike effect. Post-round mutation handled in advance step:
-          // resets cooldown_remaining=0 for OTHER non-consumable p1 slots.
-          break
-        }
         case 'aoe_stun': {
           // Multi-round opponent stun. magnitude = number of rounds opp skips
-          // counter (default 2). End-of-round decrement removes one round.
+          // (default 2). End-of-round decrement removes one round.
           // Spec: docs/06_game_systems/SKILL_TREE_DESIGN_V2.md §8 (Tank Quake).
           const rounds = Math.max(1, Math.floor(firedPlayerActive.magnitude || 2))
           opponentStunned = true
           newP2StunRoundsRemaining = rounds
           break
         }
+        default:
+          break // offensive actives mutate the player's own strike below
       }
     }
-    // Apply player's self-heal (combat formula heal + active heal)
-    const attackerAfterHeal = Math.min(
-      attackerRow.maxHp,
-      curAttackerHp + (playerResult.healAmount || 0) + playerExtraHeal
-    )
 
-    // --- Phase 3.B: pick opponent AI active for this round ---
-    // Opp sees post-strike HP so pickOpponentActive prefers heal_self if about to die.
-    const firedOppActive = pickOpponentActive(
-      actives.p2,
-      newDefenderHp,
-      defenderRow.maxHp,
-      attackerAfterHeal,
-      attackerRow.maxHp,
-      actives.p1
-    )
-    const oppActiveLabel: string | null = firedOppActive?.action_type ?? null
+    // Round state. One object (not closed-over `let`s) so TS keeps the declared
+    // union types after the strike helpers mutate it.
+    const R = {
+      hpPlayer: Math.min(attackerRow.maxHp, curAttackerHp + playerExtraHeal), // player heal lands first
+      hpOpp: curDefenderHp,
+      playerTurn: null as Turn | null,
+      oppTurn: null as Turn | null,
+      firedOppActive: null as ActiveSlotSnapshot | null,
+      oppHasShield: false,        // opp shield picked BEFORE the player's strike (opp-first rounds)
+      playerOpensOpp: false,
+      oppOpensPlayer: false,
+    }
 
-    // Apply opp's defensive / setup actives BEFORE counter-strike resolves:
-    //   shield_self → retroactively reduce player's incoming damage
-    //   heal_self   → bump opp HP (can bring them back above 0 from a fatal hit)
-    if (firedOppActive?.action_type === 'shield_self') {
-      const reduced = applyShield(mutatedPlayerTurn.damage, firedOppActive.magnitude)
-      const refund = mutatedPlayerTurn.damage - reduced
-      if (refund > 0) {
-        mutatedPlayerTurn = { ...mutatedPlayerTurn, damage: reduced }
-        newDefenderHp = Math.min(defenderRow.maxHp, newDefenderHp + refund)
+    // 1) Player strike — attacker-chosen zones vs the policy's block.
+    const doPlayerStrike = async () => {
+      const playerSeed = deriveSeed(match_id, strikeIndex, 'p')
+      const playerInput: SingleStrikeInput = {
+        attacker: attackerStats,
+        defender: defenderStats,
+        attackerZone: attacker_zone,
+        defenderZone: oppDefZone,
+        defenderHp: R.hpOpp,
+        seed: playerSeed,
+        turn: strikeIndex + 1,
+        defenderOpened: opponentOpened,
+        cooldownState: p1SkillCd,
       }
-    }
-    if (firedOppActive?.action_type === 'heal_self') {
-      const oppHeal = healAmountFromActive(defenderRow.maxHp, firedOppActive.magnitude)
-      newDefenderHp = Math.min(defenderRow.maxHp, newDefenderHp + oppHeal)
+      const playerResult = await resolveSingleStrike(playerInput)
+      let turn = playerResult.turn
+      let newOppHp = playerResult.newDefenderHp
+      R.playerOpensOpp = turn.opensDefender === true
+
+      // Offensive actives mutate the player's strike.
+      if (firedPlayerActive) {
+        switch (firedPlayerActive.action_type) {
+          case 'burst_damage':
+          case 'aoe_damage': {
+            // aoe_damage is a 1v1 alias of burst_damage (Talents v2 §8).
+            const originalDmg = turn.damage
+            const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
+            const delta = boosted - originalDmg
+            turn = { ...turn, damage: boosted }
+            newOppHp = Math.max(0, newOppHp - delta)
+            break
+          }
+          case 'execute': {
+            if (shouldExecute(R.hpOpp, defenderRow.maxHp, firedPlayerActive.magnitude)) {
+              const finishingDmg = turn.damage + Math.max(0, newOppHp)
+              turn = { ...turn, damage: finishingDmg }
+              newOppHp = 0
+            }
+            break
+          }
+          case 'stealth': {
+            // Force-crit on the player's CURRENT-round attack (Talents v2 §8:
+            // "next attack auto-crits" — the slot fires before the strike
+            // resolves on the same round, so "next" = "this").
+            if (!turn.isCrit && turn.damage > 0) {
+              const baseDmg = turn.damage
+              const boostedDmg = Math.round(baseDmg * stealthCritMultiplier)
+              const delta = boostedDmg - baseDmg
+              turn = { ...turn, damage: boostedDmg, isCrit: true, ...(turn.outcome === 'hit' ? { outcome: 'crit' as const } : {}) }
+              newOppHp = Math.max(0, newOppHp - delta)
+            }
+            break
+          }
+          default:
+            break
+        }
+      }
+
+      // Opp shield raised earlier this round (opp-first order) soaks this hit.
+      if (R.oppHasShield && R.firedOppActive) {
+        const reduced = applyShield(turn.damage, R.firedOppActive.magnitude)
+        const refund = turn.damage - reduced
+        if (refund > 0) {
+          turn = { ...turn, damage: reduced }
+          newOppHp = Math.min(defenderRow.maxHp, newOppHp + refund)
+        }
+      }
+
+      R.hpOpp = newOppHp
+      // Lifesteal + v2 counter (head into block) land on the player now.
+      if (playerResult.healAmount > 0) R.hpPlayer = Math.min(attackerRow.maxHp, R.hpPlayer + playerResult.healAmount)
+      if (playerResult.counterDamage > 0) R.hpPlayer = Math.max(0, R.hpPlayer - playerResult.counterDamage)
+      R.playerTurn = turn
     }
 
-    let oppResult: Awaited<ReturnType<typeof resolveSingleStrike>> | null = null
-    let newAttackerHp = attackerAfterHeal
+    // 2) Opponent strike — policy zones vs the player's declared block.
+    const doOpponentStrike = async (playerAlreadyStruck: boolean) => {
+      // AI picks its active right before it swings, seeing the current HPs.
+      const picked = pickOpponentActive(
+        actives.p2,
+        R.hpOpp,
+        defenderRow.maxHp,
+        R.hpPlayer,
+        attackerRow.maxHp,
+        actives.p1
+      )
+      R.firedOppActive = picked
+      if (picked?.action_type === 'shield_self') {
+        if (playerAlreadyStruck && R.playerTurn) {
+          // Player-first order: the shield retroactively soaks the hit it just took (legacy behaviour).
+          const reduced = applyShield(R.playerTurn.damage, picked.magnitude)
+          const refund = R.playerTurn.damage - reduced
+          if (refund > 0) {
+            R.playerTurn = { ...R.playerTurn, damage: reduced }
+            R.hpOpp = Math.min(defenderRow.maxHp, R.hpOpp + refund)
+          }
+        } else {
+          R.oppHasShield = true
+        }
+      }
+      if (picked?.action_type === 'heal_self') {
+        const oppHeal = healAmountFromActive(defenderRow.maxHp, picked.magnitude)
+        R.hpOpp = Math.min(defenderRow.maxHp, R.hpOpp + oppHeal)
+      }
 
-    // 2) Opponent counter-strike only if still alive AND not stunned
-    if (newDefenderHp > 0 && !opponentStunned) {
+      if (opponentStunned) return
+
       const oppSeed = deriveSeed(match_id, strikeIndex, 'o')
       const oppInput: SingleStrikeInput = {
         attacker: defenderStats,
         defender: attackerStats,
         attackerZone: oppAtkZone,
         defenderZone: defender_zone,
-        defenderHp: attackerAfterHeal,
+        defenderHp: R.hpPlayer,
         seed: oppSeed,
         turn: strikeIndex + 1,
+        defenderOpened: playerOpened,
+        cooldownState: p2SkillCd,
       }
-      oppResult = await resolveSingleStrike(oppInput)
-      // Apply opponent's offensive actives to counter-strike damage
+      const oppResult = await resolveSingleStrike(oppInput)
       let oppDamage = oppResult.turn.damage
-      let oppForcedCrit = false  // Talents v2: stealth force-crits opp counter
-      if (
-        firedOppActive?.action_type === 'burst_damage' ||
-        firedOppActive?.action_type === 'aoe_damage'
-      ) {
-        // aoe_damage = burst_damage in 1v1 (Talents v2 §8 alias)
-        oppDamage = applyBurstDamage(oppDamage, firedOppActive.magnitude)
+      let oppForcedCrit = false
+      if (picked?.action_type === 'burst_damage' || picked?.action_type === 'aoe_damage') {
+        oppDamage = applyBurstDamage(oppDamage, picked.magnitude)
       } else if (
-        firedOppActive?.action_type === 'execute' &&
-        shouldExecute(attackerAfterHeal, attackerRow.maxHp, firedOppActive.magnitude)
+        picked?.action_type === 'execute' &&
+        shouldExecute(R.hpPlayer, attackerRow.maxHp, picked.magnitude)
       ) {
-        oppDamage = attackerAfterHeal  // finishing blow
-      } else if (firedOppActive?.action_type === 'stealth') {
-        // Force-crit on opp counter-strike. Mirrors player stealth.
-        if (!oppResult.turn.isCrit) {
-          const cfg = await getCombatConfig()
-          const critMul = Math.max(1, cfg.CRIT_MULTIPLIER ?? 2.0)
+        oppDamage = R.hpPlayer  // finishing blow
+      } else if (picked?.action_type === 'stealth') {
+        if (!oppResult.turn.isCrit && oppDamage > 0) {
+          const critMul = Math.max(1, combatCfg.CRIT_MULTIPLIER ?? 2.0)
           oppDamage = Math.round(oppDamage * critMul)
           oppForcedCrit = true
         }
       }
-      // NOTE: aoe_stun / stun_enemy fired by opp would target player. In v1 the
-      // AI never picks them (see pickOpponentActive filter), and player attacks
-      // FIRST in this round, so an opp-applied stun has no in-round effect — it
-      // would only impact the NEXT round's player main attack. Cross-round
-      // application requires gating the player attack on incomingP1Stun, which
-      // is reserved for human-vs-human PvP. See newP1StunRoundsRemaining usage.
-
       // Player's shield reduces incoming opponent damage
       if (playerHasShield) {
         oppDamage = applyShield(oppDamage, firedPlayerActive?.magnitude ?? 0)
       }
       const oppDamageChanged = oppDamage !== oppResult.turn.damage
-      const mutatedOppTurn = oppDamageChanged || oppForcedCrit
+      let turn: Turn = oppDamageChanged || oppForcedCrit
         ? {
             ...oppResult.turn,
             damage: oppDamage,
-            ...(oppForcedCrit ? { isCrit: true } : {}),
+            ...(oppForcedCrit ? { isCrit: true, ...(oppResult.turn.outcome === 'hit' ? { outcome: 'crit' as const } : {}) } : {}),
           }
         : oppResult.turn
-      const finalAttackerHp = Math.max(0, attackerAfterHeal - oppDamage)
-      oppResult = { ...oppResult, turn: mutatedOppTurn, newDefenderHp: finalAttackerHp }
-      newAttackerHp = finalAttackerHp
+      R.oppOpensPlayer = turn.opensDefender === true
+      R.hpPlayer = Math.max(0, R.hpPlayer - oppDamage)
+      if (oppResult.healAmount > 0) R.hpOpp = Math.min(defenderRow.maxHp, R.hpOpp + oppResult.healAmount)
+      if (oppResult.counterDamage > 0) R.hpOpp = Math.max(0, R.hpOpp - oppResult.counterDamage)
+      turn = { ...turn, defenderHpAfter: R.hpPlayer }
+      R.oppTurn = turn
     }
+
+    if (playerFirst) {
+      await doPlayerStrike()
+      if (R.hpOpp > 0 && R.hpPlayer > 0) await doOpponentStrike(true)
+    } else {
+      await doOpponentStrike(false)
+      if (R.hpOpp > 0 && R.hpPlayer > 0) await doPlayerStrike()
+    }
+    if (R.playerTurn) {
+      R.playerTurn = { ...R.playerTurn, defenderHpAfter: Math.max(0, R.hpOpp) }
+    }
+
+    // Skill cooldowns tick once per round for both sides (mirrors runCombat).
+    tickCooldowns(p1SkillCd)
+    tickCooldowns(p2SkillCd)
+
+    const newAttackerHp = R.hpPlayer
+    const newDefenderHp = R.hpOpp
+    const firedOppActive = R.firedOppActive
+    const oppActiveLabel: string | null = firedOppActive?.action_type ?? null
+    // A round where the opponent struck first and killed the player has no
+    // player strike; the client renders `player_strike: null` as "no swing".
+    const mutatedPlayerTurn: Turn | null = R.playerTurn
+    const oppResult = R.oppTurn ? { turn: R.oppTurn } : null
 
     const matchFinished = newAttackerHp <= 0 || newDefenderHp <= 0 || (strikeIndex + 1) >= MAX_ROUNDS
     const opponentId = match.player2Id ?? opponentSnapshot?.id ?? ''
@@ -653,18 +759,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // The client decodes `player_strike` as non-optional. If the opponent struck
+    // first and the player fell before swinging, send an inert zero turn
+    // tagged `outcome: 'none'` instead of null.
+    const playerStrikePayload: Turn = mutatedPlayerTurn ?? {
+      turnNumber: strikeIndex + 1,
+      attackerId: match.player1Id,
+      damage: 0,
+      isCrit: false,
+      isDodge: false,
+      defenderHpAfter: Math.max(0, newDefenderHp),
+      targetZone: attacker_zone,
+      defendZone: oppDefZone,
+      outcome: 'none',
+    }
+
     const round: StoredRound = {
       idx: strikeIndex,
       player_atk: attacker_zone,
       player_def: defender_zone,
       opp_atk: oppAtkZone,
       opp_def: oppDefZone,
-      player_strike: mutatedPlayerTurn,
+      player_strike: playerStrikePayload,
       opp_strike: oppResult?.turn ?? null,
       attacker_hp_after: Math.max(0, newAttackerHp),
       defender_hp_after: Math.max(0, newDefenderHp),
       player_active: firedSlotIndex,
       opponent_active: firedOppActive?.slot_index ?? null,
+      opened_next: { player: R.oppOpensPlayer, opponent: R.playerOpensOpp },
+      initiative: playerFirst ? 'player' : 'opponent',
     }
 
     // --- Phase 3 + Talents v2: update actives state ---
@@ -708,6 +831,8 @@ export async function POST(req: NextRequest) {
       p2: updatedP2,
       p1_buffs: { stunRoundsRemaining: Math.max(0, newP1StunRoundsRemaining - 1) },
       p2_buffs: { stunRoundsRemaining: Math.max(0, newP2StunRoundsRemaining - 1) },
+      p1_skill_cd: p1SkillCd,
+      p2_skill_cd: p2SkillCd,
     }
 
     // Persist round in a single transaction:
@@ -812,13 +937,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       match_id,
       strike_index: strikeIndex,
-      player_strike: mutatedPlayerTurn,
+      player_strike: playerStrikePayload,
       opponent_strike: oppResult?.turn ?? null,
       attacker_hp: round.attacker_hp_after,
       defender_hp: round.defender_hp_after,
       opp_zones: { attack: oppAtkZone, defend: oppDefZone },
       match_finished: matchFinished,
       winner_id: winnerId,
+      // Combat v2 (additive): who swung first, and whose block is void next round.
+      initiative: round.initiative,
+      opened: round.opened_next,
+      zone_matrix_v2: v2,
       actives: newActives,
       player_active_fired: firedSlotIndex,
       player_active_label: playerActiveLabel,

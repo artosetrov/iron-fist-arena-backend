@@ -531,3 +531,55 @@ Before any damage is computed, two independent whiff rolls can abort the hit at 
 
 </content>
 </invoke>
+
+---
+
+## Combat v2 — Zone Matrix, Zone Policies, Initiative (flagged, 2026-10-13)
+
+> Design + rationale: `COMBAT_V2_DESIGN.md`. Everything below is **off by default**
+> (`COMBAT_V2=false`, game_config `combat.zone_matrix_v2`) except the zone
+> policies, which replace the uniform opponent roll unconditionally.
+
+### Zone policies (always on)
+
+The opponent's zones in interactive combat (`/pvp/strike`) and both sides' zones
+in classic auto-resolve under v2 come from `lib/game/zone-policy.ts`, never from a
+bare roll:
+
+| Opponent | Policy | Tell |
+|---|---|---|
+| Bot / dungeon boss | personality from `personalityForKey(botKey)` — `aggressor` / `turtle` / `rhythm` | shown at `/match/start` as `opponent_read.hint` |
+| Live player (async PvP) | **ghost**: `characters.zone_profile` (recent attack/block habits, conditioned on last round) — falls back to a personality until ≥ 6 rounds recorded | `opponent_read.pattern` = last 8 attack zones |
+
+The profile is folded in by `/pvp/match/complete` (`updateZoneProfile`, decay 0.85 per match).
+Picks are sampled with `createSeededRng(deriveSeed(match, round, 'policy'))` — the
+server secret keeps them unpredictable for a modified client.
+
+### Zone matrix (flag on)
+
+Intrinsic `STANCE_ZONES` bonuses are ignored; the pair (attack, opponent block) decides:
+
+| attack \ block | open zone | blocked (`attack == opp.block`) |
+|---|---|---|
+| head | guaranteed crit × `HEAD_CRIT_MULT` (1.8) | × `HEAD_BLOCKED_MULT` (0.35) **+ defender counters** × `HEAD_COUNTER_MULT` (0.15) of their auto-attack |
+| chest | × 1 (normal crit roll) | × `CHEST_BLOCKED_MULT` (0.6) |
+| legs | × `LEGS_OPEN_MULT` (0.85) and **opens** the opponent (their block is void next round) | × `LEGS_BLOCKED_MULT` (0.5) |
+
+Constants: `balance.ts: ZONE_MATRIX`, live keys `combat.zone.*`. Pure helper
+`zoneMatrixEffect()` in `combat.ts`. Each `Turn` carries `outcome`
+(`crit | hit | blocked | miss | dodge | none`), `counterDamage`, `opensDefender`.
+
+### Initiative (flag on)
+
+`/pvp/strike`: higher AGI swings first; ties alternate by round (`initiative` in the
+response and the stored round). v1 always let the player swing first (62–67% of a mirror).
+
+### Skill cooldowns in interactive combat (always on)
+
+`interactive_actives.p1_skill_cd / p2_skill_cd` persist equipped-skill cooldowns per
+side; ticked once per round. Before this every strike started from a fresh state and
+the first equipped skill fired every round.
+
+### Tests
+
+`tests/lib/zone-policy.test.ts`, `tests/lib/zone-matrix.test.ts`, `tests/api/pvp-strike.test.ts`.

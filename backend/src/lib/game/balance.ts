@@ -484,6 +484,72 @@ export const STANCE_ZONES = {
   MATCH_DEFENSE_BONUS: 15,     // defender bonus when correctly predicting attack zone
 } as const;
 
+// --- Zone Matrix v2 (Combat v2, docs/06_game_systems/COMBAT_V2_DESIGN.md §3) ---
+//
+// Replaces the intrinsic STANCE_ZONES bonuses when `combat.zone_matrix_v2` is on.
+// The whole zone interaction lives in the pair (attack, opponent block):
+//
+//   attack \ block   | open zone                          | blocked (attack == opp.block)
+//   -----------------+------------------------------------+------------------------------------
+//   head             | guaranteed crit × HEAD_CRIT_MULT   | × HEAD_BLOCKED_MULT + defender counters
+//   chest            | × 1 (normal crit roll)             | × CHEST_BLOCKED_MULT
+//   legs             | × LEGS_OPEN_MULT, opens opponent   | × LEGS_BLOCKED_MULT
+//
+// "Opens opponent" = the opponent's block does not apply on the NEXT round.
+// Numbers come from scripts/zone_matrix_sim.py: mixed equilibrium on both sides
+// (block 50/21/29, attack 14/50/36), a head-spammer loses to a turtle bot (20%),
+// an adaptive reader beats a head-spammer (100%). Tune via live-config keys
+// `combat.zone.*` without a deploy.
+export const ZONE_MATRIX = {
+  HEAD_CRIT_MULT: 1.8,
+  HEAD_BLOCKED_MULT: 0.35,
+  HEAD_COUNTER_MULT: 0.15,   // × defender's own auto-attack hit, dealt back to the attacker
+  CHEST_BLOCKED_MULT: 0.6,
+  LEGS_OPEN_MULT: 0.85,
+  LEGS_BLOCKED_MULT: 0.5,
+} as const;
+
+// Zone-policy noise: share of rounds in which a bot personality / ghost picks
+// uniformly instead of following its pattern. Keeps patterns readable but not
+// a deterministic puzzle.
+export const ZONE_POLICY = {
+  PERSONALITY_NOISE: 0.12,
+  GHOST_NOISE: 0.15,
+  /** Rounds of recorded data before a ghost is trusted over a fallback personality. */
+  GHOST_MIN_ROUNDS: 6,
+  /** Exponential decay applied to the profile counts after every match (≈30-round memory). */
+  GHOST_DECAY: 0.85,
+  /** Tail of recent rounds exposed to the client as the read-strip. */
+  PATTERN_TAIL: 8,
+} as const;
+
+// Dice combat (docs/06_game_systems/DICE_RUNES_DESIGN.md). Two d6 per fighter —
+// attack + guard, faces head/head/chest/chest/legs/legs. Same zone = block.
+// Prototype sims: smart Focus use ≈53% vs smart, ≈16% never spending; ~7 rounds.
+// Tune live via game_config `dice.*` (see getDiceConfig in live-config.ts).
+export const DICE = {
+  HEAD_MULT: 1.6,        // head into an open zone = crit
+  CHEST_MULT: 1.0,
+  LEGS_MULT: 0.9,        // legs also sweep: defender's guard is off next round
+  FOCUS_START: 2,
+  FOCUS_PER_ROUND: 1,
+  FOCUS_MAX: 5,
+  REROLL_COST: 2,
+  SET_FACE_COST: 4,
+  MAX_ROUNDS: 15,
+  FATIGUE_START_ROUND: 10,
+  FATIGUE_PER_ROUND: 0.15,
+  DAMAGE_VARIANCE: 0.1,
+  /** Global scale on the per-strike hit so a duel lands in ~6–9 rounds. */
+  DAMAGE_SCALE: 1.4,
+  /** Decision window the client shows per round (server does not enforce it). */
+  WINDOW_MS: 8000,
+  /** Boss phase 2 (≤ this HP share) rolls a second attack die… */
+  BOSS_PHASE2_HP: 0.5,
+  /** …which strikes at this share of a normal hit. */
+  BOSS_SECOND_DIE_MULT: 0.6,
+} as const;
+
 // --- Prestige ---
 export const PRESTIGE = {
   MAX_LEVEL: 50,

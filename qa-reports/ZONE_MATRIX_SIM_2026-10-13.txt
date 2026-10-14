@@ -1,0 +1,54 @@
+===== V1 per-round game =====
+Nash attack mix : {'head': 0.35, 'chest': 0.25, 'legs': 0.4}
+Nash block mix  : {'head': 0.61, 'chest': 0.27, 'legs': 0.12}
+Top joint picks : [(('legs', 'head'), 0.26), (('head', 'head'), 0.2), (('chest', 'head'), 0.15), (('head', 'chest'), 0.11)]
+Dominated opts  : 0 of 9 -> []
+--- V1 full fights: P1 winrate (avg rounds) ---
+naive head/chest   vs naive head/chest  :  62.1%  ( 9.9 r)
+naive head/chest   vs uniform           :  73.6%  (10.7 r)
+naive head/chest   vs nash mix          :  58.7%  (10.9 r)
+naive head/chest   vs aggressor bot     :  64.9%  (10.3 r)
+naive head/chest   vs turtle bot        :  77.8%  (11.6 r)
+naive head/chest   vs rhythm bot        :  72.9%  (10.7 r)
+naive head/chest   vs reader (adaptive) :  34.4%  (10.6 r)
+nash mix           vs naive head/chest  :  60.5%  (10.9 r)
+nash mix           vs uniform           :  60.7%  (10.9 r)
+nash mix           vs nash mix          :  59.1%  (10.9 r)
+nash mix           vs aggressor bot     :  62.8%  (11.0 r)
+nash mix           vs turtle bot        :  59.6%  (10.9 r)
+nash mix           vs rhythm bot        :  60.2%  (10.9 r)
+nash mix           vs reader (adaptive) :  60.2%  (10.9 r)
+reader (adaptive)  vs naive head/chest  :  80.5%  (10.6 r)
+reader (adaptive)  vs uniform           :  66.3%  (10.8 r)
+reader (adaptive)  vs nash mix          :  61.0%  (10.9 r)
+reader (adaptive)  vs aggressor bot     :  72.0%  (10.7 r)
+reader (adaptive)  vs turtle bot        :  71.5%  (11.3 r)
+reader (adaptive)  vs rhythm bot        :  55.7%  (10.6 r)
+reader (adaptive)  vs reader (adaptive) :  59.5%  (10.8 r)
+===== V2 per-round game =====
+Nash attack mix : {'head': 0.14, 'chest': 0.5, 'legs': 0.36}
+Nash block mix  : {'head': 0.5, 'chest': 0.21, 'legs': 0.29}
+Top joint picks : [(('chest', 'head'), 0.26), (('legs', 'head'), 0.18), (('chest', 'legs'), 0.14), (('legs', 'legs'), 0.1)]
+Dominated opts  : 0 of 9 -> []
+--- V2 full fights: P1 winrate (avg rounds) ---
+naive head/chest   vs naive head/chest  :  67.2%  ( 6.3 r)
+naive head/chest   vs uniform           :  64.9%  ( 8.8 r)
+naive head/chest   vs nash mix          :  59.6%  (10.4 r)
+naive head/chest   vs aggressor bot     :  57.3%  ( 7.4 r)
+naive head/chest   vs turtle bot        :  20.0%  (12.4 r)
+naive head/chest   vs rhythm bot        :  80.6%  ( 9.4 r)
+naive head/chest   vs reader (adaptive) :   0.2%  ( 7.5 r)
+nash mix           vs naive head/chest  :  53.9%  (10.4 r)
+nash mix           vs uniform           :  54.4%  (10.9 r)
+nash mix           vs nash mix          :  58.3%  (11.2 r)
+nash mix           vs aggressor bot     :  49.9%  (10.5 r)
+nash mix           vs turtle bot        :  63.7%  (11.5 r)
+nash mix           vs rhythm bot        :  40.9%  (10.6 r)
+nash mix           vs reader (adaptive) :  55.6%  (10.9 r)
+reader (adaptive)  vs naive head/chest  : 100.0%  ( 7.5 r)
+reader (adaptive)  vs uniform           :  75.5%  ( 9.9 r)
+reader (adaptive)  vs nash mix          :  59.9%  (11.0 r)
+reader (adaptive)  vs aggressor bot     :  95.0%  ( 9.1 r)
+reader (adaptive)  vs turtle bot        :  69.9%  (11.8 r)
+reader (adaptive)  vs rhythm bot        :  54.4%  ( 9.4 r)
+reader (adaptive)  vs reader (adaptive) :  58.4%  (11.3 r)

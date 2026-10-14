@@ -364,6 +364,9 @@ model Character {
   armor             Int       @default(0)
   magicResist       Int       @default(0) @map("magic_resist")
   combatStance      Json?     @map("combat_stance")
+  // Combat v2 — recorded zone habits (ZoneProfile, zone-policy.ts). Drives the
+  // character's "ghost" when it defends in async PvP. Null = no data yet.
+  zoneProfile       Json?     @map("zone_profile")
 
   // Stamina
   currentStamina    Int       @default(180) @map("current_stamina")
@@ -458,6 +461,7 @@ model Character {
   characterSkills     CharacterSkill[]
   characterPassives   CharacterPassive[]
   characterActiveSlots CharacterActiveSlot[]
+  dieRunes            CharacterDieRune[]
   mailRecipients      MailRecipient[]
   shopOfferPurchases  ShopOfferPurchase[]
   contrabandClaims    ContrabandClaim[]
@@ -1369,6 +1373,25 @@ model CharacterPassive {
   @@unique([characterId, nodeId])
   @@index([characterId])
   @@map("character_passives")
+}
+
+/// Dice combat — a rune socketed into one face of one die
+/// (docs/06_game_systems/DICE_RUNES_DESIGN.md §6). Owning a rune = its talent
+/// node is unlocked (CharacterPassive); this table only stores placement.
+/// Catalog (keys, tiers, die type) lives in code: backend/src/lib/game/runes.ts.
+model CharacterDieRune {
+  id          String    @id @default(uuid())
+  characterId String    @map("character_id")
+  die         String                        // 'atk' | 'grd'
+  faceIndex   Int       @map("face_index")  // 0..5 → [head,head,chest,chest,legs,legs]
+  runeKey     String    @map("rune_key")    // e.g. 'warrior.headsman'
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, die, faceIndex])
+  @@unique([characterId, runeKey])
+  @@map("character_die_runes")
 }
 
 // Interactive Combat v1 — Phase 1: 3-slot active loadout.

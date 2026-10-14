@@ -3,8 +3,14 @@
 // baseDamage now reads class scaling from GameConfig via item-balance engine.
 // =============================================================================
 
-import { STANCE_ZONES, BATTLE_FATIGUE, type BodyZone } from './balance';
+import { STANCE_ZONES, BATTLE_FATIGUE, ZONE_MATRIX, type BodyZone } from './balance';
 import { getCombatConfig } from './live-config';
+import {
+  pickZones,
+  policyForCharacter,
+  type ZonePolicy,
+  type ZoneRoundContext,
+} from './zone-policy';
 import { getClassDamageFormula } from './item-balance';
 import {
   selectSkill,
@@ -50,7 +56,21 @@ export interface CharacterStats {
    * NOT to be confused with stun/CC effects, which are per-turn and temporary.
    */
   isPassiveTarget?: boolean;
+  /**
+   * Combat v2 — how this side picks zones when no human is choosing
+   * (classic auto-resolve, and the opponent side of interactive combat).
+   * Absent → a stable personality derived from `id` (see zone-policy.ts).
+   */
+  zonePolicy?: ZonePolicy;
 }
+
+/**
+ * Combat v2 — one word per strike for the client. `miss`/`dodge` are the
+ * pre-hit whiffs that already existed; `blocked` means the attack went into
+ * the defender's block zone (reduced damage, head also eats a counter).
+ * `none` = the side never swung this round (fell before its initiative).
+ */
+export type StrikeOutcome = 'crit' | 'hit' | 'blocked' | 'miss' | 'dodge' | 'none';
 
 export interface Turn {
   turnNumber: number;
@@ -72,6 +92,12 @@ export interface Turn {
   targetZone?: string;
   defendZone?: string;
   stanceSwitch?: boolean; // True if stance was auto-rotated this turn
+  /** Combat v2 — aggregated verdict for the UI. Absent on v1 turns. */
+  outcome?: StrikeOutcome;
+  /** Combat v2 — damage the DEFENDER dealt back (head into block). Already applied by the caller. */
+  counterDamage?: number;
+  /** Combat v2 — legs landed: defender's block does not apply next round. */
+  opensDefender?: boolean;
 }
 
 // Mid-battle stance rotation: every N turns, attack/defense zones shift
@@ -234,6 +260,58 @@ interface CombatConfigData {
   // W3.D2 — Rogue Execute: bonus damage vs low-HP defenders
   ROGUE_EXECUTE_HP_THRESHOLD: number;
   ROGUE_EXECUTE_DAMAGE_BONUS: number;
+  // Combat v2 — zone matrix. Optional so tests/mocks built before v2 still type-check.
+  ZONE_MATRIX_V2?: boolean;
+  ZONE?: ZoneMatrixConfig;
+}
+
+export interface ZoneMatrixConfig {
+  HEAD_CRIT_MULT: number;
+  HEAD_BLOCKED_MULT: number;
+  HEAD_COUNTER_MULT: number;
+  CHEST_BLOCKED_MULT: number;
+  LEGS_OPEN_MULT: number;
+  LEGS_BLOCKED_MULT: number;
+}
+
+const ZERO_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge: 0 };
+
+export function isZoneMatrixV2(config: Pick<CombatConfigData, 'ZONE_MATRIX_V2'>): boolean {
+  return config.ZONE_MATRIX_V2 === true;
+}
+
+function zoneConfig(config: Pick<CombatConfigData, 'ZONE'>): ZoneMatrixConfig {
+  return config.ZONE ?? ZONE_MATRIX;
+}
+
+/**
+ * Combat v2 — the whole zone interaction in one pure function
+ * (docs/06_game_systems/COMBAT_V2_DESIGN.md §3.1). Exported for unit tests.
+ *
+ * @returns damage multiplier, whether the hit is a forced crit (head into an
+ *          open zone), the counter multiplier the defender deals back (head
+ *          into block), and whether the defender is opened next round (legs).
+ */
+export function zoneMatrixEffect(
+  attackZone: BodyZone,
+  blocked: boolean,
+  zone: ZoneMatrixConfig,
+): { mult: number; forcedCrit: boolean; counterMult: number; opens: boolean } {
+  switch (attackZone) {
+    case 'head':
+      return blocked
+        ? { mult: zone.HEAD_BLOCKED_MULT, forcedCrit: false, counterMult: zone.HEAD_COUNTER_MULT, opens: false }
+        : { mult: zone.HEAD_CRIT_MULT, forcedCrit: true, counterMult: 0, opens: false };
+    case 'legs':
+      return blocked
+        ? { mult: zone.LEGS_BLOCKED_MULT, forcedCrit: false, counterMult: 0, opens: false }
+        : { mult: zone.LEGS_OPEN_MULT, forcedCrit: false, counterMult: 0, opens: true };
+    case 'chest':
+    default:
+      return blocked
+        ? { mult: zone.CHEST_BLOCKED_MULT, forcedCrit: false, counterMult: 0, opens: false }
+        : { mult: 1, forcedCrit: false, counterMult: 0, opens: false };
+  }
 }
 
 /**
@@ -335,6 +413,33 @@ function rollPercent(rng: SeededRng): number {
   return rng() * 100;
 }
 
+// --- Dice combat ---
+
+/**
+ * Dice combat (dice.ts) — one plain ×1 strike of `attacker` against
+ * `defender`: class auto-attack, passive flat/percent damage, the defender's
+ * resists, tank reduction and passive damage reduction. No crit, dodge or
+ * variance — the dice decide those. Snapshotted once per match.
+ */
+export async function diceHitProfile(
+  attacker: CharacterStats,
+  defender: CharacterStats,
+): Promise<{ hit: number; lifesteal: number }> {
+  await loadClassDamageConfig();
+  const config = await getCombatConfig();
+  const pa = attacker.passiveBonuses ?? emptyPassiveBonuses();
+  const pd = defender.passiveBonuses ?? emptyPassiveBonuses();
+  let raw = baseDamage(attacker) + pa.flatDamage;
+  raw *= 1 + pa.percentDamage / 100;
+  let dmg = reduceDamageByType(raw, defender, getAutoAttackDamageType(attacker.class), config);
+  dmg = applyClassReduction(dmg, defender.class, config);
+  if (pd.damageReduction > 0) dmg *= 1 - Math.min(pd.damageReduction, 50) / 100;
+  return {
+    hit: Math.max(config.MIN_DAMAGE, Math.round(dmg)),
+    lifesteal: Math.max(0, Math.min(pa.lifesteal, 50)),
+  };
+}
+
 // --- Main combat function ---
 
 /**
@@ -363,7 +468,16 @@ function resolveAttack(
   config: CombatConfigData,
   attackerZone?: string,
   defenderZone?: string,
-): { turn: Turn; newDefenderHp: number; healAmount: number } {
+  defenderOpened: boolean = false,
+): { turn: Turn; newDefenderHp: number; healAmount: number; counterDamage: number } {
+  // Combat v2: intrinsic zone bonuses are gone — the zone pair decides the
+  // outcome below, so the stance modifiers collapse to zero here.
+  const v2 = isZoneMatrixV2(config);
+  if (v2) {
+    stanceAtk = ZERO_STANCE;
+    stanceDef = ZERO_STANCE;
+  }
+
   // W3.D1 — CHA miss check FIRST (pre-hit whiff from intimidation presence).
   // Separate from dodge so we can tune CHA independently and surface "MISS" in UX.
   const missPct = chaMissChance(defenderChar.cha, config);
@@ -381,9 +495,11 @@ function resolveAttack(
         defenderHpAfter: defenderHp,
         targetZone: attackerZone,
         defendZone: defenderZone,
+        ...(v2 ? { outcome: 'miss' as const } : {}),
       },
       newDefenderHp: defenderHp,
       healAmount: 0,
+      counterDamage: 0,
     };
   }
 
@@ -402,9 +518,11 @@ function resolveAttack(
         defenderHpAfter: defenderHp,
         targetZone: attackerZone,
         defendZone: defenderZone,
+        ...(v2 ? { outcome: 'dodge' as const } : {}),
       },
       newDefenderHp: defenderHp,
       healAmount: 0,
+      counterDamage: 0,
     };
   }
 
@@ -443,6 +561,7 @@ function resolveAttack(
         },
         newDefenderHp: defenderHp,
         healAmount: selfHeal,
+        counterDamage: 0,
       };
     }
 
@@ -467,12 +586,36 @@ function resolveAttack(
 
   // Crit check — passive crit bonus applied
   const totalCrit = critChance(attackerChar, stanceAtk, config) + passivesAtk.flatCritChance;
-  const isCrit = rollPercent(rng) < Math.min(totalCrit, config.MAX_CRIT_CHANCE);
-  let dmg = isCrit ? withClass * config.CRIT_MULTIPLIER : withClass;
+  const critRoll = rollPercent(rng);
+  let isCrit = critRoll < Math.min(totalCrit, config.MAX_CRIT_CHANCE);
 
-  // Stance modifiers
-  dmg = dmg * (1 + stanceAtk.offense / 100);
-  dmg = dmg * (1 - stanceDef.defense / 100);
+  // Combat v2 — zone matrix (COMBAT_V2_DESIGN.md §3.1). Replaces the stance
+  // offense/defense step. `blocked` = attack went into the defender's block,
+  // unless legs opened the defender last round.
+  let zoneMult = 1;
+  let counterMult = 0;
+  let opensDefender = false;
+  let blocked = false;
+  if (v2) {
+    const atkZone: BodyZone = attackerZone === 'head' || attackerZone === 'legs' ? attackerZone : 'chest';
+    blocked = !defenderOpened && attackerZone != null && attackerZone === defenderZone;
+    const effect = zoneMatrixEffect(atkZone, blocked, zoneConfig(config));
+    zoneMult = effect.mult;
+    counterMult = effect.counterMult;
+    opensDefender = effect.opens;
+    if (atkZone === 'head') isCrit = effect.forcedCrit; // head never rolls: crit in the open, never into a block
+  }
+
+  let dmg = isCrit ? withClass * config.CRIT_MULTIPLIER : withClass;
+  if (v2) {
+    // Forced head crit replaces the multiplier instead of stacking on it.
+    if (isCrit && attackerZone === 'head') dmg = withClass * zoneMult;
+    else dmg = dmg * zoneMult;
+  } else {
+    // Stance modifiers (v1)
+    dmg = dmg * (1 + stanceAtk.offense / 100);
+    dmg = dmg * (1 - stanceDef.defense / 100);
+  }
 
   // W3.D1 — CHA damage reduction removed. CHA now triggers a pre-hit miss roll
   // above (see `chaMissChance`). Stat kept useful without stacking two effects.
@@ -501,6 +644,21 @@ function resolveAttack(
     healAmount = Math.floor(dmg * passivesAtk.lifesteal / 100);
   }
 
+  // Combat v2 — head into a block: the defender answers with a counter, sized
+  // from THEIR auto-attack against the attacker's resists (no crit, no skills),
+  // scaled by fatigue like everything else. Applied to the attacker's HP by the
+  // caller (it owns both HP pools); reported here so the log can show it.
+  let counterDamage = 0;
+  if (v2 && counterMult > 0) {
+    const counterRaw = baseDamage(defenderChar) * counterMult;
+    let counter = reduceDamageByType(counterRaw, attackerChar, getAutoAttackDamageType(defenderChar.class), config);
+    counter = applyClassReduction(counter, attackerChar.class, config);
+    if (turnNumber > BATTLE_FATIGUE.FATIGUE_START_TURN) {
+      counter *= 1 + ((turnNumber - BATTLE_FATIGUE.FATIGUE_START_TURN) * BATTLE_FATIGUE.FATIGUE_PERCENT_PER_TURN) / 100;
+    }
+    counterDamage = Math.max(Math.floor(counter), config.MIN_DAMAGE);
+  }
+
   return {
     turn: {
       turnNumber,
@@ -515,9 +673,17 @@ function resolveAttack(
       healAmount: healAmount > 0 ? healAmount : undefined,
       targetZone: attackerZone,
       defendZone: defenderZone,
+      ...(v2
+        ? {
+            outcome: (blocked ? 'blocked' : isCrit ? 'crit' : 'hit') as StrikeOutcome,
+            ...(counterDamage > 0 ? { counterDamage } : {}),
+            ...(opensDefender ? { opensDefender: true } : {}),
+          }
+        : {}),
     },
     newDefenderHp,
     healAmount,
+    counterDamage,
   };
 }
 
@@ -600,9 +766,61 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
     zoneSecond = zoneD;
   }
 
+  // Combat v2 — both sides play a zone POLICY every round (ghost / personality)
+  // instead of a stance that rotates on a timer. Policies see last round's
+  // exchange, so a turtle really does block where it was just hit.
+  const v2 = isZoneMatrixV2(config);
+  const policyFirst = first.zonePolicy ?? policyForCharacter(first.id, null);
+  const policySecond = second.zonePolicy ?? policyForCharacter(second.id, null);
+  let openedFirst = false;   // first's block does not apply this round (second landed legs)
+  let openedSecond = false;
+  let lastFirst: Turn | null = null;
+  let lastSecond: Turn | null = null;
+
   for (let t = 1; t <= config.MAX_TURNS; t++) {
-    // --- Mid-battle stance rotation (every 3 turns) ---
-    if (t > 1 && (t - 1) % STANCE_ROTATION_INTERVAL === 0) {
+    if (v2) {
+      const ctxFirst: ZoneRoundContext = {
+        roundIndex: t - 1,
+        myHpPct: hpFirst / maxHpFirst,
+        oppHpPct: hpSecond / maxHpSecond,
+        ...(lastFirst && lastSecond
+          ? {
+              last: {
+                myAttack: zoneFirst.attack, myBlock: zoneFirst.defense,
+                oppAttack: zoneSecond.attack, oppBlock: zoneSecond.defense,
+                myStrikeBlocked: lastFirst.outcome === 'blocked',
+                iTookCrit: lastSecond.isCrit,
+                iLandedCrit: lastFirst.isCrit,
+              },
+            }
+          : {}),
+      };
+      const ctxSecond: ZoneRoundContext = {
+        roundIndex: t - 1,
+        myHpPct: hpSecond / maxHpSecond,
+        oppHpPct: hpFirst / maxHpFirst,
+        ...(lastFirst && lastSecond
+          ? {
+              last: {
+                myAttack: zoneSecond.attack, myBlock: zoneSecond.defense,
+                oppAttack: zoneFirst.attack, oppBlock: zoneFirst.defense,
+                myStrikeBlocked: lastSecond.outcome === 'blocked',
+                iTookCrit: lastFirst.isCrit,
+                iLandedCrit: lastSecond.isCrit,
+              },
+            }
+          : {}),
+      };
+      const pickF = pickZones(policyFirst, ctxFirst, rng);
+      const pickS = pickZones(policySecond, ctxSecond, rng);
+      zoneFirst = { attack: pickF.attack, defense: pickF.block };
+      zoneSecond = { attack: pickS.attack, defense: pickS.block };
+      stanceFirst = ZERO_STANCE;
+      stanceSecond = ZERO_STANCE;
+    }
+
+    // --- Mid-battle stance rotation (every 3 turns, v1 only) ---
+    if (!v2 && t > 1 && (t - 1) % STANCE_ROTATION_INTERVAL === 0) {
       // Rotate zones: head→chest→legs→head
       const rotateZone = (z: BodyZone): BodyZone => {
         const idx = ZONE_CYCLE.indexOf(z);
@@ -620,6 +838,10 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
     // went first because of agi), skip its swing. Defensive guard — with
     // `str/agi = 0` the dummy currently becomes `second`, but we don't want the
     // rule to silently break if a future tuning pass gives dummies speed.
+    let openSecondNext = false;
+    let openFirstNext = false;
+    lastFirst = null;
+    lastSecond = null;
     if (!first.isPassiveTarget) {
       const result = resolveAttack(
         t, first, second, hpSecond,
@@ -629,17 +851,27 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
         config,
         zoneFirst.attack,
         zoneSecond.defense,
+        openedSecond,
       );
       turns.push(result.turn);
+      lastFirst = result.turn;
       hpSecond = result.newDefenderHp;
+      openSecondNext = result.turn.opensDefender === true;
 
       // Lifesteal heals the attacker
       if (result.healAmount > 0) {
         hpFirst = Math.min(hpFirst + result.healAmount, maxHpFirst);
       }
+      // v2: head into a block — the defender's counter lands on the attacker
+      if (result.counterDamage > 0) {
+        hpFirst = Math.max(hpFirst - result.counterDamage, 0);
+      }
 
       if (hpSecond <= 0) {
         return buildResult(first.id, second.id, turns, { [first.id]: hpFirst, [second.id]: 0 });
+      }
+      if (hpFirst <= 0) {
+        return buildResult(second.id, first.id, turns, { [first.id]: 0, [second.id]: hpSecond });
       }
     }
 
@@ -657,19 +889,31 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
         config,
         zoneSecond.attack,
         zoneFirst.defense,
+        openedFirst,
       );
       turns.push(result.turn);
+      lastSecond = result.turn;
       hpFirst = result.newDefenderHp;
+      openFirstNext = result.turn.opensDefender === true;
 
       // Lifesteal heals the attacker
       if (result.healAmount > 0) {
         hpSecond = Math.min(hpSecond + result.healAmount, maxHpSecond);
       }
+      if (result.counterDamage > 0) {
+        hpSecond = Math.max(hpSecond - result.counterDamage, 0);
+      }
 
       if (hpFirst <= 0) {
         return buildResult(second.id, first.id, turns, { [first.id]: 0, [second.id]: hpSecond });
       }
+      if (hpSecond <= 0) {
+        return buildResult(first.id, second.id, turns, { [first.id]: hpFirst, [second.id]: 0 });
+      }
     }
+
+    openedFirst = openFirstNext;
+    openedSecond = openSecondNext;
 
     // Tick cooldowns after each turn pair
     tickCooldowns(cooldownFirst);
@@ -726,12 +970,25 @@ export interface SingleStrikeInput {
    * stalling is worst. Defaults to 1 for callers that have no round concept.
    */
   turn?: number;
+  /**
+   * Combat v2 — the defender was opened by a legs hit last round: their block
+   * does not apply to this strike.
+   */
+  defenderOpened?: boolean;
+  /**
+   * Skill cooldowns for the ATTACKER, persisted by the caller across rounds
+   * (D4: before this, every strike started with a fresh state and the first
+   * equipped skill fired every round). Mutated in place when a skill fires.
+   */
+  cooldownState?: SkillCooldownState;
 }
 
 export interface SingleStrikeResult {
   turn: Turn;
   newDefenderHp: number;
   healAmount: number;
+  /** Combat v2 — damage the defender dealt back (head into block). Caller applies it to the attacker. */
+  counterDamage: number;
 }
 
 export async function resolveSingleStrike(input: SingleStrikeInput): Promise<SingleStrikeResult> {
@@ -751,9 +1008,10 @@ export async function resolveSingleStrike(input: SingleStrikeInput): Promise<Sin
   const passivesAtk = input.attacker.passiveBonuses ?? emptyPassiveBonuses();
   const passivesDef = input.defender.passiveBonuses ?? emptyPassiveBonuses();
 
-  // Fresh cooldown state per strike — skill reuse tracking lives on the client
-  // in v1. (v2 may persist per-match cooldowns in interactive_choices.)
-  const cooldownState: SkillCooldownState = {};
+  // Cooldowns: the caller (/pvp/strike) persists them per side per match and
+  // ticks them once per round. A caller without one gets the legacy
+  // fresh-state behaviour (used by tests and one-off previews only).
+  const cooldownState: SkillCooldownState = input.cooldownState ?? {};
 
   const startHp = Math.max(0, Math.floor(input.defenderHp));
 
@@ -771,5 +1029,6 @@ export async function resolveSingleStrike(input: SingleStrikeInput): Promise<Sin
     config,
     input.attackerZone,
     input.defenderZone,
+    input.defenderOpened === true,
   );
 }

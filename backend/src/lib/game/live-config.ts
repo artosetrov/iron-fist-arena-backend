@@ -10,7 +10,7 @@ import {
   COMBAT, ELO, PRESTIGE, BATTLE_PASS, SKILLS, PASSIVES,
   GEM_COSTS, INVENTORY, EXTRA_PVP, DROP_CHANCES, RARITY_DISTRIBUTION,
   UPGRADE_CHANCES, WIN_STREAK_BONUSES, DAILY_LOGIN_REWARDS, PVP_RANKS,
-  STAMINA_REFILL_DR, TRAINING_XP_DR, MATCHMAKING,
+  STAMINA_REFILL_DR, TRAINING_XP_DR, MATCHMAKING, ZONE_MATRIX, DICE,
   type DailyLoginRewardDef,
 } from './balance'
 
@@ -125,6 +125,16 @@ export async function getCombatConfig() {
     // W3.D2 — Rogue Execute finisher
     'combat.rogue_execute_hp_threshold': COMBAT.ROGUE_EXECUTE_HP_THRESHOLD,
     'combat.rogue_execute_damage_bonus': COMBAT.ROGUE_EXECUTE_DAMAGE_BONUS,
+    // Combat v2 — zone matrix (COMBAT_V2_DESIGN.md §3). Env `COMBAT_V2=true`
+    // is the deploy-time default; the game_config row wins when present so
+    // the admin can flip it live.
+    'combat.zone_matrix_v2': process.env.COMBAT_V2 === 'true',
+    'combat.zone.head_crit_mult': ZONE_MATRIX.HEAD_CRIT_MULT,
+    'combat.zone.head_blocked_mult': ZONE_MATRIX.HEAD_BLOCKED_MULT,
+    'combat.zone.head_counter_mult': ZONE_MATRIX.HEAD_COUNTER_MULT,
+    'combat.zone.chest_blocked_mult': ZONE_MATRIX.CHEST_BLOCKED_MULT,
+    'combat.zone.legs_open_mult': ZONE_MATRIX.LEGS_OPEN_MULT,
+    'combat.zone.legs_blocked_mult': ZONE_MATRIX.LEGS_BLOCKED_MULT,
   })
   return {
     MAX_TURNS: configs['combat.max_turns'] as number,
@@ -147,7 +157,30 @@ export async function getCombatConfig() {
     // W3.D2 — Rogue Execute finisher
     ROGUE_EXECUTE_HP_THRESHOLD: configs['combat.rogue_execute_hp_threshold'] as number,
     ROGUE_EXECUTE_DAMAGE_BONUS: configs['combat.rogue_execute_damage_bonus'] as number,
+    ZONE_MATRIX_V2: configs['combat.zone_matrix_v2'] === true || configs['combat.zone_matrix_v2'] === 'true',
+    ZONE: {
+      HEAD_CRIT_MULT: configs['combat.zone.head_crit_mult'] as number,
+      HEAD_BLOCKED_MULT: configs['combat.zone.head_blocked_mult'] as number,
+      HEAD_COUNTER_MULT: configs['combat.zone.head_counter_mult'] as number,
+      CHEST_BLOCKED_MULT: configs['combat.zone.chest_blocked_mult'] as number,
+      LEGS_OPEN_MULT: configs['combat.zone.legs_open_mult'] as number,
+      LEGS_BLOCKED_MULT: configs['combat.zone.legs_blocked_mult'] as number,
+    },
   }
+}
+
+// --- Dice combat ---
+// Every DICE constant is live-tunable as `dice.<snake_case>` (e.g. dice.damage_scale).
+export async function getDiceConfig(): Promise<{ -readonly [K in keyof typeof DICE]: number }> {
+  const keys = Object.keys(DICE) as Array<keyof typeof DICE>
+  const defaults = Object.fromEntries(keys.map((k) => [`dice.${k.toLowerCase()}`, DICE[k]]))
+  const configs = await getGameConfigs(defaults)
+  const out = {} as { -readonly [K in keyof typeof DICE]: number }
+  for (const k of keys) {
+    const v = Number(configs[`dice.${k.toLowerCase()}`])
+    out[k] = Number.isFinite(v) ? v : DICE[k]
+  }
+  return out
 }
 
 // --- ELO ---
