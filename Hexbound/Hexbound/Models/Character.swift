@@ -124,11 +124,15 @@ struct Character: Codable, Identifiable {
     }
 
     /// XP to finish the current level. Mirrors backend `xpToNextLevel`:
-    /// delta of the cumulative curve `100N + 20N²` → `120 + 40·level`.
-    /// (Was the cumulative value itself — ×18 too slow; AUDIT-2026-10-13 H6.)
+    /// delta of the cumulative curve `100N + 20N²`, times `xpCurveScale`
+    /// → `(120 + 40·level) × scale`. (Was the cumulative value itself — ×18
+    /// too slow; AUDIT-2026-10-13 H6.)
     var xpNeeded: Int { Character.xpToNextLevel(level) }
 
-    static func xpToNextLevel(_ level: Int) -> Int { 120 + 40 * level }
+    /// Mirrors backend `XP_CURVE_SCALE`. Change both or the XP bar lies.
+    static let xpCurveScale = 3
+
+    static func xpToNextLevel(_ level: Int) -> Int { (120 + 40 * level) * xpCurveScale }
 
     var xpPercentage: Double {
         guard let xp = experience else { return 0 }

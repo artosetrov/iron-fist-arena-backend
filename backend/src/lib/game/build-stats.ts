@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
 import { applyPrestigeBonus } from './progression'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
-import { getUpgradeStatBonus } from './item-balance'
+import { calculateDerivedStatsFromConfig, getUpgradeStatBonus } from './item-balance'
 import { calculateEffectiveItemPower, sumCoreEquipmentStats } from './item-stats'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
@@ -100,10 +100,14 @@ export async function calculateFullStats(
     totalStats[key] = await applyPrestigeBonus(withPercent[key], prestigeLevel)
   }
 
-  // Step 6: derive base HP/armor/MR
-  let maxHp = 80 + totalStats.vit * 5 + totalStats.end * 3
-  let armor = Math.floor(totalStats.end * 2 + totalStats.str * 0.5)
-  let magicResist = Math.floor(totalStats.wis * 2 + totalStats.int * 0.5)
+  // Step 6: derive base HP/armor/MR — from the same config the equipment
+  // pipeline reads (item_balance.hp_base / hp_per_vit / …). This used to be a
+  // hardcoded 80/5/3 copy, so an admin HP retune moved one pipeline and not
+  // the other.
+  const base = await calculateDerivedStatsFromConfig(totalStats)
+  let maxHp = base.maxHp
+  let armor = base.armor
+  let magicResist = base.magicResist
 
   // Step 7: add passive flat HP/armor/MR
   maxHp += passiveBonuses.flatHp

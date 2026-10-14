@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
-import { GEM_PACKS, getGemPack } from '@/lib/game/gem-packs'
+import { GEM_PACKS, GEM_PACK_DAILY_PURCHASE_CAP, getGemPack } from '@/lib/game/gem-packs'
+import { currentDailyValue } from '@/lib/game/daily-counter'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
@@ -74,13 +75,25 @@ export async function POST(req: NextRequest) {
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
       if (character.level < pack!.requiredLevel) throw new Error('LEVEL_LOCKED')
 
-      // Lock user row, verify balance, then update atomically
-      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
-        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+      // Lock user row, verify balance and the daily cap, then update atomically.
+      // The cap is per account and lives on the user row, inside the same
+      // lock as the gold check, so two parallel purchases cannot both pass.
+      const [userRow] = await tx.$queryRawUnsafe<
+        Array<{ id: string; gold: number; gem_pack_purchases_today: number; gem_pack_purchase_date: Date | null }>
+      >(
+        `SELECT id, gold, gem_pack_purchases_today, gem_pack_purchase_date FROM users WHERE id = $1 FOR UPDATE`,
         user.id
       )
 
       if (!userRow) throw new Error('USER_NOT_FOUND')
+
+      const now = new Date()
+      const boughtToday = currentDailyValue(
+        userRow.gem_pack_purchases_today ?? 0,
+        userRow.gem_pack_purchase_date,
+        now,
+      )
+      if (boughtToday >= GEM_PACK_DAILY_PURCHASE_CAP) throw new Error('DAILY_CAP')
       if (userRow.gold < goldCost) throw new Error('NOT_ENOUGH_GOLD')
 
       const updatedUser = await tx.user.update({
@@ -88,8 +101,10 @@ export async function POST(req: NextRequest) {
         data: {
           gold: { decrement: goldCost },
           gems: { increment: gemsToAdd },
+          gemPackPurchasesToday: boughtToday + 1,
+          gemPackPurchaseDate: now,
         },
-        select: { gold: true, gems: true },
+        select: { gold: true, gems: true, gemPackPurchasesToday: true },
       })
 
       return updatedUser
@@ -110,6 +125,8 @@ export async function POST(req: NextRequest) {
       goldSpent: goldCost,
       gemsReceived: gemsToAdd,
       catalogId: pack.catalogId,
+      packsBoughtToday: result.gemPackPurchasesToday,
+      packsDailyCap: GEM_PACK_DAILY_PURCHASE_CAP,
     })
   } catch (error) {
     if (error instanceof Error) {
@@ -117,6 +134,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN')
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'DAILY_CAP')
+        return NextResponse.json(
+          { error: `You can buy ${GEM_PACK_DAILY_PURCHASE_CAP} gem pack per day.`, packsDailyCap: GEM_PACK_DAILY_PURCHASE_CAP },
+          { status: 429 }
+        )
       if (error.message === 'LEVEL_LOCKED')
         return NextResponse.json(
           { error: 'Your level is too low for this pack' },

@@ -296,7 +296,9 @@ export function simulateDaySinks(a: Archetype): number {
 
   // Upgrade attempts at avgUpgradePlusLevel — exponential cost, attempts > successes.
   // We count ALL attempted upgrades (failed attempts still burn gold).
-  gold += a.upgradeAttemptsPerDay * upgradeCost(a.avgUpgradePlusLevel)
+  // `avgUpgradePlusLevel` is the CURRENT plus level; an attempt pays for the
+  // next one (same convention as the route: cost = base × (current+1)^exp).
+  gold += a.upgradeAttemptsPerDay * upgradeCost(a.avgUpgradePlusLevel + 1)
 
   // Consumables
   gold += a.staminaPotionsSmallPerDay * SIM_CONSUMABLE_PRICES.stamina_potion_small

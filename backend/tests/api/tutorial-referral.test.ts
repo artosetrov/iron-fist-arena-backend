@@ -140,6 +140,7 @@ describe('/api/tutorial/referral', () => {
         .mockResolvedValueOnce([{
           id: 'referrer-1',
           referral_code: 'FRIEND88',
+          user_id: 'user-2',
         }]),
       character: {
         count: vi.fn(async () => 1),
@@ -193,5 +194,40 @@ describe('/api/tutorial/referral', () => {
       referredByCode: 'FRIEND88',
       referredByCharacterId: 'referrer-1',
     })
+  })
+
+  // 2026-10-14 balance audit: the own-code guard compared character ids, so a
+  // second character on the same account could enter the first one's code.
+  it('POST refuses a code that belongs to another character on the same account', async () => {
+    const tx = {
+      $queryRawUnsafe: vi.fn()
+        .mockResolvedValueOnce([{
+          id: 'char-2',
+          user_id: 'user-1',
+          referred_by: null,
+          referral_code: 'ALT00002',
+        }])
+        .mockResolvedValueOnce([{
+          id: 'char-1',
+          referral_code: 'SELF1234',
+          user_id: 'user-1',
+        }]),
+      character: { count: vi.fn(), update: vi.fn() },
+      user: { update: vi.fn() },
+    }
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx),
+    )
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/tutorial/referral', {
+        method: 'POST',
+        body: JSON.stringify({ character_id: 'char-2', referral_code: 'SELF1234' }),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    expect(tx.character.update).not.toHaveBeenCalled()
+    expect(tx.user.update).not.toHaveBeenCalled()
   })
 })

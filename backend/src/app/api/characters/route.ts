@@ -326,9 +326,14 @@ export async function POST(req: NextRequest) {
     if (avatar) {
       const skin = await prisma.appearanceSkin.findUnique({
         where: { skinKey: avatar },
-        select: { skinKey: true, origin: true, gender: true },
+        select: { skinKey: true, origin: true, gender: true, isDefault: true, priceGold: true, priceGems: true },
       })
-      if (skin && skin.origin === origin && skin.gender === charGender) {
+      // Only free skins at creation. The price check lives in the appearance
+      // editor; this path used to accept any skin of the right origin and
+      // gender, so a new character could start in a 400-gem skin that an
+      // existing character pays for (2026-10-14 balance audit).
+      const isFree = skin ? (skin.isDefault || (skin.priceGold <= 0 && skin.priceGems <= 0)) : false
+      if (skin && skin.origin === origin && skin.gender === charGender && isFree) {
         charAvatar = skin.skinKey
       }
     }

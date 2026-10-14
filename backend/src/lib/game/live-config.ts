@@ -62,6 +62,7 @@ export async function getGoldRewardsConfig() {
     'gold_rewards.training_win': GOLD_REWARDS.TRAINING_WIN,
     'gold_rewards.training_loss': GOLD_REWARDS.TRAINING_LOSS,
     'gold_rewards.revenge_multiplier': GOLD_REWARDS.REVENGE_MULTIPLIER,
+    'gold_rewards.defender_reward_share': GOLD_REWARDS.DEFENDER_REWARD_SHARE,
   })
   return {
     PVP_WIN_BASE: configs['gold_rewards.pvp_win_base'] as number,
@@ -69,6 +70,7 @@ export async function getGoldRewardsConfig() {
     TRAINING_WIN: configs['gold_rewards.training_win'] as number,
     TRAINING_LOSS: configs['gold_rewards.training_loss'] as number,
     REVENGE_MULTIPLIER: configs['gold_rewards.revenge_multiplier'] as number,
+    DEFENDER_REWARD_SHARE: configs['gold_rewards.defender_reward_share'] as number,
   }
 }
 
@@ -112,6 +114,7 @@ export async function getCombatConfig() {
     'combat.tank_damage_reduction': COMBAT.TANK_DAMAGE_REDUCTION,
     'combat.damage_variance': COMBAT.DAMAGE_VARIANCE,
     'combat.poison_armor_penetration': COMBAT.POISON_ARMOR_PENETRATION,
+    'combat.max_resist_reduction': COMBAT.MAX_RESIST_REDUCTION,
     'combat.crit_per_luk': COMBAT.CRIT_PER_LUK,
     'combat.crit_per_agi': COMBAT.CRIT_PER_AGI,
     'combat.dodge_per_agi': COMBAT.DODGE_PER_AGI,
@@ -133,6 +136,7 @@ export async function getCombatConfig() {
     TANK_DAMAGE_REDUCTION: configs['combat.tank_damage_reduction'] as number,
     DAMAGE_VARIANCE: configs['combat.damage_variance'] as number,
     POISON_ARMOR_PENETRATION: configs['combat.poison_armor_penetration'] as number,
+    MAX_RESIST_REDUCTION: configs['combat.max_resist_reduction'] as number,
     CRIT_PER_LUK: configs['combat.crit_per_luk'] as number,
     CRIT_PER_AGI: configs['combat.crit_per_agi'] as number,
     DODGE_PER_AGI: configs['combat.dodge_per_agi'] as number,

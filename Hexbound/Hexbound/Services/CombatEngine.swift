@@ -51,6 +51,11 @@ struct CombatConfig {
     // W3.D2 — Rogue Execute finisher
     let rogueExecuteHpThreshold: Double
     let rogueExecuteDamageBonus: Double
+    /// Ceiling on the share of a hit armor/MR can absorb. Mirrors
+    /// `COMBAT.MAX_RESIST_REDUCTION` (2026-10-14): uncapped, late-game
+    /// fights ran to the turn limit. Must match the server or the local
+    /// replay shows a different winner than the one the server pays.
+    let maxResistReduction: Double
 
     /// Default config matching backend balance.ts
     static let `default` = CombatConfig(
@@ -70,7 +75,8 @@ struct CombatConfig {
         chaMissPerPoint: 0.2,
         chaMissCap: 20,
         rogueExecuteHpThreshold: 0.35,
-        rogueExecuteDamageBonus: 0.15
+        rogueExecuteDamageBonus: 0.15,
+        maxResistReduction: 0.6
     )
 
     init(maxTurns: Int, minDamage: Int, critMultiplier: Double, maxCritChance: Double,
@@ -78,7 +84,8 @@ struct CombatConfig {
          damageVariance: Double, poisonArmorPenetration: Double,
          critPerLuk: Double, critPerAgi: Double, dodgePerAgi: Double, dodgePerLuk: Double,
          chaMissPerPoint: Double, chaMissCap: Double,
-         rogueExecuteHpThreshold: Double, rogueExecuteDamageBonus: Double) {
+         rogueExecuteHpThreshold: Double, rogueExecuteDamageBonus: Double,
+         maxResistReduction: Double = 0.6) {
         self.maxTurns = maxTurns
         self.minDamage = minDamage
         self.critMultiplier = critMultiplier
@@ -96,6 +103,7 @@ struct CombatConfig {
         self.chaMissCap = chaMissCap
         self.rogueExecuteHpThreshold = rogueExecuteHpThreshold
         self.rogueExecuteDamageBonus = rogueExecuteDamageBonus
+        self.maxResistReduction = maxResistReduction
     }
 }
 
@@ -598,15 +606,21 @@ final class CombatEngine {
         }
     }
 
+    /// Mirrors backend `resistMultiplier`: `100/(100+resist)`, floored at
+    /// `1 − maxResistReduction` so armor can never absorb more than the cap.
+    private func resistMultiplier(_ resist: Double) -> Double {
+        let floorValue = 1 - min(1, max(0, config.maxResistReduction))
+        return max(floorValue, 100 / (100 + max(0, resist)))
+    }
+
     private func reduceDamageByType(raw: Double, defender: FighterStats, damageType: String) -> Double {
         if damageType == "true_damage" { return raw }
         if damageType == "poison" {
             let effectiveArmor = Double(max(0, defender.armor)) * (1 - config.poisonArmorPenetration)
-            return raw * (100 / (100 + effectiveArmor))
+            return raw * resistMultiplier(effectiveArmor)
         }
         let resist = damageType == "magical" ? defender.magicResist : defender.armor
-        let effectiveResist = Double(max(0, resist))
-        return raw * (100 / (100 + effectiveResist))
+        return raw * resistMultiplier(Double(max(0, resist)))
     }
 
     private func applyClassReduction(damage: Double, defenderClass: String) -> Double {

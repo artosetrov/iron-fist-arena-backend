@@ -107,8 +107,8 @@ VALUES
   (gen_random_uuid(), 'warrior.key.headsman',       'Headsman',     '+15% Damage (crits on <40% HP)',          'percent_damage'::"PassiveBonusType",     NULL, 15, 3,  320, 320, 3, 'warrior'::"CharacterClass", FALSE, TRUE, FALSE, NULL, NULL, NULL), -- PROXY: 1.8× crit vs low HP
 
   -- Ultimates (tier 4, single-rank, cost 5, isActivatable) ------------------
-  (gen_random_uuid(), 'warrior.ult.unleash',        'Unleash the Beast', '+25% Damage (also +10% damage taken). Active: Rampage.', 'percent_damage'::"PassiveBonusType", NULL, 25, 4, 80, 400, 5, 'warrior'::"CharacterClass", FALSE, TRUE, TRUE,  'burst_damage'::"TalentSlotAction",     90, 60),
-  (gen_random_uuid(), 'warrior.ult.champion',       'Champion''s Resolve','+20% Armor. Active: Guardian Oath.',               'percent_armor'::"PassiveBonusType",  NULL, 20, 4, 200, 400, 5, 'warrior'::"CharacterClass", FALSE, TRUE, TRUE,  'shield_self'::"TalentSlotAction",      75, 50);
+  (gen_random_uuid(), 'warrior.ult.unleash',        'Unleash the Beast', '+25% Damage (also +10% damage taken). Active: Rampage.', 'percent_damage'::"PassiveBonusType", NULL, 25, 4, 80, 400, 5, 'warrior'::"CharacterClass", FALSE, TRUE, TRUE,  'burst_damage'::"TalentSlotAction",     90, 0.6),
+  (gen_random_uuid(), 'warrior.ult.champion',       'Champion''s Resolve','+20% Armor. Active: Guardian Oath.',               'percent_armor'::"PassiveBonusType",  NULL, 20, 4, 200, 400, 5, 'warrior'::"CharacterClass", FALSE, TRUE, TRUE,  'shield_self'::"TalentSlotAction",      75, 0.5);
   -- NOTE: Unleash's "+10% damage taken" drawback + Champion's "+20% magic resist"
   -- second bonus are NOT applied here (single-bonus-per-node schema). Track as
   -- Phase 1.5 follow-up; see seed header §4.

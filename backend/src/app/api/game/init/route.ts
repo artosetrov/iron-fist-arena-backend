@@ -19,7 +19,7 @@ import {
   getBattlePassConfig,
   getGemCostsConfig,
 } from '@/lib/game/live-config'
-import { getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { freePvpPerDay, getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { resolveAllFlags } from '@/lib/game/feature-flags'
 import { grantDailyGemCard } from '@/lib/game/gem-card'
 import { QuestType } from '@prisma/client'
@@ -303,7 +303,10 @@ export async function GET(req: NextRequest) {
       hpRegenPercent: hpRegenConfig.REGEN_RATE,
       hpRegenMinutes: hpRegenConfig.REGEN_INTERVAL_MINUTES,
       pvpStaminaCost: staminaConfig.PVP_COST,
-      freePvpPerDay: staminaConfig.FREE_PVP_PER_DAY,
+      // Premium accounts get PREMIUM_FREE_PVP_PER_DAY; the client reads this
+      // for the "x of y free" counter and its stamina gate, so it has to be
+      // the account's real allowance, not the base constant.
+      freePvpPerDay: freePvpPerDay(userRecord, staminaConfig.FREE_PVP_PER_DAY),
       upgradeChances: upgradeChancesConfig,
       upgradeStatBonusPerLevel: upgradeStatBonus,
       maxLevel: prestigeConfig.MAX_LEVEL,

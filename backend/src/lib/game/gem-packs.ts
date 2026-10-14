@@ -43,6 +43,17 @@ export const GEM_PACKS: Record<GemPackCatalogId, GemPackDef> = {
   },
 }
 
+/**
+ * Pack purchases allowed per account per UTC day.
+ *
+ * With no limit, gem_pack_large converted gold to gems at 30:1 forever, and
+ * since gold runs a multi-thousand daily surplus every gem price in the game
+ * collapsed into a day or two of ambient play — the 700-gem Battle Pass was
+ * 2.3 days. One pack a day keeps the conversion as a small F2P supplement
+ * (at most +100 gems/day) instead of a second wallet.
+ */
+export const GEM_PACK_DAILY_PURCHASE_CAP = 1
+
 export function isGemPackCatalogId(id: string): id is GemPackCatalogId {
   return id === 'gem_pack_small' || id === 'gem_pack_medium' || id === 'gem_pack_large'
 }

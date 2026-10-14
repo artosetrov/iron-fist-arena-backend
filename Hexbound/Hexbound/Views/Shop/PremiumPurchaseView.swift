@@ -40,33 +40,26 @@ struct PremiumPurchaseView: View {
     /// price claim, and App Store review reads the displayed price.
     private var price: String { storePrice ?? "—" }
 
+    // Only benefits the server actually grants. Until 2026-10-14 this list
+    // promised nine; the backend implemented two. A paid auto-renewing
+    // subscription whose purchase screen lists benefits it does not deliver is
+    // a Guideline 3.1.2 problem as well as a broken promise — add a row here
+    // only once the corresponding server code exists.
     private let features: [PremiumFeature] = [
-        .init(icon: "bolt.fill", title: "+20% XP from all sources",
-              description: "Level up faster — PvP, dungeons, training, and quests all give 20% more experience.",
+        .init(icon: "bolt.fill", title: "+20% XP from arena fights",
+              description: "Every PvP win and loss grants 20% more experience.",
               highlight: true),
-        .init(icon: "icon-gold", title: "+10% Gold from all sources",
-              description: "Earn more gold from battles, dungeons, daily quests, and Gold Mine.",
+        .init(icon: "icon-gold", title: "+10% Gold from battles",
+              description: "Arena fights, dungeons, Dungeon Rush and duels all pay 10% more gold.",
               highlight: true, assetIcon: true),
         .init(icon: "shield.lefthalf.filled", title: "5 Free PvP fights per day",
               description: "Two extra stamina-free arena fights daily (up from 3).",
               highlight: false),
-        .init(icon: "clock.arrow.circlepath", title: "Faster stamina regeneration",
-              description: "Stamina regens every 6 minutes instead of 8. Get back into battle sooner.",
-              highlight: true),
-        .init(icon: "paintbrush.pointed.fill", title: "Exclusive premium cosmetics",
-              description: "Access unique frames, titles, and visual effects only for Premium players.",
-              highlight: false),
-        .init(icon: "person.crop.rectangle.stack.fill", title: "Priority matchmaking",
-              description: "Shorter queue times when finding PvP opponents.",
-              highlight: false),
-        .init(icon: "star.circle.fill", title: "Premium badge on profile",
-              description: "Show off your Premium status with a golden crown next to your name.",
-              highlight: false),
         .init(icon: "icon-gems", title: "300 gems every month",
               description: "Each renewal credits 300 gems to your account on top of every other benefit.",
               highlight: true, assetIcon: true),
-        .init(icon: "gift.fill", title: "Daily bonus reward",
-              description: "Extra 50 gold added to your daily login rewards every day.",
+        .init(icon: "gift.fill", title: "+25 gems with your daily login",
+              description: "Claim 25 extra gems every day you log in while your pass is active.",
               highlight: false),
     ]
 
@@ -233,13 +226,11 @@ struct PremiumPurchaseView: View {
                 .background(DarkFantasyTheme.bgTertiary)
 
                 // Comparison rows
-                ComparisonRow(label: "XP Bonus", free: "0%", premium: "+20%")
-                ComparisonRow(label: "Gold Bonus", free: "0%", premium: "+10%")
+                ComparisonRow(label: "Arena XP", free: "0%", premium: "+20%")
+                ComparisonRow(label: "Battle Gold", free: "0%", premium: "+10%")
                 ComparisonRow(label: "Monthly Gems", free: "0", premium: "300")
                 ComparisonRow(label: "Free PvP/day", free: "3", premium: "5")
-                ComparisonRow(label: "Stamina Regen", free: "8 min", premium: "6 min")
-                ComparisonRow(label: "Cosmetics", free: "Basic", premium: "Exclusive")
-                ComparisonRow(label: "Daily Bonus", free: "—", premium: "+50 Gold")
+                ComparisonRow(label: "Daily Login Gems", free: "—", premium: "+25")
             }
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
             .overlay(

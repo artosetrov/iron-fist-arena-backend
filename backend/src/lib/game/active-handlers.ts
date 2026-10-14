@@ -17,7 +17,19 @@
  *   • All magnitude inputs treated as fractions (0.5 == 50 %), and a negative
  *     magnitude is treated as 0 to prevent stat-flip exploits if a balance
  *     mistake ever ships a signed value through the seeds.
+ *   • Magnitudes are also clamped at 1. The warrior v2 seed shipped its two
+ *     ultimates as whole percentages (60 and 50) where every other class
+ *     seeds fractions; with only the lower clamp that was a ×61 strike and a
+ *     hit reduced to 0 — a one-shot and total immunity, once per match, for
+ *     five talent points (2026-10-14 balance audit). `clampFraction` is the
+ *     single guard for both directions.
  */
+
+/** Fold any seeded magnitude into [0, 1]. See the module header. */
+export function clampFraction(magnitude: number): number {
+  if (!Number.isFinite(magnitude)) return 0
+  return Math.min(1, Math.max(0, magnitude))
+}
 
 /**
  * `burst_damage` and its 1v1 alias `aoe_damage` (D-3 of SKILL_TREE_DESIGN_V2 §8):
@@ -25,7 +37,7 @@
  * a 60 % bonus on top of the existing roll.
  */
 export function applyBurstDamage(baseDamage: number, magnitude: number): number {
-  return Math.round(baseDamage * (1 + Math.max(0, magnitude)))
+  return Math.round(baseDamage * (1 + clampFraction(magnitude)))
 }
 
 /**
@@ -41,8 +53,7 @@ export function applyBurstDamage(baseDamage: number, magnitude: number): number 
  * regression in `tests/lib/active-handlers.test.ts` 2026-04-29.
  */
 export function applyShield(incomingDamage: number, magnitude: number): number {
-  const safeMag = Math.max(0, magnitude)
-  const reduced = Math.round(incomingDamage * Math.max(0, 1 - safeMag))
+  const reduced = Math.round(incomingDamage * (1 - clampFraction(magnitude)))
   return Math.max(0, reduced)
 }
 
@@ -53,7 +64,7 @@ export function applyShield(incomingDamage: number, magnitude: number): number {
  * unsigned amount to add.
  */
 export function healAmountFromActive(maxHp: number, magnitude: number): number {
-  return Math.max(0, Math.round(maxHp * Math.max(0, magnitude)))
+  return Math.max(0, Math.round(maxHp * clampFraction(magnitude)))
 }
 
 /**
@@ -68,5 +79,5 @@ export function healAmountFromActive(maxHp: number, magnitude: number): number {
 export function shouldExecute(currentHp: number, maxHp: number, magnitude: number): boolean {
   if (maxHp <= 0) return false
   const pct = currentHp / maxHp
-  return pct > 0 && pct <= Math.max(0, magnitude)
+  return pct > 0 && pct <= clampFraction(magnitude)
 }

@@ -29,7 +29,7 @@ import { cacheDeletePrefix } from '@/lib/cache'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { createBattleResultMail } from '@/lib/game/battle-mail'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
-import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { freePvpPerDay, goldBonusMultiplier, xpBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/bot-ticket'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
@@ -148,15 +148,17 @@ export async function POST(req: NextRequest) {
       return selfFarmResponse()
     }
 
+    const freePvpAllowance = freePvpPerDay(attacker.user, STAMINA.FREE_PVP_PER_DAY)
+
     // Stamina pre-check (fast early-exit) — authoritative check happens inside transaction with row lock
-    if (!isRevenge) {
+    {
       const staminaResultPre = await calculateCurrentStamina(
         attacker.currentStamina,
         attacker.maxStamina,
         attacker.lastStaminaUpdate ?? new Date()
       )
       const freePvpUsedPre = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
-      const hasFreePvpPre = freePvpUsedPre < STAMINA.FREE_PVP_PER_DAY
+      const hasFreePvpPre = isRevenge ? false : freePvpUsedPre < freePvpAllowance
       if (!hasFreePvpPre && staminaResultPre.stamina < STAMINA.PVP_COST) {
         return NextResponse.json(
           { error: 'Not enough stamina', currentStamina: staminaResultPre.stamina, required: STAMINA.PVP_COST },
@@ -167,10 +169,23 @@ export async function POST(req: NextRequest) {
 
     // Server re-runs combat with the SAME seed for verification
     await initCombatConfig()
-    const [attackerStats, defenderStats] = await Promise.all([
+    const [attackerStats, defenderStats, ticketSnapshot] = await Promise.all([
       loadCombatCharacter(attacker.id),
       loadCombatCharacter(defender.id),
+      prisma.pvpBattleTicket.findUnique({
+        where: { id: battle_ticket_id },
+        select: { attackerStance: true },
+      }),
     ])
+
+    // Fight with the stance the ticket was issued under. /prepare hands the
+    // attacker the opponent's stance for the local replay; without this, the
+    // attacker could switch to the counter-stance between prepare and resolve
+    // and the server would honour it (2026-10-14 audit, ~87% win rate at
+    // equal gear). The ticket is verified again under lock below.
+    if (ticketSnapshot?.attackerStance && typeof ticketSnapshot.attackerStance === 'object') {
+      attackerStats.combatStance = ticketSnapshot.attackerStance as Record<string, unknown>
+    }
 
     const combatResult = await runCombat(attackerStats, defenderStats, battle_seed)
     const attackerWon = combatResult.winnerId === attacker.id
@@ -224,6 +239,7 @@ export async function POST(req: NextRequest) {
     // W3.D5 — Premium Forever +10% gold (applied LAST so it doesn't compound
     // with the CHA cap established in W3.D3 — protects sink ratio).
     goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+    xpReward = Math.floor(xpReward * xpBonusMultiplier(attacker.user))
 
     const now = new Date()
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
@@ -259,8 +275,8 @@ export async function POST(req: NextRequest) {
 
     // Build defender update
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
-    const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
-    const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
+    const defenderGoldReward = Math.floor((attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
+    const defenderXpReward = Math.floor((attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
     const defenderUpdate: Record<string, unknown> = {
       currentHp: defenderFinalHp,
       lastHpUpdate: now,
@@ -338,10 +354,16 @@ export async function POST(req: NextRequest) {
       )
       const lockedCurrentStamina = lockedStaminaResult.stamina
       const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
-      const lockedHasFreePvp = isRevenge ? true : lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
-      const lockedStaminaCost = isRevenge ? 0 : (lockedHasFreePvp ? 0 : STAMINA.PVP_COST)
+      // Revenge costs stamina like any other fight and never uses a free slot.
+      // It used to charge 0 here while `pvp/prepare` demanded 10 to issue the
+      // ticket and `pvp/revenge/[id]` charged 10 — three answers to one
+      // question. At 0 cost with the ×1.5 payout and a revenge entry minted on
+      // every loss, being attacked was the best gold-per-stamina in the game
+      // (2026-10-14 balance audit).
+      const lockedHasFreePvp = isRevenge ? false : lockedFreePvpUsed < freePvpAllowance
+      const lockedStaminaCost = lockedHasFreePvp ? 0 : STAMINA.PVP_COST
 
-      if (!isRevenge && !lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {
+      if (!lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {
         throw new Error('NOT_ENOUGH_STAMINA')
       }
 
@@ -667,6 +689,7 @@ async function resolveBotFight(
 
   // W3.D5 — Premium Forever +10% gold (applied LAST — see main resolve path)
   goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+  xpReward = Math.floor(xpReward * xpBonusMultiplier(attacker.user))
 
   const now = new Date()
   // Bot fights give minimal ELO change to the player (calibration still counts)
@@ -722,7 +745,7 @@ async function resolveBotFight(
     )
     const lockedCurrentStamina = lockedStaminaResult.stamina
     const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
-    const lockedHasFreePvp = lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
+    const lockedHasFreePvp = lockedFreePvpUsed < freePvpPerDay(attacker.user, STAMINA.FREE_PVP_PER_DAY)
     const lockedStaminaCost = lockedHasFreePvp ? 0 : STAMINA.PVP_COST
 
     if (!lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {

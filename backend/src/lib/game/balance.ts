@@ -129,8 +129,23 @@ export const MONTHLY_GEM_CARD = {
 
 // --- XP ---
 /**
- * Cumulative XP threshold for a level: `100N + 20N²` (BALANCE_CONSTANTS.md
- * "XP Formula"). Level 50 = 55,000 total.
+ * Scale on the whole level curve. ONE knob, mirrored in iOS
+ * `Character.xpCurveScale` — change both or the XP bar lies.
+ *
+ * Why 3 (2026-10-14 balance audit): with the design curve alone (55k total)
+ * and PvP XP level-scaled at +4%/level on top, a full-stamina player hit L50
+ * on day 12 — day 4 with the legal four gem refills — under a 90-day Battle
+ * Pass season, with nine of ten buildings open by day 2. ×3 puts L50 near
+ * day 35 without touching the reward side. It also makes the empty level
+ * bands (16–19, 22–24, 26–29, …) three times longer in wall-clock, so it is
+ * meant to ship together with content in those bands — skill unlocks and
+ * items at itemLevel 41–50 — not instead of it.
+ */
+export const XP_CURVE_SCALE = 3;
+
+/**
+ * Cumulative XP threshold for a level: `(100N + 20N²) × XP_CURVE_SCALE`
+ * (BALANCE_CONSTANTS.md "XP Formula", scaled). Level 50 = 165,000 total.
  *
  * NOT the per-level requirement. `checkLevelUp` resets `currentXp` on every
  * level, so it must use `xpToNextLevel` below. Feeding this cumulative value
@@ -138,13 +153,13 @@ export const MONTHLY_GEM_CARD = {
  * "XP curve" item open since the April balance audit (AUDIT-2026-10-13 H6).
  */
 export function xpForLevel(level: number): number {
-  return 100 * level + 20 * level * level;
+  return (100 * level + 20 * level * level) * XP_CURVE_SCALE;
 }
 
 /**
  * XP needed to finish `level` (reach `level + 1`) when XP resets per level.
- * `xpForLevel(level + 1) - xpForLevel(level)` = `120 + 40·level`.
- * L1→2 = 160, L10→11 = 520, L49→50 = 2,080; sum over 1..49 = 54,880.
+ * `xpForLevel(level + 1) - xpForLevel(level)` = `(120 + 40·level) × scale`.
+ * At scale 3: L1→2 = 480, L10→11 = 1,560, L49→50 = 6,240; sum 1..49 = 164,640.
  * iOS mirrors this in `Character.xpNeeded` — keep both in sync.
  */
 export function xpToNextLevel(level: number): number {
@@ -158,6 +173,12 @@ export const GOLD_REWARDS = {
   TRAINING_WIN: 30,           // was 50 — training = practice, not income
   TRAINING_LOSS: 10,          // was 20
   REVENGE_MULTIPLIER: 1.5,
+  // Share of the base paid to the DEFENDER of an incoming attack. They spent
+  // no stamina, made no choice and took no gear wear; at a full share (the
+  // state until 2026-10-14) every fight minted gold on two accounts and an
+  // active player earned ~2 100/day for being attacked. One third keeps the
+  // "your castle held" moment without a second income stream.
+  DEFENDER_REWARD_SHARE: 0.34,
 } as const;
 
 // --- XP rewards ---
@@ -395,6 +416,17 @@ export const COMBAT = {
   TANK_DAMAGE_REDUCTION: 0.85,  // tanks take 15% less damage
   DAMAGE_VARIANCE: 0.10,        // ±10% damage variance
   POISON_ARMOR_PENETRATION: 0.3, // poison ignores 30% of armor (was 50%)
+  // 2026-10-14 balance audit. Armor/MR reduce damage by 100/(100+resist) with
+  // no ceiling, while damage is linear in stats — so from L1 to L50 damage grew
+  // ×28 and effective HP ×69. By L25, 29% of mirror matches hit the 15-turn
+  // cap; at L50 essentially all of them did, decided by an HP% comparison.
+  // Capping the reduction keeps late-game armor meaningful without letting it
+  // outrun damage forever. Swept with tests/lib/combat-ttk.test.ts on the
+  // real engine: 0.75 still timed out 40% of L50 mirrors; 0.6 ends L25 and
+  // L50 mirrors in ~10 rounds with the cap essentially never reached, and
+  // leaves armor below ~150 (around L15) untouched. 0.6 = at most 60% of a
+  // hit absorbed.
+  MAX_RESIST_REDUCTION: 0.6,
   // Crit/dodge formula coefficients (W3.D2 partial restore to ease AGI/Rogue pressure)
   CRIT_PER_LUK: 0.6,            // W3.D2 was 0.7 — minor LUK concession to AGI
   CRIT_PER_AGI: 0.2,            // W3.D2 was 0.15 — partial restore toward original 0.3
@@ -571,15 +603,22 @@ export function repairCost(itemLevel: number, rarity: string): number {
   return Math.floor((REPAIR_COSTS.BASE_COST + itemLevel * REPAIR_COSTS.PER_LEVEL) * mult);
 }
 
-// --- Equipment Upgrade Costs (Economy v2 — exponential to create endgame gold sink) ---
+// --- Equipment Upgrade Costs (Economy v2 — power-law endgame gold sink) ---
+//
+// Mirrors the LIVE route formula in item-balance.ts `getUpgradeCost`
+// ('exponential' mode): cost to reach +N = BASE × N^EXPONENT. This file used
+// to say 150 × 1.4^N (a true exponential, ~10.5k for +1..+10) while the route
+// charged 150 × N^1.4 (~17.6k) — and the economy simulator imports THIS one,
+// so it under-estimated the sink by ~40% (2026-10-14 balance audit). Same
+// numbers as the admin seed; if you change one, change all three.
 export const UPGRADE_COSTS = {
   BASE: 150,
   EXPONENT: 1.4,
 } as const;
 
-/** Calculate gold cost for upgrading to +N. Exponential: 150 × 1.4^N */
+/** Gold cost for upgrading to +N: 150 × N^1.4 (same curve as the live route). */
 export function upgradeCost(plusLevel: number): number {
-  return Math.floor(UPGRADE_COSTS.BASE * Math.pow(UPGRADE_COSTS.EXPONENT, plusLevel));
+  return Math.round(UPGRADE_COSTS.BASE * Math.pow(plusLevel, UPGRADE_COSTS.EXPONENT));
 }
 
 // --- Active Skills ---

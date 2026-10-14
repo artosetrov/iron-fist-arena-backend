@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
+import { freePvpPerDay, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { prisma } from '@/lib/prisma'
 import { isKillSwitchOn } from '@/lib/game/feature-flags'
 import { rateLimit } from '@/lib/rate-limit'
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
       level: true, avatar: true, maxHp: true, currentHp: true, lastHpUpdate: true,
       currentStamina: true, maxStamina: true, lastStaminaUpdate: true,
       pvpRating: true, freePvpToday: true, freePvpDate: true,
+      user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
       pvpWins: true, pvpLosses: true,
     } as const
 
@@ -204,8 +206,9 @@ export async function POST(req: NextRequest) {
       attacker.currentStamina, attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()
     )
+    const freePvpAllowance = freePvpPerDay(attacker.user, STAMINA.FREE_PVP_PER_DAY)
     const preFreeUsed = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
-    const preHasFree = preFreeUsed < STAMINA.FREE_PVP_PER_DAY
+    const preHasFree = preFreeUsed < freePvpAllowance
     if (!skipStaminaGate && !preHasFree && preStamina.stamina < STAMINA.PVP_COST) {
       return NextResponse.json(
         { error: 'Not enough stamina', currentStamina: preStamina.stamina, required: STAMINA.PVP_COST },
@@ -362,7 +365,7 @@ export async function POST(req: NextRequest) {
         locked.last_stamina_update ?? new Date()
       )
       const lockedFreeUsed = isNewUtcDay(locked.free_pvp_date) ? 0 : locked.free_pvp_today
-      const lockedHasFree = lockedFreeUsed < STAMINA.FREE_PVP_PER_DAY
+      const lockedHasFree = lockedFreeUsed < freePvpAllowance
       // Dungeon boss fights don't consume PvP stamina / free-fight slot.
       const cost = skipStaminaGate ? 0 : lockedHasFree ? 0 : STAMINA.PVP_COST
       if (!skipStaminaGate && !lockedHasFree && lockedSt.stamina < STAMINA.PVP_COST) {

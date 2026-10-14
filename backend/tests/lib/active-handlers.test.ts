@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyBurstDamage,
+  clampFraction,
   applyShield,
   healAmountFromActive,
   shouldExecute,
@@ -127,5 +128,45 @@ describe('shouldExecute', () => {
   it('handles a 100 %-threshold ult (always-execute) within bounds', () => {
     expect(shouldExecute(99, 100, 1.0)).toBe(true)
     expect(shouldExecute(100, 100, 1.0)).toBe(true)  // exactly at cap
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Upper clamp (2026-10-14). The warrior v2 seed shipped magnitudes 60 and 50 —
+// whole percentages where every other class seeds fractions. Only the lower
+// clamp existed, so that was a ×61 strike and a hit reduced to zero.
+// ---------------------------------------------------------------------------
+describe('clampFraction', () => {
+  it('folds a whole-percentage seed into a fraction cap, not a multiplier', () => {
+    expect(clampFraction(60)).toBe(1)
+    expect(clampFraction(50)).toBe(1)
+    expect(clampFraction(1.5)).toBe(1)
+  })
+
+  it('leaves real fractions alone', () => {
+    expect(clampFraction(0.6)).toBe(0.6)
+    expect(clampFraction(0)).toBe(0)
+    expect(clampFraction(1)).toBe(1)
+  })
+
+  it('treats NaN and infinities as no effect rather than letting them through', () => {
+    expect(clampFraction(Number.NaN)).toBe(0)
+    expect(clampFraction(Number.POSITIVE_INFINITY)).toBe(0)
+  })
+})
+
+describe('the seed mistake that shipped', () => {
+  it('burst_damage with magnitude 60 is now ×2, not ×61', () => {
+    expect(applyBurstDamage(100, 60)).toBe(200)
+  })
+
+  it('shield_self with magnitude 50 is now a full block of one hit, not a cliff', () => {
+    // Same outcome as magnitude 1 — that is the ceiling a seed can express.
+    expect(applyShield(100, 50)).toBe(applyShield(100, 1))
+  })
+
+  it('heal and execute cannot exceed 100% either', () => {
+    expect(healAmountFromActive(1000, 25)).toBe(1000)
+    expect(shouldExecute(999, 1000, 25)).toBe(true)
   })
 })

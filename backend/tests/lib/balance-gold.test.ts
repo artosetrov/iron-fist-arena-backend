@@ -214,30 +214,37 @@ describe('repairCost (W3.D3 base 120 / per-level 20)', () => {
 })
 
 // -----------------------------------------------------------------------------
-// upgradeCost — exponential 150 × 1.4^N (regression guard — not touched in W3.D3)
+// upgradeCost — 150 × N^1.4, the same curve as the live route
+// (item-balance.ts getUpgradeCost in 'exponential' mode). The economy
+// simulator imports this one, so it has to match what players actually pay
+// (2026-10-14 balance audit: it modelled 150 × 1.4^N and under-counted the
+// sink by ~40%).
 // -----------------------------------------------------------------------------
-describe('upgradeCost (exponential endgame sink)', () => {
-  it('+0 = base cost 150', () => {
-    expect(upgradeCost(0)).toBe(150)
+describe('upgradeCost (power-law endgame sink)', () => {
+  it('+1 = base cost 150', () => {
+    expect(upgradeCost(1)).toBe(150)
   })
 
-  it('follows 150 × 1.4^N within integer floor tolerance', () => {
-    for (let n = 0; n <= 12; n++) {
-      const expected = Math.floor(UPGRADE_COSTS.BASE * Math.pow(UPGRADE_COSTS.EXPONENT, n))
+  it('follows 150 × N^1.4 with the same rounding as the route', () => {
+    for (let n = 1; n <= 12; n++) {
+      const expected = Math.round(UPGRADE_COSTS.BASE * Math.pow(n, UPGRADE_COSTS.EXPONENT))
       expect(upgradeCost(n)).toBe(expected)
     }
+    // The ladder the migration comment quotes.
+    let total = 0
+    for (let n = 1; n <= 10; n++) total += upgradeCost(n)
+    expect(total).toBeGreaterThan(17_000)
+    expect(total).toBeLessThan(18_000)
   })
 
-  it('is strictly increasing (the whole point of an exponential sink)', () => {
-    for (let n = 1; n <= 15; n++) {
+  it('is strictly increasing (the whole point of the sink)', () => {
+    for (let n = 2; n <= 15; n++) {
       expect(upgradeCost(n)).toBeGreaterThan(upgradeCost(n - 1))
     }
   })
 
   it('reaches a meaningful whale-scale sink by +10', () => {
-    // 150 × 1.4^10 ≈ 4343 gold per attempt. Whale average success rate ~25%
-    // at +8 means ~17k per successful upgrade — in the intended band.
-    expect(upgradeCost(10)).toBeGreaterThan(4000)
+    expect(upgradeCost(10)).toBeGreaterThan(3500)
   })
 })
 

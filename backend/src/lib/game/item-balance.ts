@@ -4,6 +4,8 @@
 // =============================================================================
 
 import { getGameConfig, getGameConfigs } from './config'
+import { getUpgradeChancesConfig } from './live-config'
+import { GEM_COSTS } from './balance'
 import { prisma } from '@/lib/prisma'
 
 // --- Types ---
@@ -405,10 +407,11 @@ export async function getUpgradeCost(currentUpgradeLevel: number): Promise<numbe
  * Get the success chance for an upgrade attempt (0-100).
  */
 export async function getUpgradeSuccessChance(currentUpgradeLevel: number): Promise<number> {
-  const chances = await getGameConfig<number[]>(
-    'upgrade_chances',
-    [100, 100, 100, 100, 100, 80, 60, 40, 25, 15],
-  )
+  // One table. This used to carry its own v2 fallback (…25, 15) while
+  // live-config's getUpgradeChancesConfig — the one shipped to the client in
+  // /game/init — fell back to v3 (…30, 20). With `upgrade_chances` unseeded the
+  // UI advertised 30/20 and the server rolled 25/15.
+  const chances = await getUpgradeChancesConfig()
   if (currentUpgradeLevel >= chances.length) return 0
   return chances[currentUpgradeLevel]
 }
@@ -417,7 +420,7 @@ export async function getUpgradeSuccessChance(currentUpgradeLevel: number): Prom
  * Get the upgrade protection scroll gem cost.
  */
 export async function getUpgradeProtectionCost(): Promise<number> {
-  return getGameConfig<number>('item_balance.upgrade_protection_gem_cost', 50)
+  return getGameConfig<number>('item_balance.upgrade_protection_gem_cost', GEM_COSTS.UPGRADE_PROTECTION)
 }
 
 /**

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
@@ -12,6 +13,7 @@ import {
   getCombatConfig,
 } from '@/lib/game/live-config'
 import { STANCE_ZONES } from '@/lib/game/balance'
+import { freePvpPerDay, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
 const BATTLE_TICKET_TTL_MS = 5 * 60_000
@@ -93,6 +95,7 @@ export async function POST(req: NextRequest) {
         firstWinDate: true,
         level: true,
         cha: true,
+        user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
         luk: true,
         maxHp: true,
         currentHp: true,
@@ -129,7 +132,8 @@ export async function POST(req: NextRequest) {
 
     const isNewDay = !attacker.freePvpDate || isNewUtcDay(attacker.freePvpDate)
     const freePvpUsed = isNewDay ? 0 : attacker.freePvpToday
-    const hasFreePvp = isRevenge ? false : freePvpUsed < STAMINA.FREE_PVP_PER_DAY
+    const freePvpAllowance = freePvpPerDay(attacker.user, STAMINA.FREE_PVP_PER_DAY)
+    const hasFreePvp = isRevenge ? false : freePvpUsed < freePvpAllowance
 
     if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
       console.warn('pvp prepare: stamina check failed', { characterId: character_id, currentStamina, required: STAMINA.PVP_COST, hasFreePvp, freePvpUsed })
@@ -202,6 +206,10 @@ export async function POST(req: NextRequest) {
           opponentId: resolvedOpponentId,
           revengeId: revenge_id ?? null,
           battleSeed,
+          // Lock the attacker's stance to the ticket — see the schema note.
+          ...(playerStats.combatStance
+            ? { attackerStance: playerStats.combatStance as Prisma.InputJsonValue }
+            : {}),
           expiresAt: new Date(Date.now() + BATTLE_TICKET_TTL_MS),
         },
       })
@@ -294,6 +302,10 @@ export async function POST(req: NextRequest) {
         tank_damage_reduction: COMBAT.TANK_DAMAGE_REDUCTION,
         damage_variance: COMBAT.DAMAGE_VARIANCE,
         poison_armor_penetration: COMBAT.POISON_ARMOR_PENETRATION,
+        // 2026-10-14 — the client replays the fight locally with this config
+        // and the server reruns it at /resolve; a cap on one side only means
+        // two winners.
+        max_resist_reduction: COMBAT.MAX_RESIST_REDUCTION,
         crit_per_luk: COMBAT.CRIT_PER_LUK,
         crit_per_agi: COMBAT.CRIT_PER_AGI,
         dodge_per_agi: COMBAT.DODGE_PER_AGI,
@@ -314,7 +326,7 @@ export async function POST(req: NextRequest) {
         current: currentStamina,
         cost: hasFreePvp ? 0 : STAMINA.PVP_COST,
         has_free_pvp: hasFreePvp,
-        free_pvp_remaining: STAMINA.FREE_PVP_PER_DAY - freePvpUsed,
+        free_pvp_remaining: Math.max(0, freePvpAllowance - freePvpUsed),
       },
       // Authoritative HP at prepare time — iOS syncs this to fix stale-cache HP display
       current_hp: currentHp,

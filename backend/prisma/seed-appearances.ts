@@ -34,6 +34,14 @@ interface Skin {
   gender: Gender
 }
 
+/** Index = position within the (origin, gender) group, alphabetical. */
+const SKIN_PRICING: ReadonlyArray<{ rarity: string; priceGold: number; priceGems: number }> = [
+  { rarity: 'common',   priceGold: 0,     priceGems: 0 },   // default — free
+  { rarity: 'uncommon', priceGold: 2_500, priceGems: 0 },   // ~half a day of surplus at L15
+  { rarity: 'rare',     priceGold: 8_000, priceGems: 0 },   // a couple of days
+  { rarity: 'epic',     priceGold: 0,     priceGems: 400 }, // a real gem goal (~10 days F2P)
+]
+
 // Names mirror Storage filenames; display name is title-case with `_` → ` `.
 const SKIN_DEFS: Skin[] = [
   // demon / female
@@ -109,6 +117,12 @@ async function main() {
       const isDefault = i === 0
       const sortOrder = i + 1
       const imageUrl = `${STORAGE_BASE}/${skin.skinKey}.png`
+      // Pricing ladder per (origin, gender): the default is free, the rest
+      // climb. Cosmetics are the one sink that absorbs surplus without
+      // touching power, and every skin shipped at 0/0 until the 2026-10-14
+      // balance audit. Mirrored for existing rows by
+      // 20261014_price_appearance_skins; admin-managed afterwards.
+      const { rarity, priceGold, priceGems } = SKIN_PRICING[Math.min(i, SKIN_PRICING.length - 1)]
 
       const result = await prisma.appearanceSkin.upsert({
         where: { skinKey: skin.skinKey },
@@ -128,9 +142,9 @@ async function main() {
           name: skin.name,
           origin: skin.origin,
           gender: skin.gender,
-          rarity: 'common',
-          priceGold: 0,
-          priceGems: 0,
+          rarity,
+          priceGold,
+          priceGems,
           imageUrl,
           imageKey: skin.skinKey,
           isDefault,

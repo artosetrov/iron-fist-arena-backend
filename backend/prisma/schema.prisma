@@ -132,15 +132,27 @@ model GuildChallenge {
   @@map("guild_challenges")
 }
 
+/**
+ * One payout per milestone per ACCOUNT.
+ *
+ * Milestone rewards are gold and gems, which live on `User`; the claim used
+ * to be keyed on the character. Five characters each crossing L10–L50 paid
+ * the same wallet five times (172 500 gold, 2 600 gems), and because the
+ * claim cascaded with the character, delete-and-relevel reset it entirely
+ * (2026-10-14 balance audit). `characterId` is kept for display — which
+ * character earned it — and survives that character's deletion.
+ */
 model MilestoneClaim {
   id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  characterId    String   @map("character_id")
+  userId         String   @map("user_id")
+  characterId    String?  @map("character_id")
   milestoneLevel Int      @map("milestone_level")
   claimedAt      DateTime @default(now()) @db.Timestamptz(6) @map("claimed_at")
 
-  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character      Character? @relation(fields: [characterId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
-  @@unique([characterId, milestoneLevel])
+  @@unique([userId, milestoneLevel])
   @@index([characterId], map: "idx_milestone_claims_character")
   @@map("milestone_claims")
 }
@@ -261,6 +273,11 @@ model User {
   premiumUntil  DateTime? @map("premium_until")
   // W3.D5 — Premium Forever +25 gems/day claim tracking
   premiumGemClaimDate DateTime? @map("premium_gem_claim_date")
+  // Gold→gem pack purchases per UTC day, lazily reset (see daily-counter.ts).
+  // Per ACCOUNT, because the currencies are. Uncapped, gem_pack_large turned
+  // every gem price into 30 gold per gem (2026-10-14 balance audit).
+  gemPackPurchasesToday Int       @default(0) @map("gem_pack_purchases_today")
+  gemPackPurchaseDate   DateTime? @map("gem_pack_purchase_date")
   role          String    @default("player")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
@@ -275,6 +292,7 @@ model User {
   dailyGemCard  DailyGemCard?
   stashItems    StashItem[]
   premiumSubscription PremiumSubscription?
+  milestoneClaims MilestoneClaim[]
 
   @@index([gold])
   @@index([deviceId])
@@ -944,6 +962,11 @@ model PvpBattleTicket {
   opponentId  String    @map("opponent_id")
   revengeId   String?   @map("revenge_id")
   battleSeed  Int       @map("battle_seed")
+  /// The attacker's stance when the ticket was issued. /resolve fights with
+  /// THIS, not the live row: /prepare returns the opponent's stance (the
+  /// client replay needs it), so without a snapshot the attacker could
+  /// read it, switch to the counter-stance, and resolve the same ticket.
+  attackerStance Json?  @map("attacker_stance")
   expiresAt   DateTime  @map("expires_at")
   consumedAt  DateTime? @map("consumed_at")
   createdAt   DateTime  @default(now()) @map("created_at")

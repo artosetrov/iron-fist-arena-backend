@@ -46,6 +46,41 @@ export const PREMIUM_GOLD_MULTIPLIER = 1.10
 /** Premium daily gems — 25 gems claimable once per UTC day. */
 export const PREMIUM_DAILY_GEMS = 25
 
+/**
+ * Premium XP bonus — +20% on PvP XP. Advertised on the Premium Pass purchase
+ * screen since Phase 2 and implemented nowhere until the 2026-10-14 audit.
+ */
+export const PREMIUM_XP_MULTIPLIER = 1.20
+
+/**
+ * Free PvP fights per day for a Premium account, against STAMINA.FREE_PVP_PER_DAY
+ * (3) for everyone else. Also advertised and unimplemented until the audit.
+ */
+export const PREMIUM_FREE_PVP_PER_DAY = 5
+
+/** XP multiplier, applied at the same point in the reward stack as gold. */
+export function xpBonusMultiplier(
+  user: PremiumUserFields,
+  now: Date = new Date(),
+): number {
+  return hasPremium(user, now) ? PREMIUM_XP_MULTIPLIER : 1.0
+}
+
+/**
+ * Free PvP allowance for this account today.
+ *
+ * `fallback` is the non-premium value — pass the live-config one where a
+ * route has it, otherwise STAMINA.FREE_PVP_PER_DAY.
+ */
+export function freePvpPerDay(
+  user: PremiumUserFields | null | undefined,
+  fallback: number,
+  now: Date = new Date(),
+): number {
+  if (!user) return fallback
+  return hasPremium(user, now) ? Math.max(fallback, PREMIUM_FREE_PVP_PER_DAY) : fallback
+}
+
 export function getActivePremiumSubscriptionExpiresAt(
   subscription: PremiumSubscriptionFields | null | undefined,
 ): Date | null {

@@ -226,12 +226,28 @@ interface CombatConfigData {
   CRIT_PER_AGI: number;
   DODGE_PER_AGI: number;
   DODGE_PER_LUK: number;
+  /** Ceiling on the fraction of a hit that armor/MR can absorb (0.75 = 75%). */
+  MAX_RESIST_REDUCTION: number;
   // W3.D1 — CHA miss chance (replaces legacy intimidation damage reduction)
   CHA_MISS_PER_POINT: number;
   CHA_MISS_CAP: number;
   // W3.D2 — Rogue Execute: bonus damage vs low-HP defenders
   ROGUE_EXECUTE_HP_THRESHOLD: number;
   ROGUE_EXECUTE_DAMAGE_BONUS: number;
+}
+
+/**
+ * Multiplier a resist value applies to a hit, floored at `1 − MAX_RESIST_REDUCTION`.
+ *
+ * `100/(100+resist)` has no floor of its own: at resist 580 (a L50 legendary
+ * loadout) it keeps 15% of the hit, and since resist grows with gear while
+ * damage grows linearly, late-game fights stopped ending in a kill. The floor
+ * means no amount of armor absorbs more than the configured share.
+ */
+function resistMultiplier(resist: number, config: Pick<CombatConfigData, 'MAX_RESIST_REDUCTION'>): number {
+  const effectiveResist = Math.max(0, resist);
+  const floor = 1 - Math.min(1, Math.max(0, config.MAX_RESIST_REDUCTION ?? 1));
+  return Math.max(floor, 100 / (100 + effectiveResist));
 }
 
 function reduceDamageByType(
@@ -243,11 +259,10 @@ function reduceDamageByType(
   if (damageType === 'true_damage') return raw;
   if (damageType === 'poison') {
     const effectiveArmor = Math.max(0, defender.armor) * (1 - config.POISON_ARMOR_PENETRATION);
-    return raw * (100 / (100 + effectiveArmor));
+    return raw * resistMultiplier(effectiveArmor, config);
   }
   const resist = damageType === 'magical' ? defender.magicResist : defender.armor;
-  const effectiveResist = Math.max(0, resist);
-  return raw * (100 / (100 + effectiveResist));
+  return raw * resistMultiplier(resist, config);
 }
 
 function applyClassReduction(damage: number, defenderClass: CharacterClassType, config: CombatConfigData): number {
@@ -704,6 +719,13 @@ export interface SingleStrikeInput {
   defenderHp: number;
   /** 32-bit seed (e.g. hash(matchId + strikeIndex)) for deterministic replay. */
   seed: number;
+  /**
+   * 1-based round number, for battle fatigue. `runCombat` passes its loop
+   * index; interactive PvP used to pass a constant 1, so the anti-stall
+   * mechanic (+10%/round after round 10) never fired in the one mode where
+   * stalling is worst. Defaults to 1 for callers that have no round concept.
+   */
+  turn?: number;
 }
 
 export interface SingleStrikeResult {
@@ -736,7 +758,7 @@ export async function resolveSingleStrike(input: SingleStrikeInput): Promise<Sin
   const startHp = Math.max(0, Math.floor(input.defenderHp));
 
   return resolveAttack(
-    1,
+    Math.max(1, Math.floor(input.turn ?? 1)),
     input.attacker,
     input.defender,
     startHp,

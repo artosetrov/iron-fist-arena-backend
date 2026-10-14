@@ -98,6 +98,10 @@ export const MILESTONES: MilestoneDefinition[] = [
  * Check and award pending milestone rewards after a level-up.
  * Returns the list of milestones claimed (usually 0 or 1).
  */
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002'
+}
+
 export async function checkAndAwardMilestones(
   prisma: PrismaClient,
   characterId: string,
@@ -110,9 +114,10 @@ export async function checkAndAwardMilestones(
   })
   if (!char) return []
 
-  // Get claimed milestones for this character
+  // Claimed milestones for this ACCOUNT. Rewards are account currency, so a
+  // second character crossing L10 must not pay the wallet again.
   const claimed = await prisma.milestoneClaim.findMany({
-    where: { characterId },
+    where: { userId: char.userId },
     select: { milestoneLevel: true },
   })
   const claimedLevels = new Set(claimed.map(c => c.milestoneLevel))
@@ -132,13 +137,22 @@ export async function checkAndAwardMilestones(
     let totalGems = 0
 
     for (const milestone of pendingMilestones) {
-      // Create claim record
-      await tx.milestoneClaim.create({
-        data: {
-          characterId,
-          milestoneLevel: milestone.level,
-        },
-      })
+      // Create claim record. The (user, level) unique is the real guard: two
+      // characters of one account levelling at the same moment (two devices)
+      // both pass the read above, and the second insert must lose quietly
+      // rather than fail that fight's level-up.
+      try {
+        await tx.milestoneClaim.create({
+          data: {
+            userId: char.userId,
+            characterId,
+            milestoneLevel: milestone.level,
+          },
+        })
+      } catch (error) {
+        if (isUniqueViolation(error)) continue
+        throw error
+      }
 
       totalGold += milestone.reward.gold
       totalGems += milestone.reward.gems
@@ -170,10 +184,16 @@ export async function getMilestoneStatus(
 ): Promise<{
   milestones: (MilestoneDefinition & { claimed: boolean; available: boolean })[]
 }> {
-  const claimed = await prisma.milestoneClaim.findMany({
-    where: { characterId },
-    select: { milestoneLevel: true },
+  const char = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { userId: true },
   })
+  const claimed = char
+    ? await prisma.milestoneClaim.findMany({
+        where: { userId: char.userId },
+        select: { milestoneLevel: true },
+      })
+    : []
   const claimedLevels = new Set(claimed.map(c => c.milestoneLevel))
 
   return {

@@ -104,8 +104,12 @@ export async function GET(
       // Derived
       armor: raw.armor,
       magicResist: raw.magicResist,
-      // Stance
-      combatStance: raw.combatStance,
+      // Stance is deliberately NOT returned. This endpoint is unauthenticated
+      // and the persisted stance decides every async fight: with both
+      // fighters' zones fixed for the whole match, a player who reads the
+      // opponent's stance here and sets the counter wins ~87% of the time at
+      // identical gear (2026-10-14 audit). No client screen rendered it; iOS
+      // decodes it as optional.
       // Equipment
       equipment,
     }

@@ -722,7 +722,9 @@ struct HubView: View {
     private func staminaRecoveryText(current: Int, max: Int) -> String? {
         guard current < max else { return nil }
         let missing = max - current
-        let minutesPerPoint = 5 // 5 minutes per stamina point
+        // Server-authored (`/api/game/init` → staminaRegenMinutes, 8 by default).
+        // This used to hardcode 5 and would have shown a 24h refill as 15h.
+        let minutesPerPoint = cache.gameConfig?.staminaRegenMinutes ?? AppConstants.staminaRegenMinutes
         let totalMinutes = missing * minutesPerPoint
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
@@ -817,7 +819,18 @@ struct HubView: View {
         appState.cachedInventory = items
 
         let maxStamina = appState.currentCharacter?.maxStamina ?? 100
-        let estimatedRestore = max(Int(Double(maxStamina) * 0.3), 20)
+        // Optimistic estimate per potion size, mirroring the server's
+        // DEFAULT_STAMINA_RESTORE (small 30 / medium 60 / large full). The
+        // old flat 30%-of-max guess promised 54 for a small potion that
+        // restores 30; the server then corrected it and the toast read as a
+        // lie. The server response remains authoritative.
+        let estimatedRestore: Int
+        switch potion.consumableType ?? potion.catalogId ?? "" {
+        case "stamina_potion_small": estimatedRestore = 30
+        case "stamina_potion_medium": estimatedRestore = 60
+        case "stamina_potion_large": estimatedRestore = maxStamina
+        default: estimatedRestore = max(Int(Double(maxStamina) * 0.3), 20)
+        }
         let newStamina = min(previousStamina + estimatedRestore, maxStamina)
         appState.currentCharacter?.currentStamina = newStamina
 

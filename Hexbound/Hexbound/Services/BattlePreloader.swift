@@ -192,6 +192,7 @@ private struct BattleCombatConfigPayload: Decodable {
     let chaMissCap: Double?
     let rogueExecuteHpThreshold: Double?
     let rogueExecuteDamageBonus: Double?
+    let maxResistReduction: Double?
 
     func toCombatConfig() -> CombatConfig {
         let defaults = CombatConfig.default
@@ -212,7 +213,8 @@ private struct BattleCombatConfigPayload: Decodable {
             chaMissPerPoint: chaMissPerPoint ?? defaults.chaMissPerPoint,
             chaMissCap: chaMissCap ?? defaults.chaMissCap,
             rogueExecuteHpThreshold: rogueExecuteHpThreshold ?? defaults.rogueExecuteHpThreshold,
-            rogueExecuteDamageBonus: rogueExecuteDamageBonus ?? defaults.rogueExecuteDamageBonus
+            rogueExecuteDamageBonus: rogueExecuteDamageBonus ?? defaults.rogueExecuteDamageBonus,
+            maxResistReduction: maxResistReduction ?? defaults.maxResistReduction
         )
     }
 }

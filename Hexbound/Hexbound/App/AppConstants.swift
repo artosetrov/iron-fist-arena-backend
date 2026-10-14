@@ -101,6 +101,8 @@ enum AppConstants {
     static let freePvpPerDay = 3
     // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4
     static let pvpStaminaCost = 10
+    // Fallback for cache.gameConfig.staminaRegenMinutes — mirrors STAMINA.REGEN_INTERVAL_MINUTES
+    static let staminaRegenMinutes = 8
 
     // MARK: - Public links (shown in Settings → Legal). Must be live before
     // App Store review: privacy, terms, and a support/contact page.

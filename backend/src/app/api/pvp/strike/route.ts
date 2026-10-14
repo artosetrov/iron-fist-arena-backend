@@ -65,9 +65,27 @@ function isZone(v: unknown): v is BodyZone {
   return typeof v === 'string' && (VALID_ZONES as readonly string[]).includes(v)
 }
 
+/**
+ * Server-side secret folded into every per-strike seed.
+ *
+ * Without it the opponent's zone picks were a pure hash of `match_id`,
+ * `strikeIndex` and a constant salt — three values the client already holds
+ * (the first two come back in every strike response). A modified client
+ * could reproduce `pickZoneFromSeed` exactly and play every round knowing the
+ * opponent's attack and defence zones, which the 2026-10-14 audit measured at
+ * an 81% win rate against 57% for honest play.
+ *
+ * `BOT_TICKET_SECRET` is reused as the fallback because it is already a
+ * required production secret; a dedicated `COMBAT_SEED_SECRET` wins when set.
+ */
+const SEED_SECRET = process.env.COMBAT_SEED_SECRET ?? process.env.BOT_TICKET_SECRET ?? ''
+if (!SEED_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('[pvp/strike] COMBAT_SEED_SECRET / BOT_TICKET_SECRET unset — opponent zones are client-predictable')
+}
+
 function deriveSeed(matchId: string, strikeIndex: number, salt: string): number {
   let h = 2166136261 | 0
-  const s = `${matchId}:${strikeIndex}:${salt}`
+  const s = `${SEED_SECRET}:${matchId}:${strikeIndex}:${salt}`
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i)
     h = Math.imul(h, 16777619)
@@ -425,6 +443,7 @@ export async function POST(req: NextRequest) {
       defenderZone: oppDefZone,
       defenderHp: curDefenderHp,
       seed: playerSeed,
+      turn: strikeIndex + 1,
     }
     const playerResult = await resolveSingleStrike(playerInput)
 
@@ -570,6 +589,7 @@ export async function POST(req: NextRequest) {
         defenderZone: defender_zone,
         defenderHp: attackerAfterHeal,
         seed: oppSeed,
+        turn: strikeIndex + 1,
       }
       oppResult = await resolveSingleStrike(oppInput)
       // Apply opponent's offensive actives to counter-strike damage

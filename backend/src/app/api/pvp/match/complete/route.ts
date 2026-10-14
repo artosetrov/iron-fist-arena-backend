@@ -26,7 +26,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { goldBonusMultiplier, xpBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { currentDailyValue } from '@/lib/game/daily-counter'
@@ -354,6 +354,7 @@ export async function POST(req: NextRequest) {
       goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
       xpReward   = applyEventXpMultiplier(xpReward, eventMultipliers)
       goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+      xpReward   = Math.floor(xpReward * xpBonusMultiplier(attacker.user))
     }
 
     // firstWin logic applies to the PvP/bot path only; dungeons don't
@@ -392,8 +393,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Defender side-effects only apply for real PvP opponents. Bots have no DB row.
-    const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
-    const defenderXpReward   = attackerWon ? XP_REWARDS.PVP_LOSS_XP    : XP_REWARDS.PVP_WIN_XP
+    const defenderGoldReward = Math.floor((attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
+    const defenderXpReward   = Math.floor((attackerWon ? XP_REWARDS.PVP_LOSS_XP    : XP_REWARDS.PVP_WIN_XP) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
     const defenderUpdate: Record<string, unknown> = {
       currentHp: defenderFinalHp,
       lastHpUpdate: now,

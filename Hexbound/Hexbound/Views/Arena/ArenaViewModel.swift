@@ -199,8 +199,15 @@ final class ArenaViewModel {
 
         // Client-side stamina pre-check: avoid "Preparing..." spinner
         // when we already know the fight will fail due to low stamina.
+        //
+        // A free fight costs no stamina on the server (`pvp/prepare` and
+        // `pvp/match/start` both skip the gate while free fights remain), so
+        // the check applies only once today's free fights are used. Before
+        // this guard, a player at zero stamina with free fights banked was
+        // shown a one-tap 50-gem refill for something the server would have
+        // given them for free.
         let staminaCost = cache.gameConfig?.pvpStaminaCost ?? 10
-        if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
+        if !hasFreePvp && (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
             CharacterService.showOutOfStamina(appState: appState, refillGemCost: cache.gameConfig?.staminaRefillGems)
             return
         }

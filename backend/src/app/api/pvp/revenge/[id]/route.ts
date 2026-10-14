@@ -20,7 +20,7 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
-import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { goldBonusMultiplier, xpBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
@@ -165,6 +165,7 @@ export async function POST(
 
     // W3.D5 — Premium Forever +10% gold (applied LAST — don't compound with CHA cap)
     goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+    xpReward = Math.floor(xpReward * xpBonusMultiplier(attacker.user))
 
     const now = new Date()
 
@@ -201,8 +202,8 @@ export async function POST(
       attackerUpdate.pvpWinStreak = 0
     }
 
-    const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
-    const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
+    const defenderGoldReward = Math.floor((attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
+    const defenderXpReward = Math.floor((attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
     const defenderUpdate: Record<string, unknown> = {
       currentHp: defenderFinalHp,
       lastHpUpdate: now,

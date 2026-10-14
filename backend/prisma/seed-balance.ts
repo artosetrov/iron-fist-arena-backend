@@ -53,11 +53,19 @@ const BALANCE_CONFIGS: { key: string; value: unknown; category: string; descript
 
   // --- Upgrade Balance ---
   { key: 'item_balance.upgrade_stat_bonus_per_level', value: 1, category: 'item_balance', description: 'Stat bonus added per upgrade level per stat' },
-  { key: 'item_balance.upgrade_cost_formula', value: 'linear', category: 'item_balance', description: 'Upgrade cost formula: linear, exponential, or custom' },
-  { key: 'item_balance.upgrade_cost_base', value: 100, category: 'item_balance', description: 'Base gold cost multiplier for upgrades' },
-  { key: 'item_balance.upgrade_cost_exponent', value: 1.5, category: 'item_balance', description: 'Exponent for exponential cost scaling' },
-  { key: 'item_balance.upgrade_failure_downgrade_threshold', value: 5, category: 'item_balance', description: 'Upgrade level at which failure causes downgrade' },
-  { key: 'item_balance.upgrade_protection_gem_cost', value: 30, category: 'item_balance', description: 'Gem cost for upgrade protection scroll' },
+  // 2026-10-14 balance audit: these were seeded as linear/100/threshold 5/30 gems
+  // while balance.ts and ECONOMY_RULES.md R7.3 specify exponential 150×1.4ⁿ,
+  // downgrade only at +9/+10, and a 40-gem scroll. The seeds won — the routes
+  // read GameConfig — so the designed endgame sink shipped 3× cheaper, losing
+  // levels three tiers early. See 20261014_upgrade_config_to_design.
+  { key: 'item_balance.upgrade_cost_formula', value: 'exponential', category: 'item_balance', description: 'Upgrade cost formula: linear, exponential, or custom' },
+  { key: 'item_balance.upgrade_cost_base', value: 150, category: 'item_balance', description: 'Base gold cost multiplier for upgrades' },
+  { key: 'item_balance.upgrade_cost_exponent', value: 1.4, category: 'item_balance', description: 'Exponent for exponential cost scaling' },
+  { key: 'item_balance.upgrade_failure_downgrade_threshold', value: 8, category: 'item_balance', description: 'Upgrade level at which failure causes downgrade (8 = attempts at +9/+10)' },
+  { key: 'item_balance.upgrade_protection_gem_cost', value: 40, category: 'item_balance', description: 'Gem cost for upgrade protection scroll' },
+  // Seeded here so the roll and the UI read the same table. Unseeded, the roll
+  // fell back to v2 (25/15) while /game/init shipped v3 (30/20) to the client.
+  { key: 'upgrade_chances', value: [100, 100, 100, 100, 100, 80, 60, 40, 30, 20], category: 'upgrade', description: 'Success rate (%) for each upgrade level (+1 through +10)' },
 
   // --- Validation Thresholds ---
   { key: 'item_balance.validation_power_deviation_threshold', value: 0.3, category: 'item_balance', description: 'Flag items with power deviation exceeding 30%' },

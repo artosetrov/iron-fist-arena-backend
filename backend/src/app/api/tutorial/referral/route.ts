@@ -160,9 +160,9 @@ export async function POST(req: NextRequest) {
       }
 
       const [referrer] = await tx.$queryRawUnsafe<
-        Array<{ id: string; referral_code: string }>
+        Array<{ id: string; referral_code: string; user_id: string }>
       >(
-        `SELECT id, referral_code
+        `SELECT id, referral_code, user_id
          FROM characters
          WHERE referral_code = $1
          FOR UPDATE`,
@@ -173,7 +173,11 @@ export async function POST(req: NextRequest) {
         throw new Error('INVALID_CODE')
       }
 
-      if (referrer.id === character_id) {
+      // Own code means the ACCOUNT's code, not this character's. The check
+      // used to compare character ids only, so characters 2–5 of one account
+      // could each enter character 1's code and refer themselves — 3 000
+      // gold and 40 gems self-funded per account (2026-10-14 audit).
+      if (referrer.id === character_id || referrer.user_id === user.id) {
         throw new Error('OWN_CODE')
       }
 

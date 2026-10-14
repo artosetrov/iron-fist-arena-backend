@@ -14,6 +14,7 @@ vi.mock('../../src/lib/game/live-config', () => ({
 }))
 
 import { applyPrestigeBonus, checkLevelUp, xpForLevel, xpToNextLevel } from '../../src/lib/game/progression'
+import { XP_CURVE_SCALE } from '../../src/lib/game/balance'
 
 describe('progression.ts', () => {
   beforeEach(() => {
@@ -44,14 +45,18 @@ describe('progression.ts', () => {
     })
   })
 
-  it('per-level requirement is the delta of the cumulative curve (L50 ≈ 55k total, not 986k)', () => {
-    expect(xpToNextLevel(1)).toBe(160)
-    expect(xpToNextLevel(10)).toBe(520)
-    expect(xpToNextLevel(49)).toBe(2080)
+  it('per-level requirement is the delta of the cumulative curve, scaled once', () => {
+    expect(xpToNextLevel(1)).toBe(160 * XP_CURVE_SCALE)
+    expect(xpToNextLevel(10)).toBe(520 * XP_CURVE_SCALE)
+    expect(xpToNextLevel(49)).toBe(2080 * XP_CURVE_SCALE)
     let total = 0
     for (let l = 1; l < 50; l++) total += xpToNextLevel(l)
     expect(total).toBe(xpForLevel(50) - xpForLevel(1))
-    expect(total).toBeLessThan(60_000)
+    // The ×18 bug fed the cumulative value into the per-level loop (~986k).
+    // The scaled design curve is 54 880 × scale; anything near 986k is that
+    // bug coming back, whatever the scale.
+    expect(total).toBe(54_880 * XP_CURVE_SCALE)
+    expect(total).toBeLessThan(900_000)
   })
 
   it('applies prestige stat bonus multiplicatively from config', async () => {

@@ -181,7 +181,7 @@ export async function seedDefaultConfigs() {
     { key: 'prestige.stat_points_per_level', value: 3, category: 'prestige', description: 'Stat points awarded per level up' },
 
     // Upgrade Chances
-    { key: 'upgrade_chances', value: [100, 100, 100, 100, 100, 80, 60, 40, 25, 15], category: 'upgrade', description: 'Success rate (%) for each upgrade level (+1 through +10)' },
+    { key: 'upgrade_chances', value: [100, 100, 100, 100, 100, 80, 60, 40, 30, 20], category: 'upgrade', description: 'Success rate (%) for each upgrade level (+1 through +10)' },
 
     // Battle Pass
     { key: 'battle_pass.bp_xp_per_pvp', value: 20, category: 'battle_pass', description: 'Battle Pass XP earned per PvP match' },

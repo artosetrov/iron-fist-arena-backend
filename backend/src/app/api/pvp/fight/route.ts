@@ -27,7 +27,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { freePvpPerDay, goldBonusMultiplier, xpBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 
@@ -143,7 +143,8 @@ export async function POST(req: NextRequest) {
       attacker.lastStaminaUpdate ?? new Date()
     )
     const freePvpUsedPre = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
-    const hasFreePvpPre = freePvpUsedPre < STAMINA.FREE_PVP_PER_DAY
+    const freePvpAllowance = freePvpPerDay(attacker.user, STAMINA.FREE_PVP_PER_DAY)
+    const hasFreePvpPre = freePvpUsedPre < freePvpAllowance
 
     if (!hasFreePvpPre && staminaResultPre.stamina < STAMINA.PVP_COST) {
       return NextResponse.json(
@@ -230,6 +231,7 @@ export async function POST(req: NextRequest) {
     // W3.D5 — Premium Forever +10% gold (applied LAST, after all other bonuses
     // and event multipliers, to avoid compounding with the W3.D3 CHA cap).
     goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
+    xpReward = Math.floor(xpReward * xpBonusMultiplier(attacker.user))
 
     const now = new Date()
 
@@ -266,8 +268,8 @@ export async function POST(req: NextRequest) {
 
     // Build defender update
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
-    const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
-    const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
+    const defenderGoldReward = Math.floor((attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
+    const defenderXpReward = Math.floor((attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP) * GOLD_REWARDS.DEFENDER_REWARD_SHARE)
     const defenderUpdate: Record<string, unknown> = {
       currentHp: defenderFinalHp,
       lastHpUpdate: now,
@@ -325,7 +327,7 @@ export async function POST(req: NextRequest) {
       )
       const lockedCurrentStamina = lockedStaminaResult.stamina
       const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
-      const lockedHasFreePvp = lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
+      const lockedHasFreePvp = lockedFreePvpUsed < freePvpAllowance
       const lockedStaminaCost = lockedHasFreePvp ? 0 : STAMINA.PVP_COST
 
       if (!lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {

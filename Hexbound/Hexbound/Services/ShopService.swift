@@ -125,9 +125,15 @@ final class ShopService {
             refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
-            if case .clientError(_, let message, _) = error {
+            switch error {
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
-            } else {
+            case .rateLimited(let message):
+                // The daily pack cap comes back as 429 with its own message.
+                // Falling through to "check your gold balance" told a player
+                // with plenty of gold that they were short of gold.
+                appState.showToast(message, type: .error)
+            default:
                 appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             }
             return false

@@ -60,6 +60,7 @@ const {
     PVP_WIN_BASE: 50,
     PVP_LOSS_BASE: 10,
     REVENGE_MULTIPLIER: 1.5,
+    DEFENDER_REWARD_SHARE: 0.34,
   })),
   mockGetXpRewardsConfig: vi.fn(async () => ({
     PVP_WIN_XP: 20,
@@ -82,6 +83,11 @@ const {
     revengeQueue: {
       findUnique: vi.fn(),
       create: vi.fn(),
+    },
+    // Non-locking read of the ticket's stance snapshot before the fight runs
+    // (2026-10-14). Null = ticket issued before the snapshot existed.
+    pvpBattleTicket: {
+      findUnique: vi.fn(async () => ({ attackerStance: null })),
     },
     $transaction: vi.fn(),
   },
@@ -484,6 +490,35 @@ describe('POST /api/pvp/resolve', () => {
     expect(mockUpdateDailyQuestProgress).toHaveBeenCalledWith(prismaMock, 'char-1', 'pvp_wins')
     expect(mockAwardBattlePassXp).toHaveBeenCalledWith(prismaMock, 'char-1', 20)
     expect(mockCreateBattleResultMail).toHaveBeenCalled()
+  })
+
+  it('fights with the stance locked on the ticket, not the attacker\'s live stance', async () => {
+    // /prepare hands the attacker the opponent's stance for the local replay.
+    // If /resolve read the live row, prepare → switch to the counter-stance →
+    // resolve would win ~87% at equal gear (2026-10-14 audit).
+    const battleState = { ticketConsumed: false, matchCount: 0 }
+    const tx = createPvpResolveTx(battleState)
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: PvpResolveTx) => Promise<unknown>) => callback(tx),
+    )
+    mockLoadCombatCharacter.mockReset()
+    mockLoadCombatCharacter
+      .mockResolvedValueOnce({ id: 'char-1', maxHp: 100, combatStance: { attack: 'legs', defense: 'legs' } })
+      .mockResolvedValueOnce({ id: 'char-2', maxHp: 100, combatStance: { attack: 'chest', defense: 'chest' } })
+    prismaMock.pvpBattleTicket.findUnique.mockResolvedValueOnce({
+      attackerStance: { attack: 'head', defense: 'chest' },
+    })
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/pvp/resolve', {
+        method: 'POST',
+        body: JSON.stringify(defaultRequestBody),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    const [attackerArg] = mockRunCombat.mock.calls[0]
+    expect(attackerArg.combatStance).toEqual({ attack: 'head', defense: 'chest' })
   })
 
   it('rejects the resolve when the locked character row no longer has enough stamina', async () => {

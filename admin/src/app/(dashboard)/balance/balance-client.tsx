@@ -73,6 +73,7 @@ const BALANCE_TABS: TabDef[] = [
           { key: 'combat.crit_multiplier', label: 'Crit Multiplier', description: 'Critical hit damage multiplier', defaultValue: 1.5, unit: 'x', step: 0.1, min: 1 },
           { key: 'combat.damage_variance', label: 'Damage Variance', description: 'Damage variance range (e.g. 0.10 = \u00b110%)', defaultValue: 0.10, unit: '\u00b1%', step: 0.01, min: 0, max: 1 },
           { key: 'combat.tank_damage_reduction', label: 'Tank DR Multiplier', description: 'Tank damage multiplier (0.85 = 15% reduction)', defaultValue: 0.85, unit: 'x', step: 0.01, min: 0, max: 1 },
+          { key: 'combat.max_resist_reduction', label: 'Max Armor/MR Reduction', description: 'Ceiling on the share of a hit armor or magic resist can absorb (0.6 = 60%)', defaultValue: 0.6, unit: 'x', step: 0.05, min: 0, max: 1 },
         ],
       },
       {
@@ -127,6 +128,7 @@ const BALANCE_TABS: TabDef[] = [
           { key: 'gold_rewards.training_win', label: 'Training Win', description: 'Gold reward for training win', defaultValue: 50, unit: 'gold', step: 5 },
           { key: 'gold_rewards.training_loss', label: 'Training Loss', description: 'Gold reward for training loss', defaultValue: 20, unit: 'gold', step: 5 },
           { key: 'gold_rewards.revenge_multiplier', label: 'Revenge Multiplier', description: 'Gold multiplier for revenge matches', defaultValue: 1.5, unit: 'x', step: 0.1, min: 1 },
+          { key: 'gold_rewards.defender_reward_share', label: 'Defender Share', description: 'Share of the base reward paid to the defender of an incoming attack (0.34 = one third)', defaultValue: 0.34, unit: 'x', step: 0.01, min: 0, max: 1 },
         ],
       },
       {
