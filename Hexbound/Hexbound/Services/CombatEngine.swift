@@ -746,6 +746,7 @@ final class CombatEngine {
             // RewardsBlock falls back to delta-only on nil.
             ratingBefore: nil,
             ratingAfter: nil,
+            tierChange: nil,
             firstWinBonus: nil,
             leveledUp: nil,
             newLevel: nil,

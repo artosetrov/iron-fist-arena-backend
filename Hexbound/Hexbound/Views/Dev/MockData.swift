@@ -87,6 +87,7 @@ enum MockData {
             // "delta + total" branch of RewardsBlock.
             ratingBefore: 1230,
             ratingAfter: 1248,
+            tierChange: nil,
             firstWinBonus: true,
             leveledUp: false,
             newLevel: nil,
@@ -111,6 +112,7 @@ enum MockData {
         ratingChange: 18,
         ratingBefore: 1230,
         ratingAfter: 1248,
+        tierChange: nil,
         firstWinBonus: true,
         leveledUp: false,
         newLevel: nil,

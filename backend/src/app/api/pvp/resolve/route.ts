@@ -13,7 +13,9 @@ import {
   getXpRewardsConfig,
   getFirstWinBonusConfig,
   getBattlePassConfig,
+  getPvpLadderRanges,
 } from '@/lib/game/live-config'
+import { describeTierChange } from '@/lib/game/tier-change'
 import {
   chaGoldBonus,
   streakGoldMultiplier,
@@ -514,6 +516,16 @@ export async function POST(req: NextRequest) {
 
     const ratingChange = attackerNewRating - attacker.pvpRating
 
+    // Did this fight cross a ladder boundary? Resolved against the live
+    // ladder, so a floor edited in the admin balance panel is the one the
+    // promotion is measured against. `null` whenever the player stayed put,
+    // which is nearly always.
+    const tierChange = describeTierChange(
+      attacker.pvpRating,
+      attackerNewRating,
+      await getPvpLadderRanges(),
+    )
+
     // Fire-and-forget: create battle result mail for both players
     createBattleResultMail(prisma, {
       winnerId,
@@ -559,6 +571,11 @@ export async function POST(req: NextRequest) {
         // the iOS view doesn't need to branch on opponent type.
         rating_before: attacker.pvpRating,
         rating_after: attackerNewRating,
+        // Absent unless the fight moved the player across a division or tier
+        // boundary. Until now a promotion into Gold was indistinguishable
+        // from any other +24, which is why RankUpCeremonyView was never
+        // instantiated anywhere.
+        tier_change: tierChange,
         first_win_bonus: firstWin,
         leveled_up: levelUpResult?.leveledUp ?? false,
         new_level: levelUpResult?.newLevel,
@@ -846,6 +863,14 @@ async function resolveBotFight(
   const loot: LootResponseItem[] = []
   if (lootItem) loot.push(lootItem)
 
+  // Bots move the rating too (0.3k on a win), so they can promote a player —
+  // rarely, but the ceremony has to fire when they do.
+  const tierChange = describeTierChange(
+    attacker.pvpRating,
+    attackerNewRating,
+    await getPvpLadderRanges(),
+  )
+
   console.log(`[BOT-FIGHT] ${attacker.characterName} vs ${opponent_id}: ${attackerWon ? 'WIN' : 'LOSS'}, gold=${goldReward}, xp=${xpReward}, rating=${attacker.pvpRating}→${attackerNewRating}`)
 
   return NextResponse.json({
@@ -869,6 +894,7 @@ async function resolveBotFight(
       // too so the iOS RewardsBlock doesn't need to branch on opponent type.
       rating_before: attacker.pvpRating,
       rating_after: attackerNewRating,
+      tier_change: tierChange,
       first_win_bonus: firstWin,
       leveled_up: levelUpResult?.leveledUp ?? false,
       new_level: levelUpResult?.newLevel,

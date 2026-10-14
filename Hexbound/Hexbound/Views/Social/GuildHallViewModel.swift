@@ -567,6 +567,7 @@ class GuildHallViewModel {
                 ratingChange: result.ratingChange,
                 ratingBefore: nil,
                 ratingAfter: nil,
+                tierChange: nil,
                 firstWinBonus: nil,
                 leveledUp: nil,
                 newLevel: nil,
@@ -612,6 +613,7 @@ class GuildHallViewModel {
                 // RewardsBlock falls back to delta-only on nil.
                 ratingBefore: nil,
                 ratingAfter: nil,
+                tierChange: nil,
                 firstWinBonus: false,
                 leveledUp: false,
                 newLevel: nil,

@@ -17,6 +17,11 @@ struct CombatResultDetailView: View {
     @State private var capturedNewLevel: Int? = nil
     @State private var capturedStatPoints: Int = 3
     @State private var capturedPassivePoints: Int = 0
+    /// Captured alongside the level-up values, and for the same reason: both
+    /// are read from inside a delayed callback, by which time `result` may
+    /// already have been cleared by goBack().
+    @State private var capturedTierChange: TierChangeInfo?
+    @State private var capturedRatingAfter: Int?
 
     // Loot detail modal
     @State private var selectedLootIndex: Int? = nil
@@ -660,6 +665,8 @@ struct CombatResultDetailView: View {
             capturedStatPoints = res.statPointsAwarded ?? 3
             capturedPassivePoints = res.passivePointsAwarded ?? 0
         }
+        capturedTierChange = result?.tierChange
+        capturedRatingAfter = result?.ratingAfter
 
         if leveledUp, let newLvl = newLevel {
             let previousLevel = newLvl - 1
@@ -715,14 +722,36 @@ struct CombatResultDetailView: View {
                         passivePoints: capturedPassivePoints
                     )
                 }
+                // Enqueued after the level-up so the two play in sequence
+                // rather than stacking. The queue does the sequencing.
+                enqueueRankUpIfPromoted()
             }
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 withAnimation(.easeInOut(duration: MotionConstants.tickUpLong)) {
                     xpBarProgress = newXpFraction
                 }
+                enqueueRankUpIfPromoted()
             }
         }
+    }
+
+    /// Fire the rank-up ceremony when this fight crossed a tier boundary.
+    ///
+    /// The crossing comes from the server (`result.tier_change`) rather than
+    /// being recomputed here — the ladder's floors are live-configurable, and
+    /// a client that owned its own thresholds is exactly how the arena badge
+    /// and the leaderboard once disagreed about the same account.
+    ///
+    /// Captured before the delay like the level-up values above: `result` is
+    /// nil once the player taps Continue, and a promotion that got swallowed
+    /// by a fast tap is a promotion the player never sees again.
+    private func enqueueRankUpIfPromoted() {
+        guard let change = capturedTierChange,
+              let rating = capturedRatingAfter,
+              let data = RankUpData(tierChange: change, newRating: rating)
+        else { return }
+        appState.presentRankUp(data)
     }
 
     // MARK: - Navigation

@@ -3,16 +3,15 @@ import SwiftUI
 /// Full-screen rank-up ceremony modal for PvP tier promotion.
 /// Old rank → new rank transition, reward display, haptic + SFX.
 ///
-/// NOT WIRED (checked 2026-10-14). Nothing instantiates this view, and the
-/// promotion it celebrates is never detected: `/api/pvp/resolve` returns the
-/// new rating but no tier-change flag, and no client code compares the old
-/// and new rating against `PvPLadder` tiers. Crossing into Gold today is
-/// silent — not even a toast; the `.rankUp` toast type is used for prestige.
+/// Wired 2026-10-14. It sat unused for months because the signal was missing,
+/// not the screen: `/api/pvp/resolve` returned the new rating and nothing
+/// else, so crossing into Gold looked exactly like any other +24 and the
+/// promotion passed without so much as a toast. Resolve now reports the
+/// crossing itself (`result.tier_change`), and `CombatResultDetailView`
+/// enqueues this through `AppState.ModalType.rankUp`.
 ///
-/// Kept deliberately rather than deleted: the ceremony is finished work and
-/// the missing half is the signal, not the screen. To wire it: have resolve
-/// report the crossed tier (or compare locally in `ArenaViewModel` /
-/// `CombatResultDetailView`), then enqueue it through `AppState.ModalType`.
+/// Fires on a TIER change only. Divisions move three times per tier, and a
+/// full-screen ceremony three times as often would stop meaning anything.
 struct RankUpCeremonyView: View {
     let oldRank: String
     let newRank: String
@@ -68,7 +67,10 @@ struct RankUpCeremonyView: View {
                 }
 
                 // Rewards
-                if showRewards {
+                // Promotion carries no reward of its own today, so this block
+                // is usually empty — the divider would otherwise float alone
+                // under the new rank.
+                if showRewards, goldReward > 0 || gemReward > 0 {
                     GoldDivider()
                         .padding(.horizontal, LayoutConstants.cinematicPaddingH)
 
@@ -212,5 +214,23 @@ struct RankUpCeremonyView: View {
     /// default gold.
     private func rankColor(for rank: String) -> Color {
         DarkFantasyTheme.rankColor(forTierKey: PvPRank.tierKey(fromLabel: rank))
+    }
+}
+
+/// What the ceremony needs to play, lifted off a `TierChangeInfo` plus
+/// whatever the fight paid out.
+struct RankUpData {
+    let oldRank: String
+    let newRank: String
+    let newRating: Int
+    var goldReward: Int = 0
+    var gemReward: Int = 0
+
+    /// Returns nil unless this was a promotion across a TIER boundary.
+    init?(tierChange: TierChangeInfo, newRating: Int) {
+        guard tierChange.isPromotion, tierChange.isTierChange else { return nil }
+        oldRank = tierChange.from.label
+        newRank = tierChange.to.label
+        self.newRating = newRating
     }
 }

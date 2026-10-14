@@ -569,6 +569,7 @@ final class CombatViewModel {
                 // RewardsBlock falls back to delta-only.
                 ratingBefore: resolve.ratingBefore,
                 ratingAfter: resolve.ratingAfter,
+                tierChange: resolve.tierChange,
                 firstWinBonus: resolve.firstWinBonus,
                 leveledUp: resolve.leveledUp,
                 newLevel: resolve.newLevel,

@@ -142,6 +142,36 @@ struct CombatLog: Codable {
     }
 }
 
+/// One side of a ladder crossing, as `/api/pvp/resolve` reports it.
+struct TierSnapshotInfo: Codable {
+    let tier: String
+    /// "III" / "II" / "I", or nil for Master and above, which have no divisions.
+    let division: String?
+    /// Ready-to-render label: "Silver II", "Master".
+    let label: String
+    /// Global 0-based ladder position — the only safe way to compare two
+    /// snapshots, since tier keys alone say nothing about order.
+    let index: Int
+}
+
+/// Present only when the fight moved the player across a division or tier
+/// boundary. The server resolves it against the live ladder, so a floor
+/// edited in the admin balance panel is the one the promotion is measured
+/// against; the client does no threshold maths of its own.
+///
+/// Challenger never appears here — it is a top-100 cutoff on the absolute
+/// leaderboard, not a rating band, and resolve does not know anyone's rank.
+struct TierChangeInfo: Codable {
+    let direction: String
+    /// True when the tier itself changed (Silver → Gold), false for a move
+    /// between divisions of one tier. Only the former earns the ceremony.
+    let isTierChange: Bool
+    let from: TierSnapshotInfo
+    let to: TierSnapshotInfo
+
+    var isPromotion: Bool { direction == "promotion" }
+}
+
 struct CombatResultInfo: Codable {
     let isWin: Bool
     let winnerId: String?
@@ -156,6 +186,10 @@ struct CombatResultInfo: Codable {
     let ratingBefore: Int?
     /// Rating AFTER the match. See `ratingBefore`.
     let ratingAfter: Int?
+    /// Set when this fight crossed a ladder boundary. See `TierChangeInfo`.
+    /// `nil` on responses from a backend older than 2026-10-14, and on the
+    /// overwhelming majority of fights, which move nobody anywhere.
+    let tierChange: TierChangeInfo?
     let firstWinBonus: Bool?
     let leveledUp: Bool?
     let newLevel: Int?

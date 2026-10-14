@@ -139,6 +139,9 @@ vi.mock('@/lib/game/live-config', () => ({
   getXpRewardsConfig: mockGetXpRewardsConfig,
   getFirstWinBonusConfig: mockGetFirstWinBonusConfig,
   getBattlePassConfig: mockGetBattlePassConfig,
+  // Undefined means "no admin overrides", which tierFromRating reads as
+  // the frozen ladder — what these tests assume.
+  getPvpLadderRanges: async () => undefined,
 }))
 
 vi.mock('@/lib/game/progression', () => ({

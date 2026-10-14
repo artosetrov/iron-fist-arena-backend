@@ -280,6 +280,9 @@ private struct PvpResolveResultPayload: Decodable {
     /// rewards block falls back to delta-only display.
     let ratingBefore: Int?
     let ratingAfter: Int?
+    /// Present only when the fight crossed a ladder boundary (2026-10-14).
+    /// See `TierChangeInfo`.
+    let tierChange: TierChangeInfo?
     let firstWinBonus: Bool
     let leveledUp: Bool
     let newLevel: Int?
@@ -462,6 +465,7 @@ final class BattlePreloader {
                 ratingChange: response.result.ratingChange,
                 ratingBefore: response.result.ratingBefore,
                 ratingAfter: response.result.ratingAfter,
+                tierChange: response.result.tierChange,
                 firstWinBonus: response.result.firstWinBonus,
                 leveledUp: response.result.leveledUp,
                 newLevel: response.result.newLevel,
@@ -516,6 +520,10 @@ struct ResolveResult {
     /// falls back to delta-only in that case.
     let ratingBefore: Int?
     let ratingAfter: Int?
+    /// The ladder crossing this fight caused, if any — the signal
+    /// `RankUpCeremonyView` waited months for. Nil on every fight that left
+    /// the player in the same division, which is nearly all of them.
+    let tierChange: TierChangeInfo?
     let firstWinBonus: Bool
     let leveledUp: Bool
     let newLevel: Int?

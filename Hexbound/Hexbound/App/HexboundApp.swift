@@ -85,6 +85,20 @@ struct HexboundApp: App {
                 }
             }
             .overlay {
+                if let rankUp = appState.activeRankUp {
+                    RankUpCeremonyView(
+                        oldRank: rankUp.oldRank,
+                        newRank: rankUp.newRank,
+                        newRating: rankUp.newRating,
+                        goldReward: rankUp.goldReward,
+                        gemReward: rankUp.gemReward,
+                        onDismiss: { appState.dismissRankUp() }
+                    )
+                    .environment(appState)
+                    .transition(.opacity)
+                }
+            }
+            .overlay {
                 // Above the boss reveal, which is what the old numbers said
                 // (180 vs 170) and the old modifier order did not do.
                 if let cfg = appState.claimRewardConfig {

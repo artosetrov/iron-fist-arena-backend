@@ -154,6 +154,25 @@ final class AppState {
         dismissActiveModal()
     }
 
+    // MARK: - Rank Up Ceremony
+    //
+    // Queued like everything else, which matters here: a fight that levels
+    // the player up AND promotes them enqueues both, and they play one after
+    // the other instead of landing on top of each other.
+    var activeRankUp: RankUpData? {
+        if case .rankUp(let data) = activeModal { return data }
+        return nil
+    }
+
+    func presentRankUp(_ data: RankUpData) {
+        enqueueModal(.rankUp(data))
+    }
+
+    func dismissRankUp() {
+        guard activeModal?.kind == .rankUp else { return }
+        dismissActiveModal()
+    }
+
     // MARK: - Hero Forge Overlay (BUG-08)
     //
     // Root-level "Forging Your Hero..." loading overlay owned by HexboundApp.
@@ -349,11 +368,12 @@ final class AppState {
         case levelUp
         case claimReward(ClaimRewardConfig)
         case bossReveal(BossRevealData)
+        case rankUp(RankUpData)
 
         /// The case without its payload. Both payloads carry closures, so
         /// `ModalType` cannot be `Equatable`; comparing kinds is what the
         /// queue actually needs.
-        enum Kind { case dailyLogin, levelUp, claimReward, bossReveal }
+        enum Kind { case dailyLogin, levelUp, claimReward, bossReveal, rankUp }
 
         var kind: Kind {
             switch self {
@@ -361,6 +381,7 @@ final class AppState {
             case .levelUp: .levelUp
             case .claimReward: .claimReward
             case .bossReveal: .bossReveal
+            case .rankUp: .rankUp
             }
         }
 
@@ -371,7 +392,7 @@ final class AppState {
         var isIdempotent: Bool {
             switch kind {
             case .dailyLogin, .levelUp: true
-            case .claimReward, .bossReveal: false
+            case .claimReward, .bossReveal, .rankUp: false
             }
         }
     }
@@ -407,6 +428,9 @@ final class AppState {
             withAnimation(.easeInOut(duration: MotionConstants.overlayFade)) { activeModal = next }
         case .claimReward:
             withAnimation(MotionConstants.snappy) { activeModal = next }
+        case .rankUp:
+            HapticManager.rankUp()
+            withAnimation(MotionConstants.dramatic) { activeModal = next }
         }
     }
 
