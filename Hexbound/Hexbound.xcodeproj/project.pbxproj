@@ -15,7 +15,6 @@
 		0045A1B2C3D4E5F6A7B8C9D6 /* BattleResultSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D7 /* BattleResultSections.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
 		007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */; };
-		0179E69325E53F8E8FA6107B /* LeaderboardPlayerDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */; };
 		02202F303EB938D9AAD66758 /* TierBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788DFA214D96BAD5671008AE /* TierBadge.swift */; };
 		050F43172483AA6F76D928A3 /* dungeon_boss_appear.wav in Resources */ = {isa = PBXBuildFile; fileRef = EF46CED9AC0AB712DD3031D8 /* dungeon_boss_appear.wav */; };
 		052D94B35BFF19AD5FD065A1 /* hit_true.wav in Resources */ = {isa = PBXBuildFile; fileRef = C48735E06813CD9D4A903A63 /* hit_true.wav */; };
@@ -340,7 +339,6 @@
 		A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */; };
 		A4B5C6D7E8F9A0B1C2D3E4F5 /* NumberTickUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F9A0B1C2D3E4F6 /* NumberTickUpView.swift */; };
 		A4C8E2F6B1D3A5C7E9F1B3D5 /* LowHPPotionBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */; };
-		A4E5F6A7B8C9D0E1F2A3B4C6 /* GuestGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */; };
 		A5271EF92268351E40E579EC /* Quest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8DD10D38C3C6619DCDD923 /* Quest.swift */; };
 		A5B6C7D8E9F0A1B2C3D4E5F6 /* RewardBurstView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0A1B2C3D4E5F7 /* RewardBurstView.swift */; };
 		A6B7C8D9E0F1A2B3C4D5E6F7 /* StaggeredAppearModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F1A2B3C4D5E6F8 /* StaggeredAppearModifier.swift */; };
@@ -792,7 +790,6 @@
 		9AF8ADC51BB174F8BA5545E1 /* combat_dodge_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_dodge_3.wav; sourceTree = "<group>"; };
 		9B1E3F5A7B8C9D0E1F2A3B4D /* GuildHallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallViewModel.swift; sourceTree = "<group>"; };
 		9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPurchaseView.swift; sourceTree = "<group>"; };
-		9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardPlayerDetailSheet.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineDetailView.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF8A /* GoldMineCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineCards.swift; sourceTree = "<group>"; };
 		9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimRewardModalView.swift; sourceTree = "<group>"; };
@@ -941,7 +938,6 @@
 		D4B954EEABC37CF12297EF9F /* amb_forge_fire.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_forge_fire.wav; sourceTree = "<group>"; };
 		D4E5F6A70819BAC1D2E3F4A6 /* TutorialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialManager.swift; sourceTree = "<group>"; };
 		D4E5F6A70819BAC1D2E3F4A8 /* TutorialTooltipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialTooltipView.swift; sourceTree = "<group>"; };
-		D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestGateView.swift; sourceTree = "<group>"; };
 		D676FF4D263CD89706EC11CB /* CelebrationBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationBannerView.swift; sourceTree = "<group>"; };
 		D6E64D0FCA19E4DC795606E0 /* dungeon_boss_appear_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dungeon_boss_appear_3.wav; sourceTree = "<group>"; };
 		D7B837363250403614BE1A4F /* TavernDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavernDetailView.swift; sourceTree = "<group>"; };
@@ -1434,7 +1430,6 @@
 				f76f0260c391916a42554dca /* CardLevelBadge.swift */,
 				79D23648A55C5267EC0B4E4F /* EquippedBadge.swift */,
 				74E92AABAC8A1B5D421A01F1 /* CurrencyDisplay.swift */,
-				D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */,
 				4F42903B5348903ABC58C059 /* ClassTagView.swift */,
 				A0502E24B9FC94BF5E244516 /* GlassStatPill.swift */,
 				CBC00DB11E9CD4F14314FCF6 /* OpponentStatCell.swift */,
@@ -1497,7 +1492,6 @@
 			isa = PBXGroup;
 			children = (
 				F9C513DB77F2837F754CB4BD /* LeaderboardDetailView.swift */,
-				9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */,
 				DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */,
 				23B93532AFD12F5E4A34B4A8 /* LeaderboardViewModel.swift */,
 			);
@@ -2273,7 +2267,6 @@
 				C70E9AD47FC899F2C57ADD80 /* AchievementsViewModel.swift in Sources */,
 				941F9A9BC1C17F6006E85B3E /* AppConstants.swift in Sources */,
 				A0E1F2A3B4C5D6E7F8091A2B /* EmailConfirmationView.swift in Sources */,
-				A4E5F6A7B8C9D0E1F2A3B4C6 /* GuestGateView.swift in Sources */,
 				E24659AA7DBF548BC2D1C76B /* ClassTagView.swift in Sources */,
 				D037EB2DCF2730146FD38E8B /* GlassStatPill.swift in Sources */,
 				41E2A41FC6BB23AFADE6CE61 /* OpponentStatCell.swift in Sources */,
@@ -2465,7 +2458,6 @@
 				L10N001BLD000000000000A1 /* L10n.swift in Sources */,
 				294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */,
 				41CB9B1A5E08848F14AC6F83 /* LeaderboardDetailView.swift in Sources */,
-				0179E69325E53F8E8FA6107B /* LeaderboardPlayerDetailSheet.swift in Sources */,
 				BBC6BB5227401094D31E5273 /* LeaderboardEntry.swift in Sources */,
 				8A9D4C7B52EB4E15E20C6E9D /* LeaderboardRowView.swift in Sources */,
 				A31D68D9C8AECACB630CCB29 /* LeaderboardService.swift in Sources */,

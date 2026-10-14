@@ -248,8 +248,10 @@ struct TutorialView: View {
     private func navigateToObjective(_ objective: FTUEObjective) {
         switch objective {
         case .firstBattle:
-            appState.selectedTab = .arena
+            // Was `selectedTab = .arena` + clear path — but there is no tab bar,
+            // so the player landed on the Hub instead of the Arena (fixed 2026-10-14).
             appState.mainPath = NavigationPath()
+            appState.mainPath.append(AppRoute.arena)
         case .gearUp:
             appState.mainPath.append(AppRoute.shop)
         case .exploreDungeon:

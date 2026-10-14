@@ -14,7 +14,6 @@ enum AppRoute: Hashable, Codable {
     case login
     case register
     case onboarding
-    case characterSelection
 
     // Hub
     case hub
@@ -159,30 +158,6 @@ extension AppRoute {
     }
 }
 
-// MARK: - Bottom Tab
-
-enum HubTab: Int, CaseIterable {
-    case hub = 0
-    case arena = 1
-    case hero = 2
-
-    var icon: String {
-        switch self {
-        case .hub: "house.fill"
-        case .arena: "shield.fill"
-        case .hero: "person.fill"
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .hub: "HUB"
-        case .arena: "ARENA"
-        case .hero: "HERO"
-        }
-    }
-}
-
 // MARK: - Main Router
 
 struct MainRouterView: View {
@@ -291,7 +266,7 @@ struct MainRouterView: View {
         case .tutorial: TutorialView()
 
         // Auth (should not reach here in MainRouter)
-        case .login, .register, .onboarding, .characterSelection:
+        case .login, .register, .onboarding:
             UnavailableRouteView()
         }
     }

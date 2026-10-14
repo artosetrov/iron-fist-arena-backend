@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Ornamental stat group header — centered gold label with diamond-tipped gradient lines.
-/// Used as section dividers in stat grids (CharacterProfileView, LeaderboardPlayerDetailSheet, HeroDetailView).
+/// Used as section dividers in stat grids (CharacterProfileView, HeroDetailView).
 ///
 /// Usage:
 /// ```swift

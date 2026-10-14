@@ -184,8 +184,7 @@ struct DungeonRoomDetailView: View {
                             triggerBossFightSlam()
                         }
                     },
-                    onLootTap: { _ in },
-                    isNavigationMode: true
+                    onLootTap: { _ in }
                 )
             }
         }

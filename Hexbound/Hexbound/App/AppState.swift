@@ -62,7 +62,6 @@ final class AppState {
     // MARK: - Navigation
     var authPath = NavigationPath()
     var mainPath = NavigationPath()
-    var selectedTab: HubTab = .hub
     var pendingPushRoute: AppRoute?
 
     // MARK: - Combat
@@ -482,7 +481,6 @@ final class AppState {
     func switchToCharacterSelect() {
         currentCharacter = nil
         mainPath = NavigationPath()
-        selectedTab = .hub
         currentScreen = .characterSelect
     }
 
@@ -505,7 +503,6 @@ final class AppState {
         isBossRevealing = false
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
         dailyLoginCanClaim = false
-        selectedTab = .hub
         authPath = NavigationPath()
         mainPath = NavigationPath()
         KeychainManager.shared.clearAll()

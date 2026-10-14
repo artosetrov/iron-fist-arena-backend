@@ -15,8 +15,16 @@ struct SeasonSummaryData {
 
 // MARK: - Season Summary Modal
 
-/// Full-screen ceremony shown when a season ends.
+/// Full-screen ceremony for the end of a battle-pass season.
 /// Animates stats tick-up → "NEW SEASON BEGINS" slam → dismiss.
+///
+/// NOT WIRED (checked 2026-10-14). Nothing instantiates this view, and no
+/// client code detects a season rollover — `BattlePassViewModel` reads the
+/// current season but never compares it with the last one seen.
+///
+/// Kept deliberately rather than deleted: to wire it, persist the last seen
+/// season id, compare on battle-pass load, and enqueue this through
+/// `AppState.ModalType` with the summary the server already has.
 struct SeasonSummaryModalView: View {
     let summary: SeasonSummaryData
     let onDismiss: () -> Void

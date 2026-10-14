@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Full-page opponent profile — replaces LeaderboardPlayerDetailSheet modal.
+/// Full-page opponent profile (replaced a modal sheet, removed 2026-10-14).
 /// Pushed via AppRoute.characterProfile onto the NavigationStack.
 /// Shows portrait+equipment card, action buttons with new friend UX, PvP stats, and stats.
 struct CharacterProfileView: View {
@@ -22,6 +22,11 @@ struct CharacterProfileView: View {
 
     // Friend chip animation
     @State private var showFriendChip = false
+
+    /// Report sheet. UGC reporting is required by App Store guideline 1.2, and
+    /// this profile is the only place a player can be reported as a person
+    /// rather than through one of their messages (GuildHallScrollsTab).
+    @State private var showReportDialog = false
 
     var body: some View {
         ZStack {
@@ -115,6 +120,9 @@ struct CharacterProfileView: View {
                 // Action buttons
                 actionButtons
 
+                // Report — low-emphasis, required for UGC (App Store 1.2)
+                reportButton(profile)
+
                 // PvP stats — unified full widget
                 PvPStatsWidget(.full, data: profile)
 
@@ -134,6 +142,32 @@ struct CharacterProfileView: View {
             .padding(.top, LayoutConstants.spaceMD)
             .padding(.bottom, LayoutConstants.spaceLG)
         }
+    }
+
+    // MARK: - Report
+
+    private func reportButton(_ profile: OpponentProfile) -> some View {
+        Button {
+            showReportDialog = true
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "flag")
+                Text("Report player")
+            }
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(DarkFantasyTheme.textTertiary)
+            .frame(maxWidth: .infinity)
+            .frame(height: LayoutConstants.buttonHeightMD)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Report this player")
+        .reportPlayerDialog(
+            isPresented: $showReportDialog,
+            targetId: profile.id,
+            targetName: profile.characterName,
+            context: .profile
+        )
     }
 
     // MARK: - Friend Status Row (new UX)

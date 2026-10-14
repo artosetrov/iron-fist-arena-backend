@@ -1,7 +1,18 @@
 import SwiftUI
 
-/// Full-screen rank-up ceremony modal shown after PvP rank promotion.
-/// Features: old rank → new rank transition, reward display, haptic + SFX.
+/// Full-screen rank-up ceremony modal for PvP tier promotion.
+/// Old rank → new rank transition, reward display, haptic + SFX.
+///
+/// NOT WIRED (checked 2026-10-14). Nothing instantiates this view, and the
+/// promotion it celebrates is never detected: `/api/pvp/resolve` returns the
+/// new rating but no tier-change flag, and no client code compares the old
+/// and new rating against `PvPLadder` tiers. Crossing into Gold today is
+/// silent — not even a toast; the `.rankUp` toast type is used for prestige.
+///
+/// Kept deliberately rather than deleted: the ceremony is finished work and
+/// the missing half is the signal, not the screen. To wire it: have resolve
+/// report the crossed tier (or compare locally in `ArenaViewModel` /
+/// `CombatResultDetailView`), then enqueue it through `AppState.ModalType`.
 struct RankUpCeremonyView: View {
     let oldRank: String
     let newRank: String

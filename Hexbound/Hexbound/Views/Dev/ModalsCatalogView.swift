@@ -12,7 +12,6 @@ struct ModalsCatalogView: View {
 
             ScrollView {
                 VStack(spacing: LayoutConstants.spaceLG) {
-                    guestGateSection
                     npcGuideSection
                     sessionExpiredSection
                 }
@@ -31,18 +30,6 @@ struct ModalsCatalogView: View {
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
-        }
-    }
-
-    // MARK: - Guest Gate
-
-    private var guestGateSection: some View {
-        catalogSection("Guest Gate") {
-            GuestGateView(
-                feature: "Arena PvP",
-                onRegister: { },
-                onDismiss: { }
-            )
         }
     }
 

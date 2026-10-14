@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Reusable opponent stat comparison cell — shows stat name, icon, value,
 /// and a delta badge comparing against the player's value.
-/// Used in CharacterProfileView and LeaderboardPlayerDetailSheet.
+/// Used in CharacterProfileView.
 ///
 /// Usage:
 /// ```swift

@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Full boss detail screen — opened when tapping a DungeonBossCard.
-/// Used as a NavigationStack push (isNavigationMode = true, default)
-/// or as a sheet for legacy/fallback.
+/// Always a NavigationStack push. The name is historical: the sheet
+/// presentation it once supported was dead code and was removed 2026-10-14.
 struct BossDetailSheet: View {
     let boss: BossInfo
     let state: BossState
@@ -12,8 +12,6 @@ struct BossDetailSheet: View {
     let isFighting: Bool
     let onFight: () -> Void
     let onLootTap: (LootPreview) -> Void
-    /// When true: full-screen nav push with toolbar back button (no sheet modifiers).
-    var isNavigationMode: Bool = true
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
@@ -48,7 +46,7 @@ struct BossDetailSheet: View {
                     Spacer(minLength: LayoutConstants.spaceLG)
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, isNavigationMode ? LayoutConstants.spaceMD : LayoutConstants.spaceLG)
+                .padding(.top, LayoutConstants.spaceMD)
                 .padding(.bottom, state == .current ? 100 : LayoutConstants.spaceLG)
                 .frame(maxWidth: .infinity)
             }
@@ -91,17 +89,6 @@ struct BossDetailSheet: View {
                 .transition(.opacity)
             }
         }
-        // Sheet mode only: close X button + sheet presentation modifiers
-        .overlay(alignment: .topTrailing) {
-            if !isNavigationMode {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.closeButton)
-                .padding(.top, LayoutConstants.spaceMD)
-                .padding(.trailing, LayoutConstants.screenPadding)
-            }
-        }
         // Loot detail modal — renders ON TOP of boss detail (FIX #4)
         .overlay {
             if showLootModal, let loot = selectedLootForModal {
@@ -114,21 +101,18 @@ struct BossDetailSheet: View {
                 .zIndex(100)
             }
         }
-        .modifier(BossDetailPresentationModifier(isNavigationMode: isNavigationMode))
-        .navigationBarBackButtonHidden(isNavigationMode)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            if isNavigationMode {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HubLogoButton { dismiss() }
-                }
-                ToolbarItem(placement: .principal) {
-                    Text(boss.name.uppercased())
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(stateColor)
-                        .tracking(2)
-                        .lineLimit(1)
-                }
+            ToolbarItem(placement: .navigationBarLeading) {
+                HubLogoButton { dismiss() }
+            }
+            ToolbarItem(placement: .principal) {
+                Text(boss.name.uppercased())
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(stateColor)
+                    .tracking(2)
+                    .lineLimit(1)
             }
         }
         .onAppear { maybeTriggerReveal() }
@@ -670,20 +654,5 @@ private struct DiamondLoadingDot: View {
             .onDisappear {
                 isAnimating = false
             }
-    }
-}
-
-private struct BossDetailPresentationModifier: ViewModifier {
-    let isNavigationMode: Bool
-    func body(content: Content) -> some View {
-        if isNavigationMode {
-            content
-        } else {
-            content
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(DarkFantasyTheme.bgPrimary)
-                .presentationCornerRadius(20)
-        }
     }
 }
