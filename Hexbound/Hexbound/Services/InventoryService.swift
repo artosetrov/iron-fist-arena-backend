@@ -149,11 +149,11 @@ final class InventoryService {
             #if DEBUG
             print("[InventoryService] Network error: \(error)")
             #endif
-            // Only interrupt with a toast when the player has nothing to look
-            // at. With warm cache on screen the view model's inline error is
-            // enough — a toast plus an error page for one failed refresh is
-            // two interruptions for one event.
-            if appState.cachedInventory == nil {
+            // Toast ONLY when there is content on screen. The view's error
+            // page (showsErrorState) appears exactly when the list is empty,
+            // so toasting that case gave two messages for one event; the warm
+            // cache case showed nothing at all. Inverted 2026-10-14.
+            if appState.cachedInventory != nil {
                 appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                     Task { @MainActor in
                         _ = await self?.loadInventory()

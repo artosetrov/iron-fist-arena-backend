@@ -18,6 +18,16 @@ final class ShellGameViewModel {
     var playsRemaining: Int = 20
     var playsLimit: Int = 20
 
+    var isLoadingStatus = false
+    var errorMessage: String?
+
+    /// The status call is what tells the player how many plays are left. When
+    /// it fails we used to keep the 20/20 defaults, so a dead backend looked
+    /// like a full allowance until the first bet failed (fixed 2026-10-14).
+    var showsErrorState: Bool { errorMessage != nil && !hasLoadedStatus }
+
+    private var hasLoadedStatus = false
+
     private var sessionId: String?
 
     static let bets = [50, 100, 200, 500, 1000]
@@ -78,6 +88,8 @@ final class ShellGameViewModel {
 
     func loadStatus() async {
         guard let charId = appState.currentCharacter?.id else { return }
+        if !hasLoadedStatus { isLoadingStatus = true }
+        errorMessage = nil
         do {
             let data: ShellGameStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.shellGameStatus,
@@ -85,9 +97,12 @@ final class ShellGameViewModel {
             )
             playsRemaining = data.playsRemaining
             playsLimit = data.playsLimit
+            hasLoadedStatus = true
         } catch {
-            // Keep defaults (20/20) — non-critical
+            errorMessage = (error as? APIError)?.userMessage
+                ?? "Couldn't reach the table. Check your connection and try again."
         }
+        isLoadingStatus = false
     }
 
     // MARK: - Step 1: Start session

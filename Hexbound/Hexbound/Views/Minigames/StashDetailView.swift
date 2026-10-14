@@ -58,8 +58,13 @@ struct StashDetailView: View {
                 // Sort picker
                 sortPicker(vm)
 
-                // Item grid
-                if vm.isLoading && vm.items.isEmpty {
+                // Item grid. Error before empty: a failed load must not read
+                // as "you own nothing" (2026-10-14).
+                if vm.showsErrorState {
+                    ErrorStateView.loadFailed(message: vm.errorMessage) {
+                        Task { await vm.loadStash() }
+                    }
+                } else if vm.isLoading && vm.items.isEmpty {
                     stashLoadingGrid()
                 } else {
                     stashGrid(vm)
@@ -178,23 +183,11 @@ struct StashDetailView: View {
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
 
-        // Empty state
-        if vm.items.isEmpty && !vm.isLoading {
-            VStack(spacing: LayoutConstants.spaceMD) {
-                Image(systemName: "shippingbox")
-                    .font(DarkFantasyTheme.cinematicTitle)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-                Text("Your chest is empty")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-                Text("Store items here from your inventory\nto share them between characters")
-                    .font(DarkFantasyTheme.caption)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, LayoutConstants.spaceXL)
+        // Empty state — only when the load actually succeeded and returned nothing.
+        if vm.items.isEmpty && !vm.isLoading && !vm.showsErrorState {
+            EmptyStateView.stash
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, LayoutConstants.spaceXL)
         }
     }
 

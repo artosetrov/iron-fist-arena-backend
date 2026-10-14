@@ -65,9 +65,14 @@ struct SessionSummaryView: View {
                 .buttonStyle(.primary)
                 .padding(.horizontal, LayoutConstants.spaceLG)
                 .padding(.bottom, LayoutConstants.spaceLG)
+            } else if vm.showsErrorState {
+                ErrorStateView.loadFailed(message: vm.errorMessage) {
+                    Task { await vm.load() }
+                }
+                .accessibilityLabel("Session summary failed to load")
             } else {
                 Spacer()
-                Text(vm.error ?? "No session data")
+                Text("No session data")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Spacer()
@@ -80,6 +85,7 @@ struct SessionSummaryView: View {
                 .buttonStyle(.primary)
                 .padding(.horizontal, LayoutConstants.spaceLG)
                 .padding(.bottom, LayoutConstants.spaceLG)
+                .accessibilityLabel("Continue, close session summary")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

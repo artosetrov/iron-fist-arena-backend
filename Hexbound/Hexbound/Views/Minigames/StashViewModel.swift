@@ -7,8 +7,13 @@ final class StashViewModel {
 
     var items: [Item] = []
     var isLoading = false
+    var errorMessage: String?
     var maxSlots = 100
     var usedSlots = 0
+
+    /// Error state only when the refresh failed AND there is nothing to show.
+    /// A failed refresh over a populated chest keeps the chest on screen.
+    var showsErrorState: Bool { errorMessage != nil && items.isEmpty }
 
     var selectedItem: Item?
     var showItemDetail = false
@@ -57,11 +62,15 @@ final class StashViewModel {
 
     func loadStash() async {
         if items.isEmpty { isLoading = true }
-        if let response = await service.loadStash() {
-            items = response.items
-            maxSlots = response.maxSlots
-            usedSlots = response.usedSlots
-        }
+        errorMessage = nil
+        await service.loadStash().apply(
+            assign: { response in
+                self.items = response.items
+                self.maxSlots = response.maxSlots
+                self.usedSlots = response.usedSlots
+            },
+            setError: { self.errorMessage = $0 }
+        )
         isLoading = false
     }
 

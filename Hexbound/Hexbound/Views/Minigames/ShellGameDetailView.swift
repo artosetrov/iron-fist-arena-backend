@@ -37,7 +37,11 @@ struct ShellGameDetailView: View {
 
     var body: some View {
         Group {
-            if let vm {
+            if let vm, vm.showsErrorState {
+                ErrorStateView.loadFailed(message: vm.errorMessage) {
+                    Task { await vm.loadStatus() }
+                }
+            } else if let vm {
                 mainContent(vm)
                     .transaction { $0.animation = nil }
             } else {

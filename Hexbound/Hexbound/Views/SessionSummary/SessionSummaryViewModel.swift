@@ -20,7 +20,11 @@ struct SessionSummaryResponse: Codable {
 final class SessionSummaryViewModel {
     var summary: SessionSummaryData?
     var isLoading = false
-    var error: String?
+    var errorMessage: String?
+
+    /// A failed load is an error state, not "no session data" — the two were
+    /// indistinguishable before 2026-10-14, both rendering one grey line.
+    var showsErrorState: Bool { errorMessage != nil && summary == nil }
 
     private let characterId: String
 
@@ -30,15 +34,16 @@ final class SessionSummaryViewModel {
 
     func load() async {
         isLoading = true
-        error = nil
+        errorMessage = nil
         do {
             let response: SessionSummaryResponse = try await APIClient.shared.get(
-                "/api/session-summary",
+                APIEndpoints.sessionSummary,
                 params: ["character_id": characterId]
             )
             summary = response.session
         } catch {
-            self.error = "Failed to load session summary"
+            errorMessage = (error as? APIError)?.userMessage
+                ?? "Couldn't load your session. Check your connection and try again."
         }
         isLoading = false
     }

@@ -10,6 +10,17 @@ struct CombatDetailView: View {
     @State private var showForfeitConfirmation = false
     @State private var playTask: Task<Void, Never>?
 
+    /// Preparation had no way out: if `appState.combatData` never arrived the
+    /// screen pulsed "PREPARING BATTLE" forever, with no back button (the view
+    /// hides the nav bar). The arena path is guarded — BattlePreloader returns
+    /// nil and navigation never happens — but the dungeon and rush paths push
+    /// this screen and set the data separately, so a failure there stranded the
+    /// player. After this timeout the screen offers retry and a way back.
+    @State private var preparationTimedOut = false
+    @State private var preparationTimeoutTask: Task<Void, Never>?
+
+    private static let preparationTimeout: Duration = .seconds(12)
+
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgAbyss.ignoresSafeArea()
@@ -64,6 +75,12 @@ struct CombatDetailView: View {
                         .allowsHitTesting(false)
                         .transition(.opacity)
                 }
+            } else if preparationTimedOut {
+                ErrorStateView.battleInit {
+                    preparationTimedOut = false
+                    startPreparationTimeout()
+                    setupCombatIfReady()
+                }
             } else {
                 preparationView
             }
@@ -85,6 +102,7 @@ struct CombatDetailView: View {
             SFXManager.shared.play(.gongHit)
             AmbientManager.shared.setZone(.arenaFight)
             setupCombatIfReady()
+            startPreparationTimeout()
         }
         .onDisappear {
             // D02 FIX (2026-04-13): cancel playTask when the combat SCREEN goes
@@ -94,6 +112,8 @@ struct CombatDetailView: View {
             // already-finished log. See finishCombat() fallback.
             playTask?.cancel()
             playTask = nil
+            preparationTimeoutTask?.cancel()
+            preparationTimeoutTask = nil
         }
         .onChange(of: appState.combatData != nil) { _, hasData in
             if hasData {
@@ -188,6 +208,22 @@ struct CombatDetailView: View {
         vm.onCombatEvent = { event in self.handleCombatEvent(event) }
         viewModel = vm
         playTask = Task { await vm.play() }
+        preparationTimeoutTask?.cancel()
+        preparationTimeoutTask = nil
+    }
+
+    /// Arms the preparation timeout. Cancelled as soon as combat data lands.
+    @MainActor
+    private func startPreparationTimeout() {
+        guard appState.combatData == nil else { return }
+        preparationTimeoutTask?.cancel()
+        preparationTimeoutTask = Task { @MainActor in
+            try? await Task.sleep(for: Self.preparationTimeout)
+            guard !Task.isCancelled else { return }
+            if appState.combatData == nil && viewModel == nil {
+                preparationTimedOut = true
+            }
+        }
     }
 
     // MARK: - Preparation Animation

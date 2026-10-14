@@ -57,6 +57,13 @@ final class FortuneWheelViewModel {
     var odds: [FortuneWheelOdd] = []
     var spinsLimit: Int = 10
     var isLoading = true
+    var errorMessage: String?
+
+    /// Error state only before the wheel has ever loaded — a failed refresh
+    /// over a known state keeps the wheel usable.
+    var showsErrorState: Bool { errorMessage != nil && !hasLoadedStatus }
+
+    private var hasLoadedStatus = false
 
     // NPC speech lines
     var npcSpeech: String = "Spin the wheel, brave soul! Fortune favors the bold."
@@ -145,6 +152,7 @@ final class FortuneWheelViewModel {
             return
         }
 
+        errorMessage = nil
         do {
             let data: FortuneWheelStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.fortuneWheelStatus,
@@ -153,8 +161,13 @@ final class FortuneWheelViewModel {
             spinsRemaining = data.spinsRemaining
             spinsLimit = data.spinsLimit
             odds = data.odds ?? []
+            hasLoadedStatus = true
         } catch {
-            // Default to showing wheel, backend will enforce limits
+            // Was: show the wheel anyway and let the backend enforce limits.
+            // That made a dead backend look like a working wheel with spins
+            // left, and the failure only surfaced on the first spin.
+            errorMessage = (error as? APIError)?.userMessage
+                ?? "Couldn't reach the wheel. Check your connection and try again."
         }
         isLoading = false
     }

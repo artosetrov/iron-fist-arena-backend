@@ -102,6 +102,14 @@ struct EmptyStateView: View {
 extension EmptyStateView {
 
     /// Inventory with no items
+    static var stash: EmptyStateView {
+        EmptyStateView(
+            icon: "shippingbox",
+            title: "Your Chest Is Empty",
+            message: "Store items here from your inventory to share them between characters."
+        )
+    }
+
     static func inventory(shopAction: @escaping () -> Void) -> EmptyStateView {
         EmptyStateView(
             icon: "backpack",

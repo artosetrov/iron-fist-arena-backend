@@ -101,11 +101,9 @@ final class ShopService {
             )
             return .loaded(response.items ?? response.shopItems ?? [])
         } catch {
-            appState.showToast("Failed to load shop", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
-                Task { @MainActor in
-                    _ = await self?.getItems()
-                }
-            }
+            // No toast here. The screen decides: ShopViewModel toasts only when
+            // the shop already has items on display, because ErrorStateView
+            // covers the empty case. Before 2026-10-14 both fired at once.
             return .failed(error)
         }
     }

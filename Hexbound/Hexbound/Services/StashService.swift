@@ -94,16 +94,22 @@ final class StashService {
     // MARK: - Load Stash
 
     /// Fetches all items in the account-level stash.
-    func loadStash() async -> StashResponse? {
+    ///
+    /// Returns a LoadOutcome so a failure reaches the screen as an error state
+    /// instead of an empty chest. Before 2026-10-14 this returned nil on
+    /// failure and showed a toast; the view then rendered "Your chest is
+    /// empty", which is the exact confusion LoadOutcome exists to prevent.
+    /// No toast here on purpose — loading errors belong to the screen, toasts
+    /// to actions (deposit, withdraw).
+    func loadStash() async -> LoadOutcome<StashResponse> {
         do {
             let response: StashPayload = try await APIClient.shared.get(APIEndpoints.stash)
-            return response.toResponse()
+            return .loaded(response.toResponse())
         } catch {
             #if DEBUG
             print("[StashService] loadStash error: \(error)")
             #endif
-            appState.showToast("Failed to load stash", subtitle: "Check connection", type: .error)
-            return nil
+            return .failed(error)
         }
     }
 

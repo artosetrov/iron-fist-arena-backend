@@ -172,6 +172,19 @@ final class ShopViewModel {
             cache: { self.cache.cacheShop($0) },
             setError: { self.errorMessage = $0 }
         )
+        // A failed refresh over a shop that still has items shows no error
+        // page (showsErrorState needs an empty list), so it would pass
+        // unnoticed — that is the one case worth a toast.
+        if outcome.isFailure && !items.isEmpty {
+            appState.showToast(
+                "Couldn't refresh the shop",
+                subtitle: errorMessage ?? "Check connection and try again",
+                type: .error,
+                actionLabel: "Retry"
+            ) { [weak self] in
+                Task { @MainActor in await self?.loadItems() }
+            }
+        }
         isLoading = false
         // Pre-load inventory for comparison if not cached
         if appState.cachedInventory == nil {
