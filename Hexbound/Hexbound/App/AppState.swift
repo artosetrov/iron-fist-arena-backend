@@ -120,7 +120,6 @@ final class AppState {
     // MARK: - UI State
     var isLoading = false
     var toasts: [ToastMessage] = []
-    var showDailyLoginPopup = false
     var dailyLoginCanClaim = false       // drives the hub widget badge
     var unreadMailCount = 0               // drives the inbox badge on hub
 
@@ -134,25 +133,25 @@ final class AppState {
     // Lives at root in HexboundApp.swift so the overlay survives
     // NavigationStack pushes / `currentScreen` transitions that would
     // otherwise tear it down mid-choreography.
-    var pendingBossReveal: BossRevealData?
-    var isBossRevealing = false
+    // Both of these now read the modal queue (see ModalType below), so a
+    // reveal waits its turn behind a level-up instead of landing on top of
+    // it. The payload used to be a second stored property cleared 350 ms
+    // after the flag; it is the queue entry itself now, and the removal
+    // transition plays from the `withAnimation` in `dismissActiveModal()`.
+    var isBossRevealing: Bool { activeModal?.kind == .bossReveal }
+
+    var pendingBossReveal: BossRevealData? {
+        if case .bossReveal(let data) = activeModal { return data }
+        return nil
+    }
 
     func presentBossReveal(_ data: BossRevealData) {
-        pendingBossReveal = data
-        withAnimation(.easeInOut(duration: MotionConstants.overlayFade)) {
-            isBossRevealing = true
-        }
+        enqueueModal(.bossReveal(data))
     }
 
     func dismissBossReveal() {
-        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
-            isBossRevealing = false
-        }
-        // Clear payload after the fade so the overlay can finish animating.
-        Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(350))
-            self?.pendingBossReveal = nil
-        }
+        guard activeModal?.kind == .bossReveal else { return }
+        dismissActiveModal()
     }
 
     // MARK: - Hero Forge Overlay (BUG-08)
@@ -257,10 +256,33 @@ final class AppState {
     // MARK: - Claim Reward Modal (root-level)
     // Used by call sites that have no own VM (e.g. ActiveQuestBanner, Hub cards)
     // so they can surface a CLAIMED ceremony instead of a toast.
-    var claimRewardConfig: ClaimRewardConfig?
+    //
+    // Still assigned the same way — `appState.claimRewardConfig = cfg` to
+    // present, `= nil` to dismiss — but it is backed by the modal queue now,
+    // so it can no longer appear on top of a level-up. Screens that own a
+    // view model keep their own `claimRewardConfig`; those are in-screen and
+    // not part of this race.
+    var claimRewardConfig: ClaimRewardConfig? {
+        get {
+            if case .claimReward(let config) = activeModal { return config }
+            return nil
+        }
+        set {
+            if let newValue {
+                enqueueModal(.claimReward(newValue))
+            } else if activeModal?.kind == .claimReward {
+                dismissActiveModal()
+            }
+        }
+    }
+
+    /// Read by the root overlay chain in `HexboundApp`. Writes go through
+    /// `enqueueModal(.dailyLogin)` / `dismissDailyLoginPopup()`; nothing
+    /// outside AppState ever set this flag directly.
+    var showDailyLoginPopup: Bool { activeModal?.kind == .dailyLogin }
 
     // MARK: - Level Up Modal
-    var showLevelUpModal = false
+    var showLevelUpModal: Bool { activeModal?.kind == .levelUp }
     var levelUpNewLevel: Int = 0
     var levelUpStatPoints: Int = 0
     var levelUpPassivePoints: Int = 0
@@ -303,61 +325,98 @@ final class AppState {
     }
 
     func dismissLevelUpModal() {
-        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
-            showLevelUpModal = false
-        }
-        // Show next queued modal after brief delay
-        Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(400))
-            self?.presentNextModal()
-        }
+        guard activeModal?.kind == .levelUp else { return }
+        dismissActiveModal()
+    }
+
+    func dismissDailyLoginPopup() {
+        guard activeModal?.kind == .dailyLogin else { return }
+        dismissActiveModal()
     }
 
     // MARK: - Modal Queue (prevents overlapping modals)
+    //
+    // One root ceremony at a time. Until 2026-10-14 the queue knew only
+    // two of them and decided whether it was busy with the expression
+    // `!showLevelUpModal && !showDailyLoginPopup`, written out twice. The
+    // boss reveal and the root claim-reward modal had their own stored
+    // flags and never consulted it, so either could mount on top of a
+    // level-up — two dimmed backdrops and two cards, with the one
+    // underneath unreachable.
 
-    enum ModalType: Equatable {
+    enum ModalType {
         case dailyLogin
         case levelUp
+        case claimReward(ClaimRewardConfig)
+        case bossReveal(BossRevealData)
+
+        /// The case without its payload. Both payloads carry closures, so
+        /// `ModalType` cannot be `Equatable`; comparing kinds is what the
+        /// queue actually needs.
+        enum Kind { case dailyLogin, levelUp, claimReward, bossReveal }
+
+        var kind: Kind {
+            switch self {
+            case .dailyLogin: .dailyLogin
+            case .levelUp: .levelUp
+            case .claimReward: .claimReward
+            case .bossReveal: .bossReveal
+            }
+        }
+
+        /// True for the ceremonies that say the same thing every time, so a
+        /// second enqueue is the same modal and can be dropped. A second
+        /// claimed reward or a second boss is not — each carries its own
+        /// payload and has to be shown.
+        var isIdempotent: Bool {
+            switch kind {
+            case .dailyLogin, .levelUp: true
+            case .claimReward, .bossReveal: false
+            }
+        }
     }
 
+    /// The ceremony on screen right now, or nil. The single source of truth
+    /// for "is a root modal up?".
+    var activeModal: ModalType?
     var modalQueue: [ModalType] = []
 
     func enqueueModal(_ modal: ModalType) {
-        // Don't enqueue duplicates
-        guard !modalQueue.contains(modal) else { return }
+        if modal.isIdempotent {
+            guard activeModal?.kind != modal.kind else { return }
+            guard !modalQueue.contains(where: { $0.kind == modal.kind }) else { return }
+        }
         modalQueue.append(modal)
-
-        // If nothing is showing, present immediately
-        if !showLevelUpModal && !showDailyLoginPopup {
+        if activeModal == nil {
             presentNextModal()
         }
     }
 
     func presentNextModal() {
-        guard !modalQueue.isEmpty else { return }
-        // Don't present if something is already showing
-        guard !showLevelUpModal && !showDailyLoginPopup else { return }
+        guard activeModal == nil, !modalQueue.isEmpty else { return }
 
         let next = modalQueue.removeFirst()
-        switch next {
+        switch next.kind {
         case .levelUp:
             HapticManager.rankUp()
-            withAnimation(MotionConstants.dramatic) {
-                showLevelUpModal = true
-            }
+            withAnimation(MotionConstants.dramatic) { activeModal = next }
         case .dailyLogin:
             HapticManager.medium()
-            withAnimation(MotionConstants.spring) {
-                showDailyLoginPopup = true
-            }
+            withAnimation(MotionConstants.spring) { activeModal = next }
+        case .bossReveal:
+            withAnimation(.easeInOut(duration: MotionConstants.overlayFade)) { activeModal = next }
+        case .claimReward:
+            withAnimation(MotionConstants.snappy) { activeModal = next }
         }
     }
 
-    func dismissDailyLoginPopup() {
+    /// Dismiss whatever is on screen and hand over to the next in line after
+    /// a beat, so two transitions never overlap.
+    func dismissActiveModal() {
+        guard activeModal != nil else { return }
         withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
-            showDailyLoginPopup = false
+            activeModal = nil
         }
-        // Pause between modals so transitions don't overlap
         Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
             self?.presentNextModal()
@@ -500,8 +559,8 @@ final class AppState {
         cachedTypedQuests = nil
         cachedDailyLogin = nil
         cachedBonusClaimedToday = false
-        pendingBossReveal = nil
-        isBossRevealing = false
+        activeModal = nil
+        modalQueue.removeAll()
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
         dailyLoginCanClaim = false
         authPath = NavigationPath()
