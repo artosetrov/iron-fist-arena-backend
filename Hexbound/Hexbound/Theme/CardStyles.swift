@@ -142,6 +142,12 @@ struct InfoPanelModifier: ViewModifier {
 // MARK: - Modal Overlay Modifier
 
 struct ModalOverlayModifier: ViewModifier {
+    /// Colour of the ornamental accents and the outer glow. Gold is the
+    /// default; modals that mean something else (item rarity, danger, a
+    /// stamina cost) pass their own. Hardcoding gold here is why this
+    /// modifier sat unused while 34 modals hand-rolled the same frame.
+    var accent: Color = DarkFantasyTheme.goldBright
+
     func body(content: Content) -> some View {
         content
             .padding(LayoutConstants.spaceLG)
@@ -168,13 +174,13 @@ struct ModalOverlayModifier: ViewModifier {
                 color: DarkFantasyTheme.gold.opacity(0.10)
             )
             // Ornamental accents
-            .cornerBrackets(color: DarkFantasyTheme.goldBright, length: 22, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.goldBright, size: 7)
+            .cornerBrackets(color: accent, length: 22, thickness: 2.0)
+            .cornerDiamonds(color: accent, size: 7)
             .sideDiamonds(color: DarkFantasyTheme.borderOrnament)
             // Flatten ornamental overlays into single GPU texture
             .compositingGroup()
             // Dual shadow: ornament glow + deep abyss
-            .shadow(color: DarkFantasyTheme.borderOrnament.opacity(0.18), radius: 24)
+            .shadow(color: accent.opacity(0.18), radius: 24)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 32, y: 8)
     }
 }
@@ -194,8 +200,8 @@ extension View {
         modifier(InfoPanelModifier())
     }
 
-    func modalOverlay() -> some View {
-        modifier(ModalOverlayModifier())
+    func modalOverlay(accent: Color = DarkFantasyTheme.goldBright) -> some View {
+        modifier(ModalOverlayModifier(accent: accent))
     }
 }
 

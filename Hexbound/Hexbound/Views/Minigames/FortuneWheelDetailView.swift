@@ -407,84 +407,25 @@ struct FortuneWheelDetailView: View {
 
     @ViewBuilder
     private func resultModal(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> some View {
-        let accentColor = result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger
-
-        ZStack {
-            // Dimmed background
-            DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque)
-                .ignoresSafeArea()
-                .onTapGesture { dismissModal(vm) }
-
-            // Modal card
-            VStack(spacing: 0) {
-                // Result icon
+        GameModal(
+            accent: MinigameResultAccent.color(isWin: result.won),
+            maxWidth: 300,
+            onDismiss: { dismissModal(vm) }
+        ) {
+            MinigameResultModal(
+                isWin: result.won,
+                title: resultTitle(result),
+                amountText: resultAmountText(vm, result: result),
+                amountLineLimit: 2,
+                onContinue: { dismissModal(vm) }
+            ) {
                 Image(vm.sectors[result.sectorIndex].sectorAsset)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                    .shadow(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), radius: 8)
-                    .padding(.bottom, LayoutConstants.spaceMD)
-
-                // Title
-                Text(resultTitle(result))
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(result.won ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
-                    .padding(.bottom, LayoutConstants.spaceXS)
-
-                // Amount
-                Text(resultAmountText(vm, result: result))
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, LayoutConstants.spaceLG)
-
-                // Dismiss button
-                if result.won {
-                    Button {
-                        dismissModal(vm)
-                    } label: {
-                        Text("CONTINUE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: LayoutConstants.buttonHeightMD)
-                    }
-                    .buttonStyle(.primary)
-                } else {
-                    Button {
-                        dismissModal(vm)
-                    } label: {
-                        Text("CONTINUE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: LayoutConstants.buttonHeightMD)
-                    }
-                    .buttonStyle(.danger)
-                }
             }
-            .padding(LayoutConstants.spaceLG)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: DarkFantasyTheme.opacityStrong,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityMild))
-            .cornerBrackets(color: accentColor.opacity(DarkFantasyTheme.opacityMedium), length: 18, thickness: 1.5)
-            .cornerDiamonds(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), size: 5)
-            .compositingGroup()
-            .dualShadow(glowColor: accentColor, glowRadius: 12, depth: .modal)
-            .frame(maxWidth: 300)
-            .opacity(showResultModal ? 1 : 0)
-            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
         }
-        .transition(.opacity)
+        .opacity(showResultModal ? 1 : 0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
     }
 
     private func resultTitle(_ result: FortuneWheelViewModel.SpinResult) -> String {

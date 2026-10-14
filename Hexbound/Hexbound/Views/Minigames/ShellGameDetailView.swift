@@ -472,87 +472,33 @@ struct ShellGameDetailView: View {
     @ViewBuilder
     private func resultModal(_ vm: ShellGameViewModel, result: String) -> some View {
         let isWin = result == "win"
-        let accentColor = isWin ? DarkFantasyTheme.gold : DarkFantasyTheme.danger
 
-        ZStack {
-            // Dimmed background
-            DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque)
-                .ignoresSafeArea()
-                .onTapGesture { dismissModal(vm) }
+        return GameModal(
+            accent: MinigameResultAccent.color(isWin: isWin),
+            maxWidth: 300,
+            onDismiss: { dismissModal(vm) }
+        ) {
+            ZStack {
+                MinigameResultModal(
+                    isWin: isWin,
+                    title: resultTitle(vm),
+                    amountText: resultAmountText(vm),
+                    onContinue: { dismissModal(vm) }
+                ) {
+                    Image(isWin ? "shell_ball" : "shell_cup")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                }
 
-            // Modal card
-            VStack(spacing: 0) {
-                // Result icon
-                Image(isWin ? "shell_ball" : "shell_cup")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                    .shadow(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), radius: 8)
-                    .padding(.bottom, LayoutConstants.spaceMD)
-
-                // Title
-                Text(resultTitle(vm))
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(isWin ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
-                    .padding(.bottom, LayoutConstants.spaceXS)
-
-                // Amount
-                Text(resultAmountText(vm))
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .padding(.bottom, LayoutConstants.spaceLG)
-
-                // Win burst
                 if isWin {
                     RewardBurstView(style: .claim, isActive: $showWinBurst)
                         .frame(height: 0) // Overlay effect, no layout space
-                }
-
-                // Dismiss button
-                if isWin {
-                    Button {
-                        dismissModal(vm)
-                    } label: {
-                        Text("CONTINUE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: LayoutConstants.buttonHeightMD)
-                    }
-                    .buttonStyle(.primary)
-                } else {
-                    Button {
-                        dismissModal(vm)
-                    } label: {
-                        Text("CONTINUE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: LayoutConstants.buttonHeightMD)
-                    }
-                    .buttonStyle(.danger)
+                        .allowsHitTesting(false)
                 }
             }
-            .padding(LayoutConstants.spaceLG)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: DarkFantasyTheme.opacityStrong,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityMild))
-            .cornerBrackets(color: accentColor.opacity(DarkFantasyTheme.opacityMedium), length: 18, thickness: 1.5)
-            .cornerDiamonds(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), size: 5)
-            .compositingGroup()
-            .dualShadow(glowColor: accentColor, glowRadius: 12, depth: .modal)
-            .frame(maxWidth: 300)
-            .opacity(showResultModal ? 1 : 0)
-            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
         }
-        .transition(.opacity)
+        .opacity(showResultModal ? 1 : 0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
     }
 
     private func resultTitle(_ vm: ShellGameViewModel) -> String {

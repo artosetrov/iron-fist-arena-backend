@@ -264,6 +264,7 @@
 		867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FAD6A83C84EAD299CC19411 /* CharacterDisplay.swift */; };
 		87FA8B563EB81FEDE4364E89 /* StanceSelectorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */; };
 		88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */; };
+		55B64C4B9DC775E12399A8EE /* MinigameResultModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */; };
 		88b74c3356af45f15cf5c792 /* CombatColdOpenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = d60c75bd38e27a687e9b77fb /* CombatColdOpenView.swift */; };
 		89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */; };
 		8A0D2E4F6A8B9C0D1E2F3A4B /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0D2E4F6A8B9C0D1E2F3A4C /* SocialService.swift */; };
@@ -293,6 +294,7 @@
 		999fc13e5536e530b050602e /* TutorialFightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26e3d5f05ba888f7540f7f81 /* TutorialFightView.swift */; };
 		9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */; };
 		9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */; };
+		347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F770E2C97B6C494DAE513 /* GameModal.swift */; };
 		9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */; };
 		9B07E5487D407789565B29C8 /* crowd_roar_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = FC15BB8FDFD7CC2BEE0A2F98 /* crowd_roar_2.wav */; };
 		9B1CDAC700082752E567A6F4 /* CharacterOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F8E9FA1781D491C725FEF /* CharacterOrigin.swift */; };
@@ -632,6 +634,7 @@
 		3D8A1598BE7C2DB7C86ED031 /* GuestGateCTA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestGateCTA.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlay.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
+		922F770E2C97B6C494DAE513 /* GameModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModal.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		3EB0DEC5060BB337B5F4E96E /* hit_poison_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_poison_2.wav; sourceTree = "<group>"; };
 		3F0687CEF0F7469DB974B7DB /* coin_drop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coin_drop.wav; sourceTree = "<group>"; };
@@ -767,6 +770,7 @@
 		8C776DC088952BD8D62F5E7F /* hit_magical_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical_3.wav; sourceTree = "<group>"; };
 		8CC572483AAC29065E209C11 /* MineResourceHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineResourceHeader.swift; sourceTree = "<group>"; };
 		8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashDetailView.swift; sourceTree = "<group>"; };
+		02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameResultModal.swift; sourceTree = "<group>"; };
 		8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue_2.wav; sourceTree = "<group>"; };
 		8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellGameDetailView.swift; sourceTree = "<group>"; };
 		8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpModalView.swift; sourceTree = "<group>"; };
@@ -1441,6 +1445,7 @@
 				EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */,
 				3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */,
 				3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */,
+				922F770E2C97B6C494DAE513 /* GameModal.swift */,
 				3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */,
 				B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */,
 				BF81E118A6812E0F4273F368 /* ScreenLayout.swift */,
@@ -1692,6 +1697,7 @@
 				8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */,
 				C8812C4317B938859A4087AC /* ShellGameViewModel.swift */,
 				8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */,
+				02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */,
 				48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */,
 				D7B837363250403614BE1A4F /* TavernDetailView.swift */,
 				B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */,
@@ -2466,6 +2472,7 @@
 				AAA20B5F92A1A7803ABFCB3C /* HexPulseLoader.swift in Sources */,
 				9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */,
 				9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */,
+				347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */,
 				9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */,
 				50BDBEB825D56CF4C576F162 /* LoginView.swift in Sources */,
 				CD54FB28E7F0F028713D0554 /* AuthView.swift in Sources */,
@@ -2517,6 +2524,7 @@
 				467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */,
 				A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */,
 				88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */,
+				55B64C4B9DC775E12399A8EE /* MinigameResultModal.swift in Sources */,
 				BB059983409468DCAA68CB7D /* StashService.swift in Sources */,
 				2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */,
 				7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */,
