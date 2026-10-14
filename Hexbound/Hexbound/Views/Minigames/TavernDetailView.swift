@@ -189,9 +189,13 @@ struct TavernDetailView: View {
 
     /// Loads the stash item count for the header card. Cheap call —
     /// reuses the same endpoint StashDetailView hits on its own .task.
+    ///
+    /// A failure leaves the previous count alone and says nothing: this is a
+    /// decorative number on a card the player is not looking at, and the stash
+    /// screen itself reports the error properly when they open it.
     private func loadStashCount() async {
         let service = StashService(appState: appState)
-        if let response = await service.loadStash() {
+        if let response = await service.loadStash().value {
             stashItemCount = response.usedSlots
         }
     }
