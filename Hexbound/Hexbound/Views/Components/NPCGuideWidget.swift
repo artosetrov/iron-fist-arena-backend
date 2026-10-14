@@ -165,6 +165,7 @@ struct NPCGuideWidget: View {
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss guide")
                 }
             }
 
@@ -364,6 +365,8 @@ struct NPCGuideWidget: View {
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 2)
         }
         .buttonStyle(.scalePress)
+        .accessibilityLabel("Guide portrait")
+        .accessibilityHint("Double tap for another tip")
     }
 }
 
@@ -437,5 +440,6 @@ struct NPCMiniButton: View {
                 bouncing = true
             }
         }
+        .accessibilityLabel("Open guide")
     }
 }

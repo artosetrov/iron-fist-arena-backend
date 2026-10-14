@@ -435,6 +435,7 @@ struct CombatResultDetailView: View {
                         Image(systemName: "xmark")
                     }
                     .buttonStyle(.closeButton)
+                    .accessibilityLabel("Close battle result")
                 }
                 .padding(LayoutConstants.cardPadding)
 

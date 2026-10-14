@@ -126,6 +126,7 @@ struct DailyLoginDetailView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
+            .accessibilityLabel("Close daily rewards")
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceMD)

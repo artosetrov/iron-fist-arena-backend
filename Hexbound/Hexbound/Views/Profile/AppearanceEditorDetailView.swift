@@ -100,6 +100,7 @@ struct AppearanceEditorDetailView: View {
                         .font(DarkFantasyTheme.body.weight(.medium))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
+                .accessibilityLabel("Switch hero")
             }
         }
         .onAppear {

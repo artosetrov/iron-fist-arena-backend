@@ -138,6 +138,7 @@ struct DungeonRoomDetailView: View {
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dungeon info")
             }
         }
         .onAppear {

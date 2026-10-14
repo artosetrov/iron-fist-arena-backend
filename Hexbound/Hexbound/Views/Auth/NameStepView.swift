@@ -484,6 +484,7 @@ struct NameStepView: View {
                 )
                 .animation(MotionConstants.snappy, value: vm.characterName.isEmpty)
                 .buttonStyle(.scalePress(0.95))
+                .accessibilityLabel("Roll a random name")
             }
 
             Group {

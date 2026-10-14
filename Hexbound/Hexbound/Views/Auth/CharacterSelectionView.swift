@@ -85,6 +85,7 @@ struct CharacterSelectionView: View {
                             .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Settings")
                 }
             }
             .navigationDestination(for: AppRoute.self) { route in
@@ -221,7 +222,7 @@ struct CharacterSelectionView: View {
 
                         // Edit/delete button — appears on active card, outside Button to avoid gesture conflict
                         if isSelected {
-                            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger) {
+                            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger, label: "Delete hero") {
                                 HapticManager.light()
                                 SFXManager.shared.play(.uiTap)
                                 heroToDelete = character

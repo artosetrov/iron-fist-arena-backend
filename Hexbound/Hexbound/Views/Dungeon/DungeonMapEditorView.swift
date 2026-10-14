@@ -164,6 +164,7 @@ struct DungeonMapEditorView: View {
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
+                    .accessibilityLabel("Decrease terrain size")
 
                     Slider(
                         value: Binding(
@@ -183,6 +184,7 @@ struct DungeonMapEditorView: View {
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
+                    .accessibilityLabel("Increase terrain size")
                 }
             } else {
                 Text("Tap a dungeon to select, drag to move")

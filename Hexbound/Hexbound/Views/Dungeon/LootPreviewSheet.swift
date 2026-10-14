@@ -56,6 +56,7 @@ struct LootPreviewSheet: View {
                         Image(systemName: "xmark")
                     }
                     .buttonStyle(.closeButton)
+                    .accessibilityLabel("Close loot preview")
                 }
                 .padding(LayoutConstants.cardPadding)
 

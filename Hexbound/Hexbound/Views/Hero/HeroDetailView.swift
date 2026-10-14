@@ -90,6 +90,7 @@ struct HeroDetailView: View {
                         .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Settings")
             }
         }
         .onAppear {

@@ -57,6 +57,7 @@ struct MerchantStripView: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.scalePress(0.85))
+            .accessibilityLabel("Dismiss merchant")
         }
         .padding(.horizontal, LayoutConstants.npcBarPaddingH)
         .padding(.vertical, LayoutConstants.npcBarPaddingV)
@@ -105,6 +106,8 @@ struct MerchantStripView: View {
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Merchant portrait")
+        .accessibilityHint("Double tap for another tip")
     }
 
     // MARK: - Speech Bubble (overlays on shopkeeper)
@@ -136,6 +139,7 @@ struct MerchantStripView: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.scalePress(0.85))
+            .accessibilityLabel("Dismiss merchant")
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceMS)
@@ -204,5 +208,6 @@ struct MerchantMiniButton: View {
                 bouncing = true
             }
         }
+        .accessibilityLabel("Open merchant")
     }
 }

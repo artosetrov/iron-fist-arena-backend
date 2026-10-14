@@ -1,0 +1,4 @@
+# Icon-only buttons without an accessibilityLabel, known at the time
+# the gate was added. This list may only shrink. Regenerating it to
+# silence a new violation defeats the gate.
+

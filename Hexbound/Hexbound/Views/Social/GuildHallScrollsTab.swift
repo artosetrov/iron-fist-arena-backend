@@ -654,6 +654,7 @@ extension GuildHallDetailView {
             }
             .buttonStyle(SendButtonPressStyle())
             .disabled(isEmpty)
+            .accessibilityLabel("Send message")
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)

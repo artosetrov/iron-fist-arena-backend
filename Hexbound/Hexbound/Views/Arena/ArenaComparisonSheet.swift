@@ -34,6 +34,7 @@ struct ArenaComparisonSheet: View {
                     }
                     .buttonStyle(.closeButton)
                     .padding(.trailing, LayoutConstants.screenPadding)
+                    .accessibilityLabel("Close comparison")
                 }
             }
             .padding(.top, LayoutConstants.spaceMD)

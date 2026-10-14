@@ -236,6 +236,7 @@ struct BattleInviteBanner: View {
                     }
                     .buttonStyle(.secondary)
                     .disabled(isAccepting || isDeclining)
+                    .accessibilityLabel("View all challenges")
                 }
             }
         }

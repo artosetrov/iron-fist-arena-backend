@@ -294,6 +294,7 @@ struct BossRevealOverlayView: View {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.closeButton)
+                .accessibilityLabel("Skip boss reveal")
 
                 Spacer()
 

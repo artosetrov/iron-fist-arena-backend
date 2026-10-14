@@ -45,6 +45,7 @@ struct GuestNudgeBanner: View {
                         .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
+                .accessibilityLabel("Dismiss")
             }
             .padding(LayoutConstants.spaceSM)
             .background(

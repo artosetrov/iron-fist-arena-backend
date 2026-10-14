@@ -161,6 +161,7 @@ struct GuestGateCTA: View {
                         .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
             }
         }
         .padding(LayoutConstants.spaceSM)

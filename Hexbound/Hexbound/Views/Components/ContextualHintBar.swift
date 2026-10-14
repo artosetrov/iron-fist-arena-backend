@@ -67,6 +67,7 @@ struct ContextualHintBar: View {
                 .buttonStyle(.plain)
                 .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                 .contentShape(Rectangle())
+                .accessibilityLabel("Dismiss hint")
             }
         }
         .padding(.horizontal, LayoutConstants.spaceMD)

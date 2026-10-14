@@ -172,6 +172,7 @@ struct LootDetailView: View {
                         Image(systemName: "xmark")
                     }
                     .buttonStyle(.closeButton)
+                    .accessibilityLabel("Close loot")
                 }
                 .padding(LayoutConstants.cardPadding)
 

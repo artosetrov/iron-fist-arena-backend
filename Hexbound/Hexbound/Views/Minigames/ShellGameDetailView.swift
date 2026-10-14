@@ -230,6 +230,8 @@ struct ShellGameDetailView: View {
         let showBall = (gamePhase == .revealing && revealedCup == cup) ||
                        (gamePhase == .result && isWinner)
 
+        // The whole game is three image-only buttons; without labels VoiceOver
+        // announced "Button, Button, Button" (fixed 2026-10-14).
         Button {
             if gamePhase == .guessing {
                 Task { await pickCup(cup, vm: vm) }
@@ -256,6 +258,10 @@ struct ShellGameDetailView: View {
             .frame(width: 110, height: 130)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Cup \(cup + 1)")
+        .accessibilityValue(showBall ? "Golden ball" : "")
+        .accessibilityHint(gamePhase == .guessing ? "Double tap to pick this cup" : "")
+        .accessibilityAddTraits(.isButton)
         // NOTE: use allowsHitTesting instead of .disabled — .disabled auto-dims
         // the button and makes the cup look semi-transparent in idle/shuffle phases.
         .allowsHitTesting(gamePhase == .guessing)

@@ -139,6 +139,7 @@ struct ActiveSkillPickerSheet: View {
                     .padding(LayoutConstants.spaceSM)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close skill picker")
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.top, LayoutConstants.spaceMD)

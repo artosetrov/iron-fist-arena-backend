@@ -89,11 +89,15 @@ struct CardLevelBadge: View {
 /// Reusable circular action button for card overlays (edit, delete, info, etc.)
 /// Guarantees 48×48 minimum tap target per Apple HIG.
 ///
+/// The label is a parameter, not derived from the icon: VoiceOver needs the
+/// ACTION ("Delete hero"), and an SF Symbol name is not it.
+///
 /// Usage:
-///   CardActionButton(icon: "trash", color: .danger) { deleteAction() }
+///   CardActionButton(icon: "trash", color: .danger, label: "Delete hero") { deleteAction() }
 struct CardActionButton: View {
     let icon: String
     let color: Color
+    let label: String
     let action: () -> Void
 
     var body: some View {
@@ -113,6 +117,7 @@ struct CardActionButton: View {
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 4, y: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }
 
@@ -130,7 +135,7 @@ struct CardActionButton: View {
                 CardLevelBadge(level: 7,  accentColor: DarkFantasyTheme.classWarrior, size: .compact)
                 CardLevelBadge(level: 99, accentColor: DarkFantasyTheme.gold,         size: .compact)
             }
-            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger) {}
+            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger, label: "Delete") {}
         }
     }
 }

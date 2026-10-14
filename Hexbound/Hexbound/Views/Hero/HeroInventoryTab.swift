@@ -379,6 +379,7 @@ extension HeroDetailView {
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.scalePress)
+                    .accessibilityLabel("Clear search")
                 }
 
                 // Sort picker

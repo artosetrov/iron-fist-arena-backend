@@ -135,6 +135,7 @@ struct DungeonInfoSheet: View {
                 }
                 .buttonStyle(.plain)
                 .padding(LayoutConstants.spaceMS)
+                .accessibilityLabel("Close dungeon info")
             }
 
             // Title + meta chips

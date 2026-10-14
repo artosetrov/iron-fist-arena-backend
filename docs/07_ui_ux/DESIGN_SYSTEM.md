@@ -1804,11 +1804,15 @@ Premium Feature
 
 ## 13. Доступность (Accessibility)
 
-### 13.1 Текущий статус
-- **Accessibility labels:** 0 ✗ (КРИТИЧЕСКИЙ ДЕФЕКТ)
+### 13.1 Текущий статус (обновлено 2026-10-14)
+- **Accessibility labels:** 244 модификатора на 357 кнопок. Строка «0 ✗» висела
+  здесь с первой редакции документа и давно не соответствовала коду.
+- **Icon-only кнопки без метки:** 0 — проверяется гейтом
+  `python3 scripts/check_a11y.py`, базовая линия пуста и может только
+  оставаться пустой. До 2026-10-14 таких кнопок было 33.
 - **Min text size:** 16pt (после рефакторинга) ✓
 - **Contrast:** WCAG AA достигнуто ✓
-- **Touch targets:** 56pt standard, 44pt minimum ✓ (but need verification)
+- **Touch targets:** 56pt comfortable, 48pt minimum (`LayoutConstants.touchMin`)
 
 ### 13.2 Минимальные требования
 
@@ -1819,7 +1823,9 @@ Premium Feature
 - *Исключение:* Боевые метрики (HP, XP) = 18pt minimum (было 7-8pt ❌)
 
 **Размер касания (Touch targets):**
-- Minimum: 44pt × 44pt (Apple HIG standard)
+- Minimum: 48pt × 48pt — `LayoutConstants.touchMin`, он же в
+  `docs/rules/rules-ui-design.md`. Apple HIG допускает 44pt, но у проекта
+  единый минимум 48; раньше этот раздел называл 44pt и расходился с кодом.
 - Comfortable: 56pt × 56pt (Hexbound standard)
 - Buttons: 48–56pt (follow button style guide)
 - Icons: 32pt × 32pt minimum
@@ -2238,7 +2244,7 @@ Text("HP: 150")
    - [ ] Add accessibility labels
 
 10. **Accessibility audit (3–5 дней)**
-    - [ ] Verify all touch targets ≥ 44pt
+    - [ ] Verify all touch targets ≥ 48pt (LayoutConstants.touchMin)
     - [ ] Verify all text ≥ 16pt
     - [ ] Verify contrast ratios (WCAG AA)
     - [ ] Test с screen reader

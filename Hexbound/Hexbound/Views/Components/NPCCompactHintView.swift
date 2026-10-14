@@ -53,6 +53,7 @@ struct NPCCompactHintView: View {
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss hint")
             }
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
