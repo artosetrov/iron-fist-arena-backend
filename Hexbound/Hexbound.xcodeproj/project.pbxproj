@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1877FA6305FD5ACC8B79793C /* DiceCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */; };
+		773F108CBDC5C58CAB39A2AA /* DiceDieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8B3CE48144F0CED031CB818 /* DiceDieView.swift */; };
+		CA48618361B369AF64192986 /* DiceBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */; };
+		838579400D919B311E37EBC5 /* DiceBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */; };
+		68FDB398B76CC5E9FC7DE124 /* DiceTabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AAABFA3807BD05AEE92BD9 /* DiceTabViewModel.swift */; };
+		A7011DFF164A05939A7AD313 /* DiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B78CF190AD84CC77B561C4A /* DiceTabView.swift */; };
+		0EB1233ED881658291934D66 /* DiceSummaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B245646D9D7B4D16600DFEA /* DiceSummaryButton.swift */; };
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
 		B055DA720001E5F7A9B1C3D5 /* BossRevealData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B055DA720002E5F7A9B1C3D5 /* BossRevealData.swift */; };
 		B055DA720003E5F7A9B1C3D5 /* BossRevealOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B055DA720004E5F7A9B1C3D5 /* BossRevealOverlayView.swift */; };
@@ -91,6 +98,7 @@
 		291EFF46B7F8D6F2B69E7CA3 /* ui_back.wav in Resources */ = {isa = PBXBuildFile; fileRef = 52F198420AC576D003898FEA /* ui_back.wav */; };
 		294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */; };
 		F89D630AE59E3BED969056B0 /* ZLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C35ED5B2B0062810232D52 /* ZLayer.swift */; };
+		87162CE9F06CB67008288A46 /* GameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5103507F98F48C0CF7FB56F4 /* GameIcon.swift */; };
 		29F455B2B3B5C6A6EFEDE32E /* dungeon_enter_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = B78C08ED37B1F1173273C580 /* dungeon_enter_2.wav */; };
 		2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */; };
 		2AE128C15635F40A7E2C67D6 /* scroll_unfurl.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */; };
@@ -540,6 +548,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceCombatModels.swift; sourceTree = "<group>"; };
+		B8B3CE48144F0CED031CB818 /* DiceDieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceDieView.swift; sourceTree = "<group>"; };
+		8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceBattleViewModel.swift; sourceTree = "<group>"; };
+		53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceBattleView.swift; sourceTree = "<group>"; };
+		02AAABFA3807BD05AEE92BD9 /* DiceTabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTabViewModel.swift; sourceTree = "<group>"; };
+		9B78CF190AD84CC77B561C4A /* DiceTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTabView.swift; sourceTree = "<group>"; };
+		0B245646D9D7B4D16600DFEA /* DiceSummaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceSummaryButton.swift; sourceTree = "<group>"; };
 		0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultCardView.swift; sourceTree = "<group>"; };
 		B055DA720002E5F7A9B1C3D5 /* BossRevealData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BossRevealData.swift; sourceTree = "<group>"; };
 		B055DA720004E5F7A9B1C3D5 /* BossRevealOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BossRevealOverlayView.swift; sourceTree = "<group>"; };
@@ -665,6 +680,7 @@
 		4D4A3C24C0F1AEDC429F38EA /* anvil_strike.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = anvil_strike.wav; sourceTree = "<group>"; };
 		4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutConstants.swift; sourceTree = "<group>"; };
 		30C35ED5B2B0062810232D52 /* ZLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZLayer.swift; sourceTree = "<group>"; };
+		5103507F98F48C0CF7FB56F4 /* GameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameIcon.swift; sourceTree = "<group>"; };
 		4DB29A5904727560971AAF5D /* ReferralSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralSectionView.swift; sourceTree = "<group>"; };
 		4E1229239D447F7D8DC2DB37 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonService.swift; sourceTree = "<group>"; };
@@ -1511,10 +1527,21 @@
 			path = Leaderboard;
 			sourceTree = "<group>";
 		};
+		D9446D6A2357A1D202C2B05E /* Dice */ = {
+			isa = PBXGroup;
+			children = (
+				B8B3CE48144F0CED031CB818 /* DiceDieView.swift */,
+				8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */,
+				53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */,
+			);
+			path = Dice;
+			sourceTree = "<group>";
+		};
 		5D7F72AB7DA680F0E683EBF4 /* Combat */ = {
 			isa = PBXGroup;
 			children = (
 				VFX00001GRP00001 /* VFX */,
+				D9446D6A2357A1D202C2B05E /* Dice */,
 				D145DE1A5F794907BB756397 /* CombatDetailView.swift */,
 				D9AC548981C3827A98817F24 /* EnemyPortraitResolver.swift */,
 				EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */,
@@ -1665,8 +1692,19 @@
 				20BBF308478B5B2817B50709 /* HeroInventoryTab.swift */,
 				20BBF308478B5B2817B5070A /* HeroStatsTab.swift */,
 				5AB28E8F5F2F9E8128879CC0 /* Talents */,
+				AA90990EA26AD83C262927DD /* Dice */,
 			);
 			path = Hero;
+			sourceTree = "<group>";
+		};
+		AA90990EA26AD83C262927DD /* Dice */ = {
+			isa = PBXGroup;
+			children = (
+				02AAABFA3807BD05AEE92BD9 /* DiceTabViewModel.swift */,
+				9B78CF190AD84CC77B561C4A /* DiceTabView.swift */,
+				0B245646D9D7B4D16600DFEA /* DiceSummaryButton.swift */,
+			);
+			path = Dice;
 			sourceTree = "<group>";
 		};
 		5AB28E8F5F2F9E8128879CC0 /* Talents */ = {
@@ -1776,6 +1814,7 @@
 				E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */,
 				4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */,
 				30C35ED5B2B0062810232D52 /* ZLayer.swift */,
+				5103507F98F48C0CF7FB56F4 /* GameIcon.swift */,
 				A2B3C4D5E6F7A8B9C0D1E2F4 /* HapticManager.swift */,
 				A3B4C5D6E7F8A9B0C1D2E3F5 /* MotionConstants.swift */,
 				B8D0E2F4A6B8C0D2E4F6A8BA /* OrnamentalStyles.swift */,
@@ -1797,6 +1836,7 @@
 				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
 				00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */,
+				791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */,
 				00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */,
 				A1B2C3D4E5F60718293A4B5D /* ConsumableCatalog.swift */,
 				218B22634BDF8DD52EFCB0D6 /* Item.swift */,
@@ -2347,6 +2387,13 @@
 				F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */,
 				1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */,
 				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
+				1877FA6305FD5ACC8B79793C /* DiceCombatModels.swift in Sources */,
+				773F108CBDC5C58CAB39A2AA /* DiceDieView.swift in Sources */,
+				CA48618361B369AF64192986 /* DiceBattleViewModel.swift in Sources */,
+				838579400D919B311E37EBC5 /* DiceBattleView.swift in Sources */,
+				68FDB398B76CC5E9FC7DE124 /* DiceTabViewModel.swift in Sources */,
+				A7011DFF164A05939A7AD313 /* DiceTabView.swift in Sources */,
+				0EB1233ED881658291934D66 /* DiceSummaryButton.swift in Sources */,
 				14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */,
 				961E078086264A48C0187425 /* CombatLogEvent.swift in Sources */,
 				81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */,
@@ -2473,6 +2520,7 @@
 				L10N001BLD000000000000A1 /* L10n.swift in Sources */,
 				294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */,
 				F89D630AE59E3BED969056B0 /* ZLayer.swift in Sources */,
+				87162CE9F06CB67008288A46 /* GameIcon.swift in Sources */,
 				41CB9B1A5E08848F14AC6F83 /* LeaderboardDetailView.swift in Sources */,
 				BBC6BB5227401094D31E5273 /* LeaderboardEntry.swift in Sources */,
 				8A9D4C7B52EB4E15E20C6E9D /* LeaderboardRowView.swift in Sources */,

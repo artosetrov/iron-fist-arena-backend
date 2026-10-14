@@ -279,14 +279,14 @@ struct InboxRowView: View {
             if let bd = message.battleData {
                 return bd.isWin ? "trophy.fill" : "xmark.shield.fill"
             }
-            return "swords"
+            return GameIcon.battle
         case "battle_invite":
             if let inv = message.inviteData {
                 if inv.isAccepted { return "checkmark.circle.fill" }
                 if inv.isDeclined { return "xmark.circle.fill" }
                 if inv.isExpired { return "clock.badge.xmark" }
             }
-            return "swords"
+            return GameIcon.battle
         case "player": return "person.fill"
         default: return "envelope.fill"
         }
@@ -370,7 +370,7 @@ struct InboxRowView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Fight type label
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "swords")
+                Image(systemName: GameIcon.battle)
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
@@ -556,7 +556,7 @@ struct InboxRowView: View {
                         acceptInvite(invite)
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "swords")
+                            Image(systemName: GameIcon.battle)
                                 .font(DarkFantasyTheme.body)
                             Text("FIGHT")
                                 .font(DarkFantasyTheme.buttonLabelCompact)

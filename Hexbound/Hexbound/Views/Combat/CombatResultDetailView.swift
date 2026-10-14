@@ -181,7 +181,7 @@ struct CombatResultDetailView: View {
                     }
                 }))
             } else {
-                buttons.append(ResultButton(title: "BACK TO ARENA", icon: "swords", style: .primary, action: {
+                buttons.append(ResultButton(title: "BACK TO ARENA", icon: GameIcon.battle, style: .primary, action: {
                     goBack()
                 }))
             }

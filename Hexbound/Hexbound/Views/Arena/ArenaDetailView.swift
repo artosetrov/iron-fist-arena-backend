@@ -73,9 +73,7 @@ struct ArenaDetailView: View {
                                     .padding(.horizontal, LayoutConstants.screenPadding)
                                 }
 
-                                // Arena summary strip — rating widget restored as the
-                                // primary surface in this slot; stance editing stays
-                                // available as a smaller dedicated CTA below it.
+                                // Arena summary strip — rating widget.
                                 arenaSummarySection(vm)
 
                                 // Low HP potion banner — shown when HP < 30%
@@ -134,11 +132,7 @@ struct ArenaDetailView: View {
                                     arenaGuideDismissed = true
                                 },
                                 npcImageName: "rush-ui-combat-skull",
-                                plainMessage: "Your stance affects attack and defense zones. Tap to change it before battle.",
-                                ctaLabel: "CHANGE STANCE",
-                                onCTA: {
-                                    appState.mainPath.append(AppRoute.stanceSelector)
-                                }
+                                plainMessage: "Pick an opponent and fight to climb the ranks."
                             )
                         }
                         .transition(.opacity)
@@ -219,7 +213,7 @@ struct ArenaDetailView: View {
                 }
             }
         })
-        .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
+        .tutorialOverlay(steps: [.arenaOpponent])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -380,21 +374,7 @@ struct ArenaDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, LayoutConstants.screenPadding)
-
-                Button {
-                    appState.mainPath.append(AppRoute.stanceSelector)
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(systemName: "figure.martial.arts")
-                            .font(DarkFantasyTheme.body.weight(.semibold))
-                        Text("COMBAT STANCE")
-                            .font(DarkFantasyTheme.body.weight(.semibold))
-                    }
-                }
-                .buttonStyle(.secondary)
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .accessibilityLabel("Edit combat stance")
-                .tutorialAnchor(.arenaStance)
+                // 2026-10-14: COMBAT STANCE button removed from Arena (stance block no longer shown here)
             }
         }
     }
@@ -413,7 +393,7 @@ struct ArenaDetailView: View {
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
             } else if vm.opponents.isEmpty {
-                emptyState(icon: "swords", message: "No opponents available.") {
+                emptyState(icon: GameIcon.battle, message: "No opponents available.") {
                     Button {
                         Task { await vm.refreshOpponents() }
                     } label: {
@@ -575,7 +555,7 @@ struct ArenaDetailView: View {
                             .scaleEffect(0.8)
                     } else {
                         HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "swords")
+                            Image(systemName: GameIcon.battle)
                                 .font(DarkFantasyTheme.body)
                             Text("REVENGE")
                         }

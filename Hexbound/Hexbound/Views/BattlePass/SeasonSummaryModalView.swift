@@ -128,7 +128,7 @@ struct SeasonSummaryModalView: View {
 
         LazyVGrid(columns: columns, spacing: LayoutConstants.spaceMD) {
             statCell(label: "FINAL LEVEL", value: summary.finalLevel, icon: "star.fill", index: 0)
-            statCell(label: "TOTAL BATTLES", value: summary.totalBattles, icon: "swords", index: 1)
+            statCell(label: "TOTAL BATTLES", value: summary.totalBattles, icon: GameIcon.battle, index: 1)
             statCell(label: "VICTORIES", value: summary.wins, icon: "trophy.fill", index: 2)
             statCell(label: "PEAK RANK", value: summary.peakRank, icon: "crown", prefix: "#", index: 3)
             statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "star.fill", assetIcon: "icon-gold", index: 4)

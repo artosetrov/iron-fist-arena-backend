@@ -115,7 +115,7 @@ enum HintCategory: String {
         switch self {
         case .health:   return "heart.fill"
         case .stamina:  return "bolt.fill"
-        case .combat:   return "swords"
+        case .combat:   return GameIcon.battle
         case .quest:    return "scroll.fill"
         case .reward:   return "gift.fill"
         case .gear:     return "shield.lefthalf.filled"

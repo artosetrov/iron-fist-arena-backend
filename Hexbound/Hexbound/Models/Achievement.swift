@@ -43,7 +43,7 @@ struct Achievement: Codable, Identifiable {
     /// SF Symbol name + color per category. Used by AchievementCardView instead of emoji.
     var categoryAsset: (String, Color) {
         switch category {
-        case "pvp":         return ("swords", DarkFantasyTheme.danger)
+        case "pvp":         return (GameIcon.battle, DarkFantasyTheme.danger)
         case "progression": return ("arrow.up.circle", DarkFantasyTheme.purple)
         case "ranking":     return ("trophy", DarkFantasyTheme.gold)
         default:            return ("star.fill", DarkFantasyTheme.textSecondary)
@@ -53,7 +53,7 @@ struct Achievement: Codable, Identifiable {
     // Legacy: kept for any code that still references it.
     var categoryIcon: String {
         switch category {
-        case "pvp": "swords"
+        case "pvp": GameIcon.battle
         case "progression": "chart.line.uptrend.xyaxis"
         case "ranking": "trophy.fill"
         default: "star.fill"

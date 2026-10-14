@@ -367,7 +367,7 @@ private extension DungeonCatalogEntry {
         }()
 
         let icon: String = {
-            if slug.contains("training") { return "swords" }
+            if slug.contains("training") { return GameIcon.battle }
             if slug.contains("catacomb") { return "skull.fill" }
             if slug.contains("volcanic") || slug.contains("forge") { return "flame.fill" }
             if slug.contains("fungal") || slug.contains("grotto") { return "leaf.fill" }

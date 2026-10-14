@@ -126,7 +126,7 @@ struct BattleInviteBanner: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Header row
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "swords")
+                Image(systemName: GameIcon.battle)
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
@@ -194,7 +194,7 @@ struct BattleInviteBanner: View {
                                 .tint(DarkFantasyTheme.textOnGold)
                                 .scaleEffect(0.7)
                         } else {
-                            Image(systemName: "swords")
+                            Image(systemName: GameIcon.battle)
                                 .font(DarkFantasyTheme.body.bold())
                         }
                         Text("FIGHT")

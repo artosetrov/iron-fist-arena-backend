@@ -65,7 +65,7 @@ struct BossInfo: Identifiable, Hashable {
 
     var emoji: String {
         switch id {
-        case 1: return "swords"
+        case 1: return GameIcon.battle
         case 2: return "gearshape.fill"
         case 3: return "ant.fill"
         case 4: return "skull.fill"
@@ -198,7 +198,7 @@ struct DungeonInfo: Identifiable {
     static let trainingCamp = DungeonInfo(
         id: "training_camp",
         name: "Training Camp",
-        icon: "swords",
+        icon: GameIcon.battle,
         description: "On the outskirts of the Stray City lies an old training ground, built by the first Arena fighters.",
         minLevel: 1, maxLevel: 10, energyCost: 10,
         bosses: [

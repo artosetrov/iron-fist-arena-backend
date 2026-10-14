@@ -14,7 +14,7 @@ struct RushRoom {
 
     var icon: String {
         switch type {
-        case "combat":   return "swords"
+        case "combat":   return GameIcon.battle
         case "elite":    return "figure.fencing"
         case "miniboss": return "figure.wave"
         case "treasure": return "shippingbox"

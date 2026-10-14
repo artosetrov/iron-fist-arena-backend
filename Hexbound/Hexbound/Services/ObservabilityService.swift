@@ -108,7 +108,11 @@ struct SentryAnalyticsBackend: AnalyticsBackend {
     func track(_ event: AnalyticsEvent) async {
         let crumb = Breadcrumb(level: .info, category: "analytics")
         crumb.message = event.name
-        crumb.data = event.properties
+        // sentry-cocoa 9 deprecated assigning `data` wholesale; the setter
+        // takes one pair at a time now.
+        for (key, value) in event.properties {
+            crumb.setData(value: value, key: key)
+        }
         SentrySDK.addBreadcrumb(crumb)
 
         #if DEBUG

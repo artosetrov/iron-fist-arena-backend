@@ -109,7 +109,7 @@ struct OpponentCardView: View {
                             .tint(DarkFantasyTheme.textOnGold)
                     } else {
                         HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "swords")
+                            Image(systemName: GameIcon.battle)
                                 .font(DarkFantasyTheme.body)
                             Text("FIGHT")
                         }

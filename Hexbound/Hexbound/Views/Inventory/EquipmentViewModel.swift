@@ -19,6 +19,10 @@ enum EquipmentViewModel {
         "belt": "Belt", "relic": "Relic", "necklace": "Necklace"
     ]
 
+    // Nothing reads this table (checked 2026-10-14). Leaving it for now, but
+    // note that several of these are not SF Symbols — "swords" and "helmet"
+    // among them — so reviving it means checking every name against the
+    // catalogue first. See Theme/GameIcon.swift.
     static let slotIcons: [String: String] = [
         "weapon": "swords", "helmet": "helmet", "chest": "shield",
         "gloves": "hand.raised", "legs": "pants", "boots": "shoe",

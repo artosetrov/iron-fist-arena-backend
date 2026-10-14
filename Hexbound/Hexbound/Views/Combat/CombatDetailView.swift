@@ -234,7 +234,7 @@ struct CombatDetailView: View {
             Spacer()
 
             // Pulsing swords icon
-            Image(systemName: "swords")
+            Image(systemName: GameIcon.battle)
                 .font(.system(size: 72)) // keep — SF Symbol decorative, no DS token for 72pt
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
                 .animation(

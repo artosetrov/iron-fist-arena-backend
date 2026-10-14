@@ -184,7 +184,7 @@ extension GuildHallDetailView {
                                 .tint(DarkFantasyTheme.textOnGold)
                                 .scaleEffect(0.7)
                         } else {
-                            Image(systemName: "swords")
+                            Image(systemName: GameIcon.battle)
                             Text("FIGHT")
                         }
                     }
@@ -435,7 +435,7 @@ extension GuildHallDetailView {
 
     var duelsEmptyState: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: "swords")
+            Image(systemName: GameIcon.battle)
                 .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
