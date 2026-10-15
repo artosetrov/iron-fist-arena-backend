@@ -1,8 +1,13 @@
 import SwiftUI
 
-/// Full boss detail screen — opened when tapping a DungeonBossCard.
-/// Always a NavigationStack push. The name is historical: the sheet
-/// presentation it once supported was dead code and was removed 2026-10-14.
+/// Boss dossier — opened from the dungeon stage (tap the boss or the dossier
+/// button). Always a NavigationStack push; the name is historical.
+///
+/// Layout (2026-10-15): the boss full-height on a lit floor, name and stage
+/// line, HP / level / energy tiles, the hook line and the lore (three lines,
+/// "Read more" expands), possible loot as tiles, FIGHT pinned at the bottom.
+/// The old blurred full-screen backdrop was `scaledToFill` without a clip
+/// and widened the whole screen, pushing the lore off the right edge.
 struct BossDetailSheet: View {
     let boss: BossInfo
     let state: BossState
@@ -12,44 +17,46 @@ struct BossDetailSheet: View {
     let isFighting: Bool
     let onFight: () -> Void
     let onLootTap: (LootPreview) -> Void
+    var totalStages: Int = 10
+    /// A dungeon run is open — energy was paid when it started, so this
+    /// fight is free and the button shows no cost.
+    var runActive: Bool = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var selectedLootForModal: LootPreview? = nil
     @State private var showLootModal = false
     @State private var hasTriggeredReveal = false
+    @State private var loreExpanded = false
 
-    private var stateColor: Color {
-        switch state {
-        case .defeated: return DarkFantasyTheme.success
-        case .current: return DarkFantasyTheme.bossBorderPurple
-        case .locked: return DarkFantasyTheme.lockedGray
-        }
-    }
+    private static let heroHeight: CGFloat = 300
+    private static let tileHeight: CGFloat = 64
 
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgDungeonGradient.ignoresSafeArea()
 
-            atmosphericBackdrop
-
             ScrollView {
-                VStack(spacing: LayoutConstants.sectionGap) {
-                    heroPortraitSection
-                    titleAndStatusSection
-                    loreCard
+                VStack(spacing: 0) {
+                    heroSection
 
-                    if !boss.loot.isEmpty {
-                        lootPillRow
+                    VStack(spacing: LayoutConstants.sectionGap) {
+                        statTiles
+                        if state != .locked {
+                            loreSection
+                        }
+                        if !boss.loot.isEmpty {
+                            lootSection
+                        }
                     }
-
-                    Spacer(minLength: LayoutConstants.spaceLG)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.top, LayoutConstants.spaceMD)
                 }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceMD)
-                .padding(.bottom, state == .current ? 100 : LayoutConstants.spaceLG)
+                .padding(.bottom, state == .current ? 112 : LayoutConstants.spaceLG)
                 .frame(maxWidth: .infinity)
             }
+            .scrollIndicators(.hidden)
 
             // Sticky fight button at bottom (only for current boss)
             if state == .current {
@@ -107,12 +114,8 @@ struct BossDetailSheet: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton { dismiss() }
             }
-            ToolbarItem(placement: .principal) {
-                Text(boss.name.uppercased())
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(stateColor)
-                    .tracking(2)
-                    .lineLimit(1)
+            ToolbarItem(placement: .navigationBarTrailing) {
+                statusPill
             }
         }
         .onAppear { maybeTriggerReveal() }
@@ -145,398 +148,213 @@ struct BossDetailSheet: View {
         }
     }
 
-    // MARK: - Atmospheric Backdrop
+    // MARK: - Hero
 
-    /// Full-screen blurred boss image behind content. Mirrors the prototype's
-    /// dusty volumetric-light vibe without fighting the card hierarchy.
-    private var atmosphericBackdrop: some View {
-        ZStack {
-            Group {
-                if UIImage(named: boss.fullImage) != nil {
-                    Image(boss.fullImage).resizable().scaledToFill()
-                } else if UIImage(named: boss.portraitImage) != nil {
-                    Image(boss.portraitImage).resizable().scaledToFill()
-                } else {
-                    Color.clear
-                }
-            }
-            .opacity(state == .locked ? 0.12 : 0.22)
-            .blur(radius: 14)
-            .saturation(0.35)
-            .ignoresSafeArea()
+    private var heroSection: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            BossStageArt(boss: boss, style: BossArtStyle(state))
+                .frame(height: Self.heroHeight)
+                .frame(maxWidth: .infinity)
+                .clipped()
 
-            LinearGradient(
-                colors: [
-                    DarkFantasyTheme.bgDungeonDeep.opacity(0.3),
-                    DarkFantasyTheme.bgDungeonDeep.opacity(0.6),
-                    DarkFantasyTheme.bgDungeonDeep
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        }
-        .allowsHitTesting(false)
-    }
-
-    // MARK: - Hero Portrait Section
-
-    private var heroPortraitSection: some View {
-        let size: CGFloat = 176
-
-        return ZStack {
-            // Rarity halo glow
-            Circle()
-                .fill(stateColor.opacity(DarkFantasyTheme.opacityMild))
-                .frame(width: size + 48, height: size + 48)
-                .blur(radius: 32)
-
-            // Physical frame
-            Circle()
-                .fill(DarkFantasyTheme.bgAbyss)
-                .frame(width: size, height: size)
-                .overlay(
-                    Group {
-                        if UIImage(named: boss.portraitImage) != nil {
-                            Image(boss.portraitImage)
-                                .resizable()
-                                .scaledToFill()
-                        } else if UIImage(named: boss.fullImage) != nil {
-                            Image(boss.fullImage)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            AssetPlaceholderView(systemIcon: "flame.fill")
-                                .frame(width: 64, height: 64)
-                        }
-                    }
-                    .frame(width: size, height: size)
-                    .clipShape(Circle())
-                )
-                .overlay(
-                    Circle().stroke(stateColor.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1.5)
-                )
-                .overlay(
-                    Circle()
-                        .inset(by: 3)
-                        .stroke(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy), lineWidth: 1)
-                )
-                .opacity(state == .locked ? 0.5 : 1.0)
-                .shadow(color: stateColor.opacity(DarkFantasyTheme.opacityMedium), radius: 18)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque), radius: 12, y: 6)
-
-            // Floating LVL badge — overlaps bottom of portrait
-            levelBadge
-                .offset(y: size / 2)
-        }
-        .frame(height: size + LayoutConstants.spaceMD)
-        .frame(maxWidth: .infinity)
-        .padding(.top, LayoutConstants.spaceSM)
-        .padding(.bottom, LayoutConstants.spaceMD)
-    }
-
-    private var levelBadge: some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: "bolt.fill")
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.gold)
-            Text("LVL \(boss.level)")
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .tracking(1.5)
-        }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceXS)
-        .background(
-            Capsule().fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            Capsule().stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
-        )
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy), radius: 6, y: 3)
-    }
-
-    // MARK: - Title & Status Section
-
-    private var titleAndStatusSection: some View {
-        VStack(spacing: LayoutConstants.spaceMS) {
-            Text(boss.name.uppercased())
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .tracking(2)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque), radius: 6)
-                .multilineTextAlignment(.center)
-
-            Text(bossSubtitleLabel)
+            Text(roleLine)
                 .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textBossDesc)
-                .tracking(3)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.gold)
 
-            statusPill
+            Text(state == .locked ? "???" : boss.name.uppercased())
+                .font(DarkFantasyTheme.cinematicTitle)
+                .tracking(1)
+                .foregroundStyle(state == .current ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .padding(.horizontal, LayoutConstants.screenPadding)
         }
-        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
-    private var bossSubtitleLabel: String {
-        let role = boss.isRealBoss ? "BOSS" : "ENEMY"
-        return "\(role) • LEVEL \(boss.level)"
+    private var roleLine: String {
+        let role = boss.isRealBoss ? "BOSS" : "SPARRING"
+        return "\(role) · STAGE \(bossIndex + 1) OF \(totalStages)"
     }
 
     @ViewBuilder
     private var statusPill: some View {
         switch state {
         case .defeated:
-            HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(DarkFantasyTheme.body)
-                Text("DEFEATED")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .tracking(1.5)
-            }
-            .foregroundStyle(DarkFantasyTheme.textStatusGood)
-            .padding(.horizontal, LayoutConstants.spaceMS)
-            .padding(.vertical, LayoutConstants.spaceXS)
-            .background(Capsule().fill(DarkFantasyTheme.pill(.heal, .bg)))
-            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.heal, .border), lineWidth: 1))
-
+            Text("Defeated")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.textStatusGood)
+                .badgeCapsule(color: DarkFantasyTheme.success)
         case .current:
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Circle()
-                    .fill(DarkFantasyTheme.success)
-                    .frame(width: LayoutConstants.spaceSM, height: LayoutConstants.spaceSM)
-                    .shadow(color: DarkFantasyTheme.success.opacity(DarkFantasyTheme.opacityHeavy), radius: 4)
-                Text("READY TO FIGHT")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .tracking(1.5)
-            }
-            .foregroundStyle(DarkFantasyTheme.textStatusGood)
-            .padding(.horizontal, LayoutConstants.spaceMS)
-            .padding(.vertical, LayoutConstants.spaceXS)
-            .background(Capsule().fill(DarkFantasyTheme.pill(.heal, .bg)))
-            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.heal, .border), lineWidth: 1))
-
+            Text("Ready to fight")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.textStatusGood)
+                .badgeCapsule(color: DarkFantasyTheme.success)
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image("icon-padlock")
                     .resizable()
                     .scaledToFit()
                     .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                Text("LOCKED")
+                Text("Locked")
                     .font(DarkFantasyTheme.body.weight(.semibold))
-                    .tracking(1.5)
             }
             .foregroundStyle(DarkFantasyTheme.textSecondary)
-            .padding(.horizontal, LayoutConstants.spaceMS)
-            .padding(.vertical, LayoutConstants.spaceXS)
-            .background(Capsule().fill(DarkFantasyTheme.pill(.offline, .bg)))
-            .overlay(Capsule().stroke(DarkFantasyTheme.pill(.offline, .border), lineWidth: 1))
+            .badgeCapsule(color: DarkFantasyTheme.textSecondary)
         }
     }
 
-    // MARK: - Lore Card (recessed italic quote)
+    // MARK: - Stat Tiles
 
-    private var loreCard: some View {
+    private var statTiles: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            statTile(value: "\(boss.hp)", label: "HP", color: DarkFantasyTheme.danger)
+            statTile(value: "\(boss.level)", label: "Level", color: DarkFantasyTheme.xpRing)
+            statTile(value: "\(energyCost)", label: "Energy", color: DarkFantasyTheme.goldBright, icon: "icon-stamina")
+        }
+    }
+
+    private func statTile(value: String, label: String, color: Color, icon: String? = nil) -> some View {
         VStack(spacing: 0) {
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [.clear, DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMedium), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 1)
-                .padding(.horizontal, LayoutConstants.spaceXL)
-
-            Text("\u{201C}\(boss.extendedLore)\u{201D}")
-                .font(DarkFantasyTheme.body.italic())
-                .foregroundStyle(DarkFantasyTheme.textBossDesc)
-                .lineSpacing(4)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(LayoutConstants.cardPadding)
-        }
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgDungeonDeep,
-                glowColor: DarkFantasyTheme.bgSecondary,
-                glowIntensity: 0.2,
-                cornerRadius: LayoutConstants.panelRadius
-            )
-        )
-        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderSubtle.opacity(DarkFantasyTheme.opacityLight))
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityStrong), radius: 4, y: 2)
-    }
-
-    // MARK: - Stats Section
-
-    private var statsSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text("BOSS STATS")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            LazyVGrid(
-                columns: [GridItem(.flexible()), GridItem(.flexible())],
-                spacing: LayoutConstants.spaceSM
-            ) {
-                bossStatRow("Level", value: "\(boss.level)", color: DarkFantasyTheme.gold)
-                bossStatRow("Hit Points", value: formatNumber(boss.hp), color: DarkFantasyTheme.danger)
-                bossStatRow("Boss #", value: "\(boss.id) / 10", color: stateColor)
-                bossStatRow("Drops", value: "\(boss.loot.count) items", color: DarkFantasyTheme.lootGold)
-            }
-
-            // HP bar
-            VStack(spacing: LayoutConstants.space2XS) {
-                HStack {
-                    Text("HP")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Spacer()
-                    Text(
-                        state == .defeated
-                            ? "0 / \(formatNumber(boss.hp))"
-                            : "\(formatNumber(boss.hp)) / \(formatNumber(boss.hp))"
-                    )
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+            HStack(spacing: LayoutConstants.space2XS) {
+                if let icon {
+                    Image(icon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                }
+                Text(value)
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(color)
                     .monospacedDigit()
-                }
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                            .fill(DarkFantasyTheme.bgTertiary)
-
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                            .fill(DarkFantasyTheme.dungeonHpGradient)
-                            .frame(width: geo.size.width * (state == .defeated ? 0 : 1.0))
-                            .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
-                    }
-                }
-                .frame(height: 14)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            .padding(LayoutConstants.spaceSM + 2)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.3,
-                    cornerRadius: LayoutConstants.panelRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
-            .compositingGroup()
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-        }
-    }
-
-    @ViewBuilder
-    private func bossStatRow(_ label: String, value: String, color: Color) -> some View {
-        HStack {
             Text(label)
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-            Spacer()
-            Text(value)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(color)
-                .monospacedDigit()
         }
-        .padding(.horizontal, LayoutConstants.spaceSM)
-        .padding(.vertical, LayoutConstants.spaceXS)
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.tileHeight)
         .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary.opacity(0.5),
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.2,
-                cornerRadius: LayoutConstants.radiusSM
-            )
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
         )
-        .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Loot Pill Row
+    // MARK: - Lore
 
-    private var lootPillRow: some View {
-        VStack(spacing: LayoutConstants.spaceMS) {
-            // Divider label — horizontal lines on both sides
-            HStack(spacing: LayoutConstants.spaceMS) {
-                dividerLine
-                Text("POSSIBLE LOOT")
+    /// The lore without the hook line it usually starts with.
+    private var loreBody: String {
+        let full = boss.extendedLore
+        let hook = boss.hookLine
+        guard full.hasPrefix(hook) else { return full }
+        return String(full.dropFirst(hook.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var loreSection: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            if !boss.hookLine.isEmpty {
+                Text("\u{201C}\(boss.hookLine)\u{201D}")
+                    .font(DarkFantasyTheme.body.italic())
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !loreBody.isEmpty {
+                Text(loreBody)
                     .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                    .tracking(2)
-                dividerLine
-            }
+                    .foregroundStyle(DarkFantasyTheme.textBossDesc)
+                    .lineSpacing(4)
+                    .lineLimit(loreExpanded ? nil : 3)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: LayoutConstants.spaceMS) {
-                    ForEach(boss.loot) { lootItem in
-                        lootPillCard(lootItem)
+                if loreBody.count > 140 {
+                    Button {
+                        withAnimation(.easeInOut(duration: MotionConstants.fast)) {
+                            loreExpanded.toggle()
+                        }
+                    } label: {
+                        Text(loreExpanded ? "Show less" : "Read more")
+                            .font(DarkFantasyTheme.body.weight(.semibold))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                            .frame(minHeight: LayoutConstants.touchMin, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, LayoutConstants.screenPadding)
             }
-            .padding(.horizontal, -LayoutConstants.screenPadding)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Loot
+
+    private var lootSection: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            Text("POSSIBLE LOOT")
+                .font(DarkFantasyTheme.body)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
+                    GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
+                ],
+                spacing: LayoutConstants.spaceSM
+            ) {
+                ForEach(boss.loot) { loot in
+                    lootTile(loot)
+                }
+            }
         }
     }
 
-    private var dividerLine: some View {
-        Rectangle()
-            .fill(
-                LinearGradient(
-                    colors: [.clear, DarkFantasyTheme.borderSubtle.opacity(DarkFantasyTheme.opacityHeavy), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .frame(height: 1)
-    }
-
-    @ViewBuilder
-    private func lootPillCard(_ loot: LootPreview) -> some View {
+    private func lootTile(_ loot: LootPreview) -> some View {
         let rarityColor = DarkFantasyTheme.rarityColor(for: loot.rarity)
 
-        Button {
+        return Button {
             selectedLootForModal = loot
             withAnimation(MotionConstants.snappy) { showLootModal = true }
         } label: {
-            HStack(spacing: LayoutConstants.spaceMS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 lootIcon(loot)
-                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
-
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text(loot.rarity.displayName)
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(rarityColor)
-                        .tracking(1.5)
+                    .frame(width: 36, height: 36)
+                VStack(alignment: .leading, spacing: 0) {
                     Text(loot.name)
                         .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(loot.detail)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(loot.rarity == .common ? DarkFantasyTheme.textSecondary : rarityColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .frame(height: Self.tileHeight)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .fill(DarkFantasyTheme.bgSecondary)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(rarityColor.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(rarityColor.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
             )
-            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityStrong), radius: 4, y: 2)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.scalePress)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("\(loot.name), \(loot.detail)"))
     }
 
     @ViewBuilder
@@ -555,7 +373,7 @@ struct BossDetailSheet: View {
     // MARK: - Sticky Fight Button
 
     private var stickyFightButton: some View {
-        let hasEnergy = stamina >= energyCost
+        let hasEnergy = runActive || stamina >= energyCost
 
         return VStack(spacing: 0) {
             // Top fade gradient
@@ -567,37 +385,43 @@ struct BossDetailSheet: View {
 
             VStack(spacing: LayoutConstants.spaceXS) {
                 Button {
+                    guard hasEnergy else {
+                        // No dead end: the toast carries the refill.
+                        HapticManager.error()
+                        CharacterService.showOutOfStamina(
+                            appState: appState,
+                            refillGemCost: cache.gameConfig?.staminaRefillGems
+                        )
+                        return
+                    }
                     HapticManager.heavy()
                     onFight()
                 } label: {
                     if isFighting {
                         HexPulseLoader(.compact)
                     } else {
-                        VStack(spacing: LayoutConstants.space2XS) {
-                            HStack(spacing: LayoutConstants.spaceSM) {
-                                // BUG-42 (QA 2026-04-10): Training Camp practice
-                                // enemies (Straw Dummy, etc.) should not be called
-                                // "FIGHT BOSS" — they're labeled ENEMY in the header
-                                // (see line 195), so the CTA must match. Only real
-                                // bosses (floor-10 culminations) keep the shield icon
-                                // and "FIGHT BOSS" copy.
-                                Image(systemName: boss.isRealBoss ? "bolt.shield.fill" : "bolt.fill")
-                                    .font(DarkFantasyTheme.cardTitle.bold())
-                                Text(boss.isRealBoss ? "FIGHT BOSS" : "FIGHT ENEMY")
+                        // BUG-42: Training Camp practice enemies are not
+                        // "bosses" — only real bosses get "FIGHT BOSS".
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            Text(boss.isRealBoss ? "FIGHT BOSS" : "FIGHT")
+                            if !runActive {
+                                HStack(spacing: LayoutConstants.space2XS) {
+                                    Image("icon-stamina")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                                    Text("\(energyCost)")
+                                }
+                                .opacity(hasEnergy ? 1 : 0.6)
                             }
-
-                            HStack(spacing: LayoutConstants.spaceXS) {
-                                Image(systemName: "bolt.fill")
-                                    .font(DarkFantasyTheme.body.weight(.semibold))
-                                Text("\(energyCost) Energy")
-                                    .font(DarkFantasyTheme.body)
-                            }
-                            .opacity(0.7)
                         }
                     }
                 }
-                .buttonStyle(.fight(accent: DarkFantasyTheme.arenaRankGold))
-                .disabled(isFighting || !hasEnergy)
+                .buttonStyle(.primary)
+                .disabled(isFighting)
+                .accessibilityLabel(Text(runActive
+                                         ? "Fight \(boss.name)"
+                                         : "Fight \(boss.name), costs \(energyCost) energy"))
 
                 if !hasEnergy {
                     Text("Not enough energy — \(stamina)/\(energyCost)")
@@ -618,41 +442,5 @@ struct BossDetailSheet: View {
                 )
             }
         }
-    }
-
-    // MARK: - Helpers
-
-    private func formatNumber(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
-}
-
-// MARK: - Presentation modifier (sheet mode only)
-
-/// Animated diamond dot for loading indicator — matches LoadingOverlay style.
-private struct DiamondLoadingDot: View {
-    let delay: Double
-    @State private var isAnimating = false
-
-    var body: some View {
-        Rectangle()
-            .fill(DarkFantasyTheme.gold)
-            .frame(width: 8, height: 8)
-            .rotationEffect(.degrees(45))
-            .opacity(isAnimating ? 1.0 : 0.3)
-            .onAppear {
-                withAnimation(
-                    Animation.easeInOut(duration: MotionConstants.reward)
-                    .repeatForever(autoreverses: true)
-                    .delay(delay)
-                ) {
-                    isAnimating = true
-                }
-            }
-            .onDisappear {
-                isAnimating = false
-            }
     }
 }

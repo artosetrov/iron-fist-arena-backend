@@ -95,10 +95,14 @@ final class DungeonRoomViewModel {
         return .locked
     }
 
+    /// A run is open (or being opened). Energy is charged once, when the run
+    /// starts — fights inside a run are free.
+    var hasActiveRun: Bool { !runId.isEmpty || runStartTask != nil }
+
     var canFightSelectedBoss: Bool {
         guard let dungeon else { return false }
         let state = bossState(at: selectedBossIndex)
-        return state == .current && stamina >= dungeon.energyCost
+        return state == .current && (hasActiveRun || stamina >= dungeon.energyCost)
     }
 
     var progressFraction: Double {
@@ -186,9 +190,39 @@ final class DungeonRoomViewModel {
 
     // MARK: - Fight
 
+    /// In-flight run start kicked off by `prewarmRunIfNeeded()`.
+    private var runStartTask: Task<Void, Never>?
+
+    /// Latency pass (2026-10-15): start the dungeon run while the BOSS FIGHT
+    /// slam plays, so `fight()` finds a `runId` instead of paying that round
+    /// trip after the animation. Safe to call repeatedly.
+    func prewarmRunIfNeeded() {
+        guard runId.isEmpty, runStartTask == nil, canFightSelectedBoss else { return }
+        runStartTask = Task { [weak self] in
+            guard let self else { return }
+            await self.startRunIfNeeded()
+            self.runStartTask = nil
+        }
+    }
+
+    private func startRunIfNeeded() async {
+        guard runId.isEmpty else { return }
+        #if DEBUG
+        print("[DUNGEON-COMBAT] no runId, starting new run for dungeon=\(dungeon?.id ?? "nil")")
+        #endif
+        let startResult = await service.start(dungeonId: dungeon?.id ?? "", difficulty: "normal")
+        if let result = startResult, runId.isEmpty {
+            runId = result.runId
+            AnalyticsService.shared.track(.dungeonRunStart, ["dungeon": .string(dungeon?.id ?? "")])
+        }
+    }
+
     func fight() async {
         guard !isFighting else { return } // prevent double-tap
-        guard canFightSelectedBoss else { return }
+        guard canFightSelectedBoss else {
+            appState.showToast("Can't start this fight", subtitle: "Check your energy and try again", type: .error)
+            return
+        }
         isFighting = true
         // Capture XP snapshot before fight to detect level-up on victory screen
         preFightLevel = appState.currentCharacter?.level ?? 0
@@ -199,16 +233,13 @@ final class DungeonRoomViewModel {
         print("[DUNGEON-COMBAT] fight(): hp=\(appState.currentCharacter?.currentHp ?? -1)/\(appState.currentCharacter?.maxHp ?? -1), stamina=\(stamina), bossIdx=\(selectedBossIndex)")
         #endif
 
-        // Start a run if we don't have one
+        // Start a run if we don't have one — usually already done by
+        // `prewarmRunIfNeeded()` during the slam; await it if still in flight.
+        if let pending = runStartTask {
+            await pending.value
+        }
         if runId.isEmpty {
-            #if DEBUG
-            print("[DUNGEON-COMBAT] fight(): no runId, starting new run for dungeon=\(dungeon?.id ?? "nil")")
-            #endif
-            let startResult = await service.start(dungeonId: dungeon?.id ?? "", difficulty: "normal")
-            if let result = startResult {
-                runId = result.runId
-                AnalyticsService.shared.track(.dungeonRunStart, ["dungeon": .string(dungeon?.id ?? "")])
-            }
+            await startRunIfNeeded()
         }
 
         guard !runId.isEmpty else {
@@ -229,7 +260,7 @@ final class DungeonRoomViewModel {
             let bossMaxHp = boss.hp > 0 ? boss.hp : char.maxHp
             appState.mainPath.append(AppRoute.interactiveBattle(
                 characterId: char.id,
-                opponentId: "boss_\(boss.name.lowercased().replacingOccurrences(of: " ", with: "_"))",
+                opponentId: EnemyPortraitResolver.opponentId(for: boss),
                 attackerMaxHp: char.maxHp,
                 defenderMaxHp: bossMaxHp,
                 opponentType: .dungeonBoss,
@@ -281,109 +312,168 @@ final class DungeonRoomViewModel {
     var pendingFightResult: DungeonFightResponse?
 
     func applyPendingResult() {
+        // Dice combat hands its settled match over through AppState.
+        if let data = appState.pendingDungeonBossResult {
+            appState.pendingDungeonBossResult = nil
+            applyDiceResult(data)
+            return
+        }
         guard let result = pendingFightResult else { return }
         pendingFightResult = nil
         applyFightResult(result)
+    }
+
+    /// Dice combat (`/pvp/match/complete` for a dungeon boss) → the same
+    /// victory / defeat overlays as the classic dungeon fight.
+    private func applyDiceResult(_ data: CombatData) {
+        appState.fightsSinceSessionSummary += 1
+        let res = data.result
+        let postFightHp = data.postCombatHp?.player
+
+        if res.isWin {
+            let hpFraction: Double? = postFightHp.map {
+                Double($0) / Double(max(data.player.maxHp, 1))
+            }
+            applyVictory(
+                gold: data.rewards?.gold ?? res.goldReward ?? 0,
+                xp: data.rewards?.xp ?? res.xpReward ?? 0,
+                items: data.loot ?? [],
+                leveledUp: res.leveledUp ?? false,
+                newLevel: res.newLevel,
+                statPoints: res.statPointsAwarded ?? 3,
+                passivePoints: res.passivePointsAwarded ?? 0,
+                hpFraction: hpFraction,
+                postFightHp: postFightHp,
+                serverFloorCleared: data.dungeon?.floorCleared,
+                serverDungeonComplete: data.dungeon?.dungeonComplete ?? false
+            )
+        } else {
+            // Defeat — the server deleted the run; saved progress stays.
+            runId = ""
+            if let postFightHp, var char = appState.currentCharacter {
+                char.currentHp = postFightHp
+                appState.currentCharacter = char
+            }
+            defeatTotalGold = 0
+            defeatTotalXP = 0
+            defeatFloorsCleared = defeatedCount
+            showDefeat = true
+            Task { [characterService] in
+                await characterService.loadCharacter()
+            }
+        }
+    }
+
+    /// Shared by the classic and the dice fight: fill the victory overlay,
+    /// update the hero optimistically, advance the dungeon.
+    private func applyVictory(gold: Int,
+                              xp: Int,
+                              items: [CombatLootItem],
+                              leveledUp: Bool,
+                              newLevel: Int?,
+                              statPoints: Int,
+                              passivePoints: Int,
+                              hpFraction: Double?,
+                              postFightHp: Int? = nil,
+                              serverFloorCleared: Int? = nil,
+                              serverDungeonComplete: Bool) {
+        victoryGold = gold
+        victoryXP = xp
+        victoryItems = items
+
+        // Level-up metadata — consumed by DungeonVictoryView to animate the
+        // XP bar and trigger the level-up modal in sync with the bar
+        // finishing its fill (mirrors arena/pvp flow).
+        victoryLeveledUp = leveledUp
+        victoryNewLevel = newLevel
+        victoryStatPointsAwarded = leveledUp ? statPoints : 0
+        victoryPassivePointsAwarded = leveledUp ? passivePoints : 0
+
+        // HP fraction for the star rating; fall back to the hero's HP.
+        if let hpFraction {
+            hpFractionAfterBattle = hpFraction
+        } else if let char = appState.currentCharacter {
+            hpFractionAfterBattle = Double(char.currentHp) / Double(max(char.maxHp, 1))
+        }
+
+        // Optimistic character update so DungeonVictoryView can snapshot
+        // the XP transition. Single write-back (struct) to avoid @Observable
+        // re-entrant exclusive-access violations. Background loadCharacter()
+        // below reconciles against authoritative server state afterwards.
+        if var char = appState.currentCharacter {
+            if let postFightHp {
+                char.currentHp = postFightHp
+            }
+            if victoryXP > 0 {
+                char.experience = (char.experience ?? 0) + victoryXP
+            }
+            if victoryGold > 0 {
+                char.gold += victoryGold
+            }
+            if leveledUp, let newLvl = newLevel {
+                let prevXpNeeded = Self.xpNeededForLevel(newLvl - 1)
+                char.level = newLvl
+                let totalXp = char.experience ?? 0
+                if totalXp >= prevXpNeeded {
+                    char.experience = totalXp - prevXpNeeded
+                }
+                if statPoints > 0 {
+                    char.statPoints = (char.statPoints ?? 0) + statPoints
+                }
+                if passivePoints > 0 {
+                    char.passivePointsAvailable = (char.passivePointsAvailable ?? 0) + passivePoints
+                }
+            }
+            appState.currentCharacter = char
+        }
+
+        // The server's cleared floor is the new defeated count; fall back to
+        // counting locally (classic fight responses don't carry it).
+        if let serverFloorCleared, serverFloorCleared > 0 {
+            defeatedCount = serverFloorCleared
+        } else {
+            defeatedCount += 1
+        }
+        showVictory = true
+
+        // Celebrate epic+ drops; common/uncommon show on the victory screen.
+        if let first = victoryItems.first {
+            let rarity = first.rarity ?? "common"
+            let rarityEnum = ItemRarity(rawValue: rarity) ?? .common
+            if rarityEnum == .epic || rarityEnum == .legendary {
+                let subtitle = victoryItems.count > 1 ? "+\(victoryItems.count - 1) more!" : "Rare drop!"
+                appState.showCelebration(.rareDrop, title: "\(rarity.capitalized) \(first.displayName)", subtitle: subtitle)
+            }
+        }
+
+        if isDungeonComplete || serverDungeonComplete {
+            runId = ""
+            // FTUE: mark explore dungeon complete
+            TutorialManager.shared.completeFTUEObjective(.exploreDungeon)
+        }
+
+        // Refresh character data (gold, xp, level may have changed).
+        // The level-up modal waits for DungeonVictoryView's XP bar.
+        Task { [characterService] in
+            await characterService.loadCharacter()
+        }
     }
 
     private func applyFightResult(_ result: DungeonFightResponse) {
         let won = result.victory
 
         if won {
-            // Extract gold/xp from rewards or result
-            victoryGold = result.rewards?.gold ?? result.result.goldReward ?? 0
-            victoryXP = result.rewards?.xp ?? result.result.xpReward ?? 0
-            victoryItems = result.loot ?? []
-
-            // Extract level-up metadata — consumed by DungeonVictoryView to
-            // animate the XP bar and trigger the level-up modal in sync with
-            // the bar finishing its fill (mirrors arena/pvp flow).
-            let leveledUp = result.result.leveledUp ?? false
-            let newLevel = result.result.newLevel
-            let statPoints = result.result.statPointsAwarded ?? 3
-            let passivePoints = result.result.passivePointsAwarded ?? 0
-            victoryLeveledUp = leveledUp
-            victoryNewLevel = newLevel
-            victoryStatPointsAwarded = leveledUp ? statPoints : 0
-            victoryPassivePointsAwarded = leveledUp ? passivePoints : 0
-
-            // HP fraction for star rating (server sends playerHpPercent or we compute from character)
-            if let hpPct = result.playerHpPercent {
-                hpFractionAfterBattle = hpPct
-            } else if let hpPct = result.rewards?.hpPercent {
-                hpFractionAfterBattle = hpPct
-            } else {
-                // Fallback: use current character HP if available
-                if let char = appState.currentCharacter {
-                    hpFractionAfterBattle = Double(char.currentHp) / Double(max(char.maxHp, 1))
-                }
-            }
-
-            // Optimistic character update so DungeonVictoryView can snapshot
-            // the XP transition the same way CombatResultDetailView does for
-            // arena/pvp. Single write-back (struct) to avoid @Observable
-            // re-entrant exclusive-access violations. Background loadCharacter()
-            // below reconciles against authoritative server state afterwards.
-            if var char = appState.currentCharacter {
-                if victoryXP > 0 {
-                    char.experience = (char.experience ?? 0) + victoryXP
-                }
-                if victoryGold > 0 {
-                    char.gold += victoryGold
-                }
-                if leveledUp, let newLvl = newLevel {
-                    let prevXpNeeded = Self.xpNeededForLevel(newLvl - 1)
-                    char.level = newLvl
-                    let totalXp = char.experience ?? 0
-                    if totalXp >= prevXpNeeded {
-                        char.experience = totalXp - prevXpNeeded
-                    }
-                    if statPoints > 0 {
-                        char.statPoints = (char.statPoints ?? 0) + statPoints
-                    }
-                    if passivePoints > 0 {
-                        char.passivePointsAvailable = (char.passivePointsAvailable ?? 0) + passivePoints
-                    }
-                }
-                appState.currentCharacter = char
-            }
-
-            defeatedCount += 1
-            showVictory = true
-
-            // Notify rare+ drops as celebration, skip common/uncommon (shown in loot screen)
-            if !victoryItems.isEmpty {
-                let first = victoryItems[0]
-                let name = first.displayName
-                let rarity = first.rarity ?? "common"
-                let rarityEnum = ItemRarity(rawValue: rarity) ?? .common
-
-                // Only celebrate epic+ drops
-                if rarityEnum == .epic || rarityEnum == .legendary {
-                    if victoryItems.count > 1 {
-                        appState.showCelebration(.rareDrop, title: "\(rarity.capitalized) \(name)", subtitle: "+\(victoryItems.count - 1) more!")
-                    } else {
-                        appState.showCelebration(.rareDrop, title: "\(rarity.capitalized) \(name)", subtitle: "Rare drop!")
-                    }
-                }
-                // Common/uncommon drops are shown in loot screen — no toast needed
-            }
-
-            // Check if dungeon is now complete
-            let serverDungeonComplete = result.dungeonComplete ?? false
-            if isDungeonComplete || serverDungeonComplete {
-                runId = ""
-                // FTUE: mark explore dungeon complete
-                TutorialManager.shared.completeFTUEObjective(.exploreDungeon)
-            }
-
-            // Refresh character data (gold, xp, level may have changed)
-            Task { [characterService] in
-                await characterService.loadCharacter()
-            }
-            // NOTE: level-up modal trigger is now deferred to
-            // DungeonVictoryView.runXpBarAnimation() so it pops AFTER the
-            // XP bar finishes filling (identical to arena/pvp flow).
+            applyVictory(
+                gold: result.rewards?.gold ?? result.result.goldReward ?? 0,
+                xp: result.rewards?.xp ?? result.result.xpReward ?? 0,
+                items: result.loot ?? [],
+                leveledUp: result.result.leveledUp ?? false,
+                newLevel: result.result.newLevel,
+                statPoints: result.result.statPointsAwarded ?? 3,
+                passivePoints: result.result.passivePointsAwarded ?? 0,
+                hpFraction: result.playerHpPercent ?? result.rewards?.hpPercent,
+                serverDungeonComplete: result.dungeonComplete ?? false
+            )
         } else {
             // Defeat — run is deleted server-side
             runId = ""
@@ -423,10 +513,13 @@ final class DungeonRoomViewModel {
         }
     }
 
-    func proceedToNextBoss() {
+    /// Close the victory overlay and put the next boss on the stage.
+    /// `ceremony: false` when the player goes straight into the next fight —
+    /// the victory screen already revealed that boss.
+    func proceedToNextBoss(ceremony: Bool = true) {
         showVictory = false
         selectedBossIndex = currentBossIndex
-        queueBossUnlockIfAny()
+        if ceremony { queueBossUnlockIfAny() }
     }
 
     /// Trigger the boss unlock ceremony if a new boss just became available.
@@ -456,9 +549,11 @@ final class DungeonRoomViewModel {
         pendingBossUnlock = nil
     }
 
+    /// TRY AGAIN: close the overlay and stay in the dungeon with the same
+    /// boss on the stage (it used to leave the dungeon).
     func dismissDefeat() {
         showDefeat = false
-        goBack()
+        selectedBossIndex = currentBossIndex
     }
 
     // MARK: - Navigation

@@ -102,6 +102,10 @@ final class AppState {
     /// Dice combat in Dungeon Rush: the settled room result, handed from the
     /// battle screen back to `DungeonRushViewModel` when the rush view reappears.
     var pendingRushFightResult: DungeonRushFightResponse?
+    /// Dice combat against a dungeon boss: the settled match, handed from the
+    /// battle screen back to `DungeonRoomViewModel` (victory / defeat overlay
+    /// over the dungeon) instead of the arena-style result screen.
+    var pendingDungeonBossResult: CombatData?
 
     // MARK: - Cache
     var cachedInventory: [Item]?
@@ -617,6 +621,8 @@ final class AppState {
         combatData = nil
         combatResult = nil
         pendingLoot = []
+        pendingDungeonBossResult = nil
+        pendingRushFightResult = nil
         resolveResult = nil
         cachedInventory = nil
         cachedTypedQuests = nil

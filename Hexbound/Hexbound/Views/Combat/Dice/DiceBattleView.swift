@@ -17,16 +17,46 @@ struct DiceBattleView: View {
     @Bindable var vm: DiceBattleViewModel
     var onFinished: ((DiceBattleViewModel.Phase) -> Void)? = nil
 
+    @Environment(GameDataCache.self) private var cache
+
+    /// Dungeon boss fights put the boss on a stage instead of the duel
+    /// header: full-body art, a long HP bar, the player as a slim strip.
+    private var boss: BossInfo? {
+        guard vm.opponentType == .dungeonBoss, let name = vm.defenderProfile?.name else { return nil }
+        return EnemyPortraitResolver.bossInfo(for: name, cache: cache)
+    }
+
+    /// The kill overlay holds from the KO through `.finished`, so it is
+    /// still up while the battle screen pops back to the dungeon.
+    private var showsKillOverlay: Bool {
+        guard vm.endWon == true else { return false }
+        switch vm.phase {
+        case .ending, .completing, .finished: return true
+        default: return false
+        }
+    }
+
     var body: some View {
         GeometryReader { geo in
             let compact = geo.size.height < 760
+            let stageHeight = bossStageHeight(geo.size)
             ZStack(alignment: .top) {
                 DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
                 VStack(spacing: compact ? LayoutConstants.spaceSM : LayoutConstants.spaceMS) {
-                    duelHeader(compact: compact)
+                    if let boss {
+                        bossHeader(boss, stageHeight: stageHeight)
+                    } else {
+                        duelHeader(compact: compact)
+                    }
                     roundStrip
-                    DiceTableView(vm: vm, dieSize: dieSize(geo.size, compact: compact))
+                    DiceTableView(
+                        vm: vm,
+                        dieSize: dieSize(geo.size, header: boss != nil
+                                         ? stageHeight + Self.playerStripHeight + LayoutConstants.spaceSM
+                                         : (compact ? 172 : 236)),
+                        hideEndCard: boss != nil && vm.endWon == true
+                    )
                     hintLine
                     bottomBar
                 }
@@ -57,8 +87,23 @@ struct DiceBattleView: View {
                         .transition(.opacity)
                         .zIndex(10)
                 }
+
+                // Killing blow on a dungeon boss — replaces the in-table
+                // VICTORY card while the match settles.
+                if let boss, showsKillOverlay {
+                    BossKillOverlay(
+                        boss: boss,
+                        rounds: min(vm.round, vm.maxRounds),
+                        dealt: vm.stats.dealt,
+                        taken: vm.stats.taken,
+                        counting: vm.phase == .completing
+                    )
+                    .transition(.opacity)
+                    .zIndex(20)
+                }
             }
             .animation(.easeOut(duration: 0.2), value: vm.sheetDie)
+            .animation(.easeOut(duration: 0.25), value: showsKillOverlay)
         }
         .overlayPreferenceValue(FighterAnchorKey.self) { entries in
             GeometryReader { proxy in
@@ -79,8 +124,7 @@ struct DiceBattleView: View {
 
     /// Die edge in points: fits two dice + chip + labels per lane in the
     /// space under the header, capped at 112 (the face tile's design size).
-    private func dieSize(_ size: CGSize, compact: Bool) -> CGFloat {
-        let header: CGFloat = compact ? 172 : 236
+    private func dieSize(_ size: CGSize, header: CGFloat) -> CGFloat {
         let chrome: CGFloat = 24 + 40 + 56 + 5 * LayoutConstants.spaceMS + 2 * LayoutConstants.spaceSM
         let lane = size.height - header - chrome
         let byHeight = (lane - 104) / 2
@@ -128,6 +172,173 @@ struct DiceBattleView: View {
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
+    }
+
+    // MARK: - Boss header (dungeon boss fights)
+
+    static let playerStripHeight: CGFloat = 56
+
+    /// Stage height for the boss: whatever the dice can spare at their
+    /// target size, between a small-phone floor and a large-phone ceiling.
+    private func bossStageHeight(_ size: CGSize) -> CGFloat {
+        let chrome: CGFloat = 24 + 40 + 56 + 5 * LayoutConstants.spaceMS + 2 * LayoutConstants.spaceSM
+        let dice: CGFloat = 104 + 2 * 96
+        let spare = size.height - chrome - dice - Self.playerStripHeight - LayoutConstants.spaceSM
+        return max(130, min(240, spare))
+    }
+
+    /// The boss, full height and facing left, over a long souls-style HP
+    /// bar; the player below as a slim strip. Hit flash, damage popups and
+    /// lunges use the same VM state as the duel header.
+    private func bossHeader(_ boss: BossInfo, stageHeight: CGFloat) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            ZStack(alignment: .bottom) {
+                BossStageArt(boss: boss, mirrored: true, hitFlash: vm.enemyFlash)
+                    .offset(x: vm.enemySlideX)
+                    .overlay(alignment: .top) {
+                        ZStack {
+                            ForEach(vm.damagePopups.filter { $0.onDefender }) { popup in
+                                DamagePopupBubble(popup: popup)
+                            }
+                        }
+                        .padding(.top, stageHeight * 0.2)
+                        .allowsHitTesting(false)
+                    }
+                    .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                        [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
+                    }
+
+                bossNameplate(boss)
+            }
+            .frame(height: stageHeight)
+            .frame(maxWidth: .infinity)
+
+            playerStrip
+        }
+    }
+
+    private func bossNameplate(_ boss: BossInfo) -> some View {
+        let fraction = Double(vm.enemyHp) / Double(max(vm.enemyMaxHp, 1))
+
+        return VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+            HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceSM) {
+                Text(boss.name.uppercased())
+                    .font(DarkFantasyTheme.cardTitle)
+                    .tracking(1.5)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("LV \(boss.level)")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Spacer(minLength: LayoutConstants.spaceXS)
+                Text("\(vm.enemyHp) / \(vm.enemyMaxHp)")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(DarkFantasyTheme.dungeonHpGradient)
+                        .frame(width: geo.size.width * max(0, min(1, fraction)))
+                        .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
+                        .animation(.easeOut(duration: 0.35), value: vm.enemyHp)
+                }
+            }
+            .frame(height: 12)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .stroke(DarkFantasyTheme.danger.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+            )
+
+            FocusPipsView(focus: vm.enemyFocus, max: vm.focusMax)
+        }
+        .padding(.top, LayoutConstants.spaceLG)
+        .background(
+            LinearGradient(
+                colors: [.clear, DarkFantasyTheme.bgPrimary.opacity(0.9), DarkFantasyTheme.bgPrimary],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("\(boss.name), level \(boss.level), \(vm.enemyHp) of \(vm.enemyMaxHp) HP"))
+    }
+
+    private var playerStrip: some View {
+        let profile = vm.attackerProfile
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            ZStack {
+                DarkFantasyTheme.bgSecondary
+                if let profile {
+                    AvatarImageView(
+                        skinKey: profile.avatar,
+                        characterClass: profile.characterClass,
+                        size: 44,
+                        deterministicSeed: profile.id
+                    )
+                }
+                DarkFantasyTheme.danger
+                    .opacity(vm.playerFlash ? 0.35 : 0)
+                    .allowsHitTesting(false)
+            }
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .stroke(DarkFantasyTheme.gold, lineWidth: 2)
+            )
+            .overlay(alignment: .top) {
+                ZStack {
+                    ForEach(vm.damagePopups.filter { !$0.onDefender }) { popup in
+                        DamagePopupBubble(popup: popup)
+                    }
+                }
+                .allowsHitTesting(false)
+            }
+            .offset(x: vm.playerSlideX)
+            .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                [FighterAnchorKey.Entry(side: .player, bounds: $0)]
+            }
+
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text(profile?.name ?? "You")
+                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+                    if let level = profile?.level {
+                        Text("· Lv \(level)")
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                }
+                HPBarView(
+                    currentHp: vm.playerHp,
+                    maxHp: vm.playerMaxHp,
+                    size: .compact,
+                    showTextInside: true,
+                    pulseOnCritical: true
+                )
+            }
+
+            FocusPipsView(focus: vm.playerFocus, max: vm.focusMax)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .frame(height: Self.playerStripHeight)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     private var roundStrip: some View {
@@ -226,6 +437,8 @@ struct DiceBattleView: View {
 struct DiceTableView: View {
     @Bindable var vm: DiceBattleViewModel
     let dieSize: CGFloat
+    /// The boss kill overlay takes over the victory beat in dungeon fights.
+    var hideEndCard: Bool = false
 
     var body: some View {
         ZStack {
@@ -236,8 +449,10 @@ struct DiceTableView: View {
             .padding(.vertical, LayoutConstants.spaceSM)
             .padding(.horizontal, LayoutConstants.spaceSM)
 
-            if case .ending = vm.phase { endCard }
-            if case .completing = vm.phase { endCard }
+            if !hideEndCard {
+                if case .ending = vm.phase { endCard }
+                if case .completing = vm.phase { endCard }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -702,5 +917,133 @@ struct DiceActionSheet: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Boss killing blow
+
+/// Full-screen beat after the KO on a dungeon boss, while the match settles:
+/// the boss goes grey, a red slash cuts across, DEFEATED stamps down, then
+/// the fight in three numbers. Opacity-only motion.
+struct BossKillOverlay: View {
+    let boss: BossInfo
+    let rounds: Int
+    let dealt: Int
+    let taken: Int
+    let counting: Bool
+
+    @State private var slashShown = false
+    @State private var stampShown = false
+
+    var body: some View {
+        ZStack {
+            DarkFantasyTheme.bgAbyss.opacity(0.96)
+                .ignoresSafeArea()
+
+            VStack(spacing: LayoutConstants.spaceLG) {
+                VStack(spacing: LayoutConstants.space2XS) {
+                    Text("LV \(boss.level)")
+                        .font(DarkFantasyTheme.body)
+                        .tracking(3)
+                        .foregroundStyle(DarkFantasyTheme.goldDim)
+                    Text(boss.name.uppercased())
+                        .font(DarkFantasyTheme.cinematicTitle)
+                        .tracking(1)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .padding(.top, LayoutConstants.spaceXL)
+
+                ZStack {
+                    BossStageArt(boss: boss, style: .defeated, mirrored: true, light: DarkFantasyTheme.danger)
+
+                    KillSlashShape()
+                        .fill(DarkFantasyTheme.danger)
+                        .opacity(slashShown ? 1 : 0)
+                        .allowsHitTesting(false)
+
+                    Text("DEFEATED")
+                        .font(DarkFantasyTheme.combatCallout)
+                        .tracking(6)
+                        .foregroundStyle(DarkFantasyTheme.danger)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .padding(.horizontal, LayoutConstants.spaceLG)
+                        .padding(.vertical, LayoutConstants.spaceSM)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                                .fill(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                                .stroke(DarkFantasyTheme.danger, lineWidth: 4)
+                        )
+                        .rotationEffect(.degrees(-12))
+                        .opacity(stampShown ? 1 : 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    statTile("\(rounds)", rounds == 1 ? "round" : "rounds", DarkFantasyTheme.textPrimary)
+                    statTile("\(dealt)", "dealt", DarkFantasyTheme.goldBright)
+                    statTile("\(taken)", "taken", taken == 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                Text("Counting the spoils…")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .opacity(counting ? 1 : 0)
+                    .padding(.bottom, LayoutConstants.spaceLG)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(boss.name) defeated in \(rounds) rounds. Dealt \(dealt), took \(taken)."))
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.15).delay(0.05)) { slashShown = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                HapticManager.stamp()
+                withAnimation(.easeOut(duration: 0.15)) { stampShown = true }
+            }
+        }
+    }
+
+    private func statTile(_ value: String, _ label: String, _ color: Color) -> some View {
+        VStack(spacing: 0) {
+            Text(value)
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(color)
+                .monospacedDigit()
+            Text(label)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 64)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+        )
+    }
+}
+
+/// A thin blade-stroke from lower left to upper right, tapered at both ends.
+private struct KillSlashShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let start = CGPoint(x: rect.minX + rect.width * 0.06, y: rect.maxY - rect.height * 0.08)
+        let end = CGPoint(x: rect.maxX - rect.width * 0.04, y: rect.minY + rect.height * 0.10)
+        let half: CGFloat = 5
+        path.move(to: start)
+        path.addLine(to: CGPoint(x: (start.x + end.x) / 2 - half, y: (start.y + end.y) / 2 - half))
+        path.addLine(to: end)
+        path.addLine(to: CGPoint(x: (start.x + end.x) / 2 + half, y: (start.y + end.y) / 2 + half))
+        path.closeSubpath()
+        return path
     }
 }

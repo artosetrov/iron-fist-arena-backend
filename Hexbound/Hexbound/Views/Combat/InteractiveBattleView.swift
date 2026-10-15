@@ -1054,6 +1054,14 @@ struct InteractiveBattleRouteView: View {
         if let opp = cache.opponents.first(where: { $0.id == opponentId }) {
             return FighterProfile(opponent: opp)
         }
+        // Dungeon boss: the boss list is bundled, so the boss can stand on
+        // the stage from the first frame. Class is a placeholder — the boss
+        // stage never shows it.
+        if opponentType == .dungeonBoss,
+           let boss = EnemyPortraitResolver.bossInfo(forOpponentId: opponentId, cache: cache) {
+            return FighterProfile(id: opponentId, name: boss.name, level: boss.level,
+                                  characterClass: .warrior, avatar: nil)
+        }
         return nil
     }
 
@@ -1063,6 +1071,18 @@ struct InteractiveBattleRouteView: View {
         case .finished where vm.opponentType == .dungeonRush:
             // Rush: back to the rush screen; it applies
             // `appState.pendingRushFightResult` on reappear.
+            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+        case .finished where vm.opponentType == .dungeonBoss:
+            // Dungeon boss: back to the dungeon. `DungeonRoomViewModel`
+            // applies the result on reappear and shows its own victory /
+            // defeat overlay with the dungeon's progress and the next boss.
+            // (This used to push the arena result screen, whose CONTINUE led
+            // to the hub and never told the dungeon a boss had fallen.)
+            if let data = vm.finalCombatData {
+                appState.pendingDungeonBossResult = data
+            } else {
+                appState.showToast("Match ended", type: .info)
+            }
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         case .finished:
             if let data = vm.finalCombatData {

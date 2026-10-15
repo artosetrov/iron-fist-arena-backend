@@ -11,9 +11,13 @@ struct CombatData: Codable {
     let matchId: String?
     let stamina: StaminaInfo?
     let postCombatHp: PostCombatHp?
+    /// Dungeon-boss fights only (`/pvp/match/complete` with
+    /// `opponent_type: dungeon_boss`): which floor fell and whether the
+    /// dungeon is now cleared. nil for arena / bot / challenge fights.
+    let dungeon: CombatDungeonResult?
 
     // Memberwise init
-    init(player: CombatFighter, enemy: CombatFighter, combatLog: [CombatLog], result: CombatResultInfo, rewards: CombatRewards? = nil, loot: [CombatLootItem]? = nil, source: String? = nil, matchId: String? = nil, stamina: StaminaInfo? = nil, postCombatHp: PostCombatHp? = nil) {
+    init(player: CombatFighter, enemy: CombatFighter, combatLog: [CombatLog], result: CombatResultInfo, rewards: CombatRewards? = nil, loot: [CombatLootItem]? = nil, source: String? = nil, matchId: String? = nil, stamina: StaminaInfo? = nil, postCombatHp: PostCombatHp? = nil, dungeon: CombatDungeonResult? = nil) {
         self.player = player
         self.enemy = enemy
         self.combatLog = combatLog
@@ -24,6 +28,7 @@ struct CombatData: Codable {
         self.matchId = matchId
         self.stamina = stamina
         self.postCombatHp = postCombatHp
+        self.dungeon = dungeon
     }
 
     // No custom CodingKeys — APIClient's .convertFromSnakeCase handles
@@ -337,4 +342,14 @@ struct StaminaInfo: Codable {
 struct PostCombatHp: Codable {
     let player: Int?
     let enemy: Int?
+}
+
+/// The `dungeon` block of a dice dungeon-boss result. Keys arrive snake_case
+/// and are decoded by `.convertFromSnakeCase` (floor_cleared → floorCleared).
+struct CombatDungeonResult: Codable {
+    let runId: String?
+    let dungeonId: String?
+    let floorCleared: Int?
+    let isFinalBoss: Bool?
+    let dungeonComplete: Bool?
 }

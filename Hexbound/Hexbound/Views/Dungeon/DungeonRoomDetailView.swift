@@ -1,32 +1,24 @@
 import SwiftUI
 
+/// The dungeon screen: a path of boss medallions across the top and the
+/// boss you are about to fight standing full-height on a lit stage below.
+/// FIGHT plays a short letterbox intro (`BossIntroOverlay`) and starts the
+/// match; the result comes back here as the victory / defeat overlay.
 struct DungeonRoomDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @Environment(\.dismiss) private var dismiss
     @State private var vm: DungeonRoomViewModel?
 
-    // Animation states
-    @State private var currentNodePulse = false
-
-    // Card entrance animation
-    @State private var cardAppeared: Bool = false
-
-    // Boss fight slam overlay states
-    @State private var showBossFightSlam = false
-    @State private var bossSlamScale: CGFloat = MotionConstants.vsScaleFrom
-    @State private var bossSlamOpacity: Double = 0
-    @State private var bossSlamBgOpacity: Double = 0
+    /// The boss the pre-fight intro is playing for; nil when no intro is up.
+    @State private var introBoss: BossInfo?
 
     // Modal states
     @State private var showDungeonInfo = false
-    // confirmation dialog removed — fight triggers directly
     @State private var selectedBossForDetail: BossInfo? = nil
 
     // Spec colors — from theme tokens
     private let accentOrange = DarkFantasyTheme.arenaRankGold
-    private let completedGreen = DarkFantasyTheme.success
-    private let lockedGray = DarkFantasyTheme.lockedGray
 
     var body: some View {
         ZStack {
@@ -43,20 +35,25 @@ struct DungeonRoomDetailView: View {
                         Task { await vm.loadState() }
                     }
                 } else {
-                    VStack(spacing: 0) {
-                        // 1. Compact hero widget
-                        compactHeroWidget
+                    GeometryReader { geo in
+                        // Small phones (SE): a shorter stage floor and no
+                        // next-boss teaser, so nothing slides under the bar.
+                        let roomy = geo.size.height >= 640
+                        VStack(spacing: 0) {
+                            // 1. Compact hero widget
+                            compactHeroWidget
 
-                        // 2. Progress section with mini-nodes
-                        dungeonProgressSection(vm: vm)
+                            // 2. The dungeon as a path of medallions
+                            bossPathSection(vm: vm)
 
-                        // 3. Boss cards grid (compact cards, tap for detail)
-                        bossCardGrid(vm: vm)
+                            // 3. The selected boss on the stage + actions
+                            bossStage(vm: vm, roomy: roomy)
+                        }
                     }
 
                     // Victory overlay
                     if vm.showVictory {
-                        DungeonVictoryView(vm: vm)
+                        DungeonVictoryView(vm: vm, onFightNext: { fightNextBoss(vm: vm) })
                             .transition(.opacity)
                     }
 
@@ -67,9 +64,9 @@ struct DungeonRoomDetailView: View {
                     }
 
                     // Boss unlock ceremony — plays after the victory modal
-                    // closes, when a new boss has just become available in
-                    // the dungeon. Reuses the same reveal animation as hub
-                    // building unlocks (locked → glow → revealed).
+                    // closes (BACK TO CAMP), when a new boss has just become
+                    // available in the dungeon. Reuses the same reveal
+                    // animation as hub building unlocks (locked → glow → revealed).
                     if let boss = vm.pendingBossUnlock {
                         BossUnlockCeremony(boss: boss) {
                             vm.dismissBossUnlock()
@@ -82,13 +79,29 @@ struct DungeonRoomDetailView: View {
                 .transaction { $0.animation = nil }
             }
 
-            // BOSS FIGHT slam overlay
-            if showBossFightSlam {
-                bossFightSlamOverlay
+            // Pre-fight intro. Stays up until the battle screen is pushed
+            // over it (or the fight could not start), so the dungeon never
+            // flashes between the two.
+            if let boss = introBoss {
+                BossIntroOverlay(boss: boss, stageLabel: introStageLabel(for: boss)) {
+                    Task {
+                        let depth = appState.mainPath.count
+                        await vm?.fight()
+                        // Pushed: keep the intro up until the battle screen
+                        // has slid over it, so the dungeon never flashes.
+                        if appState.mainPath.count > depth {
+                            try? await Task.sleep(for: .milliseconds(600))
+                        }
+                        introBoss = nil
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(ZLayer.modal)
             }
 
-            // Loading overlay when fight is starting
-            if let vm, vm.isFighting {
+            // Loading overlay when fight is starting (the intro covers it
+            // while it is up)
+            if let vm, vm.isFighting, introBoss == nil {
                 ZStack {
                     DarkFantasyTheme.bgAbyss.opacity(0.55)
                         .ignoresSafeArea()
@@ -120,7 +133,9 @@ struct DungeonRoomDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar(introBoss == nil ? .visible : .hidden, for: .navigationBar)
         .animation(MotionConstants.snappy, value: vm?.isFighting)
+        .animation(.easeInOut(duration: 0.2), value: introBoss?.id)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -143,7 +158,6 @@ struct DungeonRoomDetailView: View {
         }
         .onAppear {
             vm?.applyPendingResult()
-            startNodePulseAnimation()
             AmbientManager.shared.setZone(.dungeon)
         }
         .onDisappear {
@@ -179,18 +193,18 @@ struct DungeonRoomDetailView: View {
                     energyCost: vm.dungeon?.energyCost ?? 10,
                     isFighting: vm.isFighting,
                     onFight: {
+                        // Latency pass (2026-10-15): the intro starts on the
+                        // tap (it plays over the pop of this screen) and the
+                        // run start goes out in parallel (`startFight`).
                         selectedBossForDetail = nil
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            vm.selectBoss(at: bossIdx)
-                            triggerBossFightSlam()
-                        }
+                        startFight(vm: vm, boss: boss)
                     },
-                    onLootTap: { _ in }
+                    onLootTap: { _ in },
+                    totalStages: vm.dungeon?.totalBosses ?? 10,
+                    runActive: vm.hasActiveRun
                 )
             }
         }
-        // Loot modal removed — now handled inside BossDetailSheet (FIX #4)
-        // confirmation dialog removed — fight triggers directly from boss detail sheet
     }
 
     // MARK: - Hero Widget (same as Hub)
@@ -209,261 +223,366 @@ struct DungeonRoomDetailView: View {
         }
     }
 
-    // MARK: - Dungeon Progress Section
+    // MARK: - Boss Path
 
     @ViewBuilder
-    private func dungeonProgressSection(vm: DungeonRoomViewModel) -> some View {
-        let total = vm.dungeon?.totalBosses ?? 10
-        let defeated = vm.defeatedCount
-        let pctInt = total > 0 ? Int(Double(defeated) / Double(total) * 100) : 0
-
-        VStack(spacing: LayoutConstants.spaceSM) {
-            // Progress text + badge + cost
-            HStack {
-                HStack(spacing: 0) {
-                    NumberTickUpText(
-                        value: defeated,
-                        color: DarkFantasyTheme.textPrimary,
-                        font: DarkFantasyTheme.section
-                    )
-                    Text("/\(total)")
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-
-                if vm.isDungeonComplete {
-                    Text("Complete!")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .padding(.horizontal, LayoutConstants.spaceSM)
-                        .padding(.vertical, LayoutConstants.space2XS)
-                        .background(Capsule().fill(completedGreen))
-                } else {
-                    Text("\(pctInt)%")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .padding(.horizontal, LayoutConstants.spaceSM)
-                        .padding(.vertical, LayoutConstants.space2XS)
-                        .background(Capsule().fill(accentOrange))
-                }
-
-                Spacer()
-
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "bolt.fill")
-                        .font(DarkFantasyTheme.body)
-                    Text("Cost \(vm.dungeon?.energyCost ?? 10)")
-                        .font(DarkFantasyTheme.section)
-                }
-                .foregroundStyle(DarkFantasyTheme.stamina)
-            }
-
-            // Mini nodes row
-            miniNodeRow(vm: vm)
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.vertical, LayoutConstants.spaceMS)
-    }
-
-    // MARK: - Mini Node Row
-
-    @ViewBuilder
-    private func miniNodeRow(vm: DungeonRoomViewModel) -> some View {
+    private func bossPathSection(vm: DungeonRoomViewModel) -> some View {
         let bosses = vm.dungeon?.bosses ?? []
-        let nodeSize: CGFloat = 28
+        let total = vm.dungeon?.totalBosses ?? bosses.count
 
-        HStack(spacing: LayoutConstants.spaceXS) {
-            ForEach(0..<bosses.count, id: \.self) { i in
-                miniNode(index: i, boss: bosses[i], size: nodeSize, vm: vm)
-                    .staggeredAppear(index: i)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func miniNode(index: Int, boss: BossInfo, size: CGFloat, vm: DungeonRoomViewModel) -> some View {
-        let state = vm.bossState(at: index)
-        let isCurrent = state == .current
-        let isSelected = vm.selectedBossIndex == index
-
-        Button {
-            withAnimation(MotionConstants.snappy) {
+        VStack(spacing: LayoutConstants.space2XS) {
+            BossPathRow(
+                bosses: bosses,
+                state: { vm.bossState(at: $0) },
+                selectedIndex: vm.selectedBossIndex
+            ) { index in
+                guard index != vm.selectedBossIndex else { return }
+                HapticManager.selection()
+                SFXManager.shared.play(.uiTap)
                 vm.selectBoss(at: index)
             }
-        } label: {
-            ZStack {
-                // Pulsing glow behind current node
-                if isCurrent {
-                    Circle()
-                        .fill(accentOrange.opacity(currentNodePulse ? 0.6 : 0.3))
-                        .frame(width: size + 8, height: size + 8)
-                        .blur(radius: 5)
-                }
 
-                // Node circle
-                Circle()
-                    .fill(miniNodeBackground(state: state))
-                    .frame(width: size, height: size)
-
-                // Node border
-                Circle()
-                    .stroke(
-                        miniNodeBorderColor(state: state),
-                        lineWidth: isSelected ? 2.5 : 1
-                    )
-                    .frame(width: size, height: size)
-
-                // Node content
-                switch state {
-                case .defeated:
-                    Image(systemName: "checkmark")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(completedGreen)
-                case .current:
-                    Text("\(boss.id)")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                case .locked:
-                    Text("\(boss.id)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textDisabled)
-                }
-            }
-            .frame(width: size + 8, height: size + 8)
+            Text(vm.isDungeonComplete
+                 ? "ALL \(total) CLEARED"
+                 : "STAGE \(min(vm.defeatedCount + 1, total)) OF \(total)")
+                .font(DarkFantasyTheme.body)
+                .tracking(1.5)
+                .foregroundStyle(vm.isDungeonComplete ? DarkFantasyTheme.success : DarkFantasyTheme.textSecondary)
         }
-        .buttonStyle(.scalePress(0.9))
-        .opacity(state == .locked ? 0.5 : 1.0)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceSM)
     }
 
-    private func miniNodeBackground(state: BossState) -> Color {
-        switch state {
-        case .defeated: return completedGreen.opacity(0.15)
-        case .current: return accentOrange.opacity(0.2)
-        case .locked: return DarkFantasyTheme.bgDungeonCard
-        }
-    }
-
-    private func miniNodeBorderColor(state: BossState) -> Color {
-        switch state {
-        case .defeated: return completedGreen
-        case .current: return accentOrange
-        case .locked: return lockedGray
-        }
-    }
-
-    // MARK: - Boss Card Grid (compact cards)
+    // MARK: - Boss Stage
 
     @ViewBuilder
-    private func bossCardGrid(vm: DungeonRoomViewModel) -> some View {
-        let bosses = vm.dungeon?.bosses ?? []
-        let columns = [
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-        ]
+    private func bossStage(vm: DungeonRoomViewModel, roomy: Bool) -> some View {
+        if let boss = vm.selectedBoss {
+            let index = vm.selectedBossIndex
+            let state = vm.bossState(at: index)
 
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
-                ForEach(Array(bosses.enumerated()), id: \.element.id) { index, boss in
-                    DungeonBossCard(
-                        boss: boss,
-                        state: vm.bossState(at: index),
-                        bossIndex: index
-                    ) {
-                        HapticManager.light()
-                        SFXManager.shared.play(.uiTap)
-                        vm.selectBoss(at: index)
-                        selectedBossForDetail = boss
+            VStack(spacing: 0) {
+                // The boss, full height, in a pool of light
+                ZStack(alignment: .topLeading) {
+                    BossStageArt(boss: boss, style: BossArtStyle(state))
+                        .id(boss.id)
+                        .transition(.opacity)
+
+                    stageBadge(boss: boss, state: state)
+                        .padding(.leading, LayoutConstants.screenPadding)
+                        .padding(.top, LayoutConstants.spaceSM)
+                }
+                .frame(maxWidth: .infinity, minHeight: roomy ? 150 : 100, maxHeight: .infinity)
+                .clipped()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard state != .locked else { return }
+                    selectedBossForDetail = boss
+                }
+                .accessibilityAddTraits(state != .locked ? .isButton : [])
+                .accessibilityHint(state != .locked ? Text("Opens the dossier") : Text(""))
+                .animation(.easeInOut(duration: 0.25), value: boss.id)
+
+                // Name + hook line
+                VStack(spacing: LayoutConstants.space2XS) {
+                    Text(state == .locked ? "???" : boss.name.uppercased())
+                        .font(DarkFantasyTheme.cinematicTitle)
+                        .tracking(1)
+                        .foregroundStyle(stageNameColor(state))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+
+                    Text(stageSubline(vm: vm, boss: boss, index: index, state: state))
+                        .font(state == .current ? DarkFantasyTheme.body.italic() : DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                if state == .current {
+                    statChips(boss: boss)
+                        .padding(.top, LayoutConstants.spaceMS)
+                }
+
+                actionRow(vm: vm, boss: boss, state: state)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.top, LayoutConstants.spaceMS)
+
+                if roomy {
+                    nextTeaser(vm: vm)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.top, LayoutConstants.spaceMS)
+                }
+            }
+            .padding(.bottom, LayoutConstants.spaceMD)
+        }
+    }
+
+    private func stageNameColor(_ state: BossState) -> Color {
+        switch state {
+        case .current: return DarkFantasyTheme.goldBright
+        case .defeated: return DarkFantasyTheme.textSecondary
+        case .locked: return DarkFantasyTheme.textTertiary
+        }
+    }
+
+    private func stageSubline(vm: DungeonRoomViewModel, boss: BossInfo, index: Int, state: BossState) -> String {
+        switch state {
+        case .current:
+            return boss.hookLine.isEmpty
+                ? "Lv \(boss.level) · \(boss.hp) HP"
+                : "\u{201C}\(boss.hookLine)\u{201D}"
+        case .defeated:
+            return "Defeated · Lv \(boss.level)"
+        case .locked:
+            if let previous = vm.dungeon?.bosses[safe: index - 1] {
+                return vm.bossState(at: index - 1) == .locked
+                    ? "Stage \(index + 1) · Locked"
+                    : "Beat \(previous.name) to reveal"
+            }
+            return "Stage \(index + 1) · Locked"
+        }
+    }
+
+    @ViewBuilder
+    private func stageBadge(boss: BossInfo, state: BossState) -> some View {
+        switch state {
+        case .current:
+            Text("\(boss.isRealBoss ? "Boss" : "Sparring") · Lv \(boss.level)")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .badgeCapsule(color: DarkFantasyTheme.gold)
+        case .defeated:
+            Text("Defeated")
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.success)
+                .badgeCapsule(color: DarkFantasyTheme.success)
+        case .locked:
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("icon-padlock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                Text("Locked")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+            }
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .badgeCapsule(color: DarkFantasyTheme.textSecondary)
+        }
+    }
+
+    // MARK: Stat chips
+
+    private func statChips(boss: BossInfo) -> some View {
+        let dropIcons: [String] = boss.loot
+            .compactMap { $0.resolvedImageKey }
+            .filter { UIImage(named: $0) != nil }
+            .reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            stageChip {
+                Text("HP")
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("\(boss.hp)")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                    .monospacedDigit()
+            }
+            .accessibilityElement(children: .combine)
+
+            if !dropIcons.isEmpty {
+                stageChip {
+                    Text("Drops")
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    ForEach(Array(dropIcons.prefix(3)), id: \.self) { key in
+                        Image(key)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                     }
-                    .opacity(cardAppeared ? 1.0 : 0)
-                    .offset(y: cardAppeared ? 0 : 20)
-                    .animation(
-                        .easeOut(duration: MotionConstants.fast)
-                            .delay(Double(index) * MotionConstants.cardStagger),
-                        value: cardAppeared
-                    )
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("Drops: \(boss.loot.prefix(3).map(\.name).joined(separator: ", "))"))
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.top, LayoutConstants.spaceSM)
-            .padding(.bottom, LayoutConstants.spaceLG)
-        }
-        .onAppear {
-            cardAppeared = true
         }
     }
 
-    // MARK: - Boss Fight Slam Overlay
+    private func stageChip<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            content()
+        }
+        .font(DarkFantasyTheme.body)
+        .padding(.horizontal, LayoutConstants.spaceMS)
+        .frame(height: LayoutConstants.buttonHeightSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    // MARK: Actions
 
     @ViewBuilder
-    private var bossFightSlamOverlay: some View {
-        ZStack {
-            // Darkened background
-            DarkFantasyTheme.bgAbyss
-                .opacity(bossSlamBgOpacity)
-                .ignoresSafeArea()
+    private func actionRow(vm: DungeonRoomViewModel, boss: BossInfo, state: BossState) -> some View {
+        let cost = vm.dungeon?.energyCost ?? 10
+        switch state {
+        case .current:
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Button {
+                    startFight(vm: vm, boss: boss)
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        Text(boss.isRealBoss ? "FIGHT BOSS" : "FIGHT")
+                        // Energy is paid when a run opens; inside a run the
+                        // next fight is free, so the cost only shows when due.
+                        if !vm.hasActiveRun {
+                            HStack(spacing: LayoutConstants.space2XS) {
+                                Image("icon-stamina")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                                Text("\(cost)")
+                            }
+                            .opacity(vm.stamina >= cost ? 1 : 0.6)
+                        }
+                    }
+                }
+                .buttonStyle(.primary)
+                .disabled(vm.isFighting || introBoss != nil)
+                .accessibilityLabel(Text(vm.hasActiveRun
+                                         ? "Fight \(boss.name)"
+                                         : "Fight \(boss.name), costs \(cost) energy"))
 
-            // Boss name + "BOSS FIGHT" slam text
-            VStack(spacing: LayoutConstants.spaceSM) {
-                if let boss = vm?.currentBoss {
-                    Text(boss.name.uppercased())
+                Button {
+                    selectedBossForDetail = boss
+                } label: {
+                    Image("hud-quests")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
+                }
+                .buttonStyle(.secondary)
+                .frame(width: LayoutConstants.buttonHeightLG)
+                .accessibilityLabel(Text("\(boss.name) dossier"))
+            }
+        case .defeated:
+            Button {
+                selectedBossForDetail = boss
+            } label: {
+                Text("OPEN DOSSIER")
+            }
+            .buttonStyle(.secondary)
+        case .locked:
+            EmptyView()
+        }
+    }
+
+    // MARK: Next boss teaser
+
+    @ViewBuilder
+    private func nextTeaser(vm: DungeonRoomViewModel) -> some View {
+        let bosses = vm.dungeon?.bosses ?? []
+        let nextIndex = vm.currentBossIndex + 1
+        if !vm.isDungeonComplete,
+           vm.selectedBossIndex == vm.currentBossIndex,
+           nextIndex < bosses.count,
+           let current = vm.currentBoss {
+            HStack(spacing: LayoutConstants.spaceMS) {
+                BossArtImage(boss: bosses[nextIndex], kind: .full, style: .silhouette)
+                    .frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Next · Stage \(nextIndex + 1)")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .tracking(3)
-                        .opacity(bossSlamOpacity)
+                    Text("Beat \(current.name) to reveal")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-
-                Text("BOSS FIGHT")
-                    .font(DarkFantasyTheme.cinematicTitle)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .tracking(4)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
-                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4)
-                    .opacity(bossSlamOpacity)
+                Spacer(minLength: 0)
             }
-        }
-        .allowsHitTesting(false)
-    }
-
-    private func triggerBossFightSlam() {
-        // Reset states
-        bossSlamScale = MotionConstants.vsScaleFrom
-        bossSlamOpacity = 0
-        bossSlamBgOpacity = 0
-        showBossFightSlam = true
-
-        HapticManager.heavy()
-
-        // Phase 1: Background dims + text slams in (0→0.2s)
-        withAnimation(.easeOut(duration: MotionConstants.vsSlamDuration)) {
-            bossSlamScale = MotionConstants.vsScaleTo
-            bossSlamOpacity = 1
-            bossSlamBgOpacity = 0.7
-        }
-
-        // Phase 2: Hold for dramatic pause (0.2→0.8s), then fade out
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            withAnimation(.easeIn(duration: 0.3)) {
-                bossSlamOpacity = 0
-                bossSlamBgOpacity = 0
-            }
-        }
-
-        // Phase 3: Cleanup + start fight (1.1s total)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            showBossFightSlam = false
-            Task { await vm?.fight() }
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(DarkFantasyTheme.borderMedium, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            )
+            .accessibilityElement(children: .combine)
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Fight flow
 
-    private func startNodePulseAnimation() {
-        withAnimation(
-            .easeInOut(duration: 2)
-            .repeatForever(autoreverses: true)
-        ) {
-            currentNodePulse = true
+    /// FIGHT from the stage, the dossier or the victory screen: energy check,
+    /// select the boss, start the run in the background, play the intro.
+    /// The intro's end calls `vm.fight()`.
+    private func startFight(vm: DungeonRoomViewModel, boss: BossInfo) {
+        guard introBoss == nil, !vm.isFighting else { return }
+        // The server refuses a fight under 30% HP. Soft client check (HP may
+        // lag a regen tick) so the player gets a potion, not a dead intro.
+        if let char = appState.currentCharacter,
+           char.currentHp < Int((Double(char.maxHp) * 0.3).rounded(.up)) {
+            HapticManager.error()
+            appState.showToast(
+                "Not enough health",
+                subtitle: "Heal to 30% HP to fight",
+                type: .error,
+                actionLabel: "Use potion"
+            ) {
+                Task { await useHealthPotion() }
+            }
+            return
         }
+        let cost = vm.dungeon?.energyCost ?? 10
+        guard vm.hasActiveRun || vm.stamina >= cost else {
+            HapticManager.error()
+            CharacterService.showOutOfStamina(
+                appState: appState,
+                refillGemCost: cache.gameConfig?.staminaRefillGems
+            )
+            return
+        }
+        if let index = vm.dungeon?.bosses.firstIndex(where: { $0.id == boss.id }) {
+            vm.selectBoss(at: index)
+        }
+        guard vm.canFightSelectedBoss else { return }
+        vm.prewarmRunIfNeeded()
+        introBoss = boss
+    }
+
+    /// FIGHT NEXT on the victory screen: straight into the next boss — no
+    /// unlock ceremony, the victory screen already revealed it. The intro
+    /// fades in over the victory screen, which closes underneath it.
+    private func fightNextBoss(vm: DungeonRoomViewModel) {
+        guard let next = vm.currentBoss else {
+            vm.proceedToNextBoss(ceremony: false)
+            return
+        }
+        startFight(vm: vm, boss: next)
+        if introBoss != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                vm.proceedToNextBoss(ceremony: false)
+            }
+        } else {
+            // No energy (the refill toast is up) — just put the boss on stage.
+            vm.proceedToNextBoss(ceremony: false)
+        }
+    }
+
+    private func introStageLabel(for boss: BossInfo) -> String {
+        let name = vm?.dungeon?.name.uppercased() ?? "DUNGEON"
+        return "\(name) · STAGE \(boss.id)"
     }
 
     // MARK: - Potion Usage
@@ -563,3 +682,146 @@ struct DungeonRoomDetailView: View {
     }
 }
 
+
+// MARK: - Pre-fight intro
+
+/// Pre-fight cinematic: letterbox bars, the boss's name huge and faded in
+/// the back, the full-body art in a pool of light, then the title card —
+/// "SPARRING MATCH" for training partners, "BOSS FIGHT" for real bosses.
+/// Opacity-only motion; tap anywhere to skip. Calls `onFinish` once.
+/// The run start is already in flight underneath (`prewarmRunIfNeeded`),
+/// so the intro costs no network time of its own.
+struct BossIntroOverlay: View {
+    let boss: BossInfo
+    let stageLabel: String
+    let onFinish: () -> Void
+
+    @State private var chromeShown = false
+    @State private var artShown = false
+    @State private var titleShown = false
+    @State private var finished = false
+
+    /// Total time on screen before the fight starts on its own.
+    private static let holdSeconds: Double = 1.4
+    private static let barHeight: CGFloat = 64
+
+    private var fightLabel: String {
+        boss.isRealBoss ? "BOSS FIGHT" : "SPARRING MATCH"
+    }
+
+    var body: some View {
+        ZStack {
+            DarkFantasyTheme.bgPrimary
+                .ignoresSafeArea()
+
+            // Giant faded name in the back — decorative
+            Text(boss.name.uppercased())
+                .font(DarkFantasyTheme.bossBackdropTitle)
+                .foregroundStyle(DarkFantasyTheme.bgTertiary.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.35)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.top, Self.barHeight + LayoutConstants.spaceXL)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .opacity(chromeShown ? 1 : 0)
+                .accessibilityHidden(true)
+
+            VStack(spacing: 0) {
+                letterbox(top: true)
+
+                BossStageArt(boss: boss)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, LayoutConstants.spaceXL)
+                    .opacity(artShown ? 1 : 0)
+
+                titleBlock
+                    .padding(.top, LayoutConstants.spaceSM)
+                    .padding(.bottom, LayoutConstants.spaceLG)
+                    .opacity(titleShown ? 1 : 0)
+
+                letterbox(top: false)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { finish() }
+        .accessibilityAction(named: Text("Skip intro")) { finish() }
+        .onAppear { run() }
+    }
+
+    private var titleBlock: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Rectangle()
+                    .fill(DarkFantasyTheme.gold)
+                    .frame(width: 36, height: 1)
+                Text(fightLabel)
+                    .font(DarkFantasyTheme.cardTitle)
+                    .tracking(4)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                Rectangle()
+                    .fill(DarkFantasyTheme.gold)
+                    .frame(width: 36, height: 1)
+            }
+            Text(boss.name.uppercased())
+                .font(DarkFantasyTheme.bossNameHero)
+                .tracking(1)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            Text("LV \(boss.level) · \(boss.hp) HP")
+                .font(DarkFantasyTheme.body)
+                .tracking(1)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func letterbox(top: Bool) -> some View {
+        ZStack {
+            if top {
+                Text(stageLabel)
+                    .font(DarkFantasyTheme.body)
+                    .tracking(3)
+                    .foregroundStyle(DarkFantasyTheme.goldDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+            } else {
+                Text(finished ? "Entering the ring…" : "Tap to skip")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.barHeight)
+        .background(
+            DarkFantasyTheme.bgAbyss
+                .ignoresSafeArea(edges: top ? .top : .bottom)
+        )
+        .overlay(alignment: top ? .bottom : .top) {
+            Rectangle()
+                .fill(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong))
+                .frame(height: 1)
+        }
+        .opacity(chromeShown ? 1 : 0)
+    }
+
+    private func run() {
+        HapticManager.heavy()
+        SFXManager.shared.play(.gongHit)
+        AudioManager.shared.duckBGM(for: .ceremony)
+        withAnimation(.easeOut(duration: 0.2)) { chromeShown = true }
+        withAnimation(.easeOut(duration: 0.35).delay(0.1)) { artShown = true }
+        withAnimation(.easeOut(duration: 0.3).delay(0.35)) { titleShown = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.holdSeconds) { finish() }
+    }
+
+    private func finish() {
+        guard !finished else { return }
+        finished = true
+        AudioManager.shared.restoreBGM(for: .ceremony)
+        onFinish()
+    }
+}

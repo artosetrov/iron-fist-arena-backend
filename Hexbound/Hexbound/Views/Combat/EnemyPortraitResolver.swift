@@ -15,6 +15,10 @@
 //  icon. Keep this lookup centralized here rather than duplicating slightly
 //  different heuristics across combat views.
 //
+//  Every boss has two pieces of art: a portrait (head & shoulders) for
+//  lists, medallions and result cards, and a full-body cutout for anything
+//  that puts the boss on a stage (dungeon screen, dossier, dice combat).
+//
 
 import SwiftUI
 
@@ -24,22 +28,64 @@ import SwiftUI
 @MainActor
 enum EnemyPortraitResolver {
 
+    /// Every dungeon known to the cache, or the bundled fallback list when
+    /// the cache is cold.
+    private static func dungeonSources(_ cache: GameDataCache) -> [DungeonInfo] {
+        if let cached = cache.cachedDungeonList(), !cached.isEmpty {
+            return cached
+        }
+        return DungeonInfo.fallback
+    }
+
+    /// The dungeon boss whose name matches `name` (case-insensitive, exact).
+    static func bossInfo(for name: String, cache: GameDataCache) -> BossInfo? {
+        let lowered = name.lowercased()
+        for dungeon in dungeonSources(cache) {
+            if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
+                return boss
+            }
+        }
+        return nil
+    }
+
+    /// The opponent id a dungeon boss fight is started with
+    /// ("Rusty Golem" → "boss_rusty_golem").
+    static func opponentId(for boss: BossInfo) -> String {
+        "boss_\(boss.name.lowercased().replacingOccurrences(of: " ", with: "_"))"
+    }
+
+    /// The boss behind a dungeon-fight `opponentId` — lets the battle screen
+    /// paint the boss on its first frame, before `/match/start` answers.
+    static func bossInfo(forOpponentId id: String, cache: GameDataCache) -> BossInfo? {
+        guard id.hasPrefix("boss_") else { return nil }
+        for dungeon in dungeonSources(cache) {
+            if let boss = dungeon.bosses.first(where: { opponentId(for: $0) == id }) {
+                return boss
+            }
+        }
+        return nil
+    }
+
     /// Find the boss portrait asset by matching the fighter's name against
     /// every dungeon boss known to the cache (or the bundled fallback list
     /// when the cache is cold). Case-insensitive, exact-match.
     static func bossPortraitImage(for name: String, cache: GameDataCache) -> String? {
-        let lowered = name.lowercased()
-        let dungeonSources: [DungeonInfo] = {
-            if let cached = cache.cachedDungeonList(), !cached.isEmpty {
-                return cached
-            }
-            return DungeonInfo.fallback
-        }()
-        for dungeon in dungeonSources {
-            if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
-                return boss.portraitImage
-            }
-        }
+        bossInfo(for: name, cache: cache)?.portraitImage
+    }
+
+    /// Portrait art for a boss (lists, medallions), falling back to the
+    /// full-body art. nil when neither is bundled.
+    static func portraitAsset(_ boss: BossInfo) -> String? {
+        if UIImage(named: boss.portraitImage) != nil { return boss.portraitImage }
+        if UIImage(named: boss.fullImage) != nil { return boss.fullImage }
+        return nil
+    }
+
+    /// Full-body art for a boss (stage, dossier, combat), falling back to
+    /// the portrait. nil when neither is bundled.
+    static func fullBodyAsset(_ boss: BossInfo) -> String? {
+        if UIImage(named: boss.fullImage) != nil { return boss.fullImage }
+        if UIImage(named: boss.portraitImage) != nil { return boss.portraitImage }
         return nil
     }
 

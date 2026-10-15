@@ -445,6 +445,8 @@ enum DarkFantasyTheme {
 
     // Oswald — titles, hero names, cinematic text, section headers, button labels
     static let cinematicTitle = Font.custom("Oswald-Regular", size: 40)
+    static let bossNameHero = Font.custom("Oswald-Regular", size: 52)       // Boss name on the pre-fight intro
+    static let bossBackdropTitle = Font.custom("Oswald-Regular", size: 120) // Faded giant name behind a boss (decorative)
     static let combatCallout = Font.custom("Oswald-Regular", size: 48)      // DODGE / MISS combat callouts
     static let combatCalloutLarge = Font.custom("Oswald-Regular", size: 56) // CRIT combat callout
     static let title = Font.custom("Oswald-Regular", size: 28)

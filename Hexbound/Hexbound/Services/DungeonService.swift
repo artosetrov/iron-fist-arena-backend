@@ -364,6 +364,11 @@ private extension DungeonCatalogEntry {
                 portraitImage: portrait,
                 fullImage: full,
                 loot: combinedLoot,
+                // Training Camp floors 1–9 are sparring partners; only the
+                // last one is a boss. The bundled list already says so —
+                // the server catalog didn't, so a warm cache made every
+                // training dummy a "BOSS" again.
+                isRealBoss: !(slug.contains("training") && idx + 1 < bosses.count),
                 tagline: boss.tagline
             )
         }
