@@ -37,6 +37,27 @@ final class DailyQuestsViewModel {
         quests.filter(\.completed).count
     }
 
+    /// Claimed quests — the daily chest fills one segment per claim.
+    var claimedCount: Int {
+        quests.filter(\.rewardClaimed).count
+    }
+
+    /// Ready to claim first, then in progress, then already claimed;
+    /// server order inside each group.
+    var sortedQuests: [Quest] {
+        quests.enumerated()
+            .sorted { lhs, rhs in
+                let l = Self.sortRank(lhs.element), r = Self.sortRank(rhs.element)
+                return l != r ? l < r : lhs.offset < rhs.offset
+            }
+            .map(\.element)
+    }
+
+    private static func sortRank(_ quest: Quest) -> Int {
+        if quest.canClaim { return 0 }
+        return quest.rewardClaimed ? 2 : 1
+    }
+
     var allCompleted: Bool {
         !quests.isEmpty && completedCount == quests.count
     }

@@ -161,6 +161,16 @@ struct BattleResultCardView: View {
 
     @ViewBuilder
     var cardContent: some View {
+        if let duel = config.duel {
+            duelCardContent(duel)
+        } else {
+            classicCardContent
+        }
+    }
+
+    /// Dungeon / training / loot layout (unchanged).
+    @ViewBuilder
+    var classicCardContent: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
 
             // Title — hero element, no illustration above

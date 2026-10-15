@@ -14,6 +14,16 @@ struct AppearanceSkin: Codable, Identifiable {
     let imageKey: String?
     let isDefault: Bool
     let sortOrder: Int
+    /// Signed-in catalog only: the player already has this skin (default,
+    /// Battle Pass reward or earlier purchase). `nil` from older backends or
+    /// anonymous calls — treat as "not owned" unless `isDefault`.
+    let owned: Bool?
+
+    /// Catalog rarity as the shared item-rarity enum (unknown → common),
+    /// so skin frames reuse `DarkFantasyTheme.rarityColor(for:)`.
+    var itemRarity: ItemRarity {
+        ItemRarity(rawValue: rarity) ?? .common
+    }
 
     /// Display name for the skin (uppercased)
     var displayName: String {

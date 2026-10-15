@@ -52,21 +52,23 @@ struct DailyQuestsDetailView: View {
                         allDoneCeremony(vm: vm)
                             .transition(.opacity)
                     } else {
-                        ScrollView {
-                            LazyVStack(spacing: LayoutConstants.spaceSM) {
-                                // Bonus panel
-                                bonusPanel(vm: vm)
-
-                                // Quest cards
-                                ForEach(Array(vm.quests.enumerated()), id: \.element.id) { index, quest in
-                                    questCard(quest, vm: vm)
-                                        .staggeredAppear(index: index)
+                        // Quest cards scroll; the daily chest stays pinned at
+                        // the bottom so the "finish them all" goal is always in view.
+                        VStack(spacing: 0) {
+                            ScrollView {
+                                LazyVStack(spacing: LayoutConstants.spaceMS) {
+                                    ForEach(Array(vm.sortedQuests.enumerated()), id: \.element.id) { index, quest in
+                                        questCard(quest, vm: vm)
+                                            .staggeredAppear(index: index)
+                                    }
                                 }
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                                .padding(.vertical, LayoutConstants.spaceSM)
                             }
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.vertical, LayoutConstants.spaceSM)
+
+                            chestBar(vm: vm)
                         }
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                        .transition(.opacity)
                     }
                 }
                 .transaction { $0.animation = nil }
@@ -85,7 +87,7 @@ struct DailyQuestsDetailView: View {
             ToolbarItem(placement: .principal) {
                 Text("DAILY QUESTS")
                     .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.cyan)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
         .onAppear {
@@ -133,91 +135,15 @@ struct DailyQuestsDetailView: View {
         return "\(h)h \(m)m"
     }
 
-    // MARK: - Reward Cells Row
+    // MARK: - Layout
 
-    /// Builds a horizontal row of loot-style reward cells for a quest.
-    @ViewBuilder
-    private func rewardCellsRow(gold: Int, xp: Int, gems: Int?) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            if gold > 0 {
-                QuestRewardCell(type: .gold, value: gold)
-            }
-            if xp > 0 {
-                QuestRewardCell(type: .xp, value: xp)
-            }
-            if let gems, gems > 0 {
-                QuestRewardCell(type: .gems, value: gems)
-            }
-        }
-    }
+    private static let bannerHeight: CGFloat = 104
+    private static let bannerArtSize: CGFloat = 150
+    private static let bannerTextWidth: CGFloat = 220
+    private static let chestArtSize: CGFloat = 56
+    private static let rewardTileHeight: CGFloat = 44
+    private static let goButtonMinHeight: CGFloat = 28   // + compactOutline padding = 44pt target
 
-    // MARK: - Bonus Panel
-
-    @ViewBuilder
-    private func bonusPanel(vm: DailyQuestsViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceMS) {
-            Text("Complete All \(vm.quests.count) Quests")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .accessibilityLabel("Daily quest completion challenge")
-
-            // Segmented progress bar — 1 segment per quest
-            SegmentedProgressBar(
-                progress: vm.completedCount,
-                target: vm.quests.count,
-                isBonus: true
-            )
-
-            // Bonus rewards as loot cells
-            rewardCellsRow(gold: 500, xp: 0, gems: 10)
-
-            if vm.bonusClaimedToday {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text("✓ Claimed")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.success)
-                    TimelineView(.periodic(from: .now, by: 60)) { _ in
-                        Text("Next bonus: \(timeUntilReset())")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightSM + 10)
-                .background(DarkFantasyTheme.success.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-            } else if vm.canClaimBonus {
-                Button {
-                    Task { await vm.claimBonus() }
-                } label: {
-                    if vm.isClaimingBonus {
-                        HexPulseLoader.onGold()
-                    } else {
-                        Text("CLAIM BONUS")
-                    }
-                }
-                .buttonStyle(.compactPrimary)
-                .disabled(vm.isClaimingBonus)
-            }
-        }
-        .padding(LayoutConstants.cardPadding)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-        )
-        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
-        .cardShadow()
-    }
 
     // MARK: - Quest Type → Destination Mapping
 
@@ -240,14 +166,119 @@ struct DailyQuestsDetailView: View {
         }
     }
 
-    // MARK: - Quest Card
+    /// CTA copy for the "go do it" button on an unfinished quest.
+    private func destinationLabel(for quest: Quest) -> String {
+        switch quest.type {
+        case "pvp_wins":          return "TO THE ARENA"
+        case "dungeons_complete": return "TO DUNGEONS"
+        case "gold_spent":        return "TO THE SHOP"
+        case "consumable_use",
+             "item_upgrade":      return "TO THE HERO"
+        case "shell_game_play":   return "TO THE TAVERN"
+        case "gold_mine_collect": return "TO THE MINE"
+        default:                  return "GO"
+        }
+    }
+
+    private func navigate(to destination: AppRoute) {
+        if destination == .shop {
+            appState.shopInitialTab = 0
+        }
+        if destination == .dungeonMap {
+            // Mirror the hub ADVENTURES button: pop back to the hub
+            // and let HubView toggle its embedded dungeon map. The
+            // standalone .dungeonMap route renders without the hero
+            // card / floating HUD, which is what we want to avoid.
+            appState.pendingShowDungeonMap = true
+            appState.mainPath = NavigationPath()
+        } else {
+            appState.mainPath.append(destination)
+        }
+    }
+
+    // MARK: - Quest Card (B — art banner + one clear action)
 
     @ViewBuilder
     private func questCard(_ quest: Quest, vm: DailyQuestsViewModel) -> some View {
         let isClaiming = vm.claimingQuestId == quest.id
         let destination = destinationRoute(for: quest)
 
-        questCardContent(quest, vm: vm, isClaiming: isClaiming, destination: destination)
+        VStack(spacing: 0) {
+            questBanner(quest)
+
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceMS) {
+                if quest.canClaim {
+                    rewardTiles(quest)
+
+                    Button {
+                        HapticManager.success()
+                        SFXManager.shared.play(.uiQuestComplete)
+                        showQuestBurst = true
+                        burstQuestId = quest.id
+                        Task { await vm.claimQuest(quest) }
+                    } label: {
+                        if isClaiming {
+                            HexPulseLoader.onGold()
+                        } else {
+                            Text("CLAIM REWARD")
+                        }
+                    }
+                    .buttonStyle(.primary)
+                    .disabled(isClaiming)
+                } else {
+                    if !quest.rewardClaimed {
+                        progressRow(quest)
+                    }
+
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        rewardChips(quest)
+                        Spacer(minLength: 0)
+                        if quest.rewardClaimed {
+                            HStack(spacing: LayoutConstants.spaceXS) {
+                                Image(systemName: "checkmark")
+                                    .font(DarkFantasyTheme.body.bold())
+                                Text("Claimed")
+                                    .font(DarkFantasyTheme.body)
+                            }
+                            .foregroundStyle(DarkFantasyTheme.success)
+                        } else if let destination {
+                            Button {
+                                navigate(to: destination)
+                            } label: {
+                                HStack(spacing: LayoutConstants.spaceXS) {
+                                    Text(destinationLabel(for: quest))
+                                    Image("ui-arrow-right")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                                }
+                                .frame(minHeight: Self.goButtonMinHeight)
+                            }
+                            .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+                        }
+                    }
+                }
+            }
+            .padding(LayoutConstants.spaceMS)
+        }
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(
+                    quest.canClaim ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle,
+                    lineWidth: quest.canClaim ? 1.5 : 1
+                )
+        )
+        .cardShadow()
+        .opacity(quest.rewardClaimed ? 0.6 : 1)
         .overlay {
             if showQuestBurst && burstQuestId == quest.id {
                 GeometryReader { geo in
@@ -257,154 +288,222 @@ struct DailyQuestsDetailView: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
     }
 
-    // MARK: - Quest Card Content
+    /// Title, task and (when finished) a "Done" pill over the building art.
+    private func questBanner(_ quest: Quest) -> some View {
+        ZStack {
+            DarkFantasyTheme.bgTertiary
 
-    /// Separates navigation (outer button) from claim action to avoid button-in-button tap interception.
-    /// When quest.canClaim == true, the card body is NOT wrapped in a navigation button —
-    /// only the Claim button is interactive. Otherwise, the whole card is a navigation button.
-    @ViewBuilder
-    private func questCardContent(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
-        let cardBody = questCardBody(quest, vm: vm, isClaiming: isClaiming, destination: destination)
-
-        if quest.canClaim || quest.rewardClaimed {
-            // No outer navigation button — Claim button handles interaction,
-            // or quest is already done (no interaction needed)
-            cardBody
-        } else if let destination {
-            // Quest not yet complete — whole card navigates to relevant screen
-            Button {
-                if destination == .shop {
-                    appState.shopInitialTab = 0
-                }
-                if destination == .dungeonMap {
-                    // Mirror the hub ADVENTURES button: pop back to the hub
-                    // and let HubView toggle its embedded dungeon map. The
-                    // standalone .dungeonMap route renders without the hero
-                    // card / floating HUD, which is what we want to avoid.
-                    appState.pendingShowDungeonMap = true
-                    appState.mainPath = NavigationPath()
-                } else {
-                    appState.mainPath.append(destination)
-                }
-            } label: {
-                cardBody
-            }
-            .buttonStyle(QuestCardButtonStyle())
-        } else {
-            // No destination, not claimable — static card
-            cardBody
-        }
-    }
-
-    // MARK: - Quest Card Body (v3 — loot cells + segmented bar)
-
-    @ViewBuilder
-    private func questCardBody(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            // === ROW 1: Icon + Title + Chevron/Status ===
-            HStack(spacing: LayoutConstants.spaceMS) {
-                // Quest icon
+            HStack {
+                Spacer(minLength: 0)
                 Image(questIconAsset(for: quest.type))
                     .resizable()
                     .scaledToFill()
-                    .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                    )
+                    .frame(width: Self.bannerArtSize, height: Self.bannerArtSize)
+                    .offset(x: LayoutConstants.spaceMS)
+                    .accessibilityHidden(true)
+            }
 
-                // Title + description
+            HStack {
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text(quest.title)
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
+                    Text(quest.title.uppercased())
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.75)
 
                     Text(quest.description)
                         .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .lineLimit(2, reservesSpace: true)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(2)
+
+                    if quest.canClaim {
+                        Text("Done \(quest.target) / \(quest.target)")
+                            .font(DarkFantasyTheme.body.bold())
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .badgeCapsule(color: DarkFantasyTheme.gold)
+                            .padding(.top, LayoutConstants.space2XS)
+                    }
+                }
+                .frame(maxWidth: Self.bannerTextWidth, alignment: .leading)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, LayoutConstants.spaceMS)
+        }
+        .frame(height: Self.bannerHeight)
+        .clipped()
+    }
+
+    /// Segmented bar plus the count it stands for — "1 / 4", never a bare bar.
+    private func progressRow(_ quest: Quest) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            SegmentedProgressBar(progress: quest.progress, target: quest.target)
+            Text("\(min(quest.progress, quest.target)) / \(quest.target)")
+                .font(DarkFantasyTheme.body.bold())
+                .foregroundStyle(DarkFantasyTheme.cyan)
+                .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Progress \(min(quest.progress, quest.target)) of \(quest.target)")
+    }
+
+    /// Inline rewards for an unfinished / claimed quest.
+    private func rewardChips(_ quest: Quest) -> some View {
+        HStack(spacing: LayoutConstants.spaceMS) {
+            if quest.rewardGold > 0 {
+                rewardChip(asset: "icon-gold", value: quest.rewardGold, color: DarkFantasyTheme.goldBright, label: "gold")
+            }
+            if quest.rewardXp > 0 {
+                rewardChip(asset: "icon-xp", value: quest.rewardXp, color: DarkFantasyTheme.xpRing, label: "XP")
+            }
+            if let gems = quest.rewardGems, gems > 0 {
+                rewardChip(asset: "icon-gems", value: gems, color: DarkFantasyTheme.cyan, label: "gems")
+            }
+        }
+    }
+
+    private func rewardChip(asset: String, value: Int, color: Color, label: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+            Text("\(value)")
+                .font(DarkFantasyTheme.body.bold())
+                .foregroundStyle(color)
+                .monospacedDigit()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value) \(label)")
+    }
+
+    /// Equal-width reward tiles for a quest that is ready to claim.
+    private func rewardTiles(_ quest: Quest) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if quest.rewardGold > 0 {
+                rewardTile(asset: "icon-gold", value: quest.rewardGold, color: DarkFantasyTheme.goldBright, label: "gold")
+            }
+            if quest.rewardXp > 0 {
+                rewardTile(asset: "icon-xp", value: quest.rewardXp, color: DarkFantasyTheme.xpRing, label: "XP")
+            }
+            if let gems = quest.rewardGems, gems > 0 {
+                rewardTile(asset: "icon-gems", value: gems, color: DarkFantasyTheme.cyan, label: "gems")
+            }
+        }
+    }
+
+    private func rewardTile(asset: String, value: Int, color: Color, label: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+            Text("\(value)")
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(color)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.rewardTileHeight)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value) \(label)")
+    }
+
+    // MARK: - Daily Chest (pinned)
+
+    @ViewBuilder
+    private func chestBar(vm: DailyQuestsViewModel) -> some View {
+        HStack(spacing: LayoutConstants.spaceMS) {
+            Image("rush-node-treasure")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Self.chestArtSize, height: Self.chestArtSize)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                HStack {
+                    Text("DAILY CHEST")
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .tracking(1)
+                    Spacer(minLength: 0)
+                    Text("\(vm.claimedCount) / \(vm.quests.count)")
+                        .font(DarkFantasyTheme.body.bold())
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .monospacedDigit()
                 }
 
-                Spacer(minLength: 4)
+                SegmentedProgressBar(
+                    progress: vm.claimedCount,
+                    target: vm.quests.count,
+                    isBonus: true
+                )
 
-                // Right side: status indicator
-                if quest.rewardClaimed {
-                    Text("✓ Done")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.success)
-                } else if destination != nil && !quest.canClaim {
-                    Image(systemName: "chevron.right")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.goldDim)
+                if vm.bonusClaimedToday {
+                    TimelineView(.periodic(from: .now, by: 60)) { _ in
+                        Text("Claimed · next chest in \(timeUntilReset())")
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.success)
+                    }
+                } else {
+                    // Matches backend DAILY_BONUS_REWARD.
+                    let chest = (gold: 500, xp: 300, gems: 10)
+                    HStack(spacing: LayoutConstants.spaceMS) {
+                        if chest.gold > 0 {
+                            rewardChip(asset: "icon-gold", value: chest.gold, color: DarkFantasyTheme.goldBright, label: "gold")
+                        }
+                        if chest.xp > 0 {
+                            rewardChip(asset: "icon-xp", value: chest.xp, color: DarkFantasyTheme.xpRing, label: "XP")
+                        }
+                        if chest.gems > 0 {
+                            rewardChip(asset: "icon-gems", value: chest.gems, color: DarkFantasyTheme.cyan, label: "gems")
+                        }
+                    }
                 }
             }
 
-            // === ROW 2: Loot-style reward cells ===
-            rewardCellsRow(gold: quest.rewardGold, xp: quest.rewardXp, gems: quest.rewardGems)
-
-            // === ROW 3: Segmented progress bar ===
-            SegmentedProgressBar(progress: quest.progress, target: quest.target)
-
-            // === ROW 4: Claim button (only when claimable) ===
-            if quest.canClaim {
+            if vm.canClaimBonus {
                 Button {
                     HapticManager.success()
                     SFXManager.shared.play(.uiQuestComplete)
-                    showQuestBurst = true
-                    burstQuestId = quest.id
-                    Task { await vm.claimQuest(quest) }
+                    Task { await vm.claimBonus() }
                 } label: {
-                    if isClaiming {
+                    if vm.isClaimingBonus {
                         HexPulseLoader.onGold()
                     } else {
                         Text("CLAIM")
                     }
                 }
                 .buttonStyle(.compactPrimary)
-                .disabled(isClaiming)
+                .disabled(vm.isClaimingBonus)
             }
         }
-        .padding(LayoutConstants.spaceMS)
-        // Ornamental card system
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceMS)
+        .padding(.bottom, LayoutConstants.spaceMD)
         .background(
-            RadialGlowBackground(
-                baseColor: quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: quest.rewardClaimed ? 0.2 : 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
+            DarkFantasyTheme.bgSecondary
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong))
+                        .frame(height: 1)
+                }
+                .ignoresSafeArea(edges: .bottom)
         )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(
-            cornerRadius: LayoutConstants.cardRadius - 2,
-            inset: 2,
-            color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.12) : DarkFantasyTheme.borderMedium.opacity(0.15)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(
-                    quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.2)
-                    : quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
-                    : DarkFantasyTheme.borderSubtle,
-                    lineWidth: quest.canClaim ? 1.5 : 1
-                )
-        )
-        .cornerBrackets(
-            color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
-                : quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.15)
-                : DarkFantasyTheme.borderMedium.opacity(0.25),
-            length: 14,
-            thickness: 1.5
-        )
-        .compositingGroup()
-        .shadow(color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.15) : .clear, radius: 8)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
-        .brightness(quest.rewardClaimed ? -0.08 : 0)
-        .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Daily chest, \(vm.claimedCount) of \(vm.quests.count) quests claimed")
     }
 
     // MARK: - All Done Ceremony
@@ -477,14 +576,5 @@ struct DailyQuestsDetailView: View {
             }
             .frame(maxWidth: .infinity)
         }
-    }
-}
-
-// MARK: - Quest Card Press Style
-
-struct QuestCardButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .brightness(configuration.isPressed ? -0.06 : 0)
     }
 }

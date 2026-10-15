@@ -47,6 +47,27 @@ struct BattleResultConfig {
 
     // Buttons
     let buttons: [ResultButton]
+
+    // PvP duel layout (you vs the rival). Nil = the classic card used by
+    // dungeon / training results.
+    var duel: DuelResultInfo? = nil
+}
+
+/// PvP result header: the player against the rival, rating before → after,
+/// and the rival actions (profile, message) that used to be two of four
+/// stacked full-width buttons.
+struct DuelResultInfo {
+    let playerSkinKey: String?
+    let playerClass: CharacterClass
+    let playerLevel: Int
+    /// Rating before this fight; nil hides the "before → after" line.
+    let ratingBefore: Int?
+    let rivalName: String
+    let rivalSkinKey: String?
+    let rivalClass: CharacterClass
+    let rivalLevel: Int
+    let onViewRival: (() -> Void)?
+    let onMessageRival: (() -> Void)?
 }
 
 /// Turn-by-turn display entry for the collapsible Combat Log section in the

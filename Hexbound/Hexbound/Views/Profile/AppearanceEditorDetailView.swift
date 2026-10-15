@@ -1,9 +1,24 @@
 import SwiftUI
 
+/// Appearance editor — "wardrobe" layout: the selected look on top, every
+/// skin of the hero's race + gender in one gallery (free, gold and gem skins
+/// alike) with filter chips, and one contextual CTA: Equip / Buy / Equipped.
+/// Paid skins go through a confirmation sheet that shows the price and the
+/// balance after.
 struct AppearanceEditorDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: AppearanceEditorViewModel?
+
+    private static let heroSize: CGFloat = 156
+    private static let controlSize: CGFloat = 48
+    private static let sheetImageSize: CGFloat = 160
+    private static let rarityStripe: CGFloat = 3
+
+    private let galleryColumns = Array(
+        repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
+        count: 3
+    )
 
     var body: some View {
         ZStack {
@@ -11,69 +26,28 @@ struct AppearanceEditorDetailView: View {
 
             if let vm {
                 Group {
-                if vm.isLoadingSkins && vm.allSkins.isEmpty {
-                    HexPulseLoader(.compact)
-                        .tint(DarkFantasyTheme.gold)
-                } else {
-                    VStack(spacing: 0) {
-                        // Title
-                        Text("CHOOSE YOUR APPEARANCE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .tracking(2)
-                            .padding(.top, LayoutConstants.spaceMD)
-
-                        // Thumbnail previews — ABOVE main avatar
-                        editorThumbnailRow(vm: vm)
-                            .padding(.top, LayoutConstants.spaceMD)
-
-                        editorAvatarArea(vm: vm)
-                            .padding(.top, LayoutConstants.spaceSM)
-
-                        // Race info widget — BELOW avatar (read-only)
-                        editorRaceBonusWidget(vm: vm)
-                            .padding(.top, LayoutConstants.spaceMD)
-
-                        // Premium avatars button
-                        if !vm.premiumSkins.isEmpty {
-                            editorPremiumButton(vm: vm)
-                                .padding(.top, LayoutConstants.spaceMD)
-                        }
-
-                        Spacer(minLength: LayoutConstants.spaceLG)
-
-                        // Error
-                        if !vm.errorMessage.isEmpty {
-                            Text(vm.errorMessage)
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.textDanger)
-                                .multilineTextAlignment(.center)
-                                .padding(.bottom, LayoutConstants.spaceSM)
-                        }
-
-                        // Save button with gold cost
-                        Button {
-                            vm.save()
-                        } label: {
-                            if vm.isSaving {
-                                HexPulseLoader.onGold()
-                            } else {
-                                HStack(spacing: LayoutConstants.spaceXS) {
-                                    Text("SAVE")
-                                    if let cost = vm.costText {
-                                        Text("(\(cost))")
-                                            .font(DarkFantasyTheme.body)
-                                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                                    }
-                                }
+                    if vm.isLoadingSkins && vm.allSkins.isEmpty {
+                        HexPulseLoader(.compact)
+                            .tint(DarkFantasyTheme.gold)
+                    } else {
+                        VStack(spacing: 0) {
+                            VStack(spacing: LayoutConstants.sectionGap) {
+                                heroRow(vm: vm)
+                                filterRow(vm: vm)
                             }
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                            .padding(.top, LayoutConstants.spaceSM)
+                            .padding(.bottom, LayoutConstants.spaceMS)
+
+                            ScrollView {
+                                galleryGrid(vm: vm)
+                                    .padding(.horizontal, LayoutConstants.screenPadding)
+                                    .padding(.bottom, LayoutConstants.spaceMD)
+                            }
+
+                            bottomBar(vm: vm)
                         }
-                        .buttonStyle(.primary(enabled: vm.canSave))
-                        .disabled(!vm.canSave)
-                        .padding(.bottom, LayoutConstants.spaceLG)
                     }
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                }
                 }
                 .transaction { $0.animation = nil }
             }
@@ -103,6 +77,20 @@ struct AppearanceEditorDetailView: View {
                 .accessibilityLabel("Switch hero")
             }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { vm?.showPurchaseSheet ?? false },
+                set: { vm?.showPurchaseSheet = $0 }
+            ),
+            onDismiss: { vm?.purchaseSheetDismissed() }
+        ) {
+            if let vm {
+                purchaseSheet(vm: vm)
+                    .presentationDetents([.height(580), .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(DarkFantasyTheme.bgSecondary)
+            }
+        }
         .onAppear {
             if vm == nil {
                 let newVM = AppearanceEditorViewModel(appState: appState, cache: cache)
@@ -115,316 +103,424 @@ struct AppearanceEditorDetailView: View {
         }
     }
 
-    // MARK: - Race Info Widget (read-only)
+    // MARK: - Hero (selected look + race + gender / dice)
 
     @ViewBuilder
-    private func editorRaceBonusWidget(vm: AppearanceEditorViewModel) -> some View {
-        ZStack {
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.buttonRadiusLG
+    private func heroRow(vm: AppearanceEditorViewModel) -> some View {
+        let skin = vm.selectedSkin
+        let rarityColor = skin.map { DarkFantasyTheme.rarityColor(for: $0.itemRarity) } ?? DarkFantasyTheme.gold
+
+        HStack(alignment: .center, spacing: LayoutConstants.spaceMD) {
+            ZStack {
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.radiusXL
+                )
+                if let skin {
+                    editorSkinImage(skin)
+                        .id(skin.skinKey)
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: Self.heroSize, height: Self.heroSize)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
+                    .stroke(rarityColor, lineWidth: Self.rarityStripe)
             )
-            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
+            .cardShadow()
+            .animation(.easeInOut(duration: MotionConstants.fast), value: vm.selectedSkinKey)
+            .accessibilityHidden(true)
 
-            if let origin = vm.selectedOrigin {
-                HStack(spacing: LayoutConstants.spaceMS) {
-                    Image(origin.iconAsset)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                if let skin {
+                    rarityBadge(skin)
+                    Text(skin.displayName)
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
 
-                    VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                        Text(origin.displayName)
-                            .font(DarkFantasyTheme.cardTitle)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                        Text(origin.description)
+                if let origin = vm.selectedOrigin {
+                    HStack(alignment: .top, spacing: LayoutConstants.spaceXS) {
+                        Image(origin.iconAsset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                        Text(origin.bonuses)
                             .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .foregroundStyle(DarkFantasyTheme.textSuccess)
                             .lineLimit(2)
                     }
-
-                    Spacer(minLength: 0)
-
-                    Text(origin.bonuses)
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSuccess)
-                        .multilineTextAlignment(.trailing)
-                        .lineLimit(2)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(origin.displayName): \(origin.bonuses)")
                 }
-                .padding(.horizontal, LayoutConstants.bannerPadding)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    controlButton(
+                        asset: vm.selectedGender == .male ? "ui-gender-male" : "ui-gender-female",
+                        tint: DarkFantasyTheme.xpRing,
+                        label: vm.selectedGender == .male ? "Switch to female looks" : "Switch to male looks"
+                    ) {
+                        vm.toggleGender()
+                    }
+                    controlButton(
+                        asset: "ui-dice",
+                        tint: DarkFantasyTheme.gold,
+                        label: "Random owned look",
+                        rotation: vm.diceRotation
+                    ) {
+                        vm.diceRotation += 360
+                        vm.randomize()
+                    }
+                }
+                .padding(.top, LayoutConstants.space2XS)
             }
-        }
-        .frame(height: 88)
-        .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: MotionConstants.fast), value: vm.selectedOrigin)
-    }
-
-    // MARK: - Premium Avatars Button
-
-    @ViewBuilder
-    private func editorPremiumButton(vm: AppearanceEditorViewModel) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: MotionConstants.fast)) {
-                vm.showPremiumSkins.toggle()
-            }
-        } label: {
-            HStack(spacing: LayoutConstants.spaceMS) {
-                Image(systemName: "crown.fill")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.premiumPink)
-
-                Text("PREMIUM AVATARS")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.premiumPink)
-
-                Spacer()
-
-                Image(systemName: vm.showPremiumSkins ? "chevron.up" : "chevron.down")
-                    .font(DarkFantasyTheme.body.bold())
-                    .foregroundStyle(DarkFantasyTheme.premiumPink.opacity(0.6))
-            }
-            .padding(.horizontal, LayoutConstants.spaceMD)
-            .frame(height: 48)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                    .fill(DarkFantasyTheme.bgPremium)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                    .stroke(DarkFantasyTheme.premiumPink.opacity(0.3), lineWidth: 1.5)
-            )
-        }
-        .buttonStyle(.scalePress)
-
-        if vm.showPremiumSkins {
-            editorPremiumGrid(vm: vm)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    @ViewBuilder
-    private func editorPremiumGrid(vm: AppearanceEditorViewModel) -> some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM), count: 4)
-
-        LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
-            ForEach(vm.premiumSkins) { skin in
-                let isSelected = vm.selectedSkinKey == skin.skinKey
-
-                Button {
-                    withAnimation(MotionConstants.snappy) {
-                        vm.selectedSkinKey = skin.skinKey
-                        vm.slideDirection = .none
-                        // Sync avatar index to show in main preview
-                        if let idx = vm.availableSkins.firstIndex(where: { $0.skinKey == skin.skinKey }) {
-                            vm.avatarIndex = idx
-                        }
-                    }
-                } label: {
-                    ZStack(alignment: .bottomTrailing) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                                .fill(DarkFantasyTheme.bgPremiumDeep)
-
-                            editorSkinImage(skin)
-                                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
-                        }
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                                .stroke(isSelected ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.borderPremium, lineWidth: 2)
-                        )
-
-                        // Gem price badge
-                        HStack(spacing: LayoutConstants.space2XS) {
-                            Image("icon-gems")
-                                .resizable()
-                                .frame(width: 8, height: 8)
-                            Text("\(skin.priceGems)")
-                                .font(DarkFantasyTheme.body)
-                        }
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .padding(.horizontal, LayoutConstants.spaceXS)
-                        .padding(.vertical, LayoutConstants.space2XS)
-                        .background(
-                            Capsule().fill(DarkFantasyTheme.premiumPink.opacity(0.8))
-                        )
-                        .offset(x: -4, y: -4)
-                    }
-                }
-                .buttonStyle(.scalePress(0.95))
-            }
-        }
-        .padding(.top, LayoutConstants.spaceXS)
+    private func rarityBadge(_ skin: AppearanceSkin) -> some View {
+        let color = DarkFantasyTheme.rarityColor(for: skin.itemRarity)
+        return Text(skin.rarity.uppercased())
+            .font(DarkFantasyTheme.body.bold())
+            .tracking(1)
+            .foregroundStyle(color)
+            .badgeCapsule(color: color)
     }
 
-    // MARK: - Avatar Area (gender + arrows + central avatar + dice)
-
-    @ViewBuilder
-    private func editorAvatarArea(vm: AppearanceEditorViewModel) -> some View {
-        GeometryReader { geo in
-            let spacing: CGFloat = 8
-            let sideSize: CGFloat = 64
-            let avatarSize: CGFloat = max(min(geo.size.width - sideSize * 2 - spacing * 4, 220), 0)
-
-            HStack(alignment: .center, spacing: spacing) {
-                // Left column: gender toggle (top) + left arrow (bottom)
-                VStack(spacing: 0) {
-                    editorSquareButton(content: AnyView(
-                        Image(vm.selectedGender == .male ? "ui-gender-male" : "ui-gender-female")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: sideSize * 0.6, height: sideSize * 0.6)
-                    ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
-                       border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
-                        withAnimation(MotionConstants.snappy) { vm.toggleGender() }
-                    }
-                    Spacer()
-                    editorSquareButton(content: AnyView(
-                        Image("ui-arrow-left")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: sideSize * 0.5, height: sideSize * 0.5)
-                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
-                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.prevAvatar() }
-                    }
-                }
-                .frame(width: sideSize, height: avatarSize)
-
-                // Central avatar
-                editorCentralAvatar(vm: vm, size: avatarSize)
-
-                // Right column: dice (top) + right arrow (bottom)
-                VStack(spacing: 0) {
-                    editorSquareButton(content: AnyView(
-                        Image("ui-dice")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: sideSize * 0.6, height: sideSize * 0.6)
-                            .rotationEffect(.degrees(vm.diceRotation))
-                    ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
-                       border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
-                        withAnimation(MotionConstants.smooth) {
-                            vm.diceRotation += 360
-                            vm.randomize()
-                        }
-                    }
-                    Spacer()
-                    editorSquareButton(content: AnyView(
-                        Image("ui-arrow-right")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: sideSize * 0.5, height: sideSize * 0.5)
-                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
-                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.nextAvatar() }
-                    }
-                }
-                .frame(width: sideSize, height: avatarSize)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-
-    // MARK: Square Button Helper
-
-    @ViewBuilder
-    private func editorSquareButton(content: AnyView, size: CGFloat, bg: Color, border: Color, shadow: Color, action: @escaping () -> Void) -> some View {
+    private func controlButton(
+        asset: String,
+        tint: Color,
+        label: String,
+        rotation: Double = 0,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            content
-                .frame(width: size, height: size)
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                .rotationEffect(.degrees(rotation))
+                .animation(MotionConstants.smooth, value: rotation)
+                .frame(width: Self.controlSize, height: Self.controlSize)
                 .background(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                        .fill(bg)
+                        .fill(tint.opacity(DarkFantasyTheme.opacityLight))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                        .stroke(border, lineWidth: 2)
+                        .stroke(tint.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 2)
                 )
-                .shadow(color: shadow, radius: 5)
         }
         .buttonStyle(.scalePress)
+        .accessibilityLabel(label)
     }
+
+    // MARK: - Filter Chips
 
     @ViewBuilder
-    private func editorCentralAvatar(vm: AppearanceEditorViewModel, size: CGFloat) -> some View {
-        let isPremium = vm.selectedSkin.map { !$0.isDefault } ?? false
-        let borderColor = isPremium ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.gold
-
-        ZStack {
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
-                cornerRadius: LayoutConstants.radius2XL
-            )
-
-            if let skin = vm.selectedSkin {
-                editorSkinImage(skin)
-                    .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
-                    .id(skin.skinKey)
-                    .transition(editorAvatarTransition(vm: vm))
-            }
-        }
-        .frame(width: size, height: size)
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
-                .stroke(borderColor, lineWidth: 3)
-        )
-        .shadow(color: borderColor.opacity(0.2), radius: 20, y: 8)
-        .animation(.easeInOut(duration: MotionConstants.fast), value: vm.selectedSkinKey)
-    }
-
-    private func editorAvatarTransition(vm: AppearanceEditorViewModel) -> AnyTransition {
-        switch vm.slideDirection {
-        case .left:
-            .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
-                         removal: .move(edge: .leading).combined(with: .opacity))
-        case .right:
-            .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                         removal: .move(edge: .trailing).combined(with: .opacity))
-        case .none:
-            .opacity
-        }
-    }
-
-    // MARK: - Thumbnail Row (separate row under avatar area)
-
-    @ViewBuilder
-    private func editorThumbnailRow(vm: AppearanceEditorViewModel) -> some View {
-        let skins = vm.defaultSkins
-
-        HStack(spacing: LayoutConstants.spaceXS) {
-            ForEach(Array(skins.enumerated()), id: \.element.id) { index, skin in
-                let isSelected = vm.avatarIndex == index
-
+    private func filterRow(vm: AppearanceEditorViewModel) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(SkinFilter.allCases) { item in
+                let isActive = vm.filter == item
                 Button {
-                    withAnimation(MotionConstants.snappy) {
-                        vm.selectAvatar(at: index)
-                    }
+                    vm.filter = item
                 } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                            .fill(DarkFantasyTheme.bgDarkPanel)
-
-                        editorSkinImage(skin)
-                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                            .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2)
-                    )
-                    .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.25) : .clear, radius: 5)
+                    Text("\(item.title) \(vm.count(for: item))")
+                        .lineLimit(1)
                 }
-                .buttonStyle(.scalePress(0.95))
+                .buttonStyle(.colorToggle(isActive: isActive))
+                .accessibilityAddTraits(isActive ? .isSelected : [])
             }
+        }
+    }
+
+    // MARK: - Gallery
+
+    @ViewBuilder
+    private func galleryGrid(vm: AppearanceEditorViewModel) -> some View {
+        let skins = vm.gallerySkins
+
+        if skins.isEmpty {
+            VStack(spacing: LayoutConstants.spaceMS) {
+                Text(vm.filter == .owned ? "No owned looks for this hero yet" : "No looks in this filter")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                Button("SHOW ALL") {
+                    vm.filter = .all
+                }
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+                .frame(maxWidth: 200)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, LayoutConstants.spaceLG)
+        } else {
+            LazyVGrid(columns: galleryColumns, spacing: LayoutConstants.spaceSM) {
+                ForEach(skins) { skin in
+                    skinTile(
+                        skin,
+                        status: vm.status(of: skin),
+                        isSelected: vm.selectedSkinKey == skin.skinKey
+                    ) {
+                        vm.select(skin)
+                    }
+                }
+            }
+        }
+    }
+
+    private func skinTile(
+        _ skin: AppearanceSkin,
+        status: SkinStatus,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        let rarityColor = DarkFantasyTheme.rarityColor(for: skin.itemRarity)
+
+        return Button(action: action) {
+            VStack(spacing: LayoutConstants.spaceXS) {
+                // Square slot first, art overlaid — a .fill image can't stretch the tile.
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay { editorSkinImage(skin) }
+                    .overlay(alignment: .bottom) {
+                        Rectangle()
+                            .fill(rarityColor)
+                            .frame(height: Self.rarityStripe)
+                    }
+                    .background(DarkFantasyTheme.bgTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+
+                statusLabel(status)
+                    .frame(height: LayoutConstants.iconMD)
+            }
+            .padding(LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(DarkFantasyTheme.bgDarkPanel)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(
+                        isSelected ? DarkFantasyTheme.goldBright : rarityColor.opacity(DarkFantasyTheme.opacityStrong),
+                        lineWidth: isSelected ? 3 : 1.5
+                    )
+            )
+        }
+        .buttonStyle(.scalePress)
+        .accessibilityLabel("\(skin.name), \(skin.rarity), \(statusText(status))")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private func statusLabel(_ status: SkinStatus) -> some View {
+        switch status {
+        case .gems(let price):
+            CurrencyDisplay(gold: 0, gems: price, size: .mini, currencyType: .gems, animated: false)
+        case .gold(let price):
+            CurrencyDisplay(gold: price, size: .mini, currencyType: .gold, animated: false)
+        case .owned:
+            Text("Owned")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        case .equipped:
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "checkmark")
+                    .font(DarkFantasyTheme.body.bold())
+                Text("Equipped")
+                    .font(DarkFantasyTheme.body)
+            }
+            .foregroundStyle(DarkFantasyTheme.textSuccess)
+            .lineLimit(1)
+        }
+    }
+
+    private func statusText(_ status: SkinStatus) -> String {
+        switch status {
+        case .gems(let price): "\(price) gems"
+        case .gold(let price): "\(price) gold"
+        case .owned: "owned"
+        case .equipped: "equipped"
+        }
+    }
+
+    // MARK: - Bottom Bar (balance + contextual CTA)
+
+    @ViewBuilder
+    private func bottomBar(vm: AppearanceEditorViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            if let character = appState.currentCharacter {
+                HStack {
+                    Text("Balance")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Spacer()
+                    CurrencyDisplay(gold: character.gold, gems: character.gems ?? 0, size: .mini)
+                }
+            }
+
+            if !vm.errorMessage.isEmpty {
+                Text(vm.errorMessage)
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textDanger)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                vm.primaryTapped()
+            } label: {
+                primaryLabel(vm: vm)
+            }
+            .buttonStyle(.primary(enabled: vm.primaryEnabled))
+            .disabled(!vm.primaryEnabled)
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceMS)
+        .padding(.bottom, LayoutConstants.spaceMD)
+        .background(
+            DarkFantasyTheme.bgPrimary
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(DarkFantasyTheme.borderSubtle)
+                        .frame(height: 1)
+                }
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+
+    @ViewBuilder
+    private func primaryLabel(vm: AppearanceEditorViewModel) -> some View {
+        if vm.isSaving {
+            HexPulseLoader.onGold()
+        } else {
+            switch vm.selectedStatus ?? .equipped {
+            case .gems(let price):
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text("BUY FOR")
+                    CurrencyDisplay(
+                        gold: 0, gems: price, size: .mini, currencyType: .gems,
+                        animated: false, textColorOverride: DarkFantasyTheme.textOnGold
+                    )
+                }
+            case .gold(let price):
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text("BUY FOR")
+                    CurrencyDisplay(
+                        gold: price, size: .mini, currencyType: .gold,
+                        animated: false, textColorOverride: DarkFantasyTheme.textOnGold
+                    )
+                }
+            case .owned:
+                Text("EQUIP")
+            case .equipped:
+                Text("EQUIPPED")
+            }
+        }
+    }
+
+    // MARK: - Purchase Sheet
+
+    @ViewBuilder
+    private func purchaseSheet(vm: AppearanceEditorViewModel) -> some View {
+        if let skin = vm.selectedSkin, let status = vm.selectedStatus {
+            let rarityColor = DarkFantasyTheme.rarityColor(for: skin.itemRarity)
+
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Text("CONFIRM PURCHASE")
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(.top, LayoutConstants.spaceLG)
+
+                ZStack {
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgTertiary,
+                        glowColor: DarkFantasyTheme.bgSecondary,
+                        glowIntensity: 0.3,
+                        cornerRadius: LayoutConstants.radiusXL
+                    )
+                    editorSkinImage(skin)
+                }
+                .frame(width: Self.sheetImageSize, height: Self.sheetImageSize)
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
+                        .stroke(rarityColor, lineWidth: Self.rarityStripe)
+                )
+                .accessibilityHidden(true)
+
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    rarityBadge(skin)
+                    Text(skin.displayName)
+                        .font(DarkFantasyTheme.title)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Text("Cosmetic only — stats don't change")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    confirmRow("Price") { priceDisplay(status, balance: nil) }
+                    confirmRow("Balance after") { priceDisplay(status, balance: balance(for: status)) }
+                }
+                .padding(LayoutConstants.spaceMD)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                )
+                .padding(.horizontal, LayoutConstants.spaceMD)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Button("CANCEL") {
+                        vm.showPurchaseSheet = false
+                    }
+                    .buttonStyle(.ghost)
+
+                    Button("BUY & EQUIP") {
+                        vm.confirmPurchase()
+                    }
+                    .buttonStyle(.primary)
+                }
+                .padding(.horizontal, LayoutConstants.spaceMD)
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func balance(for status: SkinStatus) -> Int {
+        let character = appState.currentCharacter
+        switch status {
+        case .gems(let price): return (character?.gems ?? 0) - price
+        case .gold(let price): return (character?.gold ?? 0) - price
+        case .equipped, .owned: return 0
+        }
+    }
+
+    /// `balance == nil` shows the price; otherwise the remaining balance in the same currency.
+    @ViewBuilder
+    private func priceDisplay(_ status: SkinStatus, balance: Int?) -> some View {
+        switch status {
+        case .gems(let price):
+            CurrencyDisplay(gold: 0, gems: balance ?? price, size: .mini, currencyType: .gems, animated: false)
+        case .gold(let price):
+            CurrencyDisplay(gold: balance ?? price, size: .mini, currencyType: .gold, animated: false)
+        case .equipped, .owned:
+            EmptyView()
+        }
+    }
+
+    private func confirmRow<Content: View>(_ label: String, @ViewBuilder value: () -> Content) -> some View {
+        HStack {
+            Text(label)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+            Spacer()
+            value()
         }
     }
 

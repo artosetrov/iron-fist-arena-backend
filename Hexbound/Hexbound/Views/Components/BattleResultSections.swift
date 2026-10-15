@@ -564,6 +564,402 @@ extension BattleResultCardView {
         }
     }
 
+    // MARK: - Duel Layout (PvP)
+    // You vs the rival up top (rating before → after, rival profile / message
+    // as icon buttons), compact stars, one row of reward tiles (gold, XP, loot),
+    // a one-line level bar, the combat log, then a single primary CTA.
+
+    static let duelPortraitSize: CGFloat = 112
+    static let duelActionSize: CGFloat = 48
+    static let duelTileHeight: CGFloat = 64
+    static let duelBarHeight: CGFloat = 10
+
+    @ViewBuilder
+    func duelCardContent(_ duel: DuelResultInfo) -> some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            titleView
+                .padding(.top, LayoutConstants.spaceLG)
+
+            duelHeader(duel)
+                .padding(.horizontal, LayoutConstants.cardPadding)
+                .opacity(showTitle ? 1 : 0)
+
+            if let conditions = config.starConditions, config.isVictory, !conditions.isEmpty {
+                duelStarsRow(conditions)
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+            }
+
+            if let subtitle = config.subtitle {
+                Text(subtitle)
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .opacity(showTitle ? 1 : 0)
+            }
+
+            if hasDuelRewards {
+                duelRewardsSection
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .opacity(showRewards ? 1 : 0)
+            }
+
+            if let xpBarConfig = config.xpBarConfig {
+                compactXpRow(xpBarConfig)
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .opacity(showRewards ? 1 : 0)
+            }
+
+            if !config.combatLog.isEmpty {
+                combatLogSection
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .opacity(showButtons ? 1 : 0)
+            }
+
+            buttonsSection
+                .padding(.horizontal, LayoutConstants.cardPadding)
+                .opacity(showButtons ? 1 : 0)
+                .offset(y: showButtons ? 0 : 15)
+
+            Spacer().frame(height: LayoutConstants.spaceXS)
+        }
+    }
+
+    var hasDuelRewards: Bool {
+        (config.goldReward ?? 0) > 0 || (config.xpReward ?? 0) > 0 || !config.lootItems.isEmpty
+    }
+
+    // MARK: Duel header
+
+    @ViewBuilder
+    func duelHeader(_ duel: DuelResultInfo) -> some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            duelFighter(
+                name: "YOU",
+                skinKey: duel.playerSkinKey,
+                characterClass: duel.playerClass,
+                isWinner: config.isVictory
+            ) {
+                duelRatingView(duel)
+            }
+
+            Text("VS")
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .padding(.top, Self.duelPortraitSize / 2 - LayoutConstants.spaceMS)
+                .accessibilityHidden(true)
+
+            duelFighter(
+                name: duel.rivalName.uppercased(),
+                skinKey: duel.rivalSkinKey,
+                characterClass: duel.rivalClass,
+                isWinner: !config.isVictory
+            ) {
+                Text("Lv \(duel.rivalLevel) · \(duel.rivalClass.displayName)")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .lineLimit(1)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    if let onView = duel.onViewRival {
+                        duelIconButton(
+                            asset: duel.rivalClass.iconAsset,
+                            label: "View \(duel.rivalName)'s profile",
+                            action: onView
+                        )
+                    }
+                    if let onMessage = duel.onMessageRival {
+                        duelIconButton(
+                            asset: "hud-inbox",
+                            label: "Message \(duel.rivalName)",
+                            action: onMessage
+                        )
+                    }
+                }
+                .padding(.top, LayoutConstants.space2XS)
+            }
+        }
+    }
+
+    func duelFighter<Details: View>(
+        name: String,
+        skinKey: String?,
+        characterClass: CharacterClass,
+        isWinner: Bool,
+        @ViewBuilder details: () -> Details
+    ) -> some View {
+        let frameColor = isWinner ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium
+
+        return VStack(spacing: LayoutConstants.spaceXS) {
+            CachedAvatarImage(
+                skinKey: skinKey,
+                characterClass: characterClass,
+                size: Self.duelPortraitSize
+            )
+            .background(DarkFantasyTheme.bgTertiary)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                    .stroke(frameColor, lineWidth: 3)
+            )
+            .opacity(isWinner ? 1 : 0.75)
+            .accessibilityHidden(true)
+
+            Text(name)
+                .font(DarkFantasyTheme.cardTitle)
+                .tracking(1)
+                .foregroundStyle(isWinner ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            details()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// "1 240 → 1 262" and the animated "+22" under the player's portrait.
+    @ViewBuilder
+    func duelRatingView(_ duel: DuelResultInfo) -> some View {
+        if let change = config.ratingChange, change != 0 {
+            if let before = duel.ratingBefore {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("\(before)")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("→")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("\(before + change)")
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                }
+                .font(DarkFantasyTheme.body)
+                .monospacedDigit()
+                .lineLimit(1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Rating \(before) to \(before + change)")
+            }
+
+            Text(ratingDisplay > 0 ? "+\(ratingDisplay)" : "\(ratingDisplay)")
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .opacity(ratingPulseOpacity)
+        } else {
+            Text("Lv \(duel.playerLevel)")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+        }
+    }
+
+    func duelIconButton(asset: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            HapticManager.light()
+            action()
+        } label: {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                .frame(width: Self.duelActionSize, height: Self.duelActionSize)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .stroke(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.scalePress)
+        .accessibilityLabel(label)
+    }
+
+    // MARK: Duel stars
+
+    @ViewBuilder
+    func duelStarsRow(_ conditions: [StarCondition]) -> some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            ForEach(Array(conditions.enumerated()), id: \.offset) { index, condition in
+                let isRevealed = index < revealedStars
+                VStack(spacing: LayoutConstants.space2XS) {
+                    Image(systemName: condition.earned ? "star.fill" : "star")
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(
+                            condition.earned
+                                ? DarkFantasyTheme.goldBright
+                                : DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityHeavy)
+                        )
+                    Text(condition.label)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(condition.earned ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity)
+                .opacity(isRevealed ? 1 : 0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(condition.label): \(condition.earned ? "earned" : "missed")")
+            }
+        }
+    }
+
+    // MARK: Duel rewards
+
+    var duelRewardsSection: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            HStack {
+                Text("REWARDS")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .tracking(2)
+                Spacer(minLength: 0)
+                if config.firstWinBonus {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image("reward-first-win")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                        Text("First win x2")
+                            .font(DarkFantasyTheme.body.bold())
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM), count: 3),
+                spacing: LayoutConstants.spaceSM
+            ) {
+                if let gold = config.goldReward, gold > 0 {
+                    duelRewardTile(
+                        asset: "icon-gold",
+                        value: "+\(goldDisplay)",
+                        color: DarkFantasyTheme.goldBright,
+                        label: "gold",
+                        pulseOpacity: goldPulseOpacity
+                    )
+                }
+                if let xp = config.xpReward, xp > 0 {
+                    duelRewardTile(
+                        asset: "icon-xp",
+                        value: "+\(xpDisplay)",
+                        color: DarkFantasyTheme.xpRing,
+                        label: "XP",
+                        pulseOpacity: xpPulseOpacity
+                    )
+                }
+                ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
+                    duelLootTile(item, index: index)
+                }
+            }
+        }
+    }
+
+    func duelRewardTile(asset: String, value: String, color: Color, label: String, pulseOpacity: Double) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
+            Text(value)
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(color)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .lineLimit(1)
+                .opacity(pulseOpacity)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.duelTileHeight)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value) \(label)")
+    }
+
+    @ViewBuilder
+    func duelLootTile(_ item: LootItemDisplay, index: Int) -> some View {
+        let isRevealed = revealedLootIndices.contains(index)
+
+        ItemCardView(
+            rarity: item.rarity,
+            imageKey: item.imageKey,
+            imageUrl: item.imageUrl,
+            fallbackIcon: item.fallbackIcon,
+            systemIcon: item.sfIcon,
+            systemIconColor: item.sfColor,
+            context: .loot
+        ) {
+            config.onLootTap?(index)
+        }
+        .frame(width: Self.duelTileHeight, height: Self.duelTileHeight)
+        .frame(maxWidth: .infinity)
+        .opacity(isRevealed ? 1 : 0)
+        .accessibilityLabel("\(item.name), \(item.rarityName)")
+    }
+
+    // MARK: Duel level row
+
+    @ViewBuilder
+    func compactXpRow(_ xpConfig: XPBarConfig) -> some View {
+        let fraction = min(max(xpConfig.progress, 0), 1)
+
+        VStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Text("LV \(xpConfig.displayLevel)")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(1)
+                    .foregroundStyle(DarkFantasyTheme.xpRing)
+                    .padding(.horizontal, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.space2XS)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.xpRing, lineWidth: 1)
+                    )
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(DarkFantasyTheme.bgAbyss)
+                        Capsule()
+                            .fill(DarkFantasyTheme.xpGradient)
+                            .frame(width: geo.size.width * fraction)
+                    }
+                }
+                .frame(height: Self.duelBarHeight)
+
+                if let xpNeeded = config.xpNeeded {
+                    Text("\(xpHeroDisplay) / \(xpNeeded)")
+                        .font(DarkFantasyTheme.body.bold())
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+
+            if xpConfig.leveledUp {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image("reward-level-up")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                    Text("LEVEL UP!")
+                        .font(DarkFantasyTheme.body.bold())
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                }
+                .transition(.opacity)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     // MARK: - Animation Sequence (Motion Audit §2.12)
     // Victory: flash gold → title slam (2.5→1.0) → particles → reward burst → counters → loot → CTAs
     // Defeat:  flash red → title fade → shake + haptic → counters → CTAs (red glow)

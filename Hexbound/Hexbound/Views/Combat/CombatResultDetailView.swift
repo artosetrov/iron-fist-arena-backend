@@ -199,52 +199,11 @@ struct CombatResultDetailView: View {
                     goBack()
                 }))
             }
-            // View Opponent profile after PvP
-            if let enemy = combatData?.enemy {
-                buttons.append(ResultButton(title: "VIEW OPPONENT", icon: "person.crop.circle", style: .secondary, action: {
-                    let enemyId = enemy.id
-                    let enemyName = enemy.characterName
-                    appState.combatData = nil
-                    appState.combatResult = nil
-                    appState.invalidateCache("quests")
-                    appState.mainPath = NavigationPath()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
-                        appState.mainPath.append(
-                            AppRoute.characterProfile(
-                                characterId: enemyId,
-                                characterName: enemyName
-                            )
-                        )
-                    }
-                }))
-            }
-            // Send message to opponent after PvP
-            if let enemy = combatData?.enemy {
-                buttons.append(ResultButton(title: "SEND MESSAGE", assetIcon: "hud-inbox", style: .secondary, action: {
-                    let enemyId = enemy.id
-                    let enemyName = enemy.characterName
-                    let enemyAvatar = enemy.avatar
-                    let enemyClass = enemy.characterClass.rawValue
-                    appState.combatData = nil
-                    appState.combatResult = nil
-                    appState.invalidateCache("quests")
-                    // Navigate back to hub, then open message thread
-                    appState.mainPath = NavigationPath()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
-                        appState.mainPath.append(
-                            AppRoute.guildHallMessage(
-                                characterId: enemyId,
-                                characterName: enemyName,
-                                avatar: enemyAvatar,
-                                characterClass: enemyClass
-                            )
-                        )
-                    }
-                }))
-            }
+            // Rival profile / message live in the duel header now (DuelResultInfo),
+            // not as two more full-width buttons.
             // Back to Castle — leaves the arena; after a series this shows the
             // session summary on the way (AppState.leaveCombatToHub).
-            buttons.append(ResultButton(title: "BACK TO CASTLE", icon: "house.fill", style: .secondary, action: {
+            buttons.append(ResultButton(title: "BACK TO CASTLE", style: .ghost, action: {
                 appState.leaveCombatToHub()
             }))
         } else {
@@ -285,9 +244,9 @@ struct CombatResultDetailView: View {
             let hpFraction = Double(hpRemaining) / Double(playerMaxHp)
             let landedCrit = data.combatLog.contains { $0.attackerId == playerId && $0.isCrit }
             return [
-                StarCondition(label: "Claim victory", earned: true),
-                StarCondition(label: "Stay above 50% HP", earned: hpFraction > 0.5),
-                StarCondition(label: "Land a critical hit", earned: landedCrit)
+                StarCondition(label: "Win the fight", earned: true),
+                StarCondition(label: "Keep 50% HP", earned: hpFraction > 0.5),
+                StarCondition(label: "Land a crit", earned: landedCrit)
             ]
         }()
 
@@ -339,7 +298,76 @@ struct CombatResultDetailView: View {
                 }
             },
             combatLog: combatLogEntries,
-            buttons: buttons
+            buttons: buttons,
+            duel: duelInfo(res)
+        )
+    }
+
+    // MARK: - Duel (PvP header)
+
+    /// You vs the rival for arena / pvp / challenge fights; nil for everything
+    /// else (the classic card). The rival's profile and message actions moved
+    /// here from the old VIEW OPPONENT / SEND MESSAGE buttons.
+    private func duelInfo(_ res: CombatResultInfo) -> DuelResultInfo? {
+        guard let data = combatData,
+              source == "arena" || source == "pvp" || source == "challenge"
+        else { return nil }
+
+        let enemy = data.enemy
+        // Arena / pvp already added the rating change to the character
+        // (ArenaViewModel.applyResolveToCharacter) before this screen.
+        let ratingBefore: Int? = {
+            guard let rating = appState.currentCharacter?.pvpRating,
+                  let change = res.ratingChange, change != 0 else { return nil }
+            return rating - change
+        }()
+
+        return DuelResultInfo(
+            playerSkinKey: data.player.avatar,
+            playerClass: data.player.characterClass,
+            playerLevel: displayLevel,
+            ratingBefore: ratingBefore,
+            rivalName: enemy.characterName,
+            rivalSkinKey: enemy.avatar,
+            rivalClass: enemy.characterClass,
+            rivalLevel: enemy.level,
+            onViewRival: {
+                let enemyId = enemy.id
+                let enemyName = enemy.characterName
+                appState.combatData = nil
+                appState.combatResult = nil
+                appState.invalidateCache("quests")
+                appState.mainPath = NavigationPath()
+                DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+                    appState.mainPath.append(
+                        AppRoute.characterProfile(
+                            characterId: enemyId,
+                            characterName: enemyName
+                        )
+                    )
+                }
+            },
+            onMessageRival: {
+                let enemyId = enemy.id
+                let enemyName = enemy.characterName
+                let enemyAvatar = enemy.avatar
+                let enemyClass = enemy.characterClass.rawValue
+                appState.combatData = nil
+                appState.combatResult = nil
+                appState.invalidateCache("quests")
+                // Navigate back to hub, then open message thread
+                appState.mainPath = NavigationPath()
+                DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+                    appState.mainPath.append(
+                        AppRoute.guildHallMessage(
+                            characterId: enemyId,
+                            characterName: enemyName,
+                            avatar: enemyAvatar,
+                            characterClass: enemyClass
+                        )
+                    )
+                }
+            }
         )
     }
 

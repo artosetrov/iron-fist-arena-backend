@@ -9,6 +9,7 @@ private struct AppearanceChangeRequest: Encodable {
 private struct AppearanceChangeResponse: Decodable {
     let character: Character
     let gold: Int?
+    let gems: Int?
     let wallet: AppearanceWallet?
 
     var confirmedCharacter: Character {
@@ -16,12 +17,57 @@ private struct AppearanceChangeResponse: Decodable {
         if let resolvedGold = wallet?.gold ?? gold {
             value.gold = resolvedGold
         }
+        if let resolvedGems = wallet?.gems ?? gems {
+            value.gems = resolvedGems
+        }
         return value
     }
 }
 
 private struct AppearanceWallet: Decodable {
     let gold: Int
+    let gems: Int?
+}
+
+/// What the player can do with a skin in the appearance editor.
+enum SkinStatus: Equatable {
+    case equipped       // the hero wears it now
+    case owned          // default, reward or earlier purchase — equip for free
+    case gold(Int)      // buy for gold
+    case gems(Int)      // buy for gems
+
+    var isPurchase: Bool {
+        switch self {
+        case .gold, .gems: true
+        case .equipped, .owned: false
+        }
+    }
+}
+
+/// Filter chips above the skin gallery.
+enum SkinFilter: String, CaseIterable, Identifiable {
+    case all, owned, gold, gems
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .owned: "Owned"
+        case .gold: "Gold"
+        case .gems: "Gems"
+        }
+    }
+
+    func matches(_ status: SkinStatus) -> Bool {
+        switch (self, status) {
+        case (.all, _): true
+        case (.owned, .owned), (.owned, .equipped): true
+        case (.gold, .gold): true
+        case (.gems, .gems): true
+        default: false
+        }
+    }
 }
 
 @MainActor @Observable
@@ -29,18 +75,13 @@ final class AppearanceEditorViewModel {
     private let appState: AppState
     private let cache: GameDataCache
 
+    static let originChangeCost = 100
+
     var selectedOrigin: CharacterOrigin?
     var selectedGender: CharacterGender = .male
     var selectedSkinKey: String?
-
-    // Avatar navigation (same pattern as onboarding)
-    var avatarIndex: Int = 0
-    var slideDirection: AvatarSlideDirection = .none
+    var filter: SkinFilter = .all
     var diceRotation: Double = 0
-
-    enum AvatarSlideDirection {
-        case none, left, right
-    }
 
     var allSkins: [AppearanceSkin] = []
     var isLoadingSkins = false
@@ -48,6 +89,16 @@ final class AppearanceEditorViewModel {
     var isSaving = false
     var errorMessage = ""
     var didSave = false
+
+    /// Purchase confirmation sheet.
+    var showPurchaseSheet = false
+    /// Set by the sheet's Buy button. The purchase fires from the sheet's
+    /// `onDismiss`, so the sheet is gone before the screen pops back.
+    private var purchaseConfirmed = false
+
+    /// Skins bought during this visit — the cached catalog's `owned` flag
+    /// is stale until the next fetch.
+    private var purchasedKeys: Set<String> = []
 
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
@@ -60,7 +111,7 @@ final class AppearanceEditorViewModel {
         // Serve cached skins instantly
         if !cache.skins.isEmpty {
             allSkins = cache.skins
-            syncAvatarIndex()
+            syncSelection()
         }
     }
 
@@ -68,22 +119,62 @@ final class AppearanceEditorViewModel {
 
     // MARK: - Skin Lists
 
-    /// Default (free) skins filtered by origin + gender — shown in thumbnail row & arrows
-    var defaultSkins: [AppearanceSkin] {
-        allSkins.filter { skin in
-            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            let matchesGender = skin.gender == selectedGender.rawValue
-            return matchesOrigin && matchesGender && skin.isDefault
-        }.sorted { $0.sortOrder < $1.sortOrder }
-    }
-
-    /// All skins for current origin + gender (includes premium) — used for main preview
+    /// Every skin for the current origin + gender (free and paid), catalog order.
     var availableSkins: [AppearanceSkin] {
         allSkins.filter { skin in
             let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            let matchesGender = skin.gender == selectedGender.rawValue
-            return matchesOrigin && matchesGender
+            return matchesOrigin && skin.gender == selectedGender.rawValue
         }.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// Skins shown in the gallery under the active filter.
+    var gallerySkins: [AppearanceSkin] {
+        availableSkins.filter { filter.matches(status(of: $0)) }
+    }
+
+    func count(for filter: SkinFilter) -> Int {
+        availableSkins.filter { filter.matches(status(of: $0)) }.count
+    }
+
+    func status(of skin: AppearanceSkin) -> SkinStatus {
+        if skin.skinKey == character?.avatar { return .equipped }
+        if isOwned(skin) { return .owned }
+        if skin.priceGems > 0 { return .gems(skin.priceGems) }
+        if skin.priceGold > 0 { return .gold(skin.priceGold) }
+        return .owned
+    }
+
+    private func isOwned(_ skin: AppearanceSkin) -> Bool {
+        skin.isDefault || skin.owned == true || purchasedKeys.contains(skin.skinKey)
+    }
+
+    // MARK: - Selection
+
+    var selectedSkin: AppearanceSkin? {
+        guard let key = selectedSkinKey else { return nil }
+        return allSkins.first { $0.skinKey == key }
+    }
+
+    var selectedStatus: SkinStatus? {
+        selectedSkin.map { status(of: $0) }
+    }
+
+    func select(_ skin: AppearanceSkin) {
+        selectedSkinKey = skin.skinKey
+        errorMessage = ""
+    }
+
+    /// Equipped skin if it is in the list, else the first owned one, else the first.
+    private func preferredSkinKey(in skins: [AppearanceSkin]) -> String? {
+        if let equipped = skins.first(where: { status(of: $0) == .equipped }) { return equipped.skinKey }
+        if let owned = skins.first(where: { status(of: $0) == .owned }) { return owned.skinKey }
+        return skins.first?.skinKey
+    }
+
+    private func syncSelection() {
+        let skins = availableSkins
+        if let key = selectedSkinKey, skins.contains(where: { $0.skinKey == key }) { return }
+        selectedSkinKey = preferredSkinKey(in: skins)
     }
 
     // MARK: - Derived State
@@ -100,125 +191,88 @@ final class AppearanceEditorViewModel {
             || selectedSkinKey != char.avatar
     }
 
-    var canSave: Bool {
-        hasChanges && selectedOrigin != nil && selectedSkinKey != nil && !isSaving
+    /// Primary button is live for anything but the look the hero already wears.
+    var primaryEnabled: Bool {
+        guard let status = selectedStatus, !isSaving else { return false }
+        return status != .equipped && hasChanges
     }
 
-    var showPremiumSkins: Bool = false
-
-    /// Cost breakdown for save button
-    var totalGoldCost: Int {
-        var cost = 0
-        if originChanged { cost += 100 }
-        // Avatar change costs gold (based on skin price, default skins are free)
-        if let char = character, selectedSkinKey != char.avatar,
-           let skin = selectedSkin {
-            cost += skin.priceGold
+    private var canAffordSelected: Bool {
+        guard let status = selectedStatus else { return false }
+        let gold = character?.gold ?? 0
+        let originCost = originChanged ? Self.originChangeCost : 0
+        switch status {
+        case .gold(let price): return gold >= price + originCost
+        case .gems(let price): return (character?.gems ?? 0) >= price && gold >= originCost
+        case .equipped, .owned: return gold >= originCost
         }
-        return cost
     }
 
-    var costText: String? {
-        let cost = totalGoldCost
-        return cost > 0 ? "\(cost) gold" : nil
+    // MARK: - Actions
+
+    func primaryTapped() {
+        guard let skin = selectedSkin, let status = selectedStatus, !isSaving else { return }
+        switch status {
+        case .equipped:
+            return
+        case .owned:
+            save()
+        case .gold(let price), .gems(let price):
+            guard canAffordSelected else {
+                let isGems = status == .gems(price)
+                HapticManager.light()
+                appState.showToast(
+                    isGems ? "Not enough gems" : "Not enough gold",
+                    subtitle: "\(skin.name) costs \(price) \(isGems ? "gems" : "gold").",
+                    type: .error,
+                    actionLabel: "Shop"
+                ) { [appState] in
+                    appState.mainPath.append(AppRoute.currencyPurchase(initialTab: isGems ? 1 : 0))
+                }
+                return
+            }
+            purchaseConfirmed = false
+            showPurchaseSheet = true
+        }
     }
 
-    /// Premium skins for current origin + gender (non-default, purchasable with gems)
-    var premiumSkins: [AppearanceSkin] {
-        allSkins.filter { skin in
-            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            let matchesGender = skin.gender == selectedGender.rawValue
-            return matchesOrigin && matchesGender && !skin.isDefault && skin.priceGems > 0
-        }.sorted { $0.sortOrder < $1.sortOrder }
+    /// Purchase sheet "Buy & Equip".
+    func confirmPurchase() {
+        purchaseConfirmed = true
+        showPurchaseSheet = false
     }
 
-    // MARK: - Selected Skin
-
-    var selectedSkin: AppearanceSkin? {
-        guard let key = selectedSkinKey else { return nil }
-        return allSkins.first { $0.skinKey == key }
-    }
-
-    // MARK: - Avatar Navigation (same as onboarding)
-
-    func nextAvatar() {
-        let skins = defaultSkins
-        guard !skins.isEmpty else { return }
-        slideDirection = .left
-        avatarIndex = (avatarIndex + 1) % skins.count
-        selectedSkinKey = skins[avatarIndex].skinKey
-    }
-
-    func prevAvatar() {
-        let skins = defaultSkins
-        guard !skins.isEmpty else { return }
-        slideDirection = .right
-        avatarIndex = (avatarIndex - 1 + skins.count) % skins.count
-        selectedSkinKey = skins[avatarIndex].skinKey
-    }
-
-    func selectAvatar(at index: Int) {
-        let skins = defaultSkins
-        guard index >= 0, index < skins.count else { return }
-        slideDirection = .none
-        avatarIndex = index
-        selectedSkinKey = skins[index].skinKey
+    /// Purchase sheet `onDismiss` — buys only when "Buy & Equip" was tapped.
+    func purchaseSheetDismissed() {
+        guard purchaseConfirmed else { return }
+        purchaseConfirmed = false
+        save()
     }
 
     // MARK: - Gender Toggle
 
     func toggleGender() {
         selectedGender = selectedGender == .male ? .female : .male
-        onGenderChanged()
+        selectedSkinKey = preferredSkinKey(in: availableSkins)
+        errorMessage = ""
     }
 
-    func onGenderChanged() {
-        avatarIndex = 0
-        slideDirection = .none
-        let valid = defaultSkins
-        selectedSkinKey = valid.first?.skinKey
-    }
-
-    // MARK: - Race Change
-
-    func selectOrigin(_ origin: CharacterOrigin) {
-        selectedOrigin = origin
-        avatarIndex = 0
-        slideDirection = .none
-        let valid = defaultSkins
-        selectedSkinKey = valid.first?.skinKey
-    }
-
-    // MARK: - Randomize (avatar — both genders within current race)
+    // MARK: - Randomize (owned looks of the current race, either gender)
 
     func randomize() {
-        // Pick from all default skins of current race regardless of gender
-        let raceSkins = allSkins.filter { skin in
+        let pool = allSkins.filter { skin in
             let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            return matchesOrigin && skin.isDefault
+            let status = self.status(of: skin)
+            return matchesOrigin
+                && (status == .owned || status == .equipped)
+                && skin.skinKey != selectedSkinKey
         }
-        guard !raceSkins.isEmpty else { return }
-
-        let currentKey = selectedSkinKey
-        var pick: AppearanceSkin
-        if raceSkins.count == 1 {
-            pick = raceSkins[0]
-        } else {
-            repeat {
-                guard let randomPick = raceSkins.randomElement() else { return }
-                pick = randomPick
-            } while pick.skinKey == currentKey
+        guard let pick = pool.randomElement() else { return }
+        if let gender = CharacterGender(rawValue: pick.gender) {
+            selectedGender = gender
         }
-
-        // Switch gender if the picked skin is different gender
-        if let newGender = CharacterGender(rawValue: pick.gender), newGender != selectedGender {
-            selectedGender = newGender
-        }
-        // Update avatar index within gender-filtered list
-        let genderSkins = defaultSkins
-        avatarIndex = genderSkins.firstIndex(where: { $0.skinKey == pick.skinKey }) ?? 0
-        slideDirection = .none
         selectedSkinKey = pick.skinKey
+        errorMessage = ""
     }
 
     // MARK: - Fetch Skins from API
@@ -230,39 +284,42 @@ final class AppearanceEditorViewModel {
             allSkins = response.skins
             cache.cacheSkins(response.skins)
             isLoadingSkins = false
-            syncAvatarIndex()
+            syncSelection()
         } catch {
             isLoadingSkins = false
         }
     }
 
-    // MARK: - Sync Index
-
-    private func syncAvatarIndex() {
-        let skins = defaultSkins
-        if let key = selectedSkinKey, let idx = skins.firstIndex(where: { $0.skinKey == key }) {
-            avatarIndex = idx
-        } else {
-            avatarIndex = 0
-            selectedSkinKey = skins.first?.skinKey
-        }
-    }
-
-    // MARK: - Save
+    // MARK: - Save (equip, or buy + equip)
 
     func save() {
-        guard canSave, let char = character else { return }
+        guard hasChanges, !isSaving, let char = character, let skin = selectedSkin else { return }
+        let status = self.status(of: skin)
 
-        // Save previous state for revert
+        // Previous state for revert
         let prevOrigin = char.origin
         let prevGender = char.gender ?? .male
         let prevAvatar = char.avatar
+        let prevGold = char.gold
+        let prevGems = char.gems
 
-        // Optimistic: update character instantly
+        // Optimistic: wear it and pay for it now
         if let newOrigin = selectedOrigin { appState.currentCharacter?.origin = newOrigin }
         appState.currentCharacter?.gender = selectedGender
-        appState.currentCharacter?.avatar = selectedSkinKey
+        appState.currentCharacter?.avatar = skin.skinKey
+        var goldCost = originChanged ? Self.originChangeCost : 0
+        switch status {
+        case .gold(let price): goldCost += price
+        case .gems(let price): appState.currentCharacter?.gems = (prevGems ?? 0) - price
+        case .equipped, .owned: break
+        }
+        if goldCost > 0 { appState.currentCharacter?.gold = prevGold - goldCost }
+        let newlyPurchased = status.isPurchase && purchasedKeys.insert(skin.skinKey).inserted
+
         HapticManager.success()
+        if status.isPurchase {
+            appState.showToast("\(skin.name) unlocked", subtitle: "New look equipped", type: .reward)
+        }
         isSaving = true
         didSave = true
         errorMessage = ""
@@ -270,7 +327,7 @@ final class AppearanceEditorViewModel {
         let request = AppearanceChangeRequest(
             origin: selectedOrigin != prevOrigin ? selectedOrigin : nil,
             gender: selectedGender != prevGender ? selectedGender : nil,
-            avatar: selectedSkinKey != prevAvatar ? selectedSkinKey : nil
+            avatar: skin.skinKey != prevAvatar ? skin.skinKey : nil
         )
 
         // Fire API in background
@@ -290,13 +347,20 @@ final class AppearanceEditorViewModel {
                 appState.currentCharacter?.origin = prevOrigin
                 appState.currentCharacter?.gender = prevGender
                 appState.currentCharacter?.avatar = prevAvatar
+                appState.currentCharacter?.gold = prevGold
+                appState.currentCharacter?.gems = prevGems
+                if newlyPurchased { purchasedKeys.remove(skin.skinKey) }
                 didSave = false
-                if let apiError = error as? APIError {
-                    errorMessage = apiError.localizedDescription
-                } else {
-                    errorMessage = "Failed to update appearance"
+                let message = (error as? APIError)?.localizedDescription ?? "Failed to update appearance"
+                errorMessage = message
+                appState.showToast(
+                    "Appearance change failed",
+                    subtitle: message,
+                    type: .error,
+                    actionLabel: "Retry"
+                ) {
+                    self.save()
                 }
-                appState.showToast("Appearance change failed", subtitle: "Please try again", type: .error)
             }
         }
     }
