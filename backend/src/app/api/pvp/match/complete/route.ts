@@ -281,7 +281,13 @@ export async function POST(req: NextRequest) {
     // original /pvp/resolve bot path: +30%k on win, -10%k on loss).
     let newWinnerRating: number
     let newLoserRating: number
-    if (isBot) {
+    if (isDungeonBoss) {
+      // PvE: a boss fight is not a duel, so the rating stays where it was.
+      // It used to fall through to the symmetric ELO below against a proxy
+      // sitting at the player's own rating — +16 for every training dummy.
+      newWinnerRating = attacker.pvpRating
+      newLoserRating = attacker.pvpRating
+    } else if (isBot) {
       const kFactor = await getKFactor(attacker.pvpCalibrationGames)
       const delta = attackerWon
         ? Math.round(kFactor * 0.3)
@@ -403,13 +409,19 @@ export async function POST(req: NextRequest) {
     const baseAttackerUpdate: Record<string, unknown> = {
       currentHp: attackerFinalHp,
       lastHpUpdate: now,
-      pvpRating: attackerNewRating,
-      pvpCalibrationGames: { increment: 1 },
       currentXp: { increment: xpReward },
       lastPlayed: now,
       zoneProfile: nextZoneProfile as unknown as Prisma.InputJsonValue,
     }
-    if (attackerWon) {
+    // Dungeon bosses leave the PvP record alone: rating, calibration, wins,
+    // losses, streaks and best rank are arena numbers.
+    if (!isDungeonBoss) {
+      baseAttackerUpdate.pvpRating = attackerNewRating
+      baseAttackerUpdate.pvpCalibrationGames = { increment: 1 }
+    }
+    if (isDungeonBoss) {
+      // nothing — see above
+    } else if (attackerWon) {
       baseAttackerUpdate.pvpWins = { increment: 1 }
       baseAttackerUpdate.pvpWinStreak = { increment: 1 }
       baseAttackerUpdate.pvpLossStreak = 0
@@ -672,7 +684,7 @@ export async function POST(req: NextRequest) {
 
     const ratingChange = attackerNewRating - attacker.pvpRating
 
-    if (isAttackerFirstMatch) {
+    if (isAttackerFirstMatch && !isDungeonBoss) {
       trackAnalytics({
         name: 'first_pvp',
         userId: attacker.userId,
