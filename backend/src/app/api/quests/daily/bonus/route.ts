@@ -3,10 +3,11 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
 import { grantRewardEntries } from '@/lib/game/reward-grants'
+import { DAILY_BONUS_REWARD } from '@/lib/game/daily-quests'
 
-const BONUS_GOLD = 500
-const BONUS_XP = 300
-const BONUS_GEMS = 10
+const BONUS_GOLD = DAILY_BONUS_REWARD.gold
+const BONUS_XP = DAILY_BONUS_REWARD.xp
+const BONUS_GEMS = DAILY_BONUS_REWARD.gems
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10)

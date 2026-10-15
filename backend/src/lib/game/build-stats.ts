@@ -4,7 +4,7 @@
 
 import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
-import { applyPrestigeBonus } from './progression'
+import { getPrestigeConfig } from './live-config'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
 import { calculateDerivedStatsFromConfig, getUpgradeStatBonus } from './item-balance'
 import { calculateEffectiveItemPower, sumCoreEquipmentStats } from './item-stats'
@@ -94,10 +94,15 @@ export async function calculateFullStats(
     withPercent[key] = Math.floor(withFlat[key] * (1 + pct / 100))
   }
 
-  // Step 5: apply prestige bonus
+  // Step 5: apply prestige bonus. One config read for all eight stats —
+  // `applyPrestigeBonus` re-read the prestige config per stat, i.e. eight
+  // sequential cache round trips inside every equip / allocate transaction.
+  // Same formula as `applyPrestigeBonus` (progression.ts).
+  const prestigeConfig = await getPrestigeConfig()
+  const prestigeMultiplier = 1 + prestigeLevel * prestigeConfig.STAT_BONUS_PER_PRESTIGE
   const totalStats: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
   for (const key of STAT_KEYS) {
-    totalStats[key] = await applyPrestigeBonus(withPercent[key], prestigeLevel)
+    totalStats[key] = Math.floor(withPercent[key] * prestigeMultiplier)
   }
 
   // Step 6: derive base HP/armor/MR — from the same config the equipment

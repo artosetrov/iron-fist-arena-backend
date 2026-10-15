@@ -7,6 +7,7 @@ import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { getBattlePassConfig } from '@/lib/game/live-config'
 import { grantRewardEntries } from '@/lib/game/reward-grants'
 import { QUEST_META, type QuestMetaMap } from '@/lib/game/daily-quest-meta'
+import { DAILY_BONUS_REWARD } from '@/lib/game/daily-quests'
 
 type QuestPoolEntry = {
   questType: QuestType
@@ -190,6 +191,8 @@ export async function GET(req: NextRequest) {
       quests: quests.map((quest) => formatQuest(quest, questMeta)),
       day: today,
       daily_bonus_claimed: dailyBonusClaimed,
+      // Lets the client render the bonus row and claim it optimistically.
+      daily_bonus_reward: DAILY_BONUS_REWARD,
     })
   } catch (error) {
     console.error('get daily quests error:', error)

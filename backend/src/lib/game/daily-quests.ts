@@ -5,6 +5,17 @@
 import type { PrismaClient, QuestType } from '@prisma/client'
 
 /**
+ * Daily completion bonus (all quests done + claimed). Single source for the
+ * claim route AND the GET payload, so the client can show the bonus reward
+ * — and open its CLAIMED modal optimistically — with the real amounts.
+ */
+export const DAILY_BONUS_REWARD = {
+  gold: 500,
+  xp: 300,
+  gems: 10,
+} as const
+
+/**
  * Increment daily quest progress for a character.
  *
  * - Finds any daily quest for today matching the given quest type.
