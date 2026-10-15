@@ -1,0 +1,101 @@
+-- =============================================================================
+-- 20261014_premium_avatars
+--
+-- 80 new premium avatars: 8 per (origin, gender), two per class flavour
+-- (warrior / rogue / mage / tank). Class is expressed only in the art; the
+-- schema is unchanged. First of each pair is epic (400 gems), second is
+-- legendary (800 gems). Images ship in the iOS bundle
+-- (Assets.xcassets/PremiumAvatars/<skin_key>.imageset), so image_url is NULL
+-- and image_key = skin_key (AppearanceSkin.resolvedImageKey → bundle first).
+-- Idempotent: rows whose skin_key already exists are skipped.
+-- =============================================================================
+
+INSERT INTO "appearance_skins"
+  ("id", "skin_key", "name", "origin", "gender", "rarity",
+   "price_gold", "price_gems", "image_url", "image_key", "is_default",
+   "sort_order", "created_at", "updated_at")
+SELECT gen_random_uuid()::text, v.skin_key, v.name, v.origin::"CharacterOrigin", v.gender::"CharacterGender",
+       v.rarity, 0, v.price_gems, NULL, v.skin_key, false, v.sort_order, NOW(), NOW()
+  FROM (VALUES
+  ('human_m_sellsword', 'Sellsword', 'human', 'male', 'epic', 400, 5),
+  ('human_m_crusader', 'Crusader', 'human', 'male', 'legendary', 800, 6),
+  ('human_m_cutpurse', 'Cutpurse', 'human', 'male', 'epic', 400, 7),
+  ('human_m_nightblade', 'Nightblade', 'human', 'male', 'legendary', 800, 8),
+  ('human_m_alchemist', 'Alchemist', 'human', 'male', 'epic', 400, 9),
+  ('human_m_archmage', 'Archmage', 'human', 'male', 'legendary', 800, 10),
+  ('human_m_shieldbearer', 'Shieldbearer', 'human', 'male', 'epic', 400, 11),
+  ('human_m_bastion_lord', 'Bastion Lord', 'human', 'male', 'legendary', 800, 12),
+  ('human_f_shieldmaiden', 'Shieldmaiden', 'human', 'female', 'epic', 400, 5),
+  ('human_f_valkyrie', 'Valkyrie', 'human', 'female', 'legendary', 800, 6),
+  ('human_f_duelist', 'Duelist', 'human', 'female', 'epic', 400, 7),
+  ('human_f_shadow_queen', 'Shadow Queen', 'human', 'female', 'legendary', 800, 8),
+  ('human_f_hedge_witch', 'Hedge Witch', 'human', 'female', 'epic', 400, 9),
+  ('human_f_star_oracle', 'Star Oracle', 'human', 'female', 'legendary', 800, 10),
+  ('human_f_iron_matron', 'Iron Matron', 'human', 'female', 'epic', 400, 11),
+  ('human_f_templar_saint', 'Templar Saint', 'human', 'female', 'legendary', 800, 12),
+  ('orc_m_ironjaw', 'Ironjaw', 'orc', 'male', 'epic', 400, 5),
+  ('orc_m_bloodlord', 'Bloodlord', 'orc', 'male', 'legendary', 800, 6),
+  ('orc_m_sneak', 'Sneak', 'orc', 'male', 'epic', 400, 7),
+  ('orc_m_venomfang', 'Venomfang', 'orc', 'male', 'legendary', 800, 8),
+  ('orc_m_fire_shaman', 'Fire Shaman', 'orc', 'male', 'epic', 400, 9),
+  ('orc_m_storm_seer', 'Storm Seer', 'orc', 'male', 'legendary', 800, 10),
+  ('orc_m_boulder', 'Boulder', 'orc', 'male', 'epic', 400, 11),
+  ('orc_m_warwall', 'Warwall', 'orc', 'male', 'legendary', 800, 12),
+  ('orc_f_axe_mother', 'Axe Mother', 'orc', 'female', 'epic', 400, 5),
+  ('orc_f_war_queen', 'War Queen', 'orc', 'female', 'legendary', 800, 6),
+  ('orc_f_scout', 'Scout', 'orc', 'female', 'epic', 400, 7),
+  ('orc_f_widowmaker', 'Widowmaker', 'orc', 'female', 'legendary', 800, 8),
+  ('orc_f_bone_caller', 'Bone Caller', 'orc', 'female', 'epic', 400, 9),
+  ('orc_f_blood_witch', 'Blood Witch', 'orc', 'female', 'legendary', 800, 10),
+  ('orc_f_ironhide', 'Ironhide', 'orc', 'female', 'epic', 400, 11),
+  ('orc_f_stone_mother', 'Stone Mother', 'orc', 'female', 'legendary', 800, 12),
+  ('skeleton_m_grave_knight', 'Grave Knight', 'skeleton', 'male', 'epic', 400, 5),
+  ('skeleton_m_bone_king', 'Bone King', 'skeleton', 'male', 'legendary', 800, 6),
+  ('skeleton_m_grinner', 'Grinner', 'skeleton', 'male', 'epic', 400, 7),
+  ('skeleton_m_phantom_blade', 'Phantom Blade', 'skeleton', 'male', 'legendary', 800, 8),
+  ('skeleton_m_necromancer', 'Necromancer', 'skeleton', 'male', 'epic', 400, 9),
+  ('skeleton_m_soul_lich', 'Soul Lich', 'skeleton', 'male', 'legendary', 800, 10),
+  ('skeleton_m_tombguard', 'Tombguard', 'skeleton', 'male', 'epic', 400, 11),
+  ('skeleton_m_dread_bulwark', 'Dread Bulwark', 'skeleton', 'male', 'legendary', 800, 12),
+  ('skeleton_f_bone_valkyrie', 'Bone Valkyrie', 'skeleton', 'female', 'epic', 400, 5),
+  ('skeleton_f_death_duchess', 'Death Duchess', 'skeleton', 'female', 'legendary', 800, 6),
+  ('skeleton_f_ghostthief', 'Ghost Thief', 'skeleton', 'female', 'epic', 400, 7),
+  ('skeleton_f_widow_wraith', 'Widow Wraith', 'skeleton', 'female', 'legendary', 800, 8),
+  ('skeleton_f_grave_witch', 'Grave Witch', 'skeleton', 'female', 'epic', 400, 9),
+  ('skeleton_f_lich_queen', 'Lich Queen', 'skeleton', 'female', 'legendary', 800, 10),
+  ('skeleton_f_crypt_warden', 'Crypt Warden', 'skeleton', 'female', 'epic', 400, 11),
+  ('skeleton_f_iron_maiden', 'Iron Maiden', 'skeleton', 'female', 'legendary', 800, 12),
+  ('demon_m_pit_brawler', 'Pit Brawler', 'demon', 'male', 'epic', 400, 5),
+  ('demon_m_hellknight', 'Hellknight', 'demon', 'male', 'legendary', 800, 6),
+  ('demon_m_imp_thief', 'Imp Thief', 'demon', 'male', 'epic', 400, 7),
+  ('demon_m_shadow_fiend', 'Shadow Fiend', 'demon', 'male', 'legendary', 800, 8),
+  ('demon_m_hexer', 'Hexer', 'demon', 'male', 'epic', 400, 9),
+  ('demon_m_inferno_lord', 'Inferno Lord', 'demon', 'male', 'legendary', 800, 10),
+  ('demon_m_brimstone_brute', 'Brimstone Brute', 'demon', 'male', 'epic', 400, 11),
+  ('demon_m_abyss_warden', 'Abyss Warden', 'demon', 'male', 'legendary', 800, 12),
+  ('demon_f_fury', 'Fury', 'demon', 'female', 'epic', 400, 5),
+  ('demon_f_hellblade_queen', 'Hellblade Queen', 'demon', 'female', 'legendary', 800, 6),
+  ('demon_f_trickster', 'Trickster', 'demon', 'female', 'epic', 400, 7),
+  ('demon_f_night_temptress', 'Night Temptress', 'demon', 'female', 'legendary', 800, 8),
+  ('demon_f_cinder_witch', 'Cinder Witch', 'demon', 'female', 'epic', 400, 9),
+  ('demon_f_hellfire_empress', 'Hellfire Empress', 'demon', 'female', 'legendary', 800, 10),
+  ('demon_f_brimstone_matron', 'Brimstone Matron', 'demon', 'female', 'epic', 400, 11),
+  ('demon_f_obsidian_aegis', 'Obsidian Aegis', 'demon', 'female', 'legendary', 800, 12),
+  ('dogfolk_m_bulldog', 'Bulldog', 'dogfolk', 'male', 'epic', 400, 5),
+  ('dogfolk_m_wolf_lord', 'Wolf Lord', 'dogfolk', 'male', 'legendary', 800, 6),
+  ('dogfolk_m_jackal', 'Jackal', 'dogfolk', 'male', 'epic', 400, 7),
+  ('dogfolk_m_shadow_hound', 'Shadow Hound', 'dogfolk', 'male', 'legendary', 800, 8),
+  ('dogfolk_m_beagle_scholar', 'Beagle Scholar', 'dogfolk', 'male', 'epic', 400, 9),
+  ('dogfolk_m_moon_seer', 'Moon Seer', 'dogfolk', 'male', 'legendary', 800, 10),
+  ('dogfolk_m_mastiff', 'Mastiff', 'dogfolk', 'male', 'epic', 400, 11),
+  ('dogfolk_m_iron_saint', 'Iron Saint', 'dogfolk', 'male', 'legendary', 800, 12),
+  ('dogfolk_f_boxer', 'Boxer', 'dogfolk', 'female', 'epic', 400, 5),
+  ('dogfolk_f_silver_alpha', 'Silver Alpha', 'dogfolk', 'female', 'legendary', 800, 6),
+  ('dogfolk_f_fox_thief', 'Fox Thief', 'dogfolk', 'female', 'epic', 400, 7),
+  ('dogfolk_f_night_huntress', 'Night Huntress', 'dogfolk', 'female', 'legendary', 800, 8),
+  ('dogfolk_f_poodle_enchantress', 'Poodle Enchantress', 'dogfolk', 'female', 'epic', 400, 9),
+  ('dogfolk_f_spirit_fox', 'Spirit Fox', 'dogfolk', 'female', 'legendary', 800, 10),
+  ('dogfolk_f_shepherd_guard', 'Shepherd Guard', 'dogfolk', 'female', 'epic', 400, 11),
+  ('dogfolk_f_bastion_matriarch', 'Bastion Matriarch', 'dogfolk', 'female', 'legendary', 800, 12)
+  ) AS v(skin_key, name, origin, gender, rarity, price_gems, sort_order)
+ WHERE NOT EXISTS (SELECT 1 FROM "appearance_skins" s WHERE s."skin_key" = v.skin_key);
