@@ -59,6 +59,11 @@ struct AuthView: View {
         ZStack {
             AuthBackground()
 
+            // The title screen's storm, without the lightning: a form wants a
+            // calm sky.
+            AmbientStormView(layers: [.fog, .embers, .ash])
+                .ignoresSafeArea()
+
             ScrollView {
                 VStack(spacing: LayoutConstants.spaceLG) {
                     Spacer().frame(height: LayoutConstants.space2XL)

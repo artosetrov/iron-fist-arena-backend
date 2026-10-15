@@ -302,6 +302,7 @@
 		99741C9FEC95AB98FE84F48E /* AuthBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB747C6FDAB2BFE84A10570 /* AuthBackground.swift */; };
 		999fc13e5536e530b050602e /* TutorialFightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26e3d5f05ba888f7540f7f81 /* TutorialFightView.swift */; };
 		9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */; };
+		A3C8904C9277B8D66FE1D9B0 /* AmbientStormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D495529D14C52D75610D74C7 /* AmbientStormView.swift */; };
 		9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */; };
 		347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F770E2C97B6C494DAE513 /* GameModal.swift */; };
 		9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */; };
@@ -490,6 +491,9 @@
 		F65BC8C3CB2266B39AEB122C /* combat_dodge_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9AF8ADC51BB174F8BA5545E1 /* combat_dodge_3.wav */; };
 		F6C73BF38E24A42D5BCBA3A5 /* onboarding-voice-blood-glory.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FE1211D68B3A99F2D2DDA67C /* onboarding-voice-blood-glory.mp3 */; };
 		F6FF94503694A1FB3E96DF6A /* rock_crumble.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */; };
+		C3D9B747E7D62560D1160EC8 /* thunder_rumble.wav in Resources */ = {isa = PBXBuildFile; fileRef = 928EEF3CBA36C4202A4FF518 /* thunder_rumble.wav */; };
+		B651761AB59A0BC776947712 /* thunder_rumble_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9C70AB2AF7126FF54D783B9A /* thunder_rumble_2.wav */; };
+		9D01C434292441597F1904D7 /* thunder_rumble_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = EAFB7DFB0076FCA233E80AC9 /* thunder_rumble_3.wav */; };
 		F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9792A8A2127BC3038E37E96 /* CombatData.swift */; };
 		F75D1FC0F949F61232E576D6 /* BossDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2880159F81C0DEC1DDB3CB6F /* BossDetailSheet.swift */; };
 		F770CBBD4C6A5F453180B0DC /* ui_upgrade_success.wav in Resources */ = {isa = PBXBuildFile; fileRef = 30FA951781D440F0FDEA8AC9 /* ui_upgrade_success.wav */; };
@@ -588,6 +592,9 @@
 		0DC42345E343D9736E07FE87 /* amb_pickaxe_distant.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_pickaxe_distant.wav; sourceTree = "<group>"; };
 		0EB45D259067154C4872D952 /* ui_close.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_close.wav; sourceTree = "<group>"; };
 		0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rock_crumble.wav; sourceTree = "<group>"; };
+		928EEF3CBA36C4202A4FF518 /* thunder_rumble.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = thunder_rumble.wav; sourceTree = "<group>"; };
+		9C70AB2AF7126FF54D783B9A /* thunder_rumble_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = thunder_rumble_2.wav; sourceTree = "<group>"; };
+		EAFB7DFB0076FCA233E80AC9 /* thunder_rumble_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = thunder_rumble_3.wav; sourceTree = "<group>"; };
 		0FDA0741F3E184BA570F269F /* hit_rogue_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue_4.wav; sourceTree = "<group>"; };
 		0FE96A24212117D6F47A7E6C /* war_drums_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = war_drums_2.wav; sourceTree = "<group>"; };
 		102DDCA43AACFE5B2DA110AF /* combat_miss_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_miss_3.wav; sourceTree = "<group>"; };
@@ -653,6 +660,7 @@
 		3CA54208B1D7A668F2B3DFF6 /* hit_physical_7.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_physical_7.wav; sourceTree = "<group>"; };
 		3D8A1598BE7C2DB7C86ED031 /* GuestGateCTA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestGateCTA.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlay.swift; sourceTree = "<group>"; };
+		D495529D14C52D75610D74C7 /* AmbientStormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientStormView.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		922F770E2C97B6C494DAE513 /* GameModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModal.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
@@ -1349,6 +1357,9 @@
 				94B3FF4EBD9246F66D4B6B6B /* pickaxe_hit_3.wav */,
 				8EF4AED0FE3D95B79C277E1C /* pouch_drop.wav */,
 				0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */,
+				928EEF3CBA36C4202A4FF518 /* thunder_rumble.wav */,
+				9C70AB2AF7126FF54D783B9A /* thunder_rumble_2.wav */,
+				EAFB7DFB0076FCA233E80AC9 /* thunder_rumble_3.wav */,
 				0D5FAFFDB3438183EA7C1957 /* rock_crumble_2.wav */,
 				8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */,
 				904DC67AA32D06A067C8D60D /* seal_stamp.wav */,
@@ -1472,6 +1483,7 @@
 				8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */,
 				EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */,
 				3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */,
+				D495529D14C52D75610D74C7 /* AmbientStormView.swift */,
 				3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */,
 				922F770E2C97B6C494DAE513 /* GameModal.swift */,
 				3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */,
@@ -2178,6 +2190,9 @@
 				9F93C0B1148B901C08229618 /* pickaxe_hit_3.wav in Resources */,
 				60495F548BED9C6323A7379B /* pouch_drop.wav in Resources */,
 				F6FF94503694A1FB3E96DF6A /* rock_crumble.wav in Resources */,
+				C3D9B747E7D62560D1160EC8 /* thunder_rumble.wav in Resources */,
+				B651761AB59A0BC776947712 /* thunder_rumble_2.wav in Resources */,
+				9D01C434292441597F1904D7 /* thunder_rumble_3.wav in Resources */,
 				9239CB217DC8B4A252236500 /* rock_crumble_2.wav in Resources */,
 				2AE128C15635F40A7E2C67D6 /* scroll_unfurl.wav in Resources */,
 				D38BBCAA8FD2BB0E5C7C13EF /* seal_stamp.wav in Resources */,
@@ -2536,6 +2551,7 @@
 				6056EEBEF912AA9AF2CADE12 /* LevelUpModalView.swift in Sources */,
 				AAA20B5F92A1A7803ABFCB3C /* HexPulseLoader.swift in Sources */,
 				9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */,
+				A3C8904C9277B8D66FE1D9B0 /* AmbientStormView.swift in Sources */,
 				9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */,
 				347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */,
 				9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */,

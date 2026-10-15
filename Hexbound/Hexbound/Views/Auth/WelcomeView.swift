@@ -9,6 +9,10 @@ struct WelcomeView: View {
         ZStack {
             AuthBackground()
 
+            // Living storm over the title art: mist, embers, ash, lightning.
+            AmbientStormView()
+                .ignoresSafeArea()
+
             VStack(spacing: 0) {
                 Spacer()
 

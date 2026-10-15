@@ -251,6 +251,12 @@ enum DarkFantasyTheme {
     static let vfxBurnGlow = Color(hex: 0xFF6B35)
     static let vfxStunGlow = Color(hex: 0xFFF8DC)
 
+    // Ambient storm over title art (AmbientStormView)
+    static let vfxLightningCore = Color(hex: 0xEAF3FF)  // bolt core — white with a cold cast
+    static let vfxLightningGlow = Color(hex: 0x7FAEFF)  // bolt halo, sky flash, lit clouds
+    static let vfxStormFog = Color(hex: 0x8C9DA3)       // drifting mist — the title art's teal-grey
+    static let vfxAsh = Color(hex: 0x9A929E)            // falling ash flecks
+
     // MARK: - Toast Indicator Colors
 
     static let toastAchievement = goldBright
