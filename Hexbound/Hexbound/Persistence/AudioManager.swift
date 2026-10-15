@@ -12,10 +12,35 @@ final class AudioManager {
 
     private var voicePlayer: AVAudioPlayer?
     private var currentVoice: String?
-    /// When voice is active, BGM is ducked to this fraction of its effective volume.
-    private let bgmDuckFraction: Float = 0.3
-    private var isBGMDucked: Bool = false
     private var voiceFadeTask: Task<Void, Never>?
+
+    // MARK: - BGM ducking
+
+    /// Why the music is currently pulled down. Ducking used to be one
+    /// boolean owned by the voice player, which meant the first thing to
+    /// finish restored the music while anything else still wanted it quiet.
+    /// Held as a set instead: the music stays down until the last reason
+    /// lets go, at the deepest fraction any of them asks for.
+    enum BGMDuckReason: Hashable {
+        /// Narration or NPC dialogue over the track.
+        case voice
+        /// A cinematic beat — a boss reveal, a promotion. Near silence is
+        /// the point: the moment lands because the music stepped out of it.
+        case ceremony
+
+        var fraction: Float {
+            switch self {
+            case .voice: 0.30
+            case .ceremony: 0.06
+            }
+        }
+    }
+
+    private var duckReasons: Set<BGMDuckReason> = []
+    private var isBGMDucked: Bool { !duckReasons.isEmpty }
+    private var duckFraction: Float {
+        duckReasons.map(\.fraction).min() ?? 1.0
+    }
 
     var isPlaying: Bool { bgmPlayer?.isPlaying ?? false }
     var isVoicePlaying: Bool { voicePlayer?.isPlaying ?? false }
@@ -80,7 +105,8 @@ final class AudioManager {
         bgmPlayer?.stop()
         bgmPlayer = nil
         currentBGM = nil
-        isBGMDucked = false
+        // No track left to duck, so no reason outlives it.
+        duckReasons.removeAll()
         stopVoice(fadeOut: false)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
@@ -89,7 +115,7 @@ final class AudioManager {
     func syncVolume() {
         guard let player = bgmPlayer else { return }
         let baseVol = effectiveVolume
-        let vol = isBGMDucked ? baseVol * bgmDuckFraction : baseVol
+        let vol = isBGMDucked ? baseVol * duckFraction : baseVol
         player.volume = vol
         if baseVol > 0 {
             if !player.isPlaying { player.play() }
@@ -150,7 +176,7 @@ final class AudioManager {
             player.prepareToPlay()
             voicePlayer = player
             currentVoice = filename
-            duckBGM()
+            duckBGM(for: .voice)
             player.play()
 
             // Always un-duck BGM when the line ends naturally — previously this
@@ -161,7 +187,7 @@ final class AudioManager {
                 try? await Task.sleep(for: .seconds(duration))
                 // Only if this exact player is still the active track
                 if self.voicePlayer === player {
-                    self.restoreBGM()
+                    self.restoreBGM(for: .voice)
                     self.currentVoice = nil
                     self.voicePlayer = nil
                     onFinish?()
@@ -179,7 +205,7 @@ final class AudioManager {
     func stopVoice(fadeOut: Bool = false) {
         voiceFadeTask?.cancel()
         guard let player = voicePlayer else {
-            restoreBGM()
+            restoreBGM(for: .voice)
             currentVoice = nil
             return
         }
@@ -198,30 +224,32 @@ final class AudioManager {
                 player.stop()
                 self.voicePlayer = nil
                 self.currentVoice = nil
-                self.restoreBGM()
+                self.restoreBGM(for: .voice)
             }
         } else {
             player.stop()
             voicePlayer = nil
             currentVoice = nil
-            restoreBGM()
+            restoreBGM(for: .voice)
         }
     }
 
-    /// Lower BGM volume while voice is active.
-    private func duckBGM() {
-        guard !isBGMDucked, let player = bgmPlayer else { return }
-        isBGMDucked = true
-        player.setVolume(effectiveVolume * bgmDuckFraction, fadeDuration: 0.25)
+    /// Pull the music down for `reason`, and keep it down until that same
+    /// reason is released. Calling twice for one reason is a no-op.
+    func duckBGM(for reason: BGMDuckReason) {
+        guard duckReasons.insert(reason).inserted else { return }
+        applyDuck(fadeDuration: reason == .ceremony ? 0.5 : 0.25)
     }
 
-    /// Restore BGM volume after voice ends.
-    private func restoreBGM() {
-        guard isBGMDucked, let player = bgmPlayer else {
-            isBGMDucked = false
-            return
-        }
-        isBGMDucked = false
-        player.setVolume(effectiveVolume, fadeDuration: 0.25)
+    /// Release one reason. The music comes back only once none are left.
+    func restoreBGM(for reason: BGMDuckReason) {
+        guard duckReasons.remove(reason) != nil else { return }
+        applyDuck(fadeDuration: reason == .ceremony ? 0.8 : 0.25)
+    }
+
+    private func applyDuck(fadeDuration: TimeInterval) {
+        guard let player = bgmPlayer else { return }
+        let target = isBGMDucked ? effectiveVolume * duckFraction : effectiveVolume
+        player.setVolume(target, fadeDuration: fadeDuration)
     }
 }

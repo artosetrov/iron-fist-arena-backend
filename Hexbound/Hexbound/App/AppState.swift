@@ -388,6 +388,16 @@ final class AppState {
             }
         }
 
+        /// Whether the music steps out while this is on screen. The two
+        /// cinematic beats take the room; a level-up or a claimed reward is
+        /// routine and plays over the track like everything else.
+        var ducksMusic: Bool {
+            switch kind {
+            case .bossReveal, .rankUp: true
+            case .dailyLogin, .levelUp, .claimReward: false
+            }
+        }
+
         /// True for the ceremonies that say the same thing every time, so a
         /// second enqueue is the same modal and can be dropped. A second
         /// claimed reward or a second boss is not — each carries its own
@@ -420,6 +430,9 @@ final class AppState {
         guard activeModal == nil, !modalQueue.isEmpty else { return }
 
         let next = modalQueue.removeFirst()
+        if next.ducksMusic {
+            AudioManager.shared.duckBGM(for: .ceremony)
+        }
         switch next.kind {
         case .levelUp:
             HapticManager.rankUp()
@@ -440,7 +453,10 @@ final class AppState {
     /// Dismiss whatever is on screen and hand over to the next in line after
     /// a beat, so two transitions never overlap.
     func dismissActiveModal() {
-        guard activeModal != nil else { return }
+        guard let closing = activeModal else { return }
+        if closing.ducksMusic {
+            AudioManager.shared.restoreBGM(for: .ceremony)
+        }
         withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
             activeModal = nil
         }
@@ -586,6 +602,9 @@ final class AppState {
         cachedTypedQuests = nil
         cachedDailyLogin = nil
         cachedBonusClaimedToday = false
+        // A logout mid-ceremony would otherwise leave the music ducked
+        // with nothing left to restore it.
+        AudioManager.shared.restoreBGM(for: .ceremony)
         activeModal = nil
         modalQueue.removeAll()
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
