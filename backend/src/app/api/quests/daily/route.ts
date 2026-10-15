@@ -6,6 +6,7 @@ import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { getBattlePassConfig } from '@/lib/game/live-config'
 import { grantRewardEntries } from '@/lib/game/reward-grants'
+import { QUEST_META, type QuestMetaMap } from '@/lib/game/daily-quest-meta'
 
 type QuestPoolEntry = {
   questType: QuestType
@@ -15,14 +16,6 @@ type QuestPoolEntry = {
   rewardXp: number
   rewardGems: number
 }
-
-type QuestMetaEntry = {
-  title: string
-  description: (target: number) => string
-  icon: string
-}
-
-type QuestMetaMap = Record<QuestType, QuestMetaEntry>
 
 type QuestViewRow = Pick<
   DailyQuest,
@@ -50,17 +43,6 @@ const QUEST_POOL: QuestPoolEntry[] = [
   { questType: 'shell_game_play', minTarget: 2, maxTarget: 5, rewardGold: 200, rewardXp: 50, rewardGems: 3 },
   { questType: 'gold_mine_collect', minTarget: 1, maxTarget: 3, rewardGold: 100, rewardXp: 100, rewardGems: 2 },
 ]
-
-// Human-readable quest metadata by type (fallback)
-const QUEST_META: QuestMetaMap = {
-  pvp_wins: { title: 'Warrior', description: (t) => `Win ${t} PvP battles`, icon: 'building-arena' },
-  dungeons_complete: { title: 'Dungeon Crawler', description: (t) => `Complete ${t} dungeons`, icon: 'building-dungeon' },
-  gold_spent: { title: 'Big Spender', description: (t) => `Spend ${t} gold`, icon: 'building-shop' },
-  item_upgrade: { title: 'Blacksmith', description: (t) => `Upgrade ${t} items`, icon: 'item-upgrade' },
-  consumable_use: { title: 'Alchemist', description: (t) => `Use ${t} consumables`, icon: 'health-potion-medium' },
-  shell_game_play: { title: 'Shell Game', description: (t) => `Play shell game ${t} times`, icon: 'shell-cup' },
-  gold_mine_collect: { title: 'Gold Miner', description: (t) => `Collect from gold mine ${t} times`, icon: 'building-gold-mine' },
-}
 
 function isQuestType(value: string): value is QuestType {
   return value in QUEST_META

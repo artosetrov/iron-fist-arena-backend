@@ -25,6 +25,8 @@ struct CombatResultDetailView: View {
 
     // Loot detail modal
     @State private var selectedLootIndex: Int? = nil
+    /// onAppear can fire again (sheet/back) — count this fight once.
+    @State private var fightCounted = false
 
     private var combatData: CombatData? {
         appState.combatResult
@@ -88,6 +90,10 @@ struct CombatResultDetailView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
+            if !fightCounted {
+                fightCounted = true
+                appState.fightsSinceSessionSummary += 1
+            }
             // Optimistically update character XP/level/gold from combat result
             // BEFORE taking XP snapshot — loadCharacter() is async and won't
             // complete in time for the snapshot to read updated values.
@@ -233,23 +239,17 @@ struct CombatResultDetailView: View {
                     }
                 }))
             }
-            // Back to Castle — resets navigation to Hub (main screen)
+            // Back to Castle — leaves the arena; after a series this shows the
+            // session summary on the way (AppState.leaveCombatToHub).
             buttons.append(ResultButton(title: "BACK TO CASTLE", icon: "house.fill", style: .secondary, action: {
-                appState.combatData = nil
-                appState.combatResult = nil
-                appState.invalidateCache("quests")
-                appState.mainPath = NavigationPath()
+                appState.leaveCombatToHub()
             }))
         } else {
+            // Used to push the session summary after EVERY fight — an extra
+            // tap in the core loop. Now only after a series (leaveCombatToHub).
             buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary, action: {
-                if let charId = appState.currentCharacter?.id {
-                    appState.combatData = nil
-                    appState.combatResult = nil
-                    appState.invalidateCache("quests")
-                    appState.mainPath = NavigationPath()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
-                        appState.mainPath.append(AppRoute.sessionSummary(characterId: charId))
-                    }
+                if appState.currentCharacter != nil {
+                    appState.leaveCombatToHub()
                 } else {
                     goBack()
                 }

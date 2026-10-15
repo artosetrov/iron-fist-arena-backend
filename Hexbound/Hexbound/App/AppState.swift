@@ -68,6 +68,26 @@ final class AppState {
     var combatData: CombatData?
     var combatResult: CombatData?
     var pendingLoot: [PendingLootItem] = []
+    /// Fights finished since the session summary was last shown. The summary
+    /// is on-demand; it opens by itself only when the player leaves combat
+    /// after a series of `sessionSummaryAutoThreshold` fights.
+    var fightsSinceSessionSummary = 0
+    static let sessionSummaryAutoThreshold = 3
+
+    /// Leave a combat result for the hub — via the session summary when the
+    /// player has just played a series. Clears combat state either way.
+    func leaveCombatToHub() {
+        combatData = nil
+        combatResult = nil
+        invalidateCache("quests")
+        mainPath = NavigationPath()
+        guard fightsSinceSessionSummary >= Self.sessionSummaryAutoThreshold,
+              let charId = currentCharacter?.id else { return }
+        fightsSinceSessionSummary = 0
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+            self.mainPath.append(AppRoute.sessionSummary(characterId: charId))
+        }
+    }
     var resolveResult: ResolveResult?
 
     // MARK: - Interactive Combat v1 Fallback

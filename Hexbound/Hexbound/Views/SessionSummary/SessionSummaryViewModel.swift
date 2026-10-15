@@ -10,6 +10,55 @@ struct SessionSummaryData: Codable {
     let itemsGained: Int
     let questsCompleted: Int
     let questsTotal: Int
+    // Added 2026-10-15 (Victory Ledger). Optional so an older backend still decodes.
+    /// "W"/"L" per fight, oldest first.
+    let results: [String]?
+    let rating: SessionRating?
+    let quests: [SessionQuest]?
+    let loot: [SessionLoot]?
+
+    /// Headline for the session, from the score alone.
+    var verdict: String {
+        if matchesPlayed == 0 { return "NO BATTLES YET" }
+        if losses == 0 { return "UNDEFEATED" }
+        if wins == 0 { return "BLOODIED" }
+        if wins > losses { return "VICTORIOUS" }
+        if wins == losses { return "EVEN BLADES" }
+        return "HARD-FOUGHT"
+    }
+}
+
+struct SessionRating: Codable, Equatable {
+    let current: Int
+    let tierKey: String
+    let division: String?
+    let label: String
+    let nextLabel: String?
+    let pointsToNext: Int?
+    /// 0…1 inside the current division.
+    let progress: Double
+}
+
+struct SessionQuest: Codable, Identifiable, Equatable {
+    var id: String { type }
+    let type: String
+    let title: String
+    let progress: Int
+    let target: Int
+    /// Progress reached the target.
+    let done: Bool
+    /// Reward already collected.
+    let claimed: Bool
+}
+
+struct SessionLoot: Codable, Equatable {
+    let name: String
+    let rarity: String
+    let imageKey: String?
+
+    var rarityColor: Color {
+        (ItemRarity(rawValue: rarity) ?? .common).color
+    }
 }
 
 struct SessionSummaryResponse: Codable {
