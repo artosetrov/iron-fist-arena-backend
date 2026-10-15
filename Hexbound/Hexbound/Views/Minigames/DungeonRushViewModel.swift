@@ -172,6 +172,25 @@ final class DungeonRushViewModel {
     func fight() async {
         guard !isFighting else { return } // prevent double-tap
         guard currentRoom?.isCombat == true else { return }
+
+        // Dice combat (2026-10-14): the room is fought on the dice battle
+        // screen as a `dungeon_rush` match. That screen settles the room via
+        // /dungeon-rush/fight (match_id) and leaves the response in
+        // `appState.pendingRushFightResult`; `applyPendingResult()` picks it
+        // up when this view reappears.
+        if !appState.interactiveCombatLocallyDisabled, let char = appState.currentCharacter, !runId.isEmpty {
+            appState.pendingRushFightResult = nil
+            appState.mainPath.append(AppRoute.interactiveBattle(
+                characterId: char.id,
+                opponentId: "rush_room_\(currentRoomIndex)",
+                attackerMaxHp: maxHp,
+                defenderMaxHp: maxHp,
+                opponentType: .dungeonRush,
+                dungeonRunId: runId
+            ))
+            return
+        }
+
         isFighting = true
         let result = await service.rushFight(runId: runId)
         isFighting = false
@@ -300,6 +319,16 @@ final class DungeonRushViewModel {
     // MARK: - Apply Pending Result (after combat animation)
 
     func applyPendingResult() {
+        // Dice combat path — result settled by the battle screen.
+        if let diceResult = appState.pendingRushFightResult {
+            appState.pendingRushFightResult = nil
+            let lootItems = diceResult.loot ?? []
+            if !lootItems.isEmpty {
+                appState.pendingLoot.append(contentsOf: lootItems.map(Self.pendingLootItem))
+            }
+            applyFightResult(diceResult)
+            return
+        }
         guard let result = pendingFightResult else { return }
         pendingFightResult = nil
         applyFightResult(result)

@@ -41,6 +41,11 @@ enum APIEndpoints {
     static let pvpMatchStart = "/api/pvp/match/start"
     static let pvpStrike = "/api/pvp/strike"
     static let pvpMatchComplete = "/api/pvp/match/complete"
+    // Dice combat (DICE_RUNES_DESIGN.md)
+    static let pvpDiceAct = "/api/pvp/dice/act"
+    static let pvpDiceResolve = "/api/pvp/dice/resolve"
+    static let dice = "/api/dice"
+    static let diceSocket = "/api/dice/socket"
 
     // MARK: - Inventory
     static let inventory = "/api/inventory"

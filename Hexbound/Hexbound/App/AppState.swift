@@ -79,6 +79,9 @@ final class AppState {
     // `fight(opponentId:, forceClassic: true)` automatically.
     var interactiveCombatLocallyDisabled = false
     var pendingClassicFightOpponentId: String?
+    /// Dice combat in Dungeon Rush: the settled room result, handed from the
+    /// battle screen back to `DungeonRushViewModel` when the rush view reappears.
+    var pendingRushFightResult: DungeonRushFightResponse?
 
     // MARK: - Cache
     var cachedInventory: [Item]?

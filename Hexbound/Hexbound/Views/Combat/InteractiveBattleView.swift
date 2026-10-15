@@ -423,7 +423,8 @@ struct FighterAnchorKey: PreferenceKey {
     }
 }
 
-private struct DuelFighterCard: View {
+/// Shared by the dice battle screen (`DiceBattleView`) — keep internal.
+struct DuelFighterCard: View {
     typealias Side = DuelSide
 
     @Environment(GameDataCache.self) private var cache
@@ -997,29 +998,26 @@ struct InteractiveBattleRouteView: View {
     let opponentType: InteractiveOpponentType
     let dungeonRunId: String?
 
-    @State private var vm: InteractiveBattleViewModel?
+    @State private var vm: DiceBattleViewModel?
 
+    // Dice combat (2026-10-14, DICE_RUNES_DESIGN.md) replaced the zone-pick
+    // predict panel: same route, same duel header, dice below.
     var body: some View {
         Group {
             if let vm {
-                InteractiveBattleView(
+                DiceBattleView(
                     vm: vm,
                     onFinished: { phase in
                         handleTerminal(phase, vm: vm)
                     }
                 )
             } else {
-                // Single-frame placeholder until `.onAppear` assigns the VM.
-                // Intentionally empty (no spinner) — the actual loading state
-                // lives inside `InteractiveBattleView` once the VM is mounted,
-                // and is now an optimistic shell rather than a full-screen
-                // pulse loader.
                 DarkFantasyTheme.bgPrimary.ignoresSafeArea()
             }
         }
         .onAppear {
             if vm == nil {
-                vm = InteractiveBattleViewModel(
+                vm = DiceBattleViewModel(
                     appState: appState,
                     attackerCharacterId: characterId,
                     defenderCharacterId: opponentId,
@@ -1059,9 +1057,13 @@ struct InteractiveBattleRouteView: View {
         return nil
     }
 
-    private func handleTerminal(_ phase: InteractiveBattleViewModel.Phase,
-                                vm: InteractiveBattleViewModel) {
+    private func handleTerminal(_ phase: DiceBattleViewModel.Phase,
+                                vm: DiceBattleViewModel) {
         switch phase {
+        case .finished where vm.opponentType == .dungeonRush:
+            // Rush: back to the rush screen; it applies
+            // `appState.pendingRushFightResult` on reappear.
+            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         case .finished:
             if let data = vm.finalCombatData {
                 // CombatResultDetailView reads appState.combatResult (NOT
@@ -1089,7 +1091,9 @@ struct InteractiveBattleRouteView: View {
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
             // Set pending id AFTER pop so ArenaDetailView's onChange fires
             // once the arena screen is back in scope.
-            appState.pendingClassicFightOpponentId = oppId
+            if vm.opponentType == .pvp || vm.opponentType == .bot {
+                appState.pendingClassicFightOpponentId = oppId
+            }
         case .error(let message):
             appState.showToast("Match failed", subtitle: message, type: .error)
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }

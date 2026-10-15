@@ -76,6 +76,24 @@ struct InteractiveMatchStartResponse: Decodable, Sendable {
     let defender: InteractiveCharacterSnapshot
     let stamina: InteractiveMatchStaminaInfo
     let actives: InteractiveActivesState?
+    /// Combat v2 — what the player is about to read: a ghost of the real
+    /// defender (with its recent attack zones as the read-strip) or a bot
+    /// personality with its tell. Optional: pre-v2 servers omit it.
+    let opponentRead: InteractiveOpponentRead?
+}
+
+// MARK: - Opponent Read (Combat v2)
+
+/// Mirror of `describePolicy()` in backend `lib/game/zone-policy.ts`.
+struct InteractiveOpponentRead: Decodable, Sendable {
+    /// "ghost" (plays like its owner) | "bot" (personality).
+    let kind: String
+    /// "aggressor" | "turtle" | "rhythm" — nil for a ghost.
+    let personality: String?
+    /// One-line player-facing tell, e.g. "Goes for the head. Greedy after a crit."
+    let hint: String
+    /// Recent attack zones, oldest first. Empty for bots and fresh ghosts.
+    let pattern: [InteractiveBodyZone]
 }
 
 // MARK: - Active Slot Snapshot (Phase 3)
@@ -193,6 +211,21 @@ struct InteractiveStrikeTurn: Decodable, Sendable {
     /// Server-applied status (poison / bleed / burn / etc.) — drives status
     /// VFX + SFX in CombatFXAssetMap. Nil when no status fired this round.
     let statusApplied: String?
+    /// Combat v2 — server verdict: "crit" | "hit" | "blocked" | "miss" |
+    /// "dodge" | "none" (the side never swung this round). Nil on v1 servers;
+    /// `InteractiveStrikeOutcome.classify` prefers it when present.
+    let outcome: String?
+    /// Combat v2 — damage the DEFENDER dealt back (head into a block). Already
+    /// applied to the attacker's HP server-side; shown in the log only.
+    let counterDamage: Int?
+    /// Combat v2 — legs landed: the defender's block is void next round.
+    let opensDefender: Bool?
+}
+
+/// Combat v2 — whose block is ignored NEXT round (legs landed this round).
+struct InteractiveOpenedState: Decodable, Sendable {
+    let player: Bool
+    let opponent: Bool
 }
 
 struct InteractiveOpponentZones: Decodable, Sendable {
@@ -228,6 +261,12 @@ struct InteractiveStrikeResponse: Decodable, Sendable {
     /// Note: in Phase 4.B the AI intentionally never fires consumables (player
     /// inventory only), so this will always be nil today — reserved for Phase 5+.
     let opponentConsumableFired: String?
+    /// Combat v2 — who swung first this round: "player" | "opponent" (AGI).
+    let initiative: String?
+    /// Combat v2 — whose block is void next round.
+    let opened: InteractiveOpenedState?
+    /// Combat v2 — server flag echo; false/nil means legacy stance rules.
+    let zoneMatrixV2: Bool?
 }
 
 // MARK: - Match Complete
@@ -273,6 +312,18 @@ enum InteractiveStrikeOutcome: String, Sendable {
                          attackerZone: InteractiveBodyZone,
                          defenderZone: InteractiveBodyZone,
                          baseExpected: Double = 0) -> InteractiveStrikeOutcome {
+        // Combat v2 — the server tags the verdict; trust it when present.
+        // "none" (fell before swinging) has no case of its own yet → blocked.
+        if let server = turn.outcome {
+            switch server {
+            case "crit": return .crit
+            case "blocked", "none": return .blocked
+            case "miss": return .miss
+            case "dodge": return .dodge
+            case "hit": return .hit
+            default: break
+            }
+        }
         if turn.isMiss == true { return .miss }
         if turn.isDodge == true { return .dodge }
         if let key = turn.skillKey?.lowercased(), key.contains("execute") {

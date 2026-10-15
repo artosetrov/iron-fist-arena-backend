@@ -6,12 +6,14 @@ enum HeroTab: Int, CaseIterable {
     case equipment = 0
     case stats = 1
     case talents = 2
+    case dice = 3
 
     var label: String {
         switch self {
         case .equipment: "INVENTORY"
         case .stats: "STATUS"
         case .talents: "TALENTS"
+        case .dice: "DICE"
         }
     }
 }
@@ -25,6 +27,7 @@ struct HeroDetailView: View {
     @State var characterVM: CharacterViewModel?
     @State var inventoryVM: InventoryViewModel?
     @State var talentVM: PassiveTreeViewModel?
+    @State var diceVM: DiceTabViewModel?
     @State var showRespecConfirm = false
     @State var showPrestigeConfirm = false
     @State var tooltipStat: StatType?
@@ -242,7 +245,7 @@ struct HeroDetailView: View {
         // owns per-tab badge positioning so this class of bug can't recur.
         let statPoints = appState.currentCharacter?.statPoints ?? 0
         let talentPoints = appState.currentCharacter?.passivePointsAvailable ?? 0
-        let badges: [Int?] = [nil, statPoints, talentPoints]
+        let badges: [Int?] = [nil, statPoints, talentPoints, (diceVM?.hasFreeSocketAndRune ?? false) ? 1 : nil]
 
         TabSwitcher(
             tabs: HeroTab.allCases.map(\.label),
@@ -301,13 +304,9 @@ struct HeroDetailView: View {
                         // ── Repair Equipment widget ──
                         repairEquipmentWidget(equippedItems, char: char)
 
-                        // ── Stance widget (separate from equipment card) ──
-                        StanceDisplayView(
-                            stance: char.combatStance ?? .default,
-                            isInteractive: true,
-                            onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
-                        )
-                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        // ── Dice widget (dice combat replaced the stance pick) ──
+                        DiceSummaryButton { selectedTab = .dice }
+                            .padding(.horizontal, LayoutConstants.screenPadding)
 
                         lowResourcesWidget(char)
 
@@ -335,6 +334,17 @@ struct HeroDetailView: View {
                                         appState: appState,
                                         characterId: char.id
                                     )
+                                }
+                        }
+
+                    case .dice:
+                        if let vm = diceVM {
+                            DiceTabView(vm: vm, onOpenTalents: { selectedTab = .talents })
+                        } else {
+                            Color.clear
+                                .frame(height: 1)
+                                .onAppear {
+                                    diceVM = DiceTabViewModel(appState: appState, characterId: char.id)
                                 }
                         }
                     }

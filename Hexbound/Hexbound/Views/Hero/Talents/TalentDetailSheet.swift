@@ -111,6 +111,11 @@ struct TalentDetailSheet: View {
                         flavorLine(flavor)
                     }
 
+                    // Dice combat — the rune this node grants (socket it in Hero → Dice).
+                    if let rune = node.rune {
+                        runeBlock(rune)
+                    }
+
                     // Hairline divider between narrative and mechanical sections
                     Rectangle()
                         .fill(DarkFantasyTheme.borderSubtle)
@@ -586,3 +591,41 @@ struct TalentDetailSheet: View {
         )
     }
 }
+
+// MARK: - Dice rune block
+
+private extension TalentDetailSheet {
+    func runeBlock(_ rune: PassiveNodeRune) -> some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceMS) {
+            Image(rune.asset)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: 48, height: 54)
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                Text("\(rune.name.uppercased()) · \(rune.die == "atk" ? "ATTACK" : "GUARD") DIE")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                Text(rune.desc)
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Unlocking this node grants the rune. Socket it in Hero → Dice.")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(LayoutConstants.spaceMS)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
+        )
+    }
+}
+

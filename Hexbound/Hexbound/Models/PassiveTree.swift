@@ -51,6 +51,11 @@ struct PassiveNode: Codable, Identifiable, Hashable {
     let rankCosts: [Int]?
     let maxRank: Int?
 
+    /// Dice combat (2026-10-14): the rune this node grants, if any — Lesser
+    /// rune nodes, keystones (Path runes) and ultimates (Great runes).
+    /// Optional: older backends don't send it.
+    let rune: PassiveNodeRune?
+
     /// Per-rank cost schedule with a legacy fallback — use this instead of
     /// `rankCosts` when you need a guaranteed non-nil array.
     var rankCostSchedule: [Int] { rankCosts ?? [cost] }

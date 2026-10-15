@@ -198,13 +198,33 @@ struct TalentNodeView: View {
                 )
                 .overlay(alignment: .leading) { leftBar }
 
-            // Icon
-            Image(systemName: symbolName)
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.semibold)
-                .foregroundStyle(iconColor)
-                .frame(width: size * 0.42, height: size * 0.42)
+            // Icon — rune nodes (dice combat) show their rune stone instead
+            // of a symbol; locked ones desaturated.
+            if let rune = node.rune, UIImage(named: rune.asset) != nil {
+                Image(rune.asset)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: size * 0.62, height: size * 0.66)
+                    .saturation(state == .locked ? 0 : 1)
+                    .opacity(state == .locked ? 0.55 : 1)
+            } else if UIImage(named: talentAsset) != nil {
+                // Per-node emblem art (2026-10-14) — same treatment as runes.
+                Image(talentAsset)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: size * 0.78, height: size * 0.78)
+                    .saturation(state == .locked ? 0 : 1)
+                    .opacity(state == .locked ? 0.55 : 1)
+            } else {
+                Image(systemName: symbolName)
+                    .resizable()
+                    .scaledToFit()
+                    .fontWeight(.semibold)
+                    .foregroundStyle(iconColor)
+                    .frame(width: size * 0.42, height: size * 0.42)
+            }
 
             // Rank pill (top-right) — cost chip on locked/unlockable, current
             // rank indicator on unlocked single-rank nodes. Ranked nodes (v2)
@@ -234,7 +254,7 @@ struct TalentNodeView: View {
             }
         }
         .onDisappear { pulse = false }
-        .accessibilityLabel(node.name)
+        .accessibilityLabel(node.rune.map { "\(node.name), \($0.name) rune" } ?? node.name)
         .accessibilityHint(node.description)
     }
 
@@ -336,6 +356,14 @@ struct TalentNodeView: View {
     }
 
     // MARK: - Symbols
+
+    /// Bundled emblem for this node: "rogue.found.agility" →
+    /// "talent-rogue-found-agility" (Assets.xcassets/Talents).
+    private var talentAsset: String {
+        "talent-" + node.nodeKey
+            .replacingOccurrences(of: ".", with: "-")
+            .replacingOccurrences(of: "_", with: "-")
+    }
 
     private var symbolName: String {
         // Ultimate/keystone hero symbols come from tier

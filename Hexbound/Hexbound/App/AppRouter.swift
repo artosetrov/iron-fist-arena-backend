@@ -7,6 +7,8 @@ enum InteractiveOpponentType: String, Hashable, Codable, Sendable {
     case pvp
     case bot
     case dungeonBoss = "dungeon_boss"
+    /// Dice combat in a Dungeon Rush combat room — settled by /dungeon-rush/fight.
+    case dungeonRush = "dungeon_rush"
 }
 
 enum AppRoute: Hashable, Codable {

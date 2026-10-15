@@ -254,6 +254,9 @@ private struct DungeonRushStartRequest: Encodable {
 private struct DungeonRushFightRequest: Encodable {
     let characterId: String
     let runId: String
+    /// Dice combat: the finished `dungeon_rush` match that settles this room.
+    /// Omitted (nil) → the server runs the classic auto-combat.
+    var matchId: String? = nil
 }
 
 private struct DungeonRushResolveRequest: Encodable {
@@ -338,12 +341,19 @@ private extension DungeonCatalogEntry {
         let combinedLoot = baseLoot + dungeonLoot
 
         let parsedBosses: [BossInfo] = bosses.enumerated().map { idx, boss in
+            // `image_url` holds the xcassets name of the portrait
+            // (e.g. "boss-ice-lich-portrait"); the full-body sprite follows the
+            // naming convention "<slug>-full". Views fall back to the portrait
+            // when the full asset is missing (UIImage(named:) check).
             let portrait = {
                 guard let imageUrl = boss.imageUrl, !imageUrl.isEmpty else {
                     return "boss-generic-portrait"
                 }
                 return imageUrl
             }()
+            let full: String = portrait.hasSuffix("-portrait")
+                ? String(portrait.dropLast("-portrait".count)) + "-full"
+                : portrait
 
             return BossInfo(
                 id: idx + 1,
@@ -352,7 +362,7 @@ private extension DungeonCatalogEntry {
                 hp: boss.hp,
                 description: boss.description,
                 portraitImage: portrait,
-                fullImage: portrait,
+                fullImage: full,
                 loot: combinedLoot,
                 tagline: boss.tagline
             )
@@ -580,12 +590,12 @@ final class DungeonService {
         }
     }
 
-    func rushFight(runId: String) async -> DungeonRushFightResponse? {
+    func rushFight(runId: String, matchId: String? = nil) async -> DungeonRushFightResponse? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
             return try await APIClient.shared.post(
                 APIEndpoints.dungeonRushFight,
-                body: DungeonRushFightRequest(characterId: charId, runId: runId)
+                body: DungeonRushFightRequest(characterId: charId, runId: runId, matchId: matchId)
             )
         } catch {
             return nil

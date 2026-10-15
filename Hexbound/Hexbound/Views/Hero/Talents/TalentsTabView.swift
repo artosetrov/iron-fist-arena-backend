@@ -90,6 +90,12 @@ struct TalentsTabView: View {
     /// borders and lane bg. Foundation row (6 wide × 80bp) drives canvas width
     /// ~392pt, so horizontal scroll is minimal on a 360pt iPhone.
     private var canvasContainer: some View {
+        // 2026-10-14: GeometryReader + minWidth — inside a horizontal
+        // ScrollView the Spacers below collapse to zero (the content is sized
+        // to its intrinsic width), so the tree sat against the leading edge.
+        // Giving the HStack the viewport width as a floor makes the Spacers
+        // centre it; wider trees still exceed the floor and scroll.
+        GeometryReader { geo in
         ScrollView(.horizontal, showsIndicators: false) {
             // Center the tree inside the (possibly wider) ScrollView. When
             // intrinsic content < scroll width, leading-aligned default would
@@ -113,9 +119,13 @@ struct TalentsTabView: View {
                 )
                 Spacer(minLength: 0)
             }
+            .frame(minWidth: geo.size.width, minHeight: geo.size.height)
+        }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 400)
+        // Sized to the tree (row count × 64pt pitch) + room for the rank-pip
+        // strips that sit 7pt above the top row's tiles.
+        .frame(height: TalentTreeCanvas.contentHeight(for: vm.nodes) + LayoutConstants.spaceMD * 2)
         // Block-level chrome — bgSecondary fill + radial top glow + 24pt grid
         // overlay + corner brackets + subtle stroke. Lifted out of
         // `TalentTreeCanvas` (where it sat at intrinsic tree width ~392pt and

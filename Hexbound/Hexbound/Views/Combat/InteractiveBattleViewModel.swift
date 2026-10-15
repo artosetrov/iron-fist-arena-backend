@@ -69,8 +69,12 @@ final class InteractiveBattleViewModel {
     /// Final `/match/complete` payload, emitted for navigation to CombatResultDetailView.
     var finalCombatData: CombatData?
 
-    /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
+    /// Opponent's recent attack zones (read strip), oldest first. Combat v2
+    /// fills it from `/match/start` (`opponent_read.pattern`) — a ghost's real
+    /// habit. Empty for bots and fresh ghosts.
     var opponentPattern: [InteractiveBodyZone] = []
+    /// Combat v2 — who the opponent is (ghost / bot personality) + its tell.
+    var opponentRead: InteractiveOpponentRead?
 
     // MARK: - Interactive Combat v3 — Round Exchange log
 
@@ -588,6 +592,8 @@ final class InteractiveBattleViewModel {
         defenderProfile = FighterProfile(snapshot: response.defender)
         playerActives = response.actives?.p1 ?? []
         opponentActives = response.actives?.p2 ?? []
+        opponentRead = response.opponentRead
+        opponentPattern = response.opponentRead?.pattern ?? []
         state.serverFinished = false
         state.serverWinnerId = nil
         pendingActiveSlot = nil

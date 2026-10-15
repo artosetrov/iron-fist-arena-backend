@@ -42,6 +42,16 @@ struct TalentTreeCanvas: View {
     /// = 384pt content, fits inside the 400pt canvas frame in TalentsTabView.
     private let rowPitch: CGFloat = 64
 
+    /// Intrinsic canvas height for a node set — the container sizes itself to
+    /// this instead of a hard-coded frame. 2026-10-14: the dice-rune row
+    /// (y = -80) made the tree 7 rows tall (448pt) while the container was
+    /// fixed at 400pt, so the rune row spilled over the Active Skills card and
+    /// the ultimates spilled under the canvas border.
+    static func contentHeight(for nodes: [PassiveNode]) -> CGFloat {
+        let rows = max(Set(nodes.map(\.positionY)).count, 1)
+        return CGFloat(rows - 1) * 64 + 32 * 2
+    }
+
     // MARK: - Layout cache
     //
     // bounds, sortedYs, minSameRowXDelta were previously computed properties
