@@ -247,7 +247,8 @@ struct FloatingSoundToggle: View {
         } else {
             AudioManager.shared.syncVolume()
             AmbientManager.shared.syncVolume()
-            AudioManager.shared.playBGM("stray-city.mp3")
+            // Back to wherever the player actually is, not always the hub.
+            AmbientManager.shared.resumeZone(.hub)
             triggerTapBounce()
             triggerWaves()
             startIdleLoop()

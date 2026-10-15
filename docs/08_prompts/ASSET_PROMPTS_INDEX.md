@@ -10,6 +10,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 
 | Collection | Purpose | File Location | Status | Prompts |
 |---|---|---|---|---|
+| Music (BGM) | Background tracks per zone — the seven not yet made | `docs/08_prompts/MUSIC_PROMPTS.md` | Active | 7 tracks |
 | Boss Sprites | Full-body boss character art, combat ready | `docs/08_prompts/BOSS_SPRITES_PROMPTS.md` | Active | Multiple bosses |
 | Class Icons | Character class selection icons (Warrior, Mage, Rogue, etc.) | `docs/08_prompts/CLASS_ICONS_PROMPTS.md` | Active | 6+ classes |
 | Race Icons | Race/origin selection icons | `docs/08_prompts/RACE_ICONS_PROMPTS.md` | Active | Multiple races |

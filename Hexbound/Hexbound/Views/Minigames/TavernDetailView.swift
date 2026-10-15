@@ -246,6 +246,12 @@ struct TavernDetailView: View {
         .task {
             await loadStashCount()
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.tavern)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
     }
 }
 

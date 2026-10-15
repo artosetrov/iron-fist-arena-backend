@@ -99,6 +99,12 @@ struct HeroDetailView: View {
         .onAppear {
             if characterVM == nil { characterVM = CharacterViewModel(appState: appState) }
             if inventoryVM == nil { inventoryVM = InventoryViewModel(appState: appState) }
+            // The forge zone was written for this screen (upgrade + inventory)
+            // and had never been entered from anywhere.
+            AmbientManager.shared.setZone(.forge)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
         }
         .task(id: inventoryVM != nil) {
             guard let vm = inventoryVM else { return }

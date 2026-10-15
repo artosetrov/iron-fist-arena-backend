@@ -44,6 +44,13 @@ struct StashDetailView: View {
             }
             await vm?.loadStash()
         }
+        .onAppear {
+            // The chest lives in the tavern — same room, same sound.
+            AmbientManager.shared.setZone(.tavern)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
     }
 
     // MARK: - Content

@@ -36,6 +36,40 @@ enum AmbientZone: String, CaseIterable {
     // --- Profile / Leaderboard ---
     case hallOfFame        // Leaderboard — torch + echo hall
 
+    /// The music that belongs to this place.
+    ///
+    /// Ambience has had a zone model since the start; music never did. It was
+    /// set ad hoc from five screens with hardcoded filenames, which is why
+    /// nine of the thirteen zones below played whatever the last screen
+    /// happened to leave running, and why `battle-combat.mp3` — written for
+    /// the fight and shipped in the bundle — was referenced by nothing at
+    /// all. One `setZone` now answers both questions: what it sounds like
+    /// here, and what plays here.
+    ///
+    /// `nil` means "keep whatever is playing" rather than "silence". That is
+    /// the behaviour those zones already had, so a zone still waiting for its
+    /// track sounds exactly as it does today instead of going quiet — and
+    /// giving it one later is a single line here.
+    ///
+    /// Track plan and intent: docs/08_prompts/SOUND_CATALOG.md (M1-M12) and
+    /// docs/08_prompts/MUSIC_PROMPTS.md for the ones not yet made.
+    var bgmTrack: String? {
+        switch self {
+        case .hub, .hubRain:    "stray-city.mp3"      // M2
+        case .arena:            "arena-pvp.mp3"       // M6
+        case .arenaFight:       "battle-combat.mp3"   // M3
+        case .cinematic:        nil  // OnboardingCinematicView drives its own, per page
+        // Waiting on a track — see MUSIC_PROMPTS.md:
+        case .dungeon, .dungeonDeep: nil  // M7
+        case .dungeonBoss:      nil       // M8
+        case .shop:             nil       // M9
+        case .tavern:           nil       // M10
+        case .forge:            nil       // M13
+        case .goldMine:         nil       // M14
+        case .hallOfFame:       nil       // M15
+        }
+    }
+
     /// Layers of looping audio files for this zone.
     /// Multiple layers mix together for richer atmosphere.
     var layers: [AmbientLayer] {
@@ -164,10 +198,29 @@ final class AmbientManager {
         currentZone = zone
 
         guard let zone else { return }
+
+        // Music first: it is not gated on sfxVolume the way the ambient
+        // layers below are — they are SFX, the track is not.
+        if let track = zone.bgmTrack {
+            AudioManager.shared.playBGM(track)
+        }
+
         guard !settings.isMuted, settings.sfxVolume > 0 else { return }
 
         // Start new layers
         startLayers(for: zone)
+    }
+
+    /// Re-enter the zone the player is already in.
+    ///
+    /// Unmuting used to force `.hub`, which quietly teleported the sound of
+    /// an arena or a dungeon back to the city. `stopAll()` clears
+    /// `currentZone`, so after a mute there is nothing to re-enter and the
+    /// caller passes the zone it knows; otherwise the current one stands.
+    func resumeZone(_ fallback: AmbientZone) {
+        let zone = currentZone ?? fallback
+        currentZone = nil   // force setZone past its no-op guard
+        setZone(zone)
     }
 
     /// Call when sfxVolume or isMuted changes.

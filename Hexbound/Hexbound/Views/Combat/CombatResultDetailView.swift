@@ -147,6 +147,9 @@ struct CombatResultDetailView: View {
             captureXpSnapshot()
             // Play victory/defeat SFX
             SFXManager.shared.play(isWin ? .battleVictory : .battleDefeat)
+            // ...and the musical sting over it. Both tracks were written for
+            // this screen (M4/M5 in SOUND_CATALOG.md) and had never played.
+            AudioManager.shared.playSting(isWin ? "victory-fanfare.mp3" : "defeat-sting.mp3")
             // Reload character in background to get authoritative server values
             Task {
                 let charService = CharacterService(appState: appState)

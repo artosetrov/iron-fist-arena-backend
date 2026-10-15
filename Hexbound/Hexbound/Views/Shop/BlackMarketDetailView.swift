@@ -61,6 +61,14 @@ struct BlackMarketDetailView: View {
             }
             await vm?.load()
         }
+        .onAppear {
+            // Back alley behind the shop — it borrows the shop's room tone
+            // until it earns art and a track of its own.
+            AmbientManager.shared.setZone(.shop)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
     }
 
     // MARK: - Content

@@ -411,8 +411,7 @@ struct HubView: View {
                 }
             }
             updateHubHint()
-            // Start BGM + ambient atmosphere
-            AudioManager.shared.playBGM("stray-city.mp3")
+            // Music and atmosphere both come from the zone.
             AmbientManager.shared.setZone(.hub)
             // Reload quests if cache was invalidated (e.g., after PvP/dungeon)
             if appState.cachedTypedQuests == nil {

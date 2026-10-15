@@ -74,6 +74,12 @@ struct DungeonSelectDetailView: View {
             await vm?.loadProgress()
             updateDungeonHint()
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.dungeon)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .overlay {
             if isEnteringDungeon {
                 LoadingOverlay(message: "ENTERING DUNGEON")

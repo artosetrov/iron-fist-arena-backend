@@ -27,11 +27,14 @@ final class AudioManager {
         /// A cinematic beat — a boss reveal, a promotion. Near silence is
         /// the point: the moment lands because the music stepped out of it.
         case ceremony
+        /// A one-shot musical sting playing over the track.
+        case sting
 
         var fraction: Float {
             switch self {
             case .voice: 0.30
             case .ceremony: 0.06
+            case .sting: 0.15
             }
         }
     }
@@ -231,6 +234,50 @@ final class AudioManager {
             voicePlayer = nil
             currentVoice = nil
             restoreBGM(for: .voice)
+        }
+    }
+
+    // MARK: - Stings (one-shot music over the track)
+
+    private var stingPlayer: AVAudioPlayer?
+
+    /// Play a short musical sting over the running track, ducking it for the
+    /// duration. Not SFX: a fanfare is music and belongs at `bgmVolume`, not
+    /// at the effects slider.
+    ///
+    /// `victory-fanfare.mp3` and `defeat-sting.mp3` were generated for the
+    /// result screen (M4 and M5 in SOUND_CATALOG.md), shipped in the bundle,
+    /// and then referenced by nothing for months. This is how they play.
+    func playSting(_ filename: String) {
+        guard !settings.isMuted, settings.bgmVolume > 0 else { return }
+
+        let path = filename as NSString
+        let name = path.deletingPathExtension
+        let ext = path.pathExtension.isEmpty ? "mp3" : path.pathExtension
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
+            #if DEBUG
+            print("[AudioManager] Sting not found: \(filename)")
+            #endif
+            return
+        }
+
+        stingPlayer?.stop()
+        guard let player = try? AVAudioPlayer(contentsOf: url) else { return }
+        stingPlayer = player
+        player.volume = settings.bgmVolume
+        player.prepareToPlay()
+        player.play()
+
+        duckBGM(for: .sting)
+        // Released on a timer rather than a delegate: AVAudioPlayerDelegate
+        // would need a non-isolated shim here, and the sting's length is
+        // known the moment it starts.
+        let seconds = player.duration
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard let self, self.stingPlayer === player else { return }
+            self.stingPlayer = nil
+            self.restoreBGM(for: .sting)
         }
     }
 
