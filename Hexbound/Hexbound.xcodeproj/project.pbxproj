@@ -90,6 +90,8 @@
 		2283DB5DD84EB4557630A37E /* DailyLoginPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0591 /* DailyLoginPopupView.swift */; };
 		23092D3C445756F441D90B22 /* ArenaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */; };
 		236853BBCCDB12E40C142824 /* CurrencyPurchaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */; };
+		13050DD16FB08B23D205881A /* PurchaseRewardRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE0AB79224E9E90C7D7C109 /* PurchaseRewardRevealView.swift */; };
+		40B7C9735650F7D549986B9A /* CurrencyOfferCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312398C6371CC3A67934903A /* CurrencyOfferCards.swift */; };
 		238EDD0CB8CF0B8924DB7ED9 /* StanceSelectorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */; };
 		23E21DC16DC8C3627EF3E8AE /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2744738D97AFEFDA525A07D0 /* AppRouter.swift */; };
 		2640A473732509AAF202AEC2 /* BattlePreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E867F52B861525354D0709 /* BattlePreloader.swift */; };
@@ -524,6 +526,7 @@
 		PUSH001BLD0000000000000A /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001REF0000000000000B /* PushNotificationService.swift */; };
 		PUSH002BLD0000000000000C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH002REF0000000000000D /* AppDelegate.swift */; };
 		SK0001BUILD00001 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SK0001FREF00001 /* StoreKitService.swift */; };
+		B474BC8F152D9061BB468615 /* IAPOffersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC0C9E142E67C58916B0E8B /* IAPOffersService.swift */; };
 		VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00001 /* CombatVFXEffect.swift */; };
 		VFX00001BLD00002 /* CombatVFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00002 /* CombatVFXManager.swift */; };
 		VFX00001BLD00003 /* CombatVFXOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00003 /* CombatVFXOverlay.swift */; };
@@ -826,6 +829,8 @@
 		9AF8ADC51BB174F8BA5545E1 /* combat_dodge_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_dodge_3.wav; sourceTree = "<group>"; };
 		9B1E3F5A7B8C9D0E1F2A3B4D /* GuildHallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallViewModel.swift; sourceTree = "<group>"; };
 		9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPurchaseView.swift; sourceTree = "<group>"; };
+		4DE0AB79224E9E90C7D7C109 /* PurchaseRewardRevealView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRewardRevealView.swift; sourceTree = "<group>"; };
+		312398C6371CC3A67934903A /* CurrencyOfferCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyOfferCards.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineDetailView.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF8A /* GoldMineCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineCards.swift; sourceTree = "<group>"; };
 		9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimRewardModalView.swift; sourceTree = "<group>"; };
@@ -1070,6 +1075,7 @@
 		PUSH001REF0000000000000B /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		PUSH002REF0000000000000D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		SK0001FREF00001 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
+		5FC0C9E142E67C58916B0E8B /* IAPOffersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPOffersService.swift; sourceTree = "<group>"; };
 		VFX00001REF00001 /* CombatVFXEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00002 /* CombatVFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXManager.swift; sourceTree = "<group>"; };
 		VFX00001REF00003 /* CombatVFXOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXOverlay.swift; sourceTree = "<group>"; };
@@ -1162,6 +1168,8 @@
 			children = (
 				72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */,
 				9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */,
+				4DE0AB79224E9E90C7D7C109 /* PurchaseRewardRevealView.swift */,
+				312398C6371CC3A67934903A /* CurrencyOfferCards.swift */,
 				0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */,
 				2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */,
 				PP0001FREF00001 /* PremiumPurchaseView.swift */,
@@ -1632,6 +1640,7 @@
 				0D50542690564E6DD583B058 /* ShopService.swift */,
 				8A0D2E4F6A8B9C0D1E2F3A4C /* SocialService.swift */,
 				SK0001FREF00001 /* StoreKitService.swift */,
+				5FC0C9E142E67C58916B0E8B /* IAPOffersService.swift */,
 				bd20a992a694f67ff80a485d /* TutorialService.swift */,
 			);
 			path = Services;
@@ -2445,6 +2454,8 @@
 				5612940BBC1C68FBEB84BECD /* CombatViewModel.swift in Sources */,
 				10321B57C050901C03935EAA /* CurrencyDisplay.swift in Sources */,
 				236853BBCCDB12E40C142824 /* CurrencyPurchaseView.swift in Sources */,
+				13050DD16FB08B23D205881A /* PurchaseRewardRevealView.swift in Sources */,
+				40B7C9735650F7D549986B9A /* CurrencyOfferCards.swift in Sources */,
 				5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */,
 				10E50C50C3B3FBD36E06DBB1 /* DailyLoginRewardDef.swift in Sources */,
 				0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */,
@@ -2625,6 +2636,7 @@
 				64C83E733EA0004D2C5E63E1 /* BlackMarketViewModel.swift in Sources */,
 				PP0001BUILD00001 /* PremiumPurchaseView.swift in Sources */,
 				SK0001BUILD00001 /* StoreKitService.swift in Sources */,
+				B474BC8F152D9061BB468615 /* IAPOffersService.swift in Sources */,
 				28CD06D3FB21ED92CBBDC3CA /* SkeletonViews.swift in Sources */,
 				50BA6A3A30789BC202A01C2A /* StaminaBarView.swift in Sources */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* StanceDisplayView.swift in Sources */,

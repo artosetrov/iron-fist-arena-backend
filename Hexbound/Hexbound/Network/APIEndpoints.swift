@@ -147,6 +147,7 @@ enum APIEndpoints {
     // MARK: - IAP
     static let iapVerify = "/api/iap/verify"
     static let iapProducts = "/api/iap/products"
+    static let iapOffers = "/api/iap/offers"
 
     // MARK: - Passives (Talents)
     static let passivesTree = "/api/passives/tree"

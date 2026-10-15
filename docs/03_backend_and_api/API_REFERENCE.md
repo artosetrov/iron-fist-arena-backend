@@ -287,6 +287,7 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | /iap/products | Yes | IAP catalog |
+| GET | /iap/offers | Yes | Account state for special offers: `starterBundleAvailable` (one-time, false after the first purchase) and `gemCard` — Monthly Gem Card terms from `balance.ts` (`instantGems`, `dailyGems`, `days`) plus `active`, `daysRemaining`, `expiresAt` |
 | POST | /iap/verify-receipt | Yes | Verify Apple receipt (canonical backend route) |
 | POST | /iap/verify | Yes | Verify Apple receipt (compatibility alias used by current iOS client) |
 | POST | /iap/restore-purchases | Yes | Return verified purchase history (canonical restore surface) |

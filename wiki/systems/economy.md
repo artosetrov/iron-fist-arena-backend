@@ -40,8 +40,8 @@ Two currencies: Gold (soft, earned) and Gems (premium, mostly IAP).
 | Product | Price | Value |
 |---------|-------|-------|
 | Gem packs | $0.99–$49.99 | 100–6,500 gems |
-| Monthly Gem Card | $4.99 | 50 instant + 10/day = 350 total |
-| Starter Bundle | $2.99 | 200g + 3,000g (one-time) |
+| Monthly Gem Card | $4.99 | 150 instant + 50/day = up to 1,650 (re-buy adds 30 days) |
+| Starter Bundle | $2.99 | 200 gems + 3,000 gold (once per account, enforced) |
 | Adventurer's Bundles | varies | 600–3,200 gems + 3k–20k gold |
 | Premium Forever | $9.99 | **Disabled for new sales** |
 

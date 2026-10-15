@@ -3,12 +3,12 @@
   "$generatedFrom": "backend/src/app/api/**/route.ts",
   "$doNotEdit": "Regenerate with scripts/wiki/generate-api-routes.mjs",
   "counts": {
-    "total": 185,
-    "withAuth": 135,
-    "admin": 29,
-    "rateLimited": 83,
-    "transactional": 76,
-    "namespaces": 38
+    "total": 198,
+    "withAuth": 141,
+    "admin": 34,
+    "rateLimited": 91,
+    "transactional": 80,
+    "namespaces": 41
   },
   "routes": {
     "achievements": [
@@ -139,6 +139,18 @@
         "hasTransaction": false
       },
       {
+        "url": "/api/admin/economy",
+        "file": "backend/src/app/api/admin/economy/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
         "url": "/api/admin/events",
         "file": "backend/src/app/api/admin/events/route.ts",
         "methods": [
@@ -166,6 +178,18 @@
       {
         "url": "/api/admin/iap-products",
         "file": "backend/src/app/api/admin/iap-products/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/iap",
+        "file": "backend/src/app/api/admin/iap/route.ts",
         "methods": [
           "GET"
         ],
@@ -310,6 +334,30 @@
         "hasTransaction": false
       },
       {
+        "url": "/api/admin/matchmaking",
+        "file": "backend/src/app/api/admin/matchmaking/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/minigame-sessions",
+        "file": "backend/src/app/api/admin/minigame-sessions/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
         "url": "/api/admin/passives/connections",
         "file": "backend/src/app/api/admin/passives/connections/route.ts",
         "methods": [
@@ -331,6 +379,30 @@
           "POST",
           "PUT",
           "DELETE"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/push/send",
+        "file": "backend/src/app/api/admin/push/send/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/admin/referrals",
+        "file": "backend/src/app/api/admin/referrals/route.ts",
+        "methods": [
+          "GET"
         ],
         "requiresAuth": false,
         "adminOnly": true,
@@ -366,6 +438,18 @@
         "hasTransaction": false
       },
       {
+        "url": "/api/admin/stats",
+        "file": "backend/src/app/api/admin/stats/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": true,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
         "url": "/api/admin/unban",
         "file": "backend/src/app/api/admin/unban/route.ts",
         "methods": [
@@ -390,6 +474,20 @@
         "hasTransaction": false
       }
     ],
+    "analytics": [
+      {
+        "url": "/api/analytics/events",
+        "file": "backend/src/app/api/analytics/events/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      }
+    ],
     "appearances": [
       {
         "url": "/api/appearances",
@@ -397,9 +495,9 @@
         "methods": [
           "GET"
         ],
-        "requiresAuth": false,
+        "requiresAuth": true,
         "adminOnly": false,
-        "rateLimited": false,
+        "rateLimited": true,
         "idempotencyKey": false,
         "hasTransaction": false
       }
@@ -473,7 +571,7 @@
         "methods": [
           "POST"
         ],
-        "requiresAuth": true,
+        "requiresAuth": false,
         "adminOnly": false,
         "rateLimited": false,
         "idempotencyKey": false,
@@ -758,11 +856,11 @@
         "methods": [
           "POST"
         ],
-        "requiresAuth": true,
+        "requiresAuth": false,
         "adminOnly": false,
-        "rateLimited": true,
+        "rateLimited": false,
         "idempotencyKey": false,
-        "hasTransaction": true
+        "hasTransaction": false
       },
       {
         "url": "/api/combat/simulate",
@@ -813,6 +911,20 @@
         "rateLimited": true,
         "idempotencyKey": false,
         "hasTransaction": true
+      }
+    ],
+    "cron": [
+      {
+        "url": "/api/cron/push-scheduled",
+        "file": "backend/src/app/api/cron/push-scheduled/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": false
       }
     ],
     "daily-login": [
@@ -882,18 +994,6 @@
         "hasTransaction": false
       },
       {
-        "url": "/api/dev/fix-avatars",
-        "file": "backend/src/app/api/dev/fix-avatars/route.ts",
-        "methods": [
-          "POST"
-        ],
-        "requiresAuth": false,
-        "adminOnly": false,
-        "rateLimited": false,
-        "idempotencyKey": false,
-        "hasTransaction": false
-      },
-      {
         "url": "/api/dev/health",
         "file": "backend/src/app/api/dev/health/route.ts",
         "methods": [
@@ -928,6 +1028,32 @@
         "rateLimited": false,
         "idempotencyKey": false,
         "hasTransaction": false
+      }
+    ],
+    "dice": [
+      {
+        "url": "/api/dice",
+        "file": "backend/src/app/api/dice/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dice/socket",
+        "file": "backend/src/app/api/dice/socket/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
       }
     ],
     "dungeon-rush": [
@@ -1144,6 +1270,18 @@
           "POST"
         ],
         "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": false,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/iap/offers",
+        "file": "backend/src/app/api/iap/offers/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
         "adminOnly": false,
         "rateLimited": false,
         "idempotencyKey": false,
@@ -1375,7 +1513,7 @@
         "methods": [
           "GET"
         ],
-        "requiresAuth": true,
+        "requiresAuth": false,
         "adminOnly": false,
         "rateLimited": false,
         "idempotencyKey": false,
@@ -1516,7 +1654,7 @@
         "adminOnly": false,
         "rateLimited": false,
         "idempotencyKey": false,
-        "hasTransaction": false
+        "hasTransaction": true
       },
       {
         "url": "/api/minigames/gold-mine/status",
@@ -1599,6 +1737,18 @@
           "GET",
           "POST",
           "DELETE"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/passives/active-slots/unlock-premium",
+        "file": "backend/src/app/api/passives/active-slots/unlock-premium/route.ts",
+        "methods": [
+          "POST"
         ],
         "requiresAuth": true,
         "adminOnly": false,
@@ -1697,6 +1847,30 @@
       }
     ],
     "pvp": [
+      {
+        "url": "/api/pvp/dice/act",
+        "file": "backend/src/app/api/pvp/dice/act/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/pvp/dice/resolve",
+        "file": "backend/src/app/api/pvp/dice/resolve/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
       {
         "url": "/api/pvp/fight",
         "file": "backend/src/app/api/pvp/fight/route.ts",
@@ -1866,7 +2040,7 @@
         ],
         "requiresAuth": true,
         "adminOnly": false,
-        "rateLimited": false,
+        "rateLimited": true,
         "idempotencyKey": false,
         "hasTransaction": false
       }
@@ -2110,6 +2284,18 @@
         "hasTransaction": false
       },
       {
+        "url": "/api/social/report",
+        "file": "backend/src/app/api/social/report/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
         "url": "/api/social/status",
         "file": "backend/src/app/api/social/status/route.ts",
         "methods": [
@@ -2286,7 +2472,7 @@
         "adminOnly": false,
         "rateLimited": true,
         "idempotencyKey": false,
-        "hasTransaction": false
+        "hasTransaction": true
       },
       {
         "url": "/api/user/email",

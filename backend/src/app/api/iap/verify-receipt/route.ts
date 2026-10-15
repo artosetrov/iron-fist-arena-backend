@@ -6,6 +6,8 @@ import { isKillSwitchOn } from '@/lib/game/feature-flags'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
 import { verifyAppleTransaction, internalProductIdFromApple } from '@/lib/apple-iap'
 import { track as trackAnalytics } from '@/lib/analytics'
+import { startOrExtendGemCard } from '@/lib/game/gem-card'
+import { hasPurchased } from '@/lib/game/iap-offers'
 
 function isDuplicateTransactionError(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
@@ -176,6 +178,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // One-time SKUs (Starter Bundle): the client stops offering them after the
+    // first purchase (GET /api/iap/offers). A repeat receipt can still arrive
+    // from an old build or a race — Apple has already charged by now, so it is
+    // granted rather than refused, and logged.
+    if (product.oneTime && (await hasPurchased(user.id, resolvedProductId))) {
+      console.warn(`[IAP] one-time product ${resolvedProductId} bought again by user ${user.id} (tx ${transaction_id})`)
+    }
+
     const now = new Date()
 
     // Build dynamic update payload based on product type
@@ -330,29 +340,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 4. Monthly Gem Card — create daily_gem_card record
+    // 4. Monthly Gem Card — start a card, or add 30 days to the active one.
+    //    (Until 2026-10-15 this reset the card and threw away the days left.)
     if (product.monthlyGemCard) {
-      const expiresAt = new Date(now)
-      expiresAt.setDate(expiresAt.getDate() + 30)
-
-      operations.push(
-        prisma.dailyGemCard.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            purchasedAt: now,
-            expiresAt,
-            lastClaimedAt: now, // first 50 gems are instant
-            daysRemaining: 30,
-          },
-          update: {
-            purchasedAt: now,
-            expiresAt,
-            lastClaimedAt: now,
-            daysRemaining: 30,
-          },
-        })
-      )
+      operations.push(startOrExtendGemCard(user.id))
     }
 
     const [transaction] = await prisma.$transaction(operations)

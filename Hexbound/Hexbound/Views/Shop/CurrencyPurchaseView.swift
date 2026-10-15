@@ -3,88 +3,77 @@ import StoreKit
 
 // MARK: - CurrencyPurchaseView
 
+/// GET CURRENCY — the real-money shop: bundles, gem packs and the two
+/// recurring offers. Cards live in CurrencyOfferCards.swift, the "purchase
+/// complete" ceremony in PurchaseRewardRevealView.swift.
 struct CurrencyPurchaseView: View {
     var initialTab: Int = 0
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
+    // Observed so prices re-render when StoreKit finishes loading products.
+    @ObservedObject private var store = StoreKitService.shared
     @State private var selectedTab: Int = 0
     @State private var purchaseState: PurchaseState = .idle
-    @State private var showSuccessOverlay = false
-    @State private var successMessage = "Currency has been added to your account."
+    @State private var reveal: PurchaseRevealContent?
+    @State private var productLoadFinished = false
+
+    /// Starter Bundle availability and Monthly Gem Card terms/status, from
+    /// GET /api/iap/offers. Observable, so the cards follow it.
+    private var offers: IAPOffersService { .shared }
 
     private let tabs = ["BUNDLES", "GEMS", "SPECIAL"]
 
-    // Adventurer's Bundles (Economy v3). The old flat gold packs
-    // (gold_500 … gold_20000) are retired: the backend returns 410 for them,
-    // so listing them charged the player and delivered nothing.
+    private static let monthlyGemCardOfferId = "monthly_gem_card"
+
     // Contents mirror IAP_PRODUCTS in backend/src/lib/game/balance.ts.
-    private let bundlePackages: [CurrencyPackage] = [
-        .init(id: "starter_bundle", currencyType: .gold, amount: 3000, bonusAmount: 0,
-              priceUSD: "$2.99", productId: IAPProduct.starterBundle.rawValue,
-              isBestValue: false, isPopular: true,
-              subtitle: "+200 gems · one-time starter",
-              successSummary: "3,000 gold and 200 gems"),
-        .init(id: "adventurer_bundle_I", currencyType: .gold, amount: 3000, bonusAmount: 0,
-              priceUSD: "$4.99", productId: IAPProduct.adventurerBundleI.rawValue,
-              isBestValue: false, isPopular: false,
-              subtitle: "+600 gems · 1 Protection Scroll",
-              successSummary: "3,000 gold, 600 gems and 1 Protection Scroll"),
-        .init(id: "adventurer_bundle_II", currencyType: .gold, amount: 10000, bonusAmount: 0,
-              priceUSD: "$9.99", productId: IAPProduct.adventurerBundleII.rawValue,
-              isBestValue: true, isPopular: false,
-              subtitle: "+1400 gems · 3 Protection Scrolls · 1 Legendary Shard",
-              successSummary: "10,000 gold, 1,400 gems, 3 Protection Scrolls and 1 Legendary Shard"),
-        .init(id: "adventurer_bundle_III", currencyType: .gold, amount: 20000, bonusAmount: 0,
-              priceUSD: "$19.99", productId: IAPProduct.adventurerBundleIII.rawValue,
-              isBestValue: false, isPopular: false,
-              subtitle: "+3200 gems · 5 Protection Scrolls · 5 Legendary Shards",
-              successSummary: "20,000 gold, 3,200 gems, 5 Protection Scrolls and 5 Legendary Shards"),
+
+    // Once per account: hidden after the first purchase (IAPOffersService).
+    private let starterBundle = CurrencyPackage(
+        id: "starter_bundle", currencyType: .gold, amount: 3000,
+        productId: IAPProduct.starterBundle.rawValue, title: "Starter Bundle",
+        extras: [.gems(200)]
+    )
+
+    // Adventurer's Bundles (Economy v3). The old flat gold packs (gold_500 …
+    // gold_20000) are retired: the backend returns 410 for them, so listing
+    // them charged the player and delivered nothing.
+    // BEST VALUE is on III: per dollar it matches II on gold and beats it on
+    // gems (+14%) and Legendary Shards (2.5×); II only leads on scrolls.
+    private let adventurerBundles: [CurrencyPackage] = [
+        .init(id: "adventurer_bundle_I", currencyType: .gold, amount: 3000,
+              productId: IAPProduct.adventurerBundleI.rawValue, title: "Adventurer's Bundle I",
+              extras: [.gems(600), .protectionScrolls(1)]),
+        .init(id: "adventurer_bundle_II", currencyType: .gold, amount: 10000,
+              productId: IAPProduct.adventurerBundleII.rawValue, title: "Adventurer's Bundle II",
+              extras: [.gems(1400), .protectionScrolls(3), .legendaryShards(1)]),
+        .init(id: "adventurer_bundle_III", currencyType: .gold, amount: 20000,
+              productId: IAPProduct.adventurerBundleIII.rawValue, title: "Adventurer's Bundle III",
+              isBestValue: true,
+              extras: [.gems(3200), .protectionScrolls(5), .legendaryShards(5)]),
     ]
 
-    // Gem packages — aligned with docs/02_product_and_features/ECONOMY.md
+    // Gem packs — docs/02_product_and_features/ECONOMY.md. Every pack is ~100
+    // gems per dollar before its bonus, so the biggest bonus is the best value.
     private let gemPackages: [CurrencyPackage] = [
-        .init(id: "gems_small", currencyType: .gems, amount: 100, bonusAmount: 0,
-              priceUSD: "$0.99", productId: "com.hexbound.gems_small", isBestValue: false, isPopular: false),
+        .init(id: "gems_small", currencyType: .gems, amount: 100,
+              productId: IAPProduct.gemsSmall.rawValue),
         .init(id: "gems_medium", currencyType: .gems, amount: 500, bonusAmount: 50,
-              priceUSD: "$4.99", productId: "com.hexbound.gems_medium", isBestValue: false, isPopular: true),
+              productId: IAPProduct.gemsMedium.rawValue, isPopular: true),
         .init(id: "gems_large", currencyType: .gems, amount: 1000, bonusAmount: 200,
-              priceUSD: "$9.99", productId: "com.hexbound.gems_large", isBestValue: true, isPopular: false),
+              productId: IAPProduct.gemsLarge.rawValue),
         .init(id: "gems_huge", currencyType: .gems, amount: 2000, bonusAmount: 500,
-              priceUSD: "$19.99", productId: "com.hexbound.gems_huge", isBestValue: false, isPopular: false),
+              productId: IAPProduct.gemsHuge.rawValue),
         .init(id: "gems_mega", currencyType: .gems, amount: 5000, bonusAmount: 1500,
-              priceUSD: "$49.99", productId: "com.hexbound.gems_mega", isBestValue: false, isPopular: false),
+              productId: IAPProduct.gemsMega.rawValue, isBestValue: true),
     ]
-
-    private var currentPackages: [CurrencyPackage] {
-        switch selectedTab {
-        case 0: return bundlePackages
-        case 1: return gemPackages
-        default: return []
-        }
-    }
 
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Current balance strip
-                HStack {
-                    Spacer()
-                    CurrencyDisplay(
-                        gold: appState.currentCharacter?.gold ?? 0,
-                        gems: appState.currentCharacter?.gems ?? 0,
-                        size: .standard
-                    )
-                    Spacer()
-                }
-                .padding(.vertical, LayoutConstants.spaceSM)
-                .background(DarkFantasyTheme.bgSecondary)
-                .overlay(alignment: .bottom) {
-                    EtchedGroove()
-                }
+                balanceBar
 
-                // Tab switcher
                 TabSwitcher(
                     tabs: tabs,
                     selectedIndex: $selectedTab
@@ -92,47 +81,21 @@ struct CurrencyPurchaseView: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
 
-                // Content
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: LayoutConstants.spaceMD) {
+                    VStack(spacing: LayoutConstants.sectionGap) {
                         // Kill switch (admin → Feature Flags → iap_enabled). The
                         // server rejects receipts too; this keeps the player from
                         // paying Apple for something we cannot grant right now.
                         if !cache.isKillSwitchOn("iap_enabled") {
-                            Text("Purchases are temporarily unavailable. Please check back soon.")
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                .multilineTextAlignment(.center)
-                                .padding(LayoutConstants.cardPadding)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                        .fill(DarkFantasyTheme.bgSecondary)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                                )
-                                .padding(.horizontal, LayoutConstants.screenPadding)
+                            purchasesPausedNotice
                         }
 
-                        if selectedTab < 2 {
-                            // Gold / Gems tab
-                            currencyHeader
-
-                            ForEach(currentPackages) { pkg in
-                                CurrencyPackageCard(
-                                    package: pkg,
-                                    purchaseState: purchaseState,
-                                    onBuy: { buyPackage(pkg) }
-                                )
-                            }
-                        } else {
-                            // Special tab — Monthly Gem Card + Premium
-                            specialOffersContent
+                        switch selectedTab {
+                        case 0: bundlesTab
+                        case 1: gemsTab
+                        default: specialTab
                         }
 
-                        // Restore purchases
                         Button {
                             restorePurchases()
                         } label: {
@@ -143,46 +106,20 @@ struct CurrencyPurchaseView: View {
                         .padding(.bottom, LayoutConstants.spaceLG)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceMD)
+                    // Room above the first card for its ribbon.
+                    .padding(.top, LayoutConstants.spaceLG)
                 }
             }
 
-            // Error toast
-            if case .failed(let message) = purchaseState {
-                VStack {
-                    Spacer()
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(DarkFantasyTheme.danger)
-                        Text(message)
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            if let reveal {
+                PurchaseRewardRevealView(content: reveal) {
+                    withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
+                        self.reveal = nil
                     }
-                    .padding(LayoutConstants.spaceMD)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                            .fill(DarkFantasyTheme.bgElevated)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                            .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
-                    )
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceLG)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    purchaseState = .idle
                 }
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        withAnimation { purchaseState = .idle }
-                    }
-                }
-            }
-
-            // Success overlay
-            if showSuccessOverlay {
-                successOverlay
-                    .transition(.opacity)
+                .transition(.opacity)
+                .zIndex(1)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -191,6 +128,18 @@ struct CurrencyPurchaseView: View {
             if initialTab != 0 && initialTab < tabs.count {
                 selectedTab = initialTab
             }
+        }
+        // StoreKit loads products once at init; if that attempt failed
+        // (offline at launch) every price would stay unknown for the session.
+        // Entering the screen retries it.
+        .task {
+            if store.products.isEmpty {
+                await store.loadProducts()
+            }
+            productLoadFinished = true
+        }
+        .task {
+            await offers.refresh(userId: appState.currentUser?.id)
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -204,169 +153,322 @@ struct CurrencyPurchaseView: View {
         }
     }
 
-    // MARK: - Currency Header
+    // MARK: - Balance
 
-    @ViewBuilder
-    private var currencyHeader: some View {
-        // Tab 0 is no longer a gold store — it sells mixed bundles.
-        let isBundles = selectedTab == 0
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Image(isBundles ? "icon-gold" : "icon-gems")
-                .resizable()
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                .accessibilityLabel(isBundles ? "Gold currency icon" : "Gems currency icon")
-                .accessibilityElement(children: .ignore)
-
-            Text(isBundles ? "ADVENTURER'S BUNDLES" : "GEM VAULT")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(isBundles ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan)
-                .accessibilityLabel(isBundles ? "Adventurer's Bundles" : "Gem Vault")
-
-            Text(isBundles
-                 ? "Gold, gems and consumables together — the best value per purchase."
-                 : "Gems unlock premium content — skins, boosts, and rare items.")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, LayoutConstants.spaceLG)
-                .accessibilityLabel("Currency description")
-        }
-        .padding(.vertical, LayoutConstants.spaceMD)
-    }
-
-    // MARK: - Special Offers (Monthly Gem Card + Premium Unlock)
-
-    @ViewBuilder
-    private var specialOffersContent: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            // Monthly Gem Card
-            MonthlyGemCardOffer(
-                purchaseState: purchaseState,
-                onBuy: { buyMonthlyGemCard() }
+    /// Both balances, always — including a zero gem balance, which is exactly
+    /// when the player is most likely to be on this screen.
+    private var balanceBar: some View {
+        HStack(spacing: LayoutConstants.spaceLG) {
+            CurrencyDisplay(
+                gold: appState.currentCharacter?.gold ?? 0,
+                size: .standard,
+                currencyType: .gold
             )
-
-            // Divider
-            HStack {
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderSubtle)
-                    .frame(height: 1)
-                Text("OR")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderSubtle)
-                    .frame(height: 1)
-            }
-
-            // Premium One-Time
-            PremiumUnlockCard(
-                onBuy: { appState.mainPath.append(AppRoute.premiumPurchase) }
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle)
+                .frame(width: 1, height: LayoutConstants.iconXL)
+                .accessibilityHidden(true)
+            CurrencyDisplay(
+                gold: 0,
+                gems: appState.currentCharacter?.gems ?? 0,
+                size: .standard,
+                currencyType: .gems
             )
         }
-        .padding(.top, LayoutConstants.spaceMD)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(DarkFantasyTheme.bgSecondary)
+        .overlay(alignment: .bottom) {
+            EtchedGroove()
+        }
     }
 
-    // MARK: - Success Overlay
+    private var purchasesPausedNotice: some View {
+        Text("Purchases are temporarily unavailable. Please check back soon.")
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .multilineTextAlignment(.center)
+            .padding(LayoutConstants.cardPadding)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+    }
+
+    // MARK: - Tabs
 
     @ViewBuilder
-    private var successOverlay: some View {
-        ZStack {
-            DarkFantasyTheme.bgModal.ignoresSafeArea()
+    private var bundlesTab: some View {
+        if offers.isStarterBundleAvailable(for: appState.currentUser?.id) {
+            StarterBundleCard(
+                package: starterBundle,
+                price: price(for: starterBundle.productId),
+                priceLoading: isPriceLoading,
+                isPurchasing: isPurchasing(starterBundle.id),
+                onBuy: { buy(starterBundle) }
+            )
 
-            VStack(spacing: LayoutConstants.spaceLG) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 64)) // keep — SF Symbol icon
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+            OrnamentalSectionHeader(title: "Adventurer's Bundles")
+                .padding(.top, LayoutConstants.spaceSM)
+        }
 
-                Text("PURCHASE COMPLETE")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+        ForEach(adventurerBundles) { pkg in
+            BundleOfferCard(
+                package: pkg,
+                price: price(for: pkg.productId),
+                priceLoading: isPriceLoading,
+                isPurchasing: isPurchasing(pkg.id),
+                onBuy: { buy(pkg) }
+            )
+        }
+    }
 
-                Text(successMessage)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
+    /// Two tiles per row; the last pack (the hoard) closes the grid full-width.
+    @ViewBuilder
+    private var gemsTab: some View {
+        let tiles = Array(gemPackages.dropLast())
 
-                Button("CONTINUE") {
-                    withAnimation { showSuccessOverlay = false }
-                    purchaseState = .idle
+        ForEach(Array(stride(from: 0, to: tiles.count, by: 2)), id: \.self) { start in
+            HStack(alignment: .top, spacing: LayoutConstants.spaceMS) {
+                gemTile(tiles[start])
+                if start + 1 < tiles.count {
+                    gemTile(tiles[start + 1])
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.primary)
-                .padding(.horizontal, LayoutConstants.spaceXL)
             }
-            .padding(LayoutConstants.spaceLG)
+            .fixedSize(horizontal: false, vertical: true)
         }
+
+        if let hoard = gemPackages.last {
+            GemPackWideCard(
+                package: hoard,
+                price: price(for: hoard.productId),
+                priceLoading: isPriceLoading,
+                isPurchasing: isPurchasing(hoard.id),
+                onBuy: { buy(hoard) }
+            )
+        }
+    }
+
+    private func gemTile(_ pkg: CurrencyPackage) -> some View {
+        GemPackTile(
+            package: pkg,
+            price: price(for: pkg.productId),
+            priceLoading: isPriceLoading,
+            isPurchasing: isPurchasing(pkg.id),
+            onBuy: { buy(pkg) }
+        )
+    }
+
+    @ViewBuilder
+    private var specialTab: some View {
+        MonthlyGemCardOffer(
+            terms: offers.gemCard,
+            valueLine: gemCardValueLine,
+            price: price(for: IAPProduct.monthlyGemCard.rawValue),
+            priceLoading: isPriceLoading,
+            isPurchasing: isPurchasing(Self.monthlyGemCardOfferId),
+            onBuy: { buyMonthlyGemCard() }
+        )
+
+        PremiumUnlockCard(
+            price: price(for: IAPProduct.premiumPassMonthly.rawValue),
+            onOpen: { appState.mainPath.append(AppRoute.premiumPurchase) }
+        )
+    }
+
+    // MARK: - Prices
+
+    /// Localized App Store price, or nil until StoreKit has the product.
+    private func price(for productId: String) -> String? {
+        store.products.first { $0.id == productId }?.displayPrice
+    }
+
+    /// True while the first product fetch is still running, so cards show a
+    /// placeholder rather than a guessed price.
+    private var isPriceLoading: Bool {
+        store.products.isEmpty && !productLoadFinished
+    }
+
+    private func isPurchasing(_ offerId: String) -> Bool {
+        purchaseState == .purchasing(packageId: offerId)
+    }
+
+    /// "Up to 3× the gems of the 550-gem pack, same price" (Economy Rule 10:
+    /// show the value comparison). Only when StoreKit confirms both SKUs cost
+    /// the same in this storefront; rounded down, never up.
+    private var gemCardValueLine: String? {
+        guard let pack = gemPackages.first(where: { $0.id == "gems_medium" }),
+              let cardPrice = store.product(for: .monthlyGemCard)?.price,
+              let packPrice = store.products.first(where: { $0.id == pack.productId })?.price,
+              cardPrice == packPrice, pack.totalAmount > 0
+        else { return nil }
+        let multiple = (Double(offers.gemCard.maxGems) / Double(pack.totalAmount) * 10).rounded(.down) / 10
+        guard multiple >= 1.5 else { return nil }
+        let shown = multiple == multiple.rounded() ? String(Int(multiple)) : String(format: "%.1f", multiple)
+        return "Up to \(shown)× the gems of the \(pack.totalAmount.formatted())-gem pack, same price"
     }
 
     // MARK: - Purchase Actions
 
-    private func buyPackage(_ pkg: CurrencyPackage) {
+    private func buy(_ pkg: CurrencyPackage) {
+        startPurchase(productId: pkg.productId, offerId: pkg.id,
+                      content: PurchaseRevealContent(package: pkg))
+    }
+
+    private func buyMonthlyGemCard() {
+        startPurchase(productId: IAPProduct.monthlyGemCard.rawValue,
+                      offerId: Self.monthlyGemCardOfferId,
+                      content: .monthlyGemCard(terms: offers.gemCard))
+    }
+
+    private func startPurchase(productId: String, offerId: String, content: PurchaseRevealContent) {
         guard purchaseState == .idle else { return }
         guard cache.isKillSwitchOn("iap_enabled") else {
             appState.showToast("Purchases unavailable", subtitle: "Please check back soon", type: .info)
             return
         }
 
-        withAnimation { purchaseState = .purchasing(packageId: pkg.id) }
-        successMessage = pkg.successSummary.map { "\($0) have been added to your account." }
-            ?? "\(pkg.currencyType.label) has been added to your account."
+        withAnimation(MotionConstants.snappy) { purchaseState = .purchasing(packageId: offerId) }
 
         Task {
             do {
                 // StoreKitService redeems on the server before finishing the
                 // transaction, so reaching this line means the account was
                 // actually credited.
-                _ = try await StoreKitService.shared.purchase(productId: pkg.productId)
-
-                await MainActor.run {
-                    withAnimation {
-                        purchaseState = .success(packageId: pkg.id)
-                        showSuccessOverlay = true
-                    }
-                    appState.invalidateCache("character")
-                }
-            } catch let error as StoreKitError where error == .purchaseCancelled {
-                await MainActor.run {
-                    withAnimation { purchaseState = .idle }
-                }
+                _ = try await store.purchase(productId: productId)
+                await MainActor.run { celebrate(content, offerId: offerId) }
             } catch {
                 await MainActor.run {
-                    withAnimation { purchaseState = .failed(message: error.localizedDescription) }
+                    handlePurchaseFailure(error, content: content, offerId: offerId) {
+                        startPurchase(productId: productId, offerId: offerId, content: content)
+                    }
                 }
             }
         }
     }
 
-    private func buyMonthlyGemCard() {
-        guard purchaseState == .idle else { return }
-        guard cache.isKillSwitchOn("iap_enabled") else {
-            appState.showToast("Purchases unavailable", subtitle: "Please check back soon", type: .info)
+    private func celebrate(_ content: PurchaseRevealContent, offerId: String) {
+        purchaseState = .success(packageId: offerId)
+        appState.invalidateCache("character")
+        updateOffers(after: offerId)
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
+            reveal = content
+        }
+    }
+
+    /// Optimistic: the Starter Bundle goes away and the Gem Card shows its new
+    /// days at once; the refresh then takes the server's word for both.
+    private func updateOffers(after offerId: String) {
+        let userId = appState.currentUser?.id
+        switch offerId {
+        case starterBundle.id:
+            offers.starterBundleBought(userId: userId)
+        case Self.monthlyGemCardOfferId:
+            offers.gemCardBought()
+        default:
             return
         }
+        Task { await offers.refresh(userId: userId) }
+    }
 
-        withAnimation { purchaseState = .purchasing(packageId: "monthly_gem_card") }
-        successMessage = "50 gems added now! You'll receive 10 gems daily for 30 days."
+    /// Routes a failed purchase to the right message. Once Apple has charged,
+    /// "Retry" must never start a new purchase — that would charge twice.
+    private func handlePurchaseFailure(
+        _ error: Error,
+        content: PurchaseRevealContent,
+        offerId: String,
+        retryPurchase: @escaping () -> Void
+    ) {
+        withAnimation(MotionConstants.snappy) { purchaseState = .idle }
+
+        switch error as? StoreKitError {
+        case .purchaseCancelled?:
+            return
+
+        case .pending?:
+            // Ask to Buy / bank confirmation: not a failure. The transaction
+            // listener credits it once it is approved.
+            appState.showToast(
+                "Waiting for approval",
+                subtitle: "Your purchase arrives as soon as it's approved.",
+                type: .info
+            )
+
+        case .deliveryDeferred?:
+            appState.showToast(
+                "Payment received — delivery delayed",
+                subtitle: "It will arrive automatically. Retry to deliver it now.",
+                type: .error,
+                actionLabel: "Retry",
+                action: { retryDelivery(content: content, offerId: offerId) }
+            )
+
+        case .unknownProduct?, .verificationFailed?:
+            // Charged but permanently undeliverable. No Retry on purpose
+            // (exception to the toast rule): buying again would charge again.
+            appState.showToast(
+                "Purchase couldn't be delivered",
+                subtitle: "Your receipt is saved. Please contact support.",
+                type: .error
+            )
+
+        case .productNotFound?, .purchaseFailed?:
+            appState.showToast(
+                "Purchase failed",
+                subtitle: error.localizedDescription,
+                type: .error,
+                actionLabel: "Retry",
+                action: retryPurchase
+            )
+
+        case nil:
+            // StoreKit failed before charging (network, App Store unavailable),
+            // so buying again is the right retry.
+            appState.showToast(
+                "Purchase failed",
+                subtitle: "Check your connection and try again.",
+                type: .error,
+                actionLabel: "Retry",
+                action: retryPurchase
+            )
+        }
+    }
+
+    /// Retry for `.deliveryDeferred`: hands the unfinished transaction back to
+    /// the server instead of buying again.
+    private func retryDelivery(content: PurchaseRevealContent, offerId: String) {
+        guard purchaseState == .idle else { return }
+        withAnimation(MotionConstants.snappy) { purchaseState = .purchasing(packageId: offerId) }
 
         Task {
-            do {
-                _ = try await StoreKitService.shared.purchase(
-                    productId: IAPProduct.monthlyGemCard.rawValue
-                )
-
-                await MainActor.run {
-                    withAnimation {
-                        purchaseState = .success(packageId: "monthly_gem_card")
-                        showSuccessOverlay = true
-                    }
-                    appState.invalidateCache("character")
-                }
-            } catch let error as StoreKitError where error == .purchaseCancelled {
-                await MainActor.run {
-                    withAnimation { purchaseState = .idle }
-                }
-            } catch {
-                await MainActor.run {
-                    withAnimation { purchaseState = .failed(message: error.localizedDescription) }
+            let result = await store.redeemUnfinished()
+            await MainActor.run {
+                if result.hasUnresolved {
+                    withAnimation(MotionConstants.snappy) { purchaseState = .idle }
+                    appState.showToast(
+                        "Still couldn't deliver it",
+                        subtitle: "Check your connection. It will also arrive automatically.",
+                        type: .error,
+                        actionLabel: "Retry",
+                        action: { retryDelivery(content: content, offerId: offerId) }
+                    )
+                } else if result.hasUndeliverable {
+                    withAnimation(MotionConstants.snappy) { purchaseState = .idle }
+                    appState.showToast(
+                        "Purchase couldn't be delivered",
+                        subtitle: "Your receipt is saved. Please contact support.",
+                        type: .error
+                    )
+                } else {
+                    // Redeemed now, or already credited by an earlier attempt.
+                    celebrate(content, offerId: offerId)
                 }
             }
         }
@@ -374,306 +476,38 @@ struct CurrencyPurchaseView: View {
 
     private func restorePurchases() {
         Task {
-            let result = await StoreKitService.shared.restorePurchases()
-            if result.hasUnresolved {
-                appState.showToast(
-                    "Some purchases could not be restored. Check your connection and try again.",
-                    type: .error
-                )
-            } else if result.recoveredPurchases > 0 {
-                appState.showToast("Purchases restored — your account has been credited.", type: .reward)
-            } else {
-                appState.showToast("Purchases restored!", type: .reward)
-            }
-        }
-    }
-
-}
-
-// MARK: - Currency Package Card
-
-struct CurrencyPackageCard: View {
-    let package: CurrencyPackage
-    let purchaseState: PurchaseState
-    let onBuy: () -> Void
-
-    private var isPurchasing: Bool {
-        if case .purchasing(let id) = purchaseState { return id == package.id }
-        return false
-    }
-
-    private var accentColor: Color { package.currencyType.accentColor }
-
-    var body: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            // Currency icon — per-tier illustration for gold, generic for gems
-            VStack {
-                Image(package.tierAsset ?? package.currencyType.assetIcon)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 72, height: 72)
-            }
-            .frame(width: 88, height: 88)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(accentColor.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(accentColor.opacity(0.25), lineWidth: 1.5)
-            )
-            .shadow(color: accentColor.opacity(0.15), radius: 8)
-            .accessibilityLabel("\(package.currencyType.label) currency icon")
-            .accessibilityElement(children: .ignore)
-
-            // Amount + bonus
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text(package.displayAmount)
-                    .font(package.isBestValue ? DarkFantasyTheme.section : DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(accentColor)
-                    .accessibilityLabel("\(package.displayAmount) \(package.currencyType.label)")
-                if package.bonusAmount > 0 {
-                    Text("+\(formatBonus(package.bonusAmount)) BONUS")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSuccess)
-                        .fontWeight(.semibold)
-                        .accessibilityLabel("Bonus: \(formatBonus(package.bonusAmount)) \(package.currencyType.label)")
-                }
-                if let subtitle = package.subtitle {
-                    Text(subtitle)
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .accessibilityElement(children: .combine)
-
-            Spacer(minLength: 4)
-
-            // Buy button — meets touchMin (48pt)
-            Button(action: onBuy) {
-                if isPurchasing {
-                    HexPulseLoader(.compact)
-                        .tint(DarkFantasyTheme.textOnGold)
-                } else {
-                    Text(package.priceUSD)
-                }
-            }
-            .buttonStyle(.compactPrimary)
-            .disabled(isPurchasing)
-            .contentShape(Rectangle())
-            .accessibilityLabel("Purchase \(package.displayAmount) \(package.currencyType.label) for \(package.priceUSD)")
-        }
-        .frame(minHeight: LayoutConstants.packageCardMinHeight)
-        .padding(LayoutConstants.spaceMD)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(package.isBestValue ? accentColor.opacity(0.08) : DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(
-                    package.isBestValue ? accentColor.opacity(0.5) :
-                    package.isPopular ? DarkFantasyTheme.purple.opacity(0.4) :
-                    DarkFantasyTheme.borderSubtle,
-                    lineWidth: (package.isBestValue || package.isPopular) ? 2 : 1
-                )
-        )
-        .accessibilityElement(children: .contain)
-        .shadow(color: package.isBestValue ? accentColor.opacity(0.15) : .clear, radius: 8)
-        // Shimmer on best value
-        .shimmer(color: accentColor, duration: 4, isActive: package.isBestValue)
-        .contentShape(Rectangle())
-    }
-
-    private func formatBonus(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
-}
-
-// MARK: - Monthly Gem Card Offer
-
-struct MonthlyGemCardOffer: View {
-    let purchaseState: PurchaseState
-    let onBuy: () -> Void
-
-    private var isPurchasing: Bool {
-        if case .purchasing(let id) = purchaseState { return id == "monthly_gem_card" }
-        return false
-    }
-
-    var body: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Header
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Image("icon-gems")
-                    .resizable()
-                    .frame(width: 36, height: 36)
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text("MONTHLY GEM CARD")
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                    Text("Best daily value!")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSuccess)
-                }
-                Spacer()
-                // Badge
-                Text("350 GEMS")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .padding(.horizontal, LayoutConstants.spaceMS)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .background(
-                        Capsule().fill(DarkFantasyTheme.cyan.opacity(0.3))
+            let result = await store.restorePurchases()
+            await MainActor.run {
+                if result.hasUnresolved {
+                    appState.showToast(
+                        "Some purchases couldn't be restored",
+                        subtitle: "Check your connection and try again.",
+                        type: .error,
+                        actionLabel: "Retry",
+                        action: { restorePurchases() }
                     )
-            }
-
-            // Breakdown
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image("hud-gift")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                    Text("50 gems instantly upon purchase")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "calendar")
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(DarkFantasyTheme.body)
-                    Text("10 gems daily for 30 days (300 total)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .font(DarkFantasyTheme.body)
-                    Text("7x more value than buying gems directly!")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSuccess)
-                }
-            }
-            .padding(.horizontal, LayoutConstants.spaceSM)
-
-            // Buy button
-            Button(action: onBuy) {
-                if isPurchasing {
-                    HexPulseLoader(.compact)
-                        .tint(DarkFantasyTheme.textOnGold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightLG)
+                } else if result.hasUndeliverable {
+                    // Permanent — retrying cannot help, so no Retry.
+                    appState.showToast(
+                        "A purchase couldn't be delivered",
+                        subtitle: "Please contact support with your receipt.",
+                        type: .error
+                    )
+                } else if result.recoveredPurchases > 0 {
+                    appState.invalidateCache("character")
+                    appState.showToast(
+                        "Purchases restored",
+                        subtitle: "Your account has been credited.",
+                        type: .reward
+                    )
                 } else {
-                    Text("GET GEM CARD")
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightLG)
+                    appState.showToast(
+                        "You're all set",
+                        subtitle: "Everything you bought has already been delivered.",
+                        type: .info
+                    )
                 }
             }
-            .buttonStyle(.primary)
-            .disabled(isPurchasing)
         }
-        .padding(LayoutConstants.spaceMD)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.cyan.opacity(0.06))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.cyan.opacity(0.4), lineWidth: 2)
-        )
-        .shadow(color: DarkFantasyTheme.cyan.opacity(0.1), radius: 12)
     }
 }
-
-// MARK: - Premium Unlock Card (Teaser — navigates to full screen)
-
-struct PremiumUnlockCard: View {
-    let onBuy: () -> Void
-
-    var body: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Header
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Image(systemName: "crown.fill")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.premiumPink)
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text("UPGRADE TO PREMIUM")
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.premiumPink)
-                    Text("Auto-renewing monthly subscription — cancel anytime")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                Spacer()
-            }
-
-            // Quick benefits preview
-            HStack(spacing: LayoutConstants.spaceSM) {
-                PremiumBenefitChip(icon: "bolt.fill", text: "+20% XP")
-                PremiumBenefitChip(icon: "icon-gold", text: "+10% Gold", assetIcon: true)
-                PremiumBenefitChip(icon: "sparkles", text: "Exclusive")
-            }
-
-            // CTA
-            Button(action: onBuy) {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "crown.fill")
-                        .font(DarkFantasyTheme.body)
-                    Text("VIEW DETAILS")
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightLG)
-            }
-            .buttonStyle(.premium)
-        }
-        .padding(LayoutConstants.spaceMD)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgPremium.opacity(0.6))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.premiumPink.opacity(0.4), lineWidth: 2)
-        )
-        .shadow(color: DarkFantasyTheme.premiumPink.opacity(0.1), radius: 12)
-    }
-}
-
-// MARK: - Premium Benefit Chip
-
-struct PremiumBenefitChip: View {
-    let icon: String
-    let text: String
-    var assetIcon: Bool = false
-
-    var body: some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            if assetIcon {
-                Image(icon)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-            } else {
-                Image(systemName: icon)
-                    .font(DarkFantasyTheme.body)
-            }
-            Text(text)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-        }
-        .foregroundStyle(DarkFantasyTheme.premiumPink)
-        .padding(.horizontal, LayoutConstants.spaceSM)
-        .padding(.vertical, LayoutConstants.spaceXS)
-        .background(
-            Capsule().fill(DarkFantasyTheme.premiumPink.opacity(0.12))
-        )
-    }
-}
-
-// PremiumButtonStyle moved to ButtonStyles.swift (use .premium)

@@ -8,6 +8,7 @@ const APPLE_TO_INTERNAL: Record<string, string> = {
   'com.hexbound.premium_pass_monthly': 'premium_pass_monthly',
   'com.hexbound.monthly_gem_card': 'monthly_gem_card',
   'com.hexbound.adventurer_bundle_III': 'adventurer_bundle_III',
+  'com.hexbound.starter_bundle': 'starter_bundle',
   // Bare internal keys, as StoreKit Configuration environments may report them.
   gems_small: 'gems_small',
   gems_mega: 'gems_mega',
@@ -25,6 +26,7 @@ const {
   prismaMock: {
     iapTransaction: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
     },
     user: {
@@ -44,6 +46,7 @@ const {
       upsert: vi.fn(),
     },
     $transaction: vi.fn(),
+    $executeRaw: vi.fn(),
   },
 }))
 
@@ -71,6 +74,37 @@ vi.mock('@/lib/apple-iap', () => ({
 
 import { POST } from '@/app/api/iap/verify-receipt/route'
 import { POST as verifyAliasPOST } from '@/app/api/iap/verify/route'
+import { IAP_PRODUCTS, MONTHLY_GEM_CARD } from '@/lib/game/balance'
+
+function appleConfirms(appleProductId: string, transactionId: string) {
+  mockVerifyAppleTransaction.mockResolvedValue({
+    valid: true,
+    transactionInfo: {
+      transactionId,
+      originalTransactionId: transactionId,
+      bundleId: 'com.hexbound.app',
+      productId: appleProductId,
+      purchaseDate: Date.now(),
+      type: 'Consumable',
+      inAppOwnershipType: 'PURCHASED',
+      environment: 'Production',
+      signedDate: Date.now(),
+    },
+  })
+}
+
+function redeem(productId: string, transactionId: string) {
+  return POST(
+    makeNextRequest('http://localhost/api/iap/verify-receipt', {
+      method: 'POST',
+      body: JSON.stringify({
+        product_id: productId,
+        transaction_id: transactionId,
+        receipt_data: 'receipt-blob',
+      }),
+    }),
+  )
+}
 
 describe('POST /api/iap/verify-receipt', () => {
   beforeEach(() => {
@@ -79,6 +113,8 @@ describe('POST /api/iap/verify-receipt', () => {
     mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
     mockVerifyAppleTransaction.mockResolvedValue({ valid: true })
     prismaMock.iapTransaction.findUnique.mockResolvedValue(null)
+    prismaMock.iapTransaction.findFirst.mockResolvedValue(null)
+    prismaMock.$executeRaw.mockReturnValue({ op: 'dailyGemCard.startOrExtend' })
     prismaMock.iapTransaction.create.mockReturnValue({ op: 'iapTransaction.create' })
     prismaMock.user.update.mockReturnValue({ op: 'user.update' })
     prismaMock.character.findFirst.mockResolvedValue(null)
@@ -328,5 +364,57 @@ describe('POST /api/iap/verify-receipt', () => {
 
     expect(response.status).toBe(200)
     expect(prismaMock.$transaction).toHaveBeenCalled()
+  })
+
+  it('starts or extends the Monthly Gem Card in one atomic statement instead of resetting it', async () => {
+    appleConfirms('com.hexbound.monthly_gem_card', 'tx-card')
+
+    const response = await redeem('monthly_gem_card', 'tx-card')
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      gemsAwarded: IAP_PRODUCTS.monthly_gem_card.gems,
+      gemCardActivated: true,
+    })
+    // The old Prisma upsert overwrote days_remaining with 30.
+    expect(prismaMock.dailyGemCard.upsert).not.toHaveBeenCalled()
+    expect(prismaMock.$executeRaw).toHaveBeenCalledTimes(1)
+    const [strings, ...values] = prismaMock.$executeRaw.mock.calls[0] as [TemplateStringsArray, ...unknown[]]
+    const sql = strings.join('?')
+    expect(sql).toContain('ON CONFLICT ("user_id") DO UPDATE')
+    expect(sql).toContain('"daily_gem_cards"."days_remaining" + ?')
+    expect(sql).toContain('"daily_gem_cards"."expires_at" + make_interval')
+    expect(values).toContain('user-1')
+    expect(values).toContain(MONTHLY_GEM_CARD.DAYS)
+    const [operations] = prismaMock.$transaction.mock.calls[0] as [unknown[]]
+    expect(operations).toContainEqual({ op: 'dailyGemCard.startOrExtend' })
+  })
+
+  it('still grants a repeat Starter Bundle receipt — Apple already charged — and logs it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    appleConfirms('com.hexbound.starter_bundle', 'tx-starter-2')
+    prismaMock.iapTransaction.findFirst.mockResolvedValue({ id: 'iap-row-old' })
+
+    const response = await redeem('starter_bundle', 'tx-starter-2')
+
+    expect(response.status).toBe(200)
+    expect(prismaMock.$transaction).toHaveBeenCalled()
+    expect(prismaMock.iapTransaction.findFirst).toHaveBeenCalledWith({
+      where: { userId: 'user-1', productId: 'starter_bundle' },
+      select: { id: true },
+    })
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('one-time product starter_bundle bought again'))
+    warn.mockRestore()
+  })
+
+  it('does not flag a first Starter Bundle purchase', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    appleConfirms('com.hexbound.starter_bundle', 'tx-starter-1')
+
+    const response = await redeem('starter_bundle', 'tx-starter-1')
+
+    expect(response.status).toBe(200)
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })

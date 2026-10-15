@@ -27,7 +27,7 @@ enum IAPProduct: String, CaseIterable {
 
     // Starter / recurring
     case starterBundle = "com.hexbound.starter_bundle"              // 200💎 + 3K gold — $2.99
-    case monthlyGemCard = "com.hexbound.monthly_gem_card"           // 50 + 10/day ×30 — $4.99
+    case monthlyGemCard = "com.hexbound.monthly_gem_card"           // instant + daily gems, 30 days — $4.99 (terms: MONTHLY_GEM_CARD)
     case premiumPassMonthly = "com.hexbound.premium_pass_monthly"   // 30-day pass — $4.99
 
     /// Backend `IAP_PRODUCTS` key for this SKU.
@@ -61,6 +61,11 @@ enum StoreKitError: LocalizedError {
     case verificationFailed
     case pending
     case unknownProduct
+    /// Apple charged the player but the server has not credited them yet
+    /// (offline, 5xx, expired session). The transaction is left unfinished so
+    /// it is redelivered; `redeemUnfinished()` retries it on demand. Never
+    /// answer this with a new purchase — that charges a second time.
+    case deliveryDeferred
 
     var errorDescription: String? {
         switch self {
@@ -70,6 +75,7 @@ enum StoreKitError: LocalizedError {
         case .verificationFailed: "Purchase verification failed."
         case .pending: "Purchase is pending approval."
         case .unknownProduct: "This purchase could not be delivered. Your receipt is saved — please contact support."
+        case .deliveryDeferred: "Payment received, but delivery is delayed. It will be credited automatically, or use Restore Purchases."
         }
     }
 }
@@ -146,7 +152,15 @@ final class StoreKitService: ObservableObject {
             // server call leaves the player charged with nothing to show and
             // no way to recover. A throw here leaves the transaction unfinished
             // so the listener below retries on the next launch.
-            let outcome = try await redeem(transaction)
+            let outcome: RedeemOutcome
+            do {
+                outcome = try await redeem(transaction)
+            } catch {
+                // Charged, not credited yet. Reported as its own error so no
+                // caller offers "buy again" as the fix.
+                AnalyticsService.shared.track(.iapFailed, ["product": .string(product.id), "stage": "redeem"])
+                throw StoreKitError.deliveryDeferred
+            }
 
             // Both remaining outcomes are terminal, so stop the redelivery loop
             // either way — but only one of them is worth celebrating.
@@ -283,6 +297,15 @@ final class StoreKitService: ObservableObject {
         // Re-send anything StoreKit still considers undelivered. This is what
         // makes "Restore Purchases" actually recover a purchase whose server
         // grant failed, instead of only repopulating a local set.
+        return await redeemUnfinished()
+    }
+
+    /// Hand every transaction StoreKit still holds as undelivered back to the
+    /// server. This is the Retry after `.deliveryDeferred`; unlike
+    /// `restorePurchases()` it skips `AppStore.sync()`, which can ask for the
+    /// Apple Account password.
+    @discardableResult
+    func redeemUnfinished() async -> RestoreResult {
         var recovered = 0
         var stillPending = 0
         var undeliverable = 0
