@@ -139,6 +139,7 @@ Minimum repo-wide sanity checks:
 python3 scripts/check_schema_drift.py
 python3 scripts/check_a11y.py          # icon-only buttons must carry a VoiceOver label
 python3 scripts/check_building_unlocks.py  # hub unlock levels: iOS table == backend table
+python3 scripts/check_audio_levels.py  # take spread, true peak, level drift (needs ffmpeg)
 git diff --check
 grep -rn '^<<<<<<<\\|^=======$\\|^>>>>>>>' . --include='*.swift' --include='*.ts' --include='*.prisma' | grep -v node_modules
 ```

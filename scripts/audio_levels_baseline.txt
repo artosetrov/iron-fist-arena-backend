@@ -1,0 +1,48 @@
+# Accepted audio-level outliers — rule 3 only (distance from the category
+# median). Rules 1 and 2, take spread and true peak, have no baseline: they
+# are objective and the tree is clean of them.
+#
+# This list shrinks, never grows. Written by:
+#   python3 scripts/check_audio_levels.py --write-baseline
+#
+# Most of these are deliberate. Footsteps belong well under combat, a death
+# sting belongs over it, and UI ticks are meant to be felt more than heard.
+#
+# Four are NOT deliberate and are waiting on a replacement asset, not on a
+# gain change — turning them up would just raise their noise floor:
+#
+#   SFX/ui_tap.wav              -44.9 LUFS and 4.05 s long. The most-played
+#                               sound in the game is inaudible and lasts four
+#                               seconds; this is the wrong file, not a quiet one.
+#   NPC/npc_tavern_ff388e1f     -55.4 LUFS — effectively silence.
+#   NPC/npc_tavern_a3f33e55     -47.5 LUFS — same.
+#   NPC/npc_finch_*  (8 files)  -32 to -39 LUFS while every other NPC sits at
+#                               -16. Either Finch is written as a whisper or
+#                               that batch was generated at the wrong level.
+#                               Worth one listen to decide.
+level -30.9 LUFS is -10.8 dB from the SFX median (-20.1) — SFX/dungeon_unlock.wav
+level -30.9 LUFS is -10.8 dB from the SFX median (-20.1) — SFX/wheel_spin.wav
+level -31.3 LUFS is -15.0 dB from the NPC median (-16.3) — NPC/npc_merchant_2c7def13.m4a
+level -32.6 LUFS is -12.5 dB from the SFX median (-20.1) — SFX/item_drop.wav
+level -32.7 LUFS is -16.4 dB from the NPC median (-16.3) — NPC/npc_finch_a670e655.m4a
+level -32.9 LUFS is -16.6 dB from the NPC median (-16.3) — NPC/npc_finch_6ab2ca65.m4a
+level -33.4 LUFS is -13.2 dB from the SFX median (-20.1) — SFX/ui_transition.wav
+level -34.3 LUFS is -18.0 dB from the NPC median (-16.3) — NPC/npc_finch_0358a992.m4a
+level -34.6 LUFS is -18.3 dB from the NPC median (-16.3) — NPC/npc_finch_9d6aa3d8.m4a
+level -35.2 LUFS is -15.1 dB from the SFX median (-20.1) — SFX/footstep_stone_4.wav
+level -35.3 LUFS is -19.0 dB from the NPC median (-16.3) — NPC/npc_finch_2b80ddb0.m4a
+level -35.4 LUFS is -15.2 dB from the SFX median (-20.1) — SFX/footstep_stone_2.wav
+level -35.4 LUFS is -15.2 dB from the SFX median (-20.1) — SFX/footstep_stone_3.wav
+level -35.4 LUFS is -15.2 dB from the SFX median (-20.1) — SFX/footstep_wood.wav
+level -35.4 LUFS is -15.2 dB from the SFX median (-20.1) — SFX/footstep_wood_3.wav
+level -35.5 LUFS is -15.4 dB from the SFX median (-20.1) — SFX/footstep_stone.wav
+level -35.6 LUFS is -15.5 dB from the SFX median (-20.1) — SFX/footstep_wood_2.wav
+level -35.6 LUFS is -15.5 dB from the SFX median (-20.1) — SFX/shell_shuffle.wav
+level -36.3 LUFS is -16.1 dB from the SFX median (-20.1) — SFX/chain_rattle.wav
+level -37.9 LUFS is -21.6 dB from the NPC median (-16.3) — NPC/npc_finch_458ae25c.m4a
+level -39.2 LUFS is -22.9 dB from the NPC median (-16.3) — NPC/npc_finch_afa2a232.m4a
+level -39.4 LUFS is -23.1 dB from the NPC median (-16.3) — NPC/npc_finch_7fdf28d5.m4a
+level -44.9 LUFS is -24.8 dB from the SFX median (-20.1) — SFX/ui_tap.wav
+level -47.5 LUFS is -31.2 dB from the NPC median (-16.3) — NPC/npc_tavern_a3f33e55.m4a
+level -55.4 LUFS is -39.1 dB from the NPC median (-16.3) — NPC/npc_tavern_ff388e1f.m4a
+level -8.1 LUFS is +12.0 dB from the SFX median (-20.1) — SFX/combat_death.wav

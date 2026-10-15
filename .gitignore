@@ -51,3 +51,7 @@ _personal/
 _audit_tmp/
 # Never commit PDFs/reports dropped into prototypes
 prototypes/*.pdf
+
+# Python bytecode from the repo scripts
+__pycache__/
+*.pyc
