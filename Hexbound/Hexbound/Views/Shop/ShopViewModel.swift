@@ -17,6 +17,8 @@ final class ShopViewModel {
     var isLoading = false
     var selectedTab = 0
     var buyingItemId: String?
+    /// Items with a purchase in flight (per-item double-tap guard).
+    private var buyingItemIds: Set<String> = []
     var buyingOfferId: String?
     var errorMessage: String? = nil
 
@@ -138,7 +140,7 @@ final class ShopViewModel {
 
     func loadItems() async {
         // Serve cached shop instantly
-        if let cached = cache.cachedShop() {
+        if let cached = cache.staleShop() {
             items = cached
         } else {
             isLoading = true
@@ -218,15 +220,35 @@ final class ShopViewModel {
         }
 
         // ── Optimistic UI: deduct currency instantly ──
-        let savedGold = appState.currentCharacter?.gold ?? 0
-        let savedGems = appState.currentCharacter?.gems ?? 0
-
-        if offer.isGemPurchase {
-            appState.currentCharacter?.gems = savedGems - offer.salePrice
-        } else {
-            appState.currentCharacter?.gold = savedGold - offer.salePrice
-        }
+        // As a signed delta, so a failure gives back exactly this price
+        // without clobbering a purchase made in the meantime.
+        let spend = appState.applyOptimisticCurrencyDelta(
+            gold: offer.isGemPurchase ? 0 : -offer.salePrice,
+            gems: offer.isGemPurchase ? -offer.salePrice : 0
+        )
         HapticManager.success()
+
+        // Latency pass (2026-10-15): the reward modal is built from the
+        // offer's own contents, so it opens on the tap instead of after the
+        // round trip. A failure takes it back together with the currency.
+        let config = ClaimRewardConfig.fromOfferContents(
+            title: "CLAIMED!",
+            subtitle: offer.title,
+            contents: offer.contents
+        )
+        let hold = appState.holdLevelUpForCeremony()
+        let shownConfig: ClaimRewardConfig = {
+            var withRelease = config
+            withRelease.onDismiss = { [appState] in appState.releaseLevelUpHold(hold) }
+            return withRelease
+        }()
+        claimRewardConfig = shownConfig
+        let appStateRef = appState
+        func rollBack() {
+            appStateRef.revertRewardCredit(spend)
+            if claimRewardConfig == shownConfig { claimRewardConfig = nil }
+            appStateRef.releaseLevelUpHold(hold)
+        }
 
         // ── Fire API in background ──
         Task { [weak self] in
@@ -247,12 +269,9 @@ final class ShopViewModel {
                         statPointsAwarded: response.statPointsAwarded,
                         passivePointsAwarded: response.passivePointsAwarded
                     )
-                    // Show reward modal with the offer's contents
-                    claimRewardConfig = .fromOfferContents(
-                        title: "CLAIMED!",
-                        subtitle: offer.title,
-                        contents: offer.contents
-                    )
+                    // Reward modal is already up (opened on the tap). If the
+                    // player closed it before this landed, let a level-up in.
+                    if claimRewardConfig != shownConfig { appState.releaseLevelUpHold(hold) }
                     // Local patch: bump purchasesMade and flip canPurchase if limit hit.
                     if let idx = offers.firstIndex(where: { $0.id == offer.id }) {
                         let existing = offers[idx]
@@ -281,18 +300,12 @@ final class ShopViewModel {
                     // Fire-and-forget background reconcile — never blocks the UI.
                     Task { [weak self] in await self?.loadOffers() }
                 } else {
-                    if var char = appState.currentCharacter {
-                        char.gold = savedGold; char.gems = savedGems
-                        appState.currentCharacter = char
-                    }
-                    appState.showToast("Purchase failed", type: .error)
+                    rollBack()
+                    appState.showToast("Purchase failed", subtitle: "Nothing was charged", type: .error)
                 }
             } catch {
-                if var char = appState.currentCharacter {
-                    char.gold = savedGold; char.gems = savedGems
-                    appState.currentCharacter = char
-                }
-                appState.showToast("Purchase failed", type: .error)
+                rollBack()
+                appState.showToast("Purchase failed", subtitle: "Nothing was charged", type: .error)
             }
         }
     }
@@ -363,7 +376,10 @@ final class ShopViewModel {
     }
 
     func buy(_ item: ShopItem, quantity: Int = 1) async {
-        guard buyingItemId == nil else { return } // double-tap guard
+        // Double-tap guard per item. It used to be global: one in-flight
+        // purchase silently swallowed taps on every OTHER item until the
+        // round trip finished (latency pass 2026-10-15).
+        guard !buyingItemIds.contains(item.id) else { return }
 
         // Bug #20: clamp quantity — non-consumables always buy exactly 1.
         let qty: Int
@@ -393,12 +409,10 @@ final class ShopViewModel {
             return
         }
 
+        buyingItemIds.insert(item.id)
         buyingItemId = item.id
 
         // ── Optimistic UI: update instantly ──
-        let savedGold = appState.currentCharacter?.gold ?? 0
-        let savedGems = appState.currentCharacter?.gems ?? 0
-        let savedItems = items
 
         // Gem packs add gems while spending gold — they're the one consumable
         // with a bidirectional balance effect. All other items just spend.
@@ -414,26 +428,20 @@ final class ShopViewModel {
         }()
 
         // Deduct currency optimistically (Bug #20: total cost, not unit).
-        // Use a fresh struct copy + reassignment so @Observable reliably
-        // notifies every view reading `currentCharacter.gold/gems` — optional
-        // chain mutation on a struct property has been flaky in practice.
-        if var char = appState.currentCharacter {
-            if item.isGemPurchase {
-                char.gems = savedGems - totalCost
-            } else {
-                char.gold = savedGold - totalCost
-                if isGemPack {
-                    // Credit the gems immediately — server response will overwrite
-                    // with authoritative values a moment later.
-                    char.gems = savedGems + gemPackGemsAmount
-                }
-            }
-            appState.currentCharacter = char
-        }
+        // A signed delta through AppState (fresh struct copy inside, for
+        // reliable @Observable notification). Gem packs also credit their
+        // gems now — the server response overwrites with authoritative values.
+        let spend = appState.applyOptimisticCurrencyDelta(
+            gold: item.isGemPurchase ? 0 : -totalCost,
+            gems: item.isGemPurchase ? -totalCost : (isGemPack ? gemPackGemsAmount : 0)
+        )
 
-        // Remove from list immediately (equipment only)
-        if !item.isConsumable {
-            items.removeAll { $0.id == item.id }
+        // Remove from list immediately (equipment only) — and from the
+        // cache, so re-entering the shop doesn't show it for sale again.
+        let removedIndex = item.isConsumable ? nil : items.firstIndex(where: { $0.id == item.id })
+        if let removedIndex {
+            items.remove(at: removedIndex)
+            cache.cacheShop(items)
         }
 
         HapticManager.success()
@@ -442,7 +450,13 @@ final class ShopViewModel {
         showItemDetail = false
         selectedItem = nil
         lastPurchasedItemId = item.id
-        appState.invalidateCache("inventory")
+        // Confirmation on the tap; a failure replaces it with the error.
+        let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "\(item.itemName) purchased!"
+        appState.showToast(toastMsg, type: .reward)
+        // No `invalidateCache("inventory")` here any more: emptying the
+        // cache on the tap broke the potion buttons on Hero/Arena until a
+        // refetch. ShopService revalidates it in the background once the
+        // server confirms.
         // NOTE: do NOT invalidate "quests" here. Nil-ing the cache before the
         // POST makes every ActiveQuestBanner refetch *pre-purchase* progress,
         // which could land after the post-purchase refresh and show stale
@@ -452,7 +466,10 @@ final class ShopViewModel {
         // ── Fire API in background ──
         Task { [weak self] in
             guard let self else { return }
-            defer { buyingItemId = nil }
+            defer {
+                buyingItemIds.remove(item.id)
+                if buyingItemId == item.id { buyingItemId = nil }
+            }
             let success: Bool
             if isGemPack {
                 success = await service.buyGems(catalogId: ct)
@@ -471,19 +488,19 @@ final class ShopViewModel {
                     "qty": .int(qty),
                     "kind": isGemPack ? "gem_pack" : (item.isConsumable ? "consumable" : "equipment"),
                 ])
-                let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "\(item.itemName) purchased!"
-                appState.showToast(toastMsg, type: .reward)
+                // ShopService revalidates the inventory cache in the
+                // background (stale-while-revalidate).
             } else {
-                // Revert optimistic state using a fresh struct copy for the
-                // same @Observable-reliable notification reason as the deduct.
-                if var char = appState.currentCharacter {
-                    char.gold = savedGold
-                    char.gems = savedGems
-                    appState.currentCharacter = char
+                // Revert by DELTA (not by snapshot) so a second purchase made
+                // while this one was in flight keeps its own deduction.
+                appState.revertRewardCredit(spend)
+                if let removedIndex, !items.contains(where: { $0.id == item.id }) {
+                    items.insert(item, at: min(removedIndex, items.count))
+                    cache.cacheShop(items)
                 }
-                items = savedItems
-                lastPurchasedItemId = nil
-                appState.showToast("Purchase failed", subtitle: "Gold refunded", type: .error)
+                if lastPurchasedItemId == item.id { lastPurchasedItemId = nil }
+                // ShopService already showed the server's reason — a second
+                // toast here would just replace it.
             }
         }
     }

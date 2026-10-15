@@ -119,7 +119,25 @@ final class InventoryViewModel {
             isLoading = true
         }
         errorMessage = nil
+        let seqAtStart = mutationSeq
         let outcome = await service.loadInventory()
+        // An equip/unequip went out while this was loading: this snapshot
+        // may predate it and would undo the optimistic change on screen.
+        // Still in flight → reload once they settle; already settled → the
+        // mutation's own snapshot is newer than this one, keep it.
+        if inFlightMutations > 0 {
+            needsResyncAfterMutations = true
+            // The service already wrote this (older) snapshot to the shared
+            // cache — put the on-screen optimistic state back.
+            appState.cachedInventory = items
+            isLoading = false
+            return
+        }
+        if mutationSeq != seqAtStart {
+            appState.cachedInventory = items
+            isLoading = false
+            return
+        }
         outcome.apply(
             assign: { self.items = $0 },
             cache: { self.appState.cachedInventory = $0 },
@@ -156,40 +174,100 @@ final class InventoryViewModel {
         }
     }
 
+    // MARK: - Equip / Unequip (optimistic, sequenced)
+    //
+    // Latency pass (2026-10-15). The optimistic step used to unequip EVERY
+    // item of the same type — a second ring took the first one off, a
+    // necklace left the amulet on, an off-hand weapon dropped the main
+    // hand — and then the server snapshot put them back a round trip
+    // later. That snap-back was the "equip isn't instant" bug. The local
+    // step now mirrors the server's slot rules exactly
+    // (backend/src/app/api/inventory/equip/route.ts), so the snapshot
+    // normally changes nothing on screen.
+    //
+    // Rapid taps: every mutation gets a sequence number. A server snapshot
+    // is applied only if no newer optimistic change is on screen (the newer
+    // request's response will carry the newer truth). A failure of an
+    // older request triggers one authoritative reload once everything in
+    // flight has settled, instead of rolling back over newer changes.
+
+    private var mutationSeq = 0
+    private var inFlightMutations = 0
+    private var needsResyncAfterMutations = false
+    private var characterNeedsRefresh = false
+    /// Two requests were in flight at once. Their DB transactions may have
+    /// committed in a different order than the taps, so the newest snapshot
+    /// isn't guaranteed to contain the older change — reload once at the end.
+    private var mutationsOverlapped = false
+
     func equip(_ item: Item) async {
         // Optimistic UI: update immediately
         let previousItems = items
+        let seq = beginMutation()
         applyOptimisticEquip(item)
         appState.cachedInventory = items
         showItemDetail = false
         appState.showToast("Equipped \(item.displayName)", type: .reward)
 
-        if let updated = await service.equip(inventoryId: item.id) {
-            items = updated
-            appState.cachedInventory = updated
-        } else {
-            // Rollback on failure
-            items = previousItems
-            appState.cachedInventory = previousItems
-            appState.showToast("Failed to equip", subtitle: "Check class or level requirements", type: .error)
-        }
+        // Failure toast comes from the service (it has the server's reason).
+        let updated = await service.equip(inventoryId: item.id)
+        endMutation(seq: seq, snapshot: updated, rollback: previousItems)
     }
 
     func unequip(_ item: Item) async {
         // Optimistic UI: update immediately
         let previousItems = items
+        let seq = beginMutation()
         applyOptimisticUnequip(item)
         appState.cachedInventory = items
         showItemDetail = false
         appState.showToast("Unequipped \(item.displayName)", type: .info)
 
-        if let updated = await service.unequip(inventoryId: item.id) {
-            items = updated
-            appState.cachedInventory = updated
+        let updated = await service.unequip(inventoryId: item.id)
+        endMutation(seq: seq, snapshot: updated, rollback: previousItems)
+    }
+
+    private func beginMutation() -> Int {
+        if inFlightMutations > 0 { mutationsOverlapped = true }
+        mutationSeq += 1
+        inFlightMutations += 1
+        return mutationSeq
+    }
+
+    /// Reconcile one equip/unequip response. `snapshot == nil` means failure.
+    private func endMutation(seq: Int, snapshot: [Item]?, rollback: [Item]) {
+        inFlightMutations = max(0, inFlightMutations - 1)
+        let isLatest = seq == mutationSeq
+
+        if let snapshot {
+            characterNeedsRefresh = true
+            if isLatest {
+                items = snapshot
+                appState.cachedInventory = snapshot
+            }
+        } else if isLatest {
+            items = rollback
+            appState.cachedInventory = rollback
         } else {
-            items = previousItems
-            appState.cachedInventory = previousItems
-            appState.showToast("Failed to unequip", subtitle: "Inventory may be full", type: .error)
+            needsResyncAfterMutations = true
+        }
+
+        guard inFlightMutations == 0 else { return }
+        if mutationsOverlapped {
+            mutationsOverlapped = false
+            needsResyncAfterMutations = true
+        }
+        if needsResyncAfterMutations {
+            needsResyncAfterMutations = false
+            Task { [weak self] in await self?.loadInventory() }
+        }
+        if characterNeedsRefresh {
+            characterNeedsRefresh = false
+            // Equip recomputes derived stats (max HP, damage…) server-side;
+            // the inventory snapshot doesn't carry them. One silent refresh
+            // after the burst of taps settles, never blocking the UI.
+            let characterService = CharacterService(appState: appState)
+            Task { await characterService.refreshCharacterSilently() }
         }
     }
 
@@ -240,11 +318,11 @@ final class InventoryViewModel {
         let isStaminaPotion = item.consumableType?.contains("stamina_potion") == true
 
         if isHealthPotion, var char = appState.currentCharacter {
-            let estimatedHeal = max(Int(Double(char.maxHp) * 0.3), 50)
+            let estimatedHeal = InventoryService.estimatedHpRestore(consumableType: item.consumableType, maxHp: char.maxHp)
             char.currentHp = min(char.currentHp + estimatedHeal, char.maxHp)
             appState.currentCharacter = char
         } else if isStaminaPotion, var char = appState.currentCharacter {
-            let estimatedRestore = max(Int(Double(char.maxStamina) * 0.3), 20)
+            let estimatedRestore = InventoryService.estimatedStaminaRestore(consumableType: item.consumableType, maxStamina: char.maxStamina)
             char.currentStamina = min(char.currentStamina + estimatedRestore, char.maxStamina)
             appState.currentCharacter = char
         }
@@ -410,31 +488,74 @@ final class InventoryViewModel {
 
     func equippedItemInSlot(for item: Item) -> Item? {
         guard item.isEquipped != true else { return nil }
+        // Compare against what the server would actually replace. For a
+        // second ring with one ring slot free that is nothing — fall back to
+        // a same-type item so the sheet still shows a useful comparison.
+        if let slot = Self.predictedSlot(for: item, in: items),
+           let occupant = items.first(where: { $0.isEquipped == true && $0.equippedSlot == slot }) {
+            return occupant
+        }
         return items.first { $0.isEquipped == true && $0.itemType == item.itemType }
     }
 
     // MARK: - Optimistic Helpers
 
+    /// Item type → candidate equipment slots, in server priority order.
+    /// Mirror of `ITEM_TYPE_TO_SLOTS` in backend/src/app/api/inventory/equip/route.ts.
+    static let serverSlotsByType: [String: [String]] = [
+        "weapon": ["weapon", "relic"],   // main hand, then off-hand (dual wield)
+        "helmet": ["helmet"],
+        "chest": ["chest"],
+        "gloves": ["gloves"],
+        "legs": ["legs"],
+        "boots": ["boots"],
+        "accessory": ["relic"],
+        "amulet": ["amulet"],
+        "necklace": ["amulet"],          // shares the amulet slot
+        "belt": ["belt"],
+        "relic": ["relic"],
+        "ring": ["ring", "ring2"],       // dual ring slots
+    ]
+
+    /// The slot the server will put `item` in, given what is equipped now:
+    /// the first free candidate slot, else the first candidate.
+    static func predictedSlot(for item: Item, in items: [Item]) -> String? {
+        let candidates = serverSlotsByType[item.itemType.rawValue]
+            ?? canonicalPrimarySlot(for: item.itemType.rawValue).map { [$0] }
+            ?? []
+        guard let first = candidates.first else { return nil }
+        let occupied = Set(items.compactMap { other -> String? in
+            guard other.id != item.id, other.isEquipped == true else { return nil }
+            return other.equippedSlot
+        })
+        return candidates.first { !occupied.contains($0) } ?? first
+    }
+
     private func applyOptimisticEquip(_ item: Item) {
-        // Unequip any existing item in the same slot, equip the new one.
-        //
-        // BUG-59 (QA 2026-04-10): also assign `equippedSlot` to the
-        // canonical primary slot for the item's type. Without this the
-        // render layer (IntegratedCharacterCard.findEquippedItem) fell
-        // back to matching by accepted-types, and a weapon with a nil
-        // slot appeared in BOTH the weapon slot and the "relic" universal
-        // off-hand slot, duplicating the item visually.
-        let canonicalSlot = Self.canonicalPrimarySlot(for: item.itemType.rawValue)
+        // Mirror the server: pick the slot (first free candidate, else the
+        // primary), unequip ONLY what occupies that slot, plus the two-handed
+        // rules. BUG-59 still holds — the equipped item always gets an
+        // explicit `equippedSlot` so the card never matches it twice.
+        guard let slot = Self.predictedSlot(for: item, in: items) else { return }
+
+        let isTwoHanded = item.itemType == .weapon && item.isTwoHanded == true
+        let mainHandIsTwoHanded = slot == "relic"
+            && item.itemType == .weapon
+            && items.contains { $0.isEquipped == true && $0.equippedSlot == "weapon" && $0.itemType == .weapon && $0.isTwoHanded == true }
+
         items = items.map { existing in
             var updated = existing
             if existing.id == item.id {
                 updated.isEquipped = true
-                if updated.equippedSlot == nil, let canonicalSlot {
-                    updated.equippedSlot = canonicalSlot
+                updated.equippedSlot = slot
+            } else if existing.isEquipped == true, let occupiedSlot = existing.equippedSlot {
+                let displaced = occupiedSlot == slot
+                    || (isTwoHanded && occupiedSlot == "relic")
+                    || (mainHandIsTwoHanded && occupiedSlot == "weapon")
+                if displaced {
+                    updated.isEquipped = false
+                    updated.equippedSlot = nil
                 }
-            } else if existing.isEquipped == true && existing.itemType == item.itemType {
-                updated.isEquipped = false
-                updated.equippedSlot = nil
             }
             return updated
         }

@@ -12,16 +12,27 @@ final class CombatVFXManager {
     @ObservationIgnored var activeEffects: [ActiveVFXEffect] = []
     @ObservationIgnored private var lastFrameTime: Date?
 
+    /// Drives `TimelineView(.animation(paused:))` in `CombatVFXOverlay`.
+    /// Latency pass (2026-10-15): the overlay used to run a full-screen
+    /// 60 fps Canvas for the whole fight even with nothing to draw, competing
+    /// with the battle UI for every frame. It now runs only while effects
+    /// are alive. The only tracked state here, and it changes twice per
+    /// burst, never per frame.
+    private(set) var isAnimating = false
+    @ObservationIgnored private var pauseScheduled = false
+
     // MARK: - Trigger
 
     func trigger(_ type: VFXEffectType, at normalizedPos: CGPoint, speed: Double) {
         let effect = buildEffect(type: type, origin: normalizedPos, speed: speed)
         activeEffects.append(effect)
+        if !isAnimating { isAnimating = true }
     }
 
     func clearAll() {
         activeEffects.removeAll()
         lastFrameTime = nil
+        if isAnimating { isAnimating = false }
     }
 
     // MARK: - Frame Update
@@ -41,6 +52,19 @@ final class CombatVFXManager {
         }
 
         activeEffects.removeAll { $0.isFinished }
+
+        // Pause the timeline once the last effect is gone. Deferred: this
+        // runs inside Canvas rendering, where tracked state must not change.
+        if activeEffects.isEmpty, !pauseScheduled {
+            pauseScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.pauseScheduled = false
+                guard self.activeEffects.isEmpty, self.isAnimating else { return }
+                self.isAnimating = false
+                self.lastFrameTime = nil
+            }
+        }
     }
 
     // MARK: - Render

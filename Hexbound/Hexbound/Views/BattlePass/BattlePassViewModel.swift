@@ -44,7 +44,7 @@ final class BattlePassViewModel {
     // MARK: - Actions
 
     func loadBattlePass() async {
-        if let cached = cache.cachedBattlePass() {
+        if let cached = cache.staleBattlePass() {
             data = cached
         } else {
             isLoading = true
@@ -52,8 +52,11 @@ final class BattlePassViewModel {
         errorMessage = nil
         let result = await service.loadBattlePass()
         if let result {
-            data = result
-            cache.cacheBattlePass(result)
+            // Re-apply levels still being claimed — a refresh that started
+            // before an optimistic claim must not bring the CLAIM back.
+            let patched = withInFlightClaims(result)
+            data = patched
+            cache.cacheBattlePass(patched)
         } else if data == nil {
             errorMessage = "Failed to load Battle Pass"
         }
@@ -65,6 +68,13 @@ final class BattlePassViewModel {
         claimingLevels.contains(level)
     }
 
+    /// Latency pass (2026-10-15): optimistic. Every reward the server will
+    /// grant for this level (free + premium when owned — the route claims
+    /// them together) is already in `data`, so the nodes flip to claimed, the
+    /// HUD is credited and the CLAIMED modal opens on the tap. The blocking
+    /// full `loadBattlePass()` that used to run after EVERY claim (holding
+    /// the lock for two round trips and re-rendering every node) now runs
+    /// only to resync after a failure.
     func claimReward(_ reward: BPReward) async {
         let level = reward.level
 
@@ -72,9 +82,26 @@ final class BattlePassViewModel {
         guard rewardState(reward) == .claimable else { return }
         guard !claimingLevels.contains(level) else { return }
         claimingLevels.insert(level)
+        defer { claimingLevels.remove(level) }
         let previousLevel = appState.currentCharacter?.level
 
-        // ── Await API call (not fire-and-forget) ──
+        // ── Optimistic ──
+        let expected = expectedClaims(at: level)
+        let claimsFree = expected.contains { !$0.isPremium }
+        let claimsPremium = expected.contains { $0.isPremium }
+        recentClaims[level] = RecentClaim(free: claimsFree, premium: claimsPremium, at: Date())
+        setClaimed(true, level: level, free: claimsFree, premium: claimsPremium)
+        let credit = appState.creditRewardOptimistically(
+            gold: Self.sum(expected, type: "gold"),
+            gems: Self.sum(expected, type: "gems"),
+            xp: Self.sum(expected, type: "xp")
+        )
+        let hold = appState.holdLevelUpForCeremony()
+        var config = buildClaimRewardConfig(level: level, rewards: expected)
+        config.onDismiss = { [appState] in appState.releaseLevelUpHold(hold) }
+        claimRewardConfig = config
+
+        // ── Confirm ──
         do {
             let response = try await service.claimReward(level: level)
 
@@ -92,9 +119,8 @@ final class BattlePassViewModel {
             if response.rewards.contains(where: { $0.rewardType == "item" || $0.rewardType == "consumable" }) {
                 appState.cachedInventory = nil
             }
-            HapticManager.success()
-
-            claimRewardConfig = buildClaimRewardConfig(response: response)
+            if claimRewardConfig != config { appState.releaseLevelUpHold(hold) }
+            return
         } catch let error as BattlePassClaimError {
             if case .alreadyClaimed = error {
                 appState.showToast("Already claimed", subtitle: error.toastSubtitle, type: .info)
@@ -105,14 +131,83 @@ final class BattlePassViewModel {
             appState.showToast("Claim failed", subtitle: "Check connection and try again", type: .error)
         }
 
-        // ── Always refresh to sync with server truth ──
-        if let freshData = await service.loadBattlePass() {
-            data = freshData
-            cache.cacheBattlePass(freshData)
+        // ── Roll back + resync with server truth ──
+        recentClaims[level] = nil
+        appState.revertRewardCredit(credit)
+        setClaimed(false, level: level, free: claimsFree, premium: claimsPremium)
+        if claimRewardConfig == config { claimRewardConfig = nil }
+        appState.releaseLevelUpHold(hold)
+        Task { [weak self] in
+            guard let self, let freshData = await self.service.loadBattlePass() else { return }
+            self.data = freshData
+            self.cache.cacheBattlePass(freshData)
         }
+    }
 
-        // Remove lock AFTER all async work (API + refresh) completes
-        claimingLevels.remove(level)
+    /// Claims made in the last minute (in flight or just confirmed), per
+    /// level AND track — buying premium later must not mark that level's
+    /// premium node as claimed just because its free node was.
+    private struct RecentClaim {
+        let free: Bool
+        let premium: Bool
+        let at: Date
+    }
+    private var recentClaims: [Int: RecentClaim] = [:]
+
+    private func withInFlightClaims(_ bp: BattlePassData) -> BattlePassData {
+        let now = Date()
+        recentClaims = recentClaims.filter { now.timeIntervalSince($0.value.at) < 60 }
+        guard !recentClaims.isEmpty else { return bp }
+        var patched = bp
+        for index in patched.freeRewards.indices
+        where recentClaims[patched.freeRewards[index].level]?.free == true {
+            patched.freeRewards[index].claimed = true
+        }
+        for index in patched.premiumRewards.indices
+        where recentClaims[patched.premiumRewards[index].level]?.premium == true {
+            patched.premiumRewards[index].claimed = true
+        }
+        return patched
+    }
+
+    /// What `POST /battle-pass/claim/{level}` will grant: the unclaimed free
+    /// reward(s) at `level`, plus the premium ones when the pass is owned.
+    private func expectedClaims(at level: Int) -> [BattlePassClaimReward] {
+        let free = freeRewards.filter { $0.level == level && !$0.claimed }
+        let premium = hasPremium ? premiumRewards.filter { $0.level == level && !$0.claimed } : []
+        return free.map { Self.claimLine($0, isPremium: false) } + premium.map { Self.claimLine($0, isPremium: true) }
+    }
+
+    private static func claimLine(_ reward: BPReward, isPremium: Bool) -> BattlePassClaimReward {
+        BattlePassClaimReward(
+            rewardType: reward.rewardType,
+            rewardName: reward.rewardName,
+            rewardId: nil,
+            rewardAmount: reward.amount,
+            isPremium: isPremium
+        )
+    }
+
+    private static func sum(_ rewards: [BattlePassClaimReward], type: String) -> Int {
+        rewards.filter { $0.rewardType == type }.reduce(0) { $0 + $1.rewardAmount }
+    }
+
+    /// Flip the claimed flag of this level's nodes only (never a snapshot
+    /// restore — a parallel claim of another level must survive a rollback).
+    private func setClaimed(_ claimed: Bool, level: Int, free: Bool, premium: Bool) {
+        guard var bp = data else { return }
+        if free {
+            for index in bp.freeRewards.indices where bp.freeRewards[index].level == level {
+                bp.freeRewards[index].claimed = claimed
+            }
+        }
+        if premium {
+            for index in bp.premiumRewards.indices where bp.premiumRewards[index].level == level {
+                bp.premiumRewards[index].claimed = claimed
+            }
+        }
+        data = bp
+        cache.cacheBattlePass(bp)
     }
 
     func buyPremium() {
@@ -158,25 +253,19 @@ final class BattlePassViewModel {
         cache.cacheBattlePass(bp)
     }
 
-    private func buildClaimRewardConfig(response: BattlePassClaimResponse) -> ClaimRewardConfig {
-        let goldReward = response.rewards
-            .filter { $0.rewardType == "gold" }
-            .reduce(0) { $0 + $1.rewardAmount }
-        let gemsReward = response.rewards
-            .filter { $0.rewardType == "gems" }
-            .reduce(0) { $0 + $1.rewardAmount }
-        let xpReward = response.rewards
-            .filter { $0.rewardType == "xp" }
-            .reduce(0) { $0 + $1.rewardAmount }
+    private func buildClaimRewardConfig(level: Int, rewards: [BattlePassClaimReward]) -> ClaimRewardConfig {
+        let goldReward = Self.sum(rewards, type: "gold")
+        let gemsReward = Self.sum(rewards, type: "gems")
+        let xpReward = Self.sum(rewards, type: "xp")
 
-        let lootItems = response.rewards.compactMap { reward -> ClaimLootItem? in
+        let lootItems = rewards.compactMap { reward -> ClaimLootItem? in
             let trackRarity: ItemRarity = reward.isPremium ? .epic : .rare
             let trackColor = reward.isPremium ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.rarityRare
 
             switch reward.rewardType {
             case "item", "chest":
                 return ClaimLootItem(
-                    id: reward.rewardId ?? "\(response.level)-\(reward.rewardType)",
+                    id: reward.rewardId ?? "\(level)-\(reward.rewardType)",
                     name: reward.rewardName,
                     quantity: reward.rewardAmount,
                     imageKey: nil,
@@ -186,7 +275,7 @@ final class BattlePassViewModel {
                 )
             case "consumable":
                 return ClaimLootItem(
-                    id: reward.rewardId ?? "\(response.level)-consumable",
+                    id: reward.rewardId ?? "\(level)-consumable",
                     name: reward.rewardName,
                     quantity: reward.rewardAmount,
                     imageKey: nil,
@@ -196,7 +285,7 @@ final class BattlePassViewModel {
                 )
             case "stamina":
                 return ClaimLootItem(
-                    id: reward.rewardId ?? "\(response.level)-stamina",
+                    id: reward.rewardId ?? "\(level)-stamina",
                     name: reward.rewardName,
                     quantity: reward.rewardAmount,
                     imageKey: nil,
@@ -206,7 +295,7 @@ final class BattlePassViewModel {
                 )
             case "skin", "title", "frame", "effect", "cosmetic":
                 return ClaimLootItem(
-                    id: reward.rewardId ?? "\(response.level)-\(reward.rewardType)",
+                    id: reward.rewardId ?? "\(level)-\(reward.rewardType)",
                     name: reward.rewardName,
                     quantity: reward.rewardAmount,
                     imageKey: nil,
@@ -219,12 +308,12 @@ final class BattlePassViewModel {
             }
         }
 
-        let tracks = Set(response.rewards.map { $0.isPremium ? "Premium" : "Free" })
+        let tracks = Set(rewards.map { $0.isPremium ? "Premium" : "Free" })
         let subtitle: String
         if tracks.count == 2 {
-            subtitle = "Level \(response.level) — Free + Premium"
+            subtitle = "Level \(level) — Free + Premium"
         } else {
-            subtitle = "Level \(response.level) — \(tracks.first ?? "Reward")"
+            subtitle = "Level \(level) — \(tracks.first ?? "Reward")"
         }
 
         return ClaimRewardConfig(

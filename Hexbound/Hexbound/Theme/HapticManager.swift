@@ -7,52 +7,84 @@ import UIKit
 @MainActor
 enum HapticManager {
 
+    // MARK: - Shared generators
+    //
+    // Latency pass (2026-10-15): a generator used to be allocated per call
+    // and fired without `prepare()`, so the Taptic Engine spun up cold on
+    // every tap (iOS documents up to tens of ms before the buzz lands).
+    // One long-lived generator per style, re-prepared after each fire,
+    // keeps the engine warm for the next interaction.
+    private static let lightGenerator = UIImpactFeedbackGenerator(style: .light)
+    private static let mediumGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private static let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
+    private static let notificationGenerator = UINotificationFeedbackGenerator()
+    private static let selectionGenerator = UISelectionFeedbackGenerator()
+
+    /// Warm every generator. Call on launch and when a screen with
+    /// tap-heavy interaction (combat, minigames) appears.
+    static func prepareAll() {
+        lightGenerator.prepare()
+        mediumGenerator.prepare()
+        heavyGenerator.prepare()
+        notificationGenerator.prepare()
+        selectionGenerator.prepare()
+    }
+
+    private static var isEnabled: Bool { SettingsManager.shared.hapticsEnabled }
+
     // MARK: - Impact Feedback (physical hits)
 
     /// Light tap — stat increment, filter toggle, minor interaction
     static func light() {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        guard isEnabled else { return }
+        lightGenerator.impactOccurred()
+        lightGenerator.prepare()
     }
 
     /// Medium impact — equip item, claim reward, purchase confirm
     static func medium() {
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        guard isEnabled else { return }
+        mediumGenerator.impactOccurred()
+        mediumGenerator.prepare()
     }
 
     /// Heavy impact — FIGHT press, critical hit, boss encounter, legendary reveal
     static func heavy() {
-        let generator = UIImpactFeedbackGenerator(style: .heavy)
-        generator.impactOccurred()
+        guard isEnabled else { return }
+        heavyGenerator.impactOccurred()
+        heavyGenerator.prepare()
     }
 
     // MARK: - Notification Feedback (outcomes)
 
     /// Success — victory, achievement claimed, purchase complete, level up
     static func success() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        guard isEnabled else { return }
+        notificationGenerator.notificationOccurred(.success)
+        notificationGenerator.prepare()
     }
 
     /// Warning — low stamina, dangerous action about to happen
     static func warning() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.warning)
+        guard isEnabled else { return }
+        notificationGenerator.notificationOccurred(.warning)
+        notificationGenerator.prepare()
     }
 
     /// Error — form validation fail, insufficient funds, action blocked
     static func error() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.error)
+        guard isEnabled else { return }
+        notificationGenerator.notificationOccurred(.error)
+        notificationGenerator.prepare()
     }
 
     // MARK: - Selection Feedback (choices)
 
     /// Selection changed — tab switch, stance zone tap, filter select
     static func selection() {
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
+        guard isEnabled else { return }
+        selectionGenerator.selectionChanged()
+        selectionGenerator.prepare()
     }
 
     // MARK: - Compound Patterns (game-specific)

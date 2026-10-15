@@ -606,13 +606,22 @@ final class DiceBattleViewModel {
         phase = .ending
         if won { HapticManager.victory(); SFXManager.shared.play(.battleVictory) }
         else { HapticManager.defeat(); SFXManager.shared.play(.battleDefeat) }
-        try? await Task.sleep(for: .seconds(1.6))
-        phase = .completing
+
+        // Latency pass (2026-10-15): the server settles the match WHILE the
+        // 1.6 s ending card plays. These used to run one after the other
+        // (card, then the round trip), so the result screen came 1.6 s +
+        // RTT after the KO; now it comes after max(1.6 s, RTT).
+        let endingCard: Duration = .seconds(1.6)
+
         // Dungeon Rush: the rush route settles the room (rewards, HP%, next
         // room) and its response goes back to the rush screen.
         if opponentType == .dungeonRush, let runId = dungeonRunId {
             let service = DungeonService(appState: appState)
-            if let result = await service.rushFight(runId: runId, matchId: matchId) {
+            async let settled = service.rushFight(runId: runId, matchId: matchId)
+            try? await Task.sleep(for: endingCard)
+            phase = .completing
+            let settledResult = await settled
+            if let result = settledResult {
                 appState.pendingRushFightResult = result
                 phase = .finished(winnerId: won ? attackerCharacterId : defenderCharacterId)
             } else {
@@ -620,17 +629,33 @@ final class DiceBattleViewModel {
             }
             return
         }
+
+        async let completion = completeMatch()
+        try? await Task.sleep(for: endingCard)
+        phase = .completing
+        let outcome = await completion
+        switch outcome {
+        case .success(let data):
+            finalCombatData = data
+            phase = .finished(winnerId: data.result.winnerId ?? winnerId ?? defenderCharacterId)
+        case .failure(let error):
+            if case APIError.clientError(let status, _, _) = error, status == 404 {
+                phase = .unavailable
+            } else {
+                phase = .error(message: (error as? APIError)?.errorDescription ?? "Failed to complete match")
+            }
+        }
+    }
+
+    private func completeMatch() async -> Result<CombatData, Error> {
         do {
             let data: CombatData = try await APIClient.shared.post(
                 APIEndpoints.pvpMatchComplete,
                 body: InteractiveMatchCompleteRequest(matchId: matchId)
             )
-            finalCombatData = data
-            phase = .finished(winnerId: data.result.winnerId ?? winnerId ?? defenderCharacterId)
-        } catch let APIError.clientError(status, _, _) where status == 404 {
-            phase = .unavailable
+            return .success(data)
         } catch {
-            phase = .error(message: (error as? APIError)?.errorDescription ?? "Failed to complete match")
+            return .failure(error)
         }
     }
 

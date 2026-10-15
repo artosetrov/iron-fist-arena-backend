@@ -227,16 +227,19 @@ final class CharacterViewModel {
         pendingChanges.removeAll()
         HapticManager.success()
         isSaving = false
+        // Confirmation on the tap (it used to arrive a round trip later,
+        // from the service).
+        appState.showToast("Stats saved!", type: .info)
 
         // Fire API in background — server response will overwrite with authoritative values
         Task { [weak self] in
             guard let self else { return }
             let success = await service.allocateStats(statChanges: statChanges)
             if !success {
-                // Revert both Character and pending on failure
+                // Revert both Character and pending on failure. The service
+                // already showed the error toast — no second one here.
                 appState.currentCharacter = savedCharacter
                 pendingChanges = savedPending
-                appState.showToast("Failed to save stats", subtitle: "Try again", type: .error)
             }
         }
     }

@@ -37,19 +37,36 @@ final class DailyLoginPopupViewModel {
         self.service = DailyLoginService(appState: appState)
     }
 
+    /// Set once the player claims in this popup, so a status refresh that
+    /// was already in flight can't flip the screen back to "claimable".
+    private var didClaimHere = false
+
+    /// Latency pass (2026-10-15): open from `appState.cachedDailyLogin`
+    /// (filled by /game/init) instead of a spinner, then revalidate.
     func loadData() async {
-        isLoading = true
+        if loginData == nil, let cached = appState.cachedDailyLogin {
+            applyStatus(cached)
+            isLoading = false
+        } else if loginData == nil {
+            isLoading = true
+        }
         let data = await service.getStatus()
-        loginData = data
+        if let data, !didClaimHere, !isClaiming {
+            applyStatus(data)
+        }
         isLoading = false
-        let canClaim = data?.canClaim ?? false
+    }
+
+    private func applyStatus(_ data: DailyLoginData) {
+        loginData = data
+        let canClaim = data.canClaim
         hasClaimed = !canClaim
         // BUG-23: if we load into an already-claimed state (e.g. modal reopened
         // mid-cooldown), the backend's `currentDay` is *tomorrow's* slot. Roll
         // it back one position in the 7-day cycle so the confirmation UI shows
         // the reward the player actually received, not tomorrow's preview.
-        if !canClaim, let currentDay = data?.currentDay {
-            justClaimedDay = currentDay == 1 ? 7 : currentDay - 1
+        if !canClaim {
+            justClaimedDay = data.currentDay == 1 ? 7 : data.currentDay - 1
         } else {
             justClaimedDay = nil
         }
@@ -57,10 +74,19 @@ final class DailyLoginPopupViewModel {
         appState.dailyLoginCanClaim = canClaim
     }
 
+    /// Latency pass (2026-10-15): the CLAIMED modal used to wait for the
+    /// server even though the claimed state flipped instantly. The day's
+    /// reward is in the live config table, so the modal and the gold/gems
+    /// credit now land on the tap too. On success the server's absolute
+    /// totals reconcile (done in DailyLoginService); if the server granted a
+    /// different reward (streak reset → day 1, config drift) the modal is
+    /// replaced with the real one, and a Premium bonus is announced on top.
+    /// On failure everything rolls back; DailyLoginService toasts once.
     func claimReward() async {
-        guard loginData?.canClaim == true, !isClaiming else { return }
-        let currentDay = loginData?.currentDay ?? 0
+        guard let data = loginData, data.canClaim, !isClaiming else { return }
+        let currentDay = Self.expectedClaimDay(data)
         isClaiming = true
+        didClaimHere = true
 
         // BUG-23: freeze the "day shown" before we flip hasClaimed — this
         // snapshot survives the server pushing `loginData.currentDay` forward.
@@ -76,6 +102,23 @@ final class DailyLoginPopupViewModel {
         // Invalidate cached daily login so Hub doesn't re-read stale canClaim=true
         appState.cachedDailyLogin = nil
 
+        // Optimistic reward + modal from the live 7-day table.
+        let defs = cache.gameConfig?.dailyLoginRewards ?? GameConfig.fallbackDailyRewards
+        let expectedDef: DailyLoginRewardDef? = defs.indices.contains(currentDay - 1) ? defs[currentDay - 1] : nil
+        let credit: AppState.RewardCredit = expectedDef.map {
+            appState.creditRewardOptimistically(
+                gold: $0.type == "gold" ? $0.amount : 0,
+                gems: $0.type == "gems" ? $0.amount : 0,
+                xp: 0
+            )
+        } ?? .none
+        let optimisticConfig: ClaimRewardConfig? = expectedDef.map {
+            buildClaimRewardConfig(def: $0, premiumGems: 0, claimedDay: currentDay)
+        }
+        if let optimisticConfig {
+            claimRewardConfig = optimisticConfig
+        }
+
         // Fire API in background — don't block UI
         Task { [weak self] in
             guard let self else { return }
@@ -83,13 +126,39 @@ final class DailyLoginPopupViewModel {
             isClaiming = false
             if let claimResponse {
                 loginData = claimResponse.status
-                claimRewardConfig = buildClaimRewardConfig(from: claimResponse, claimedDay: currentDay)
+                let grantedDef = claimResponse.reward.rewardDef
+                // Mechanics only — display strings may legitimately differ
+                // between the config table and the claim response.
+                let sameReward = expectedDef.map {
+                    $0.type == grantedDef.type && $0.amount == grantedDef.amount && $0.itemId == grantedDef.itemId
+                } ?? false
+                if !sameReward {
+                    // Server claimed a different day (streak reset) — show
+                    // what was actually granted.
+                    let grantedDay = claimResponse.currentDay == 1 ? 7 : claimResponse.currentDay - 1
+                    justClaimedDay = grantedDay
+                    claimRewardConfig = buildClaimRewardConfig(
+                        def: grantedDef,
+                        premiumGems: claimResponse.premiumGemsAwarded,
+                        claimedDay: grantedDay
+                    )
+                } else if claimResponse.premiumGemsAwarded > 0 {
+                    appState.showToast(
+                        "+\(claimResponse.premiumGemsAwarded) gems",
+                        subtitle: "Premium daily bonus",
+                        type: .reward
+                    )
+                }
             } else {
-                // Revert on failure
+                // Revert on failure (the service already showed the toast)
+                appState.revertRewardCredit(credit)
+                if let optimisticConfig, claimRewardConfig == optimisticConfig {
+                    claimRewardConfig = nil
+                }
                 hasClaimed = false
                 justClaimedDay = nil
+                didClaimHere = false
                 appState.dailyLoginCanClaim = true
-                appState.showToast("Claim failed", subtitle: "Try again", type: .error)
             }
 
             // Reset particles after animation
@@ -98,6 +167,20 @@ final class DailyLoginPopupViewModel {
                 self.showClaimParticles = false
             }
         }
+    }
+
+    /// Day the server will grant. Mirrors backend `shouldResetStreak`
+    /// (lib/game/daily-login.ts): no previous claim, or ≥ 48 h since it,
+    /// resets the cycle to day 1; otherwise `currentDay`.
+    static func expectedClaimDay(_ data: DailyLoginData, now: Date = Date()) -> Int {
+        guard let raw = data.lastClaimDate else { return 1 }
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let last = withFraction.date(from: raw) ?? plain.date(from: raw) else {
+            return data.currentDay
+        }
+        return now.timeIntervalSince(last) >= 48 * 60 * 60 ? 1 : data.currentDay
     }
 
     // MARK: - BUG-23 display helpers
@@ -134,12 +217,12 @@ final class DailyLoginPopupViewModel {
     }
 
     private func buildClaimRewardConfig(
-        from response: DailyLoginClaimResponse,
+        def reward: DailyLoginRewardDef,
+        premiumGems: Int,
         claimedDay: Int
     ) -> ClaimRewardConfig {
-        let reward = response.reward.rewardDef
         var goldReward = 0
-        var gemsReward = response.premiumGemsAwarded
+        var gemsReward = premiumGems
         var lootItems: [ClaimLootItem] = []
 
         switch reward.type {

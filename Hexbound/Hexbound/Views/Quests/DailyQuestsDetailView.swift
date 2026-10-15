@@ -458,8 +458,10 @@ struct DailyQuestsDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 } else {
-                    // Matches backend DAILY_BONUS_REWARD.
-                    let chest = (gold: 500, xp: 300, gems: 10)
+                    // Real chest amounts from GET /api/quests/daily
+                    // (`daily_bonus_reward`); the old hard-coded 500 / 10
+                    // left out the 300 XP the server also grants.
+                    let chest = vm.bonusReward
                     HStack(spacing: LayoutConstants.spaceMS) {
                         if chest.gold > 0 {
                             rewardChip(asset: "icon-gold", value: chest.gold, color: DarkFantasyTheme.goldBright, label: "gold")

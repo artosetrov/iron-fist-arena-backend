@@ -122,7 +122,12 @@ class GuildHallViewModel {
     // MARK: - Load Data
 
     func loadFriends() async {
-        loadState = .loading
+        // Stale-while-revalidate: the skeleton only when there is nothing to
+        // show. A refresh (re-appear, accept) keeps the list on screen
+        // instead of swapping it for skeletons (latency pass 2026-10-15).
+        if loadState != .loaded {
+            loadState = .loading
+        }
         do {
             let response = try await socialService.getFriends(characterId: characterId)
             friends = response.friends.sorted { f1, f2 in
@@ -498,7 +503,9 @@ class GuildHallViewModel {
     // MARK: - Duels
 
     func loadChallenges() async {
-        duelsLoadState = .loading
+        if duelsLoadState != .loaded {
+            duelsLoadState = .loading
+        }
         do {
             let response = try await challengeService.getChallenges(characterId: characterId)
             incomingChallenges = response.incoming
@@ -529,6 +536,24 @@ class GuildHallViewModel {
         }
         processingChallengeId = challenge.id
         defer { processingChallengeId = nil }
+
+        // Latency pass (2026-10-15): the duel is resolved server-side in this
+        // one request, and CombatDetailView already has a "preparing" state
+        // for nil data — so the combat screen is pushed on the tap and the
+        // result is injected when it lands (it used to wait the round trip).
+        appState.combatData = nil
+        appState.combatResult = nil
+        appState.resolveResult = nil
+        appState.pendingLoot = []
+        appState.mainPath.append(AppRoute.combat)
+        let combatDepth = appState.mainPath.count
+        HapticManager.heavy()
+        func popCombatIfStillShowing() {
+            if appState.mainPath.count == combatDepth, combatDepth > 0 {
+                appState.mainPath.removeLast()
+            }
+        }
+
         do {
             let result = try await challengeService.acceptChallenge(
                 characterId: characterId,
@@ -585,19 +610,11 @@ class GuildHallViewModel {
                 matchId: result.matchId
             )
 
-            // Clear previous combat state
-            appState.combatData = nil
-            appState.combatResult = nil
-            appState.resolveResult = nil
-            appState.pendingLoot = []
-
             // Remove accepted challenge from list
             incomingChallenges.removeAll { $0.id == challenge.id }
 
-            // Navigate to combat playback screen
-            appState.mainPath.append(AppRoute.combat)
-
-            // Deliver combat data — CombatDetailView picks this up and starts playback
+            // Deliver combat data to the already-visible combat screen —
+            // CombatDetailView picks this up and starts playback
             appState.combatData = combatData
 
             // Pre-fill resolve result so CombatResultDetailView has reward data
@@ -628,9 +645,9 @@ class GuildHallViewModel {
                 hpMax: nil
             )
 
-            HapticManager.heavy()
             return nil
         } catch let apiError as APIError {
+            popCombatIfStillShowing()
             HapticManager.error()
             switch apiError {
             case .serverError(_, let msg):
@@ -639,6 +656,7 @@ class GuildHallViewModel {
                 return apiError.localizedDescription
             }
         } catch {
+            popCombatIfStillShowing()
             HapticManager.error()
             return "Failed to start duel"
         }

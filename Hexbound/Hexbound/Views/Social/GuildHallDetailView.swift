@@ -87,8 +87,17 @@ struct GuildHallDetailView: View {
         }
         .task {
             guard let charId = appState.currentCharacter?.id else { return }
-            let viewModel = GuildHallViewModel(characterId: charId, appState: appState)
-            vm = viewModel
+            // Reuse the view model on re-appear (back from a profile, a duel…)
+            // instead of rebuilding it — a fresh VM reset every tab to its
+            // loading state and refetched all three lists (latency pass
+            // 2026-10-15). The loads below now revalidate in place.
+            let viewModel: GuildHallViewModel
+            if let existing = vm {
+                viewModel = existing
+            } else {
+                viewModel = GuildHallViewModel(characterId: charId, appState: appState)
+                vm = viewModel
+            }
 
             // Deep-link: open message thread instantly (conversations load in background)
             if let targetId = openMessageTo, let targetName = messageName {

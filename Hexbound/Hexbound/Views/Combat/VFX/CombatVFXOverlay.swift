@@ -7,7 +7,8 @@ struct CombatVFXOverlay: View {
     let speedMultiplier: Double
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        // Paused while no effect is alive (see CombatVFXManager.isAnimating).
+        TimelineView(.animation(minimumInterval: nil, paused: !vfxManager.isAnimating)) { timeline in
             Canvas { context, size in
                 vfxManager.update(now: timeline.date, speed: max(0.1, speedMultiplier))
                 vfxManager.render(in: &context, size: size)

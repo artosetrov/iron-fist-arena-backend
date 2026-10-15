@@ -1,5 +1,23 @@
 import SwiftUI
 
+// MARK: - Effects activity (latency pass 2026-10-15)
+
+/// Whether the hub's animated map layers should tick. NavigationStack keeps
+/// the hub alive under every pushed screen, so its 20 fps Canvas layers (and
+/// the `.drawingGroup()` re-rasterising the whole 4096 px map) kept running
+/// behind the Shop, the Arena, combat… competing with the visible screen for
+/// every frame. HubView sets this to false while anything covers the map.
+private struct HubEffectsActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var hubEffectsActive: Bool {
+        get { self[HubEffectsActiveKey.self] }
+        set { self[HubEffectsActiveKey.self] = newValue }
+    }
+}
+
 // MARK: - Lantern Glow Points (positioned relative to terrain)
 
 struct LanternGlowLayer: View {
@@ -125,12 +143,13 @@ struct FogLayer: View {
 // MARK: - Wind Particles (barely perceptible atmospheric streaks)
 
 struct WindParticlesLayer: View {
+    @Environment(\.hubEffectsActive) private var effectsActive
     let width: CGFloat
     let height: CGFloat
 
     var body: some View {
         // Low update rate — these move so slowly that 6fps is enough
-        TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.05, paused: !effectsActive)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
@@ -175,12 +194,13 @@ struct WindParticlesLayer: View {
 // Far leaves are subtle background texture.
 
 struct FallingLeavesLayer: View {
+    @Environment(\.hubEffectsActive) private var effectsActive
     let width: CGFloat
     let height: CGFloat
 
     var body: some View {
         // Low update rate — slow particles don't need 20fps
-        TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.05, paused: !effectsActive)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
@@ -361,6 +381,7 @@ struct FallingLeavesLayer: View {
 // MARK: - Chimney Smoke (rising wisps — glacially slow)
 
 struct ChimneySmokeLayer: View {
+    @Environment(\.hubEffectsActive) private var effectsActive
     let terrainSize: CGSize
 
     private let chimneys: [(x: CGFloat, y: CGFloat)] = [
@@ -372,7 +393,7 @@ struct ChimneySmokeLayer: View {
     private let particlesPerChimney = 5
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.05, paused: !effectsActive)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
@@ -424,6 +445,7 @@ struct ChimneySmokeLayer: View {
 // Performance: Canvas at 20fps during storm, 0fps during idle (no timeline tick)
 
 struct StormEffectLayer: View {
+    @Environment(\.hubEffectsActive) private var effectsActive
     let width: CGFloat
     let height: CGFloat
 
@@ -454,7 +476,7 @@ struct StormEffectLayer: View {
 
             // Rain particles — only rendered during storm
             if stormActive {
-                TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+                TimelineView(.animation(minimumInterval: 0.05, paused: !effectsActive)) { timeline in
                     Canvas { context, size in
                         let time = timeline.date.timeIntervalSince(stormStartTime)
                         drawRain(context: &context, size: size, time: time)

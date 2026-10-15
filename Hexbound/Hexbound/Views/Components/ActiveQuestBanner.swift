@@ -6,6 +6,7 @@ import SwiftUI
 /// Auto-reloads quests from server when cache is nil (after invalidation).
 struct ActiveQuestBanner: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
 
     /// Quest types that should appear on this screen (e.g. ["pvp_wins"])
     let questTypes: [String]
@@ -175,76 +176,24 @@ struct ActiveQuestBanner: View {
 
     // MARK: - Claim
 
-    /// BUG-51 (QA 2026-04-10): previously did an optimistic commit + fired the
-    /// "Quest Complete!" toast BEFORE awaiting the API — so on server failure
-    /// the toast had already fired, and because the character refresh was a
-    /// detached background Task the gold/XP HUD stayed stale. New flow mirrors
-    /// DailyQuestsViewModel: API first, commit after, celebration uses real
-    /// server reward values.
+    /// Latency pass (2026-10-15): optimistic, via
+    /// `QuestService.claimQuestOptimistically` — the banner slides out and
+    /// the CLAIMED modal opens on the tap; a server refusal brings the
+    /// banner back, withdraws the modal and toasts the reason. (BUG-51's
+    /// original complaint — celebrating on failure and a stale HUD — is
+    /// handled there by rollback + authoritative totals.) The 0.9 s fake
+    /// progress fill that used to stand in for the round trip is gone.
     private func claimQuest(_ quest: Quest) {
         guard claimingId == nil else { return }
         claimingId = quest.id
-        let questId = quest.id
-        let previousLevel = appState.currentCharacter?.level
-
-        // Progress-fill loader — start at 0, animate to 1 over ~0.9s. This
-        // gives immediate feedback that the tap was registered without
-        // faking completion. If the API finishes earlier we snap to 1 and
-        // the banner fades away; if it takes longer, the fill simply
-        // holds at 100% until the server responds.
-        claimProgress = 0
-        withAnimation(.easeInOut(duration: 0.9)) {
-            claimProgress = 1
-        }
+        HapticManager.success()
+        SFXManager.shared.play(.uiQuestComplete)
 
         Task {
             let service = QuestService(appState: self.appState)
-            let result = await service.claimQuest(questId: questId)
+            await service.claimQuestOptimistically(quest, cache: cache)
             claimingId = nil
-
-            guard let result = result else {
-                // Reset loader on failure so the button returns to idle.
-                // QuestService already toasted the specific server reason —
-                // don't stack a second generic toast on top.
-                withAnimation(.easeOut(duration: 0.2)) {
-                    claimProgress = 0
-                }
-                return
-            }
-
-            self.appState.applyAuthoritativeRewardState(
-                gold: result.gold,
-                gems: result.gems,
-                xp: result.xp,
-                leveledUp: result.leveledUp,
-                newLevel: result.newLevel,
-                statPointsAwarded: result.statPointsAwarded,
-                passivePointsAwarded: result.passivePointsAwarded,
-                previousLevel: previousLevel
-            )
-
-            // ── Commit on confirmed success ──
-            // Snap progress to 100% first so the loader never disappears
-            // mid-flight, then the banner itself fades out via the quest
-            // list transition.
-            claimProgress = 1
-            if let idx = self.appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    self.appState.cachedTypedQuests?[idx].rewardClaimed = true
-                }
-            }
             syncLastKnown()
-
-            HapticManager.success()
-
-            self.appState.claimRewardConfig = ClaimRewardConfig(
-                title: "CLAIMED!",
-                subtitle: quest.title,
-                goldReward: result.rewardGold,
-                gemsReward: result.rewardGems,
-                xpReward: result.rewardXp,
-                lootItems: []
-            )
         }
     }
 }

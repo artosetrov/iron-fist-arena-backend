@@ -56,7 +56,9 @@ final class AppState {
     }
 
     // MARK: - Character
-    var currentCharacter: Character?
+    var currentCharacter: Character? {
+        didSet { trackExternalCurrencyChange(from: oldValue) }
+    }
     var userCharacters: [Character] = []
 
     // MARK: - Navigation
@@ -65,6 +67,10 @@ final class AppState {
     var pendingPushRoute: AppRoute?
 
     // MARK: - Combat
+    /// Set when a fight pushes CombatDetailView before its data exists;
+    /// cleared by that screen's `onDisappear`. Lets the pusher tell "the
+    /// player is still on the preparing screen" from "they backed out".
+    @ObservationIgnored var combatScreenToken: UUID?
     var combatData: CombatData?
     var combatResult: CombatData?
     var pendingLoot: [PendingLootItem] = []
@@ -112,6 +118,9 @@ final class AppState {
     var cachedTypedQuests: [Quest]?
     var cachedDailyLogin: DailyLoginData?
     var cachedBonusClaimedToday = false
+    /// Daily all-quests bonus amounts from GET /api/quests/daily (nil until
+    /// a backend that sends them answers).
+    var cachedDailyBonusReward: DailyBonusReward?
 
     // MARK: - Dungeon
     var selectedDungeonId: String?
@@ -322,6 +331,19 @@ final class AppState {
         }
     }
 
+    /// Take back a root claim modal that was shown optimistically and then
+    /// refused by the server — whether it is on screen or still queued.
+    func withdrawClaimReward(_ config: ClaimRewardConfig) {
+        if case .claimReward(let active) = activeModal, active == config {
+            dismissActiveModal()
+            return
+        }
+        modalQueue.removeAll { queued in
+            if case .claimReward(let pending) = queued { return pending == config }
+            return false
+        }
+    }
+
     /// Read by the root overlay chain in `HexboundApp`. Writes go through
     /// `enqueueModal(.dailyLogin)` / `dismissDailyLoginPopup()`; nothing
     /// outside AppState ever set this flag directly.
@@ -339,6 +361,18 @@ final class AppState {
         passivePoints: Int = 0,
         previousLevel: Int? = nil
     ) {
+        // An in-screen claim ceremony is playing (it lives outside the modal
+        // queue). Park the level-up until it is dismissed, so the two never
+        // stack — see `holdLevelUpForCeremony()`.
+        if !levelUpHolds.isEmpty {
+            heldLevelUp = HeldLevelUp(
+                newLevel: max(newLevel, heldLevelUp?.newLevel ?? 0),
+                statPoints: statPoints + (heldLevelUp?.statPoints ?? 0),
+                passivePoints: passivePoints + (heldLevelUp?.passivePoints ?? 0),
+                previousLevel: heldLevelUp?.previousLevel ?? previousLevel
+            )
+            return
+        }
         levelUpNewLevel = newLevel
         levelUpStatPoints = statPoints
         levelUpPassivePoints = passivePoints
@@ -378,6 +412,174 @@ final class AppState {
     func dismissDailyLoginPopup() {
         guard activeModal?.kind == .dailyLogin else { return }
         dismissActiveModal()
+    }
+
+    // MARK: - Optimistic rewards (latency pass 2026-10-15)
+    //
+    // Claim flows used to build the CLAIMED modal only after the server
+    // answered (~1 s on a phone network). Rewards whose amounts the client
+    // already knows (quest / achievement / battle-pass / login / mail /
+    // gold-mine payouts are all deterministic) are now credited and shown on
+    // the tap; the server's absolute totals reconcile on success, and a
+    // failure subtracts exactly what was added and dismisses the modal.
+
+    /// What an optimistic change added (or, signed, spent), so it can be
+    /// taken back exactly — subtracting deltas, not restoring a snapshot,
+    /// keeps any other change made in the meantime.
+    struct RewardCredit {
+        let gold: Int
+        let gems: Int
+        let xp: Int
+        /// Per-currency generations when the delta was applied.
+        let goldGeneration: Int
+        let gemsGeneration: Int
+        let xpGeneration: Int
+        /// Hero the delta was applied to — a revert never touches another.
+        let characterId: String?
+        let isNone: Bool
+        static let none = RewardCredit(
+            gold: 0, gems: 0, xp: 0,
+            goldGeneration: 0, gemsGeneration: 0, xpGeneration: 0,
+            characterId: nil,
+            isNone: true
+        )
+    }
+
+    // Per-currency generations. Bumped whenever gold / gems / xp on
+    // `currentCharacter` change by any path OTHER than an optimistic delta
+    // (server totals, sells, minigames, refills, a character reload…).
+    // Such a write may have replaced the value with server truth, which
+    // never contains an unconfirmed optimistic delta — so subtracting that
+    // delta on failure could double-subtract. In that case the revert pulls
+    // the character from the server instead of doing arithmetic.
+    @ObservationIgnored private var goldGeneration = 0
+    @ObservationIgnored private var gemsGeneration = 0
+    @ObservationIgnored private var xpGeneration = 0
+    @ObservationIgnored private var isApplyingOptimisticDelta = false
+
+    private func trackExternalCurrencyChange(from old: Character?) {
+        guard !isApplyingOptimisticDelta,
+              let old, let new = currentCharacter, old.id == new.id else { return }
+        if old.gold != new.gold { goldGeneration &+= 1 }
+        if old.gems != new.gems { gemsGeneration &+= 1 }
+        if old.experience != new.experience || old.level != new.level { xpGeneration &+= 1 }
+    }
+
+    /// Explicit marker for server-absolute writes — covers the case where
+    /// the server total happens to equal the value on screen (no change for
+    /// `trackExternalCurrencyChange` to see).
+    func noteAuthoritativeCurrencyWrite(gold: Bool = true, gems: Bool = true, xp: Bool = true) {
+        if gold { goldGeneration &+= 1 }
+        if gems { gemsGeneration &+= 1 }
+        if xp { xpGeneration &+= 1 }
+    }
+
+    /// Credit a reward on the tap (amounts clamped to ≥ 0).
+    @discardableResult
+    func creditRewardOptimistically(gold: Int, gems: Int, xp: Int) -> RewardCredit {
+        applyOptimisticCurrencyDelta(gold: max(0, gold), gems: max(0, gems), xp: max(0, xp))
+    }
+
+    /// Signed variant — a purchase passes negative amounts.
+    @discardableResult
+    func applyOptimisticCurrencyDelta(gold: Int, gems: Int, xp: Int = 0) -> RewardCredit {
+        guard var char = currentCharacter else { return .none }
+        let credit = RewardCredit(
+            gold: gold, gems: gems, xp: xp,
+            goldGeneration: goldGeneration,
+            gemsGeneration: gemsGeneration,
+            xpGeneration: xpGeneration,
+            characterId: char.id,
+            isNone: false
+        )
+        char.gold = max(0, char.gold + credit.gold)
+        char.gems = max(0, (char.gems ?? 0) + credit.gems)
+        char.experience = max(0, (char.experience ?? 0) + credit.xp)
+        isApplyingOptimisticDelta = true
+        currentCharacter = char
+        isApplyingOptimisticDelta = false
+        return credit
+    }
+
+    /// Take back an optimistic delta the server refused. Per currency: if
+    /// nothing else has written it since, subtract exactly the delta;
+    /// otherwise the on-screen value may already be server truth, so the
+    /// character is re-fetched instead (silently, never blocking).
+    func revertRewardCredit(_ credit: RewardCredit) {
+        guard !credit.isNone, var char = currentCharacter,
+              char.id == credit.characterId else { return }
+        var needsServerTruth = false
+
+        if credit.gold != 0 {
+            if credit.goldGeneration == goldGeneration {
+                char.gold = max(0, char.gold - credit.gold)
+            } else {
+                needsServerTruth = true
+            }
+        }
+        if credit.gems != 0 {
+            if credit.gemsGeneration == gemsGeneration {
+                char.gems = max(0, (char.gems ?? 0) - credit.gems)
+            } else {
+                needsServerTruth = true
+            }
+        }
+        if credit.xp != 0 {
+            if credit.xpGeneration == xpGeneration {
+                char.experience = max(0, (char.experience ?? 0) - credit.xp)
+            } else {
+                needsServerTruth = true
+            }
+        }
+
+        isApplyingOptimisticDelta = true
+        currentCharacter = char
+        isApplyingOptimisticDelta = false
+
+        if needsServerTruth {
+            let characterService = CharacterService(appState: self)
+            Task { await characterService.refreshCharacterSilently() }
+        }
+    }
+
+    // MARK: Level-up hold for in-screen ceremonies
+
+    private struct HeldLevelUp {
+        let newLevel: Int
+        let statPoints: Int
+        let passivePoints: Int
+        let previousLevel: Int?
+    }
+
+    private var levelUpHolds: Set<UUID> = []
+    private var heldLevelUp: HeldLevelUp?
+
+    /// Call when an in-screen ceremony (per-screen `claimRewardModal`) opens
+    /// before the server has answered. A level-up reported by that answer
+    /// waits for `releaseLevelUpHold(_:)` instead of landing on top of the
+    /// ceremony. Each hold self-expires after 15 s, so a lost release can
+    /// never swallow a level-up.
+    @discardableResult
+    func holdLevelUpForCeremony() -> UUID {
+        let token = UUID()
+        levelUpHolds.insert(token)
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            self?.releaseLevelUpHold(token)
+        }
+        return token
+    }
+
+    func releaseLevelUpHold(_ token: UUID) {
+        guard levelUpHolds.remove(token) != nil else { return }
+        guard levelUpHolds.isEmpty, let held = heldLevelUp else { return }
+        heldLevelUp = nil
+        triggerLevelUpModal(
+            newLevel: held.newLevel,
+            statPoints: held.statPoints,
+            passivePoints: held.passivePoints,
+            previousLevel: held.previousLevel
+        )
     }
 
     // MARK: - Modal Queue (prevents overlapping modals)
@@ -516,6 +718,7 @@ final class AppState {
         previousLevel: Int? = nil
     ) -> Bool {
         guard var char = currentCharacter else { return false }
+        noteAuthoritativeCurrencyWrite(gold: gold != nil, gems: gems != nil, xp: xp != nil || leveledUp == true)
 
         let levelBefore = previousLevel ?? char.level
 
@@ -607,6 +810,14 @@ final class AppState {
     /// Switch back to character selection screen (from Settings or after character creation)
     func switchToCharacterSelect() {
         currentCharacter = nil
+        // A held level-up belongs to the hero being left.
+        levelUpHolds.removeAll()
+        heldLevelUp = nil
+        // Per-hero caches: the next hero must not flash these.
+        cachedInventory = nil
+        cachedTypedQuests = nil
+        cachedDailyLogin = nil
+        cachedBonusClaimedToday = false
         mainPath = NavigationPath()
         currentScreen = .characterSelect
     }
@@ -633,6 +844,8 @@ final class AppState {
         AudioManager.shared.restoreBGM(for: .ceremony)
         activeModal = nil
         modalQueue.removeAll()
+        levelUpHolds.removeAll()
+        heldLevelUp = nil
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
         dailyLoginCanClaim = false
         authPath = NavigationPath()

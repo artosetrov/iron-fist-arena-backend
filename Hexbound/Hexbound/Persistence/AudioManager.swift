@@ -1,5 +1,13 @@
 import AVFoundation
 
+/// Serial queue for audio file I/O and `AVAudioSession` (de)activation —
+/// work that blocks and must never run on main during a transition.
+/// Serial so a deactivate queued by `stopBGM()` can't land after the
+/// activate of the next `playBGM()`.
+enum AudioLoadQueue {
+    static let shared = DispatchQueue(label: "app.hexbound.audio.load", qos: .userInitiated)
+}
+
 @MainActor
 final class AudioManager {
     static let shared = AudioManager()
@@ -66,12 +74,32 @@ final class AudioManager {
 
     // MARK: - BGM
 
+    /// Track whose player is being created on `AudioLoadQueue`.
+    private var pendingBGM: String?
+    /// Bumped by every play/stop so a slow load can't start a stale track.
+    private var bgmLoadGeneration = 0
+    /// `setActive(true)` is a blocking IPC to the audio server. It is done
+    /// once per activation, off main, instead of on every track change.
+    private var isSessionActive = false
+
+    /// Latency pass (2026-10-15): this used to call `setActive(true)`,
+    /// `AVAudioPlayer(contentsOf: mp3)` and `prepareToPlay()` synchronously
+    /// on main — from `onAppear` of most screens, i.e. during the push
+    /// animation. The load now happens on `AudioLoadQueue`; the swap to the
+    /// new track happens back on main when it is ready (typically < 50 ms).
     func playBGM(_ filename: String) {
-        // Don't reload if same track already loaded
+        // Don't reload if same track already loaded (or loading)
         if currentBGM == filename, bgmPlayer != nil {
+            // Back to the track that is still playing while another one was
+            // loading: cancel that load, keep this one going.
+            if pendingBGM != nil {
+                bgmLoadGeneration += 1
+                pendingBGM = nil
+            }
             syncVolume()
             return
         }
+        if pendingBGM == filename { return }
 
         let name = (filename as NSString).deletingPathExtension
         let ext = (filename as NSString).pathExtension.isEmpty ? "mp3" : (filename as NSString).pathExtension
@@ -83,35 +111,64 @@ final class AudioManager {
             return
         }
 
-        do {
-            // Activate audio session only when actually playing
-            try AVAudioSession.sharedInstance().setActive(true)
+        bgmLoadGeneration += 1
+        let generation = bgmLoadGeneration
+        pendingBGM = filename
+        let needsActivation = !isSessionActive
+        isSessionActive = true
 
-            let player = try AVAudioPlayer(contentsOf: url)
-            player.numberOfLoops = -1
-            player.volume = effectiveVolume
-            player.prepareToPlay()
-            bgmPlayer = player
-            currentBGM = filename
-
-            if effectiveVolume > 0 {
-                player.play()
+        AudioLoadQueue.shared.async {
+            if needsActivation {
+                // Activate audio session only when actually playing
+                try? AVAudioSession.sharedInstance().setActive(true)
             }
-        } catch {
-            #if DEBUG
-            print("[AudioManager] Failed to load BGM: \(error)")
-            #endif
+            let player: AVAudioPlayer?
+            do {
+                let created = try AVAudioPlayer(contentsOf: url)
+                created.numberOfLoops = -1
+                created.prepareToPlay()
+                player = created
+            } catch {
+                #if DEBUG
+                print("[AudioManager] Failed to load BGM: \(error)")
+                #endif
+                player = nil
+            }
+            DispatchQueue.main.async {
+                self.finishBGMLoad(player, filename: filename, generation: generation)
+            }
+        }
+    }
+
+    private func finishBGMLoad(_ player: AVAudioPlayer?, filename: String, generation: Int) {
+        guard generation == bgmLoadGeneration else { return } // superseded
+        pendingBGM = nil
+        guard let player else { return }
+
+        bgmPlayer?.stop()
+        let baseVol = effectiveVolume
+        player.volume = isBGMDucked ? baseVol * duckFraction : baseVol
+        bgmPlayer = player
+        currentBGM = filename
+
+        if baseVol > 0 {
+            player.play()
         }
     }
 
     func stopBGM() {
+        bgmLoadGeneration += 1
+        pendingBGM = nil
         bgmPlayer?.stop()
         bgmPlayer = nil
         currentBGM = nil
         // No track left to duck, so no reason outlives it.
         duckReasons.removeAll()
         stopVoice(fadeOut: false)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isSessionActive = false
+        AudioLoadQueue.shared.async {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 
     /// Call this whenever bgmVolume or isMuted changes in settings.
@@ -171,7 +228,15 @@ final class AudioManager {
         }
 
         do {
-            try AVAudioSession.sharedInstance().setActive(true)
+            if !isSessionActive {
+                isSessionActive = true
+                // Through the queue so it orders after any pending
+                // deactivate from `stopBGM()`. Voice lines are rare, so the
+                // short synchronous wait here is acceptable.
+                AudioLoadQueue.shared.sync {
+                    try? AVAudioSession.sharedInstance().setActive(true)
+                }
+            }
             let player = try AVAudioPlayer(contentsOf: url)
             // Speech has its own level; BGM is ducked underneath it
             player.volume = settings.voiceVolume

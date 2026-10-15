@@ -114,6 +114,8 @@ struct CombatDetailView: View {
             playTask = nil
             preparationTimeoutTask?.cancel()
             preparationTimeoutTask = nil
+            // Tells an in-flight arena prepare the player has left.
+            appState.combatScreenToken = nil
         }
         .onChange(of: appState.combatData != nil) { _, hasData in
             if hasData {

@@ -54,7 +54,7 @@ final class LeaderboardViewModel {
 
     func loadLeaderboard() async {
         // Serve cached data instantly
-        if let cached = cache.cachedLeaderboard() {
+        if let cached = cache.staleLeaderboard() {
             data = cached
         } else {
             isLoading = true

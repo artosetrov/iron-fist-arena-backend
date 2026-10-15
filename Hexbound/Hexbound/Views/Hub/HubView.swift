@@ -26,6 +26,8 @@ struct HubView: View {
     /// Latched once on appear — prevents NPC from vanishing mid-sequence
     /// when TutorialManager state changes (e.g. server sync completing).
     @State private var onboardingActive = false
+    /// Tutorial quest claims in flight (double-tap guard).
+    @State private var claimingTutorialQuestIds: Set<String> = []
     private let onboardingSteps = [
         (title: "Welcome, Adventurer!", message: "This is your Hub — the center of your journey."),
         (title: "Explore the City", message: "Visit the SHOP to gear up, the ARENA to fight other players, or the DUNGEON to explore."),
@@ -84,8 +86,11 @@ struct HubView: View {
 
     /// Claim quest reward via TutorialManager
     private func claimQuestReward(_ questId: String) {
-        guard let charId = appState.currentCharacter?.id else { return }
+        guard let charId = appState.currentCharacter?.id,
+              !claimingTutorialQuestIds.contains(questId) else { return }
+        claimingTutorialQuestIds.insert(questId)
         Task {
+            defer { claimingTutorialQuestIds.remove(questId) }
             let result = await TutorialManager.shared.claimQuestReward(
                 characterId: charId,
                 questId: questId
@@ -220,6 +225,9 @@ struct HubView: View {
 
                 // Hub city map — parallax shifts up when going to dungeons
                 CityMapView()
+                    // Pause the map's animated layers while a pushed screen
+                    // or the dungeon map covers it (see HubEffectsActiveKey).
+                    .environment(\.hubEffectsActive, appState.mainPath.isEmpty && !showDungeonMap)
                     .tutorialAnchor(.hubCityMap)
                     .offset(y: cityMapOffset)
                     .opacity(cityMapOpacity)
@@ -413,6 +421,22 @@ struct HubView: View {
             updateHubHint()
             // Music and atmosphere both come from the zone.
             AmbientManager.shared.setZone(.hub)
+            // Background prefetches — deferred until the transition settles.
+            scheduleHubPrefetch()
+        }
+    }
+
+    /// Hub prefetch burst. Latency pass (2026-10-15): this ran synchronously
+    /// in `onAppear`, i.e. during the pop-to-hub animation, and every response
+    /// re-rendered the city map mid-transition. It now starts after the
+    /// transition has settled; the guards still make it a no-op when the
+    /// caches are fresh.
+    private func scheduleHubPrefetch() {
+        let scheduledFor = appState.currentCharacter?.id
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            // The player may have switched hero during the delay.
+            guard scheduledFor != nil, appState.currentCharacter?.id == scheduledFor else { return }
             // Reload quests if cache was invalidated (e.g., after PvP/dungeon)
             if appState.cachedTypedQuests == nil {
                 Task { await loadQuests() }
@@ -614,10 +638,17 @@ struct HubView: View {
         _ = try? await service.loadQuests()
     }
 
+    /// A prefetch that lands after a hero switch must not write the previous
+    /// hero's data into the (just cleared) cache.
+    private func isSameHero(_ heroId: String?) -> Bool {
+        heroId != nil && appState.currentCharacter?.id == heroId
+    }
+
     private func prefetchOpponents() async {
+        let heroId = appState.currentCharacter?.id
         let pvpService = PvPService(appState: appState)
         let opponents = await pvpService.getOpponents()
-        if !opponents.isEmpty {
+        if !opponents.isEmpty, isSameHero(heroId) {
             await MainActor.run { cache.cacheOpponents(opponents) }
 
             // Phase 2 (2026-04-13): warm BattlePreloader from Hub so
@@ -625,6 +656,13 @@ struct HubView: View {
             // shared PrepareCacheStore means ArenaViewModel and Combat
             // will find the result already cached when the user taps
             // Fight. Fire-and-forget, background priority.
+            //
+            // Skipped in dice mode (2026-10-15): /pvp/match/start never
+            // consumes these tickets, and each one spends the 10/min
+            // /pvp/prepare budget that revenge fights still use.
+            let dice = cache.gameConfig?.interactiveCombatEnabled == true
+                && !appState.interactiveCombatLocallyDisabled
+            guard !dice else { return }
             let preloader = BattlePreloader(appState: appState)
             for opponent in opponents.prefix(3) {
                 Task(priority: .background) {
@@ -635,23 +673,26 @@ struct HubView: View {
     }
 
     private func prefetchShop() async {
+        let heroId = appState.currentCharacter?.id
         let shopService = ShopService(appState: appState)
-        guard let items = await shopService.getItems().value, !items.isEmpty else { return }
+        guard let items = await shopService.getItems().value, !items.isEmpty, isSameHero(heroId) else { return }
         await MainActor.run { cache.cacheShop(items) }
     }
 
     private func prefetchAchievements() async {
+        let heroId = appState.currentCharacter?.id
         let achievementService = AchievementService(appState: appState)
         // Prefetch only caches a real success — a failed prefetch must never
         // overwrite a good cache with an empty list.
         guard let achievements = await achievementService.loadAchievements().value,
-              !achievements.isEmpty else { return }
+              !achievements.isEmpty, isSameHero(heroId) else { return }
         await MainActor.run { cache.cacheAchievements(achievements) }
     }
 
     private func prefetchDungeons() async {
+        let heroId = appState.currentCharacter?.id
         let dungeonService = DungeonService(appState: appState)
-        guard let snapshot = await dungeonService.getProgress() else { return }
+        guard let snapshot = await dungeonService.getProgress(), isSameHero(heroId) else { return }
         let progress = snapshot.progress
         if !progress.isEmpty {
             await MainActor.run { cache.cacheDungeonProgress(progress) }
@@ -659,8 +700,9 @@ struct HubView: View {
     }
 
     private func prefetchBattlePass() async {
+        let heroId = appState.currentCharacter?.id
         let bpService = BattlePassService(appState: appState)
-        guard let data = await bpService.loadBattlePass() else { return }
+        guard let data = await bpService.loadBattlePass(), isSameHero(heroId) else { return }
         cache.cacheBattlePass(data)
     }
 
@@ -674,6 +716,7 @@ struct HubView: View {
                 APIEndpoints.goldMineStatus,
                 params: ["character_id": charId]
             )
+            guard isSameHero(charId) else { return }
             await MainActor.run {
                 cache.cacheGoldMine(status: data)
                 updateHubHint()
@@ -685,7 +728,8 @@ struct HubView: View {
 
     private func prefetchSocialStatus() async {
         guard let charId = appState.currentCharacter?.id else { return }
-        guard let status = await SocialService.shared.getSocialStatus(characterId: charId) else { return }
+        guard let status = await SocialService.shared.getSocialStatus(characterId: charId),
+              isSameHero(charId) else { return }
         cache.cacheSocialStatus(status)
     }
 
@@ -693,6 +737,7 @@ struct HubView: View {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
             let response = try await ChallengeService.shared.getChallenges(characterId: charId)
+            guard isSameHero(charId) else { return }
             cache.cacheIncomingChallenges(response.incoming)
         } catch {
             // Silent — banner just won't show

@@ -23,7 +23,7 @@ final class DailyQuestsViewModel {
         self.service = QuestService(appState: appState)
         // Serve cached quests instantly (GameDataCache first, then appState fallback).
         // If we have cache, treat the initial state as "loaded" to avoid skeleton flash.
-        if let cached = cache.cachedDailyQuests() {
+        if let cached = cache.staleDailyQuests() {
             quests = cached.quests
             bonusClaimedToday = cached.bonusClaimed
             hasLoadedOnce = true
@@ -104,7 +104,7 @@ final class DailyQuestsViewModel {
         // Only flip isLoading on a cold miss — with warm cache the view
         // keeps the cached quests visible while we silently revalidate in
         // the background (no skeleton flash on warm cache).
-        if let cached = cache.cachedDailyQuests() {
+        if let cached = cache.staleDailyQuests() {
             quests = cached.quests
             bonusClaimedToday = cached.bonusClaimed
         } else if quests.isEmpty {
@@ -113,9 +113,16 @@ final class DailyQuestsViewModel {
         errorMessage = nil
         do {
             let result = try await service.loadQuests()
-            quests = result.quests
-            bonusClaimedToday = result.bonusClaimed
-            cache.cacheDailyQuests(result.quests, bonusClaimed: result.bonusClaimed)
+            // A refresh that started before an optimistic claim must not
+            // resurrect its CLAIM button (a second tap would credit twice):
+            // re-apply claims still in flight on top of the server list.
+            var fresh = result.quests
+            for index in fresh.indices where inFlightClaimIds.contains(fresh[index].id) {
+                fresh[index].rewardClaimed = true
+            }
+            quests = fresh
+            bonusClaimedToday = result.bonusClaimed || isClaimingBonus
+            syncQuestCaches()
             hasLoadedOnce = true
         } catch {
             // Keep stale `quests` on screen — the view will ignore
@@ -128,85 +135,69 @@ final class DailyQuestsViewModel {
 
     // MARK: - Claim
 
-    /// Claims a daily quest reward.
-    ///
-    /// BUG-51 (QA 2026-04-10) fix: the previous implementation showed the
-    /// "Quest Complete!" celebration + success haptic BEFORE awaiting the API,
-    /// which meant the banner fired on server failure too. It also never
-    /// awaited the character refresh, so the gold/XP HUD stayed stale for
-    /// seconds after the claim (user reported gold 1,643 → 1,643 and XP
-    /// 71/480 → 71/480 despite the celebration).
-    ///
-    /// New flow:
-    /// 1. Show a subtle in-flight state (`claimingQuestId`) only.
-    /// 2. Await the server and apply its authoritative `gold/gems/xp/level`
-    ///    payload directly into `AppState.currentCharacter`.
-    /// 3. On success: commit optimistic `rewardClaimed`, haptic, celebration
-    ///    with the REAL reward values from the server ("+150g  +80 XP").
-    /// 4. On failure: keep state untouched, show error toast.
-    func claimQuest(_ quest: Quest) async {
-        guard claimingQuestId == nil else { return } // prevent double-tap
-        claimingQuestId = quest.id
-        let previousLevel = appState.currentCharacter?.level
-
-        // ── Fire API first — no optimistic celebration ──
-        // QuestService already surfaces the specific server reason on failure
-        // (e.g. "Already claimed", "Quest not completed yet"); don't double-toast.
-        let result = await service.claimQuest(questId: quest.id)
-        claimingQuestId = nil
-
-        guard let result = result else { return }
-
-        appState.applyAuthoritativeRewardState(
-            gold: result.gold,
-            gems: result.gems,
-            xp: result.xp,
-            leveledUp: result.leveledUp,
-            newLevel: result.newLevel,
-            statPointsAwarded: result.statPointsAwarded,
-            passivePointsAwarded: result.passivePointsAwarded,
-            previousLevel: previousLevel
-        )
-
-        // ── Commit local state now that the server confirmed ──
-        if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
-            quests[idx].rewardClaimed = true
-        }
-        // Keep the on-disk cache consistent with the new claimed state so a
-        // navigate-away-and-back doesn't flash the quest as un-claimed again.
-        cache.cacheDailyQuests(quests, bonusClaimed: bonusClaimedToday)
-
-        HapticManager.success()
-
-        // Build a reward subtitle from SERVER values, not the local Quest.
-        // Format: "+150g  +80 XP  +3 gems" (omit zero components).
-        var parts: [String] = []
-        if result.rewardGold > 0 { parts.append("+\(result.rewardGold)g") }
-        if result.rewardXp > 0 { parts.append("+\(result.rewardXp) XP") }
-        if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
-        let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
-
-        // Show reward modal instead of celebration toast
-        claimRewardConfig = ClaimRewardConfig(
-            title: "CLAIMED!",
-            subtitle: subtitle,
-            goldReward: result.rewardGold,
-            gemsReward: result.rewardGems,
-            xpReward: result.rewardXp,
-            lootItems: []
-        )
+    /// Bonus amounts — from the server payload when available. The fallback
+    /// matches backend `DAILY_BONUS_REWARD` for an older backend.
+    var bonusReward: DailyBonusReward {
+        appState.cachedDailyBonusReward ?? DailyBonusReward(gold: 500, xp: 300, gems: 10)
     }
 
-    func claimBonus() async {
-        guard !bonusClaimedToday, !isClaimingBonus else { return }
-        isClaimingBonus = true
-        let previousLevel = appState.currentCharacter?.level
+    /// Claims a daily quest reward — optimistically.
+    ///
+    /// History: BUG-51 (QA 2026-04-10) moved the celebration AFTER the API
+    /// call, because the old optimistic version celebrated even when the
+    /// server refused and never reconciled the HUD. That made every claim
+    /// wait a full round trip (~1 s) before the popup appeared.
+    ///
+    /// Latency pass (2026-10-15) — optimistic again, with BUG-51's two
+    /// failure modes handled:
+    /// 1. On tap: mark claimed, credit the quest's own reward amounts (the
+    ///    server grants exactly these), open the CLAIMED modal.
+    /// 2. Success: apply the server's absolute gold/gems/xp/level. A level-up
+    ///    waits for the modal to close (`holdLevelUpForCeremony`).
+    /// 3. Failure: subtract exactly what was credited, un-mark the quest,
+    ///    close the modal; QuestService shows the server's reason.
+    /// Quests whose claim request is still in flight.
+    private var inFlightClaimIds: Set<String> = []
 
-        let result = await service.claimBonus()
-        isClaimingBonus = false
+    func claimQuest(_ quest: Quest) async {
+        guard !inFlightClaimIds.contains(quest.id),
+              let idx = quests.firstIndex(where: { $0.id == quest.id }),
+              quests[idx].canClaim else { return } // prevent double-tap
+        inFlightClaimIds.insert(quest.id)
+        defer { inFlightClaimIds.remove(quest.id) }
+        claimingQuestId = quest.id
+        let previousLevel = appState.currentCharacter?.level
+        let gems = quest.rewardGems ?? 0
+
+        // ── 1. Optimistic ──
+        quests[idx].rewardClaimed = true
+        syncQuestCaches()
+        let credit = appState.creditRewardOptimistically(gold: quest.rewardGold, gems: gems, xp: quest.rewardXp)
+        let hold = appState.holdLevelUpForCeremony()
+        let config = ClaimRewardConfig(
+            title: "CLAIMED!",
+            subtitle: Self.rewardSubtitle(gold: quest.rewardGold, xp: quest.rewardXp, gems: gems, fallback: quest.title),
+            goldReward: quest.rewardGold,
+            gemsReward: gems,
+            xpReward: quest.rewardXp,
+            lootItems: [],
+            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) }
+        )
+        claimRewardConfig = config
+
+        // ── 2. Confirm ──
+        let result = await service.claimQuest(questId: quest.id)
+        if claimingQuestId == quest.id { claimingQuestId = nil }
 
         guard let result else {
-            appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
+            // ── 3. Roll back ── (QuestService already toasted the reason)
+            appState.revertRewardCredit(credit)
+            if let i = quests.firstIndex(where: { $0.id == quest.id }) {
+                quests[i].rewardClaimed = false
+            }
+            syncQuestCaches()
+            if claimRewardConfig == config { claimRewardConfig = nil }
+            appState.releaseLevelUpHold(hold)
             return
         }
 
@@ -220,18 +211,78 @@ final class DailyQuestsViewModel {
             passivePointsAwarded: result.passivePointsAwarded,
             previousLevel: previousLevel
         )
+        // If the player already closed the modal, nothing is holding a
+        // level-up any more — let it through now.
+        if claimRewardConfig != config { appState.releaseLevelUpHold(hold) }
+    }
 
+    func claimBonus() async {
+        guard !bonusClaimedToday, !isClaimingBonus else { return }
+        isClaimingBonus = true
+        let previousLevel = appState.currentCharacter?.level
+        let reward = bonusReward
+
+        // Optimistic — same contract as claimQuest.
         bonusClaimedToday = true
+        appState.cachedBonusClaimedToday = true
         cache.cacheDailyQuests(quests, bonusClaimed: true)
-        HapticManager.success()
-
-        claimRewardConfig = ClaimRewardConfig(
+        let credit = appState.creditRewardOptimistically(gold: reward.gold, gems: reward.gems, xp: reward.xp)
+        let hold = appState.holdLevelUpForCeremony()
+        let config = ClaimRewardConfig(
             title: "CLAIMED!",
             subtitle: "All quests completed",
-            goldReward: result.rewardGold,
-            gemsReward: result.rewardGems,
-            xpReward: result.rewardXp,
-            lootItems: []
+            goldReward: reward.gold,
+            gemsReward: reward.gems,
+            xpReward: reward.xp,
+            lootItems: [],
+            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) }
         )
+        claimRewardConfig = config
+
+        let result = await service.claimBonus()
+        isClaimingBonus = false
+
+        guard let result else {
+            // QuestService already toasted the reason.
+            appState.revertRewardCredit(credit)
+            bonusClaimedToday = false
+            appState.cachedBonusClaimedToday = false
+            cache.cacheDailyQuests(quests, bonusClaimed: false)
+            if claimRewardConfig == config { claimRewardConfig = nil }
+            appState.releaseLevelUpHold(hold)
+            return
+        }
+
+        appState.applyAuthoritativeRewardState(
+            gold: result.gold,
+            gems: result.gems,
+            xp: result.xp,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+            statPointsAwarded: result.statPointsAwarded,
+            passivePointsAwarded: result.passivePointsAwarded,
+            previousLevel: previousLevel
+        )
+        if claimRewardConfig != config { appState.releaseLevelUpHold(hold) }
+    }
+
+    // MARK: - Helpers
+
+    /// Write the quest list to BOTH caches. Hub widgets read
+    /// `appState.cachedTypedQuests`, this screen reads `GameDataCache`; they
+    /// used to drift, so a quest claimed here still showed CLAIM on the hub
+    /// (and vice versa) until the next refetch.
+    private func syncQuestCaches() {
+        cache.cacheDailyQuests(quests, bonusClaimed: bonusClaimedToday)
+        appState.cachedTypedQuests = quests
+    }
+
+    /// "+150g  +80 XP  +3 gems" (zero components omitted).
+    static func rewardSubtitle(gold: Int, xp: Int, gems: Int, fallback: String) -> String {
+        var parts: [String] = []
+        if gold > 0 { parts.append("+\(gold)g") }
+        if xp > 0 { parts.append("+\(xp) XP") }
+        if gems > 0 { parts.append("+\(gems) gems") }
+        return parts.isEmpty ? fallback : parts.joined(separator: "  ")
     }
 }

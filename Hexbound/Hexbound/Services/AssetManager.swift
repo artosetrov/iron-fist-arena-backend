@@ -35,11 +35,31 @@ final class AssetManager {
 
     // MARK: - Private
 
-    /// In-memory image cache (key → UIImage) — avoids repeated disk reads
-    private var memoryCache: [String: UIImage] = [:]
+    /// Bumped only when a network download lands. `image(forKey:)` reads
+    /// it so views showing a not-yet-downloaded key re-render once it
+    /// arrives — and for nothing else.
+    private(set) var downloadRevision: Int = 0
 
-    /// Maximum number of images to keep in memory cache
-    private let memoryCacheLimit = 200
+    /// In-memory image cache (key → UIImage) — avoids repeated disk reads.
+    ///
+    /// Latency pass (2026-10-15): this was a tracked `@Observable` dictionary
+    /// written from inside `image(forKey:)`, i.e. from view bodies. Every
+    /// first lookup of a key mutated observed state mid-render and
+    /// invalidated EVERY image view on screen (a grid of 30 items re-rendered
+    /// 30×). It is untracked now, and an `NSCache` so eviction is
+    /// memory-pressure aware instead of "drop an arbitrary 25%". (A `let`
+    /// reference type is never tracked by `@Observable`.)
+    private let memoryCache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 200
+        return cache
+    }()
+
+    /// Keys already known to be in neither the bundle nor the disk cache —
+    /// skips a repeated `UIImage(named:)` miss + disk stat on every render.
+    /// Cleared for a key when its download lands.
+    @ObservationIgnored
+    private var knownMissing: Set<String> = []
 
     /// Disk cache directory: Caches/GameAssets/
     private let cacheDirectory: URL
@@ -48,12 +68,15 @@ final class AssetManager {
     private let manifestPath: URL
 
     /// Bundled manifest (from sync-assets.sh, included in app bundle)
+    @ObservationIgnored
     private var bundledManifest: [String: AssetManifestEntry] = [:]
 
     /// Remote manifest (from /api/assets/manifest)
+    @ObservationIgnored
     private var remoteManifest: [String: AssetManifestEntry] = [:]
 
     /// Active download tasks (key → Task) to avoid duplicate downloads
+    @ObservationIgnored
     private var activeDownloads: [String: Task<UIImage?, Never>] = [:]
 
     /// URLSession with disk caching disabled (we manage our own cache)
@@ -93,9 +116,13 @@ final class AssetManager {
         guard let key, !key.isEmpty else { return nil }
 
         // 1. Memory cache (fastest)
-        if let cached = memoryCache[key] {
+        if let cached = memoryCache.object(forKey: key as NSString) {
             return cached
         }
+        // Observation dependency only for views still waiting on an image:
+        // they re-render when a download lands; resolved ones never do.
+        _ = downloadRevision
+        if knownMissing.contains(key) { return nil }
 
         // 2. Bundle asset
         if let bundled = UIImage(named: key) {
@@ -109,6 +136,7 @@ final class AssetManager {
             return diskImage
         }
 
+        knownMissing.insert(key)
         return nil
     }
 
@@ -230,7 +258,8 @@ final class AssetManager {
 
     /// Clear all cached assets (useful for debugging or freeing disk space)
     func clearCache() {
-        memoryCache.removeAll()
+        memoryCache.removeAllObjects()
+        knownMissing.removeAll()
         try? FileManager.default.removeItem(at: cacheDirectory)
         try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
@@ -249,15 +278,7 @@ final class AssetManager {
     // MARK: - Private Helpers
 
     private func addToMemoryCache(key: String, image: UIImage) {
-        // Evict oldest entries if at limit
-        if memoryCache.count >= memoryCacheLimit {
-            // Remove ~25% of cache (simple eviction)
-            let keysToRemove = Array(memoryCache.keys.prefix(memoryCacheLimit / 4))
-            for k in keysToRemove {
-                memoryCache.removeValue(forKey: k)
-            }
-        }
-        memoryCache[key] = image
+        memoryCache.setObject(image, forKey: key as NSString)
     }
 
     private func diskCacheFile(forKey key: String) -> URL {
@@ -293,6 +314,8 @@ final class AssetManager {
             // Add to memory cache
             await MainActor.run {
                 addToMemoryCache(key: key, image: image)
+                knownMissing.remove(key)
+                downloadRevision &+= 1
                 pendingDownloads = activeDownloads.count
             }
 

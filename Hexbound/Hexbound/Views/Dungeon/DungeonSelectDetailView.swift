@@ -80,11 +80,8 @@ struct DungeonSelectDetailView: View {
         .onDisappear {
             AmbientManager.shared.setZone(.hub)
         }
-        .overlay {
-            if isEnteringDungeon {
-                LoadingOverlay(message: "ENTERING DUNGEON")
-            }
-        }
+        // The "ENTERING DUNGEON" LoadingOverlay is gone: the push is
+        // immediate, so the overlay only flashed over the transition.
     }
 
     // MARK: - Contextual Hint
@@ -241,14 +238,16 @@ struct DungeonSelectDetailView: View {
 
         Button {
             if !isLocked && !isEnteringDungeon {
+                // Latency pass (2026-10-15): push immediately. The push is
+                // purely local; a fixed 600 ms sleep behind an "ENTERING
+                // DUNGEON" overlay used to sit in front of it. The flag now
+                // only guards against a double tap during the push.
                 HapticManager.selection()
                 isEnteringDungeon = true
+                vm.enterDungeon(dungeon)
                 Task {
-                    try? await Task.sleep(for: .milliseconds(600))
-                    await MainActor.run {
-                        vm.enterDungeon(dungeon)
-                        isEnteringDungeon = false
-                    }
+                    try? await Task.sleep(for: .milliseconds(450))
+                    isEnteringDungeon = false
                 }
             }
         } label: {

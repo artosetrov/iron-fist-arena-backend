@@ -109,7 +109,7 @@ Always use dual shadows: accent glow + dark depth. Never single flat shadow.
 - **Combat events**: `CombatViewModel.CombatEventType` enum → `CombatDetailView.handleCombatEvent()` for differentiated shake + haptics + crit flash
 - **Modal queue**: `AppState.enqueueModal()` / `.presentNextModal()` / `.dismissXxxModal()` — prevents overlapping modals
 - **Slam overlay pattern**: For dramatic text reveals (VS, BOSS FIGHT), use: `scaleEffect(from→to)` + opacity + dimmed background + `DispatchQueue.main.asyncAfter` phase chain. Always pair with `HapticManager.heavy()`.
-- **Rules**: Haptic = special moments only (never on scroll/passive). No persistent particles. No shimmer on prices. Respect `MotionConstants` speed tiers.
+- **Rules**: Haptic = special moments only (never on scroll/passive). No persistent particles (one exception: `AmbientStormView`, the ambient storm on the title screen — nothing there is read through it). No shimmer on prices. Respect `MotionConstants` speed tiers.
 
 ## Animation Rules (CRITICAL)
 
@@ -140,7 +140,7 @@ Tap-only, not idle. Default `opacity: 0`, `shadowRadius: 0`. Only glow on `.isPr
 - **UI sounds**: Button styles (`PrimaryButtonStyle`, `SecondaryButtonStyle`, `DangerButtonStyle`, `NavGridButtonStyle`) already trigger SFX via `onChange(of: configuration.isPressed)`. `TabSwitcher` triggers on tap and swipe.
 - **Adding new SFX**: (1) Add `.wav` to `Resources/Audio/SFX/`, (2) add case to `SFX` enum, (3) add to `project.pbxproj` (PBXBuildFile + PBXFileReference + PBXGroup + PBXResourcesBuildPhase), (4) call `SFXManager.shared.play(.newCase)` at trigger point
 - **Preloading**: `SFXManager.shared.preload([...])` on screen appear for latency-critical sounds (combat preloads all hit/block/miss)
-- **Rules**: SFX on meaningful interactions only (never scroll/passive). Pair with `HapticManager`, not replace. Keep files short (< 1s UI, < 0.7s hits). Respect `isMuted`.
+- **Rules**: SFX on meaningful interactions only (never scroll/passive; the one passive exception is weather — `.thunderRumble` with the lightning of the hub storm and of `AmbientStormView`). Pair with `HapticManager`, not replace. Keep files short (< 1s UI, < 0.7s hits). Respect `isMuted`.
 
 ## Stat Colors — Unified Gold Palette
 
@@ -397,6 +397,15 @@ Zero force unwraps. Use `if let`/`guard let`/`?? default`. Only exception: hardc
 
 ### Optimistic UI Updates
 All mutating actions MUST update UI immediately. Pattern: update local → toast + haptic → API in background → on error, revert.
+
+Toolkit (latency pass 2026-10-15 — `qa-reports/LATENCY_AUDIT_2026-10-15.md`):
+- **Currency/XP:** `appState.creditRewardOptimistically(gold:gems:xp:)` (rewards) / `applyOptimisticCurrencyDelta` (signed, purchases) → keep the returned `RewardCredit`; on failure `appState.revertRewardCredit(credit)`. Never restore a gold/gems snapshot — it clobbers concurrent changes.
+- **Claim modals:** build `ClaimRewardConfig` from data the client already has (quest/achievement/BP/login/mail/mine amounts) and show it on the tap. Per-screen modal → `appState.holdLevelUpForCeremony()` + release in `onDismiss`; root modal → `appState.claimRewardConfig = cfg`, on failure `appState.withdrawClaimReward(cfg)`. Quest claims from widgets → `QuestService.claimQuestOptimistically`.
+- **Refresh vs. optimistic state:** a list refresh must re-apply in-flight/just-made claims (see `withInFlightClaims`, `QuestService.recentClaims`) — never let a pre-claim snapshot resurrect a CLAIM button.
+- **Sequenced mutations:** rapid taps on the same list (equip) use a sequence number; only the latest response is applied (`InventoryViewModel.beginMutation/endMutation`).
+- **Navigation never waits on the network:** push first, show the screen's loading state, inject data when it lands (`ArenaViewModel.pushCombatScreen`). No `asyncAfter`/`Task.sleep` before a push — except a deliberate ceremony (boss slam, run start fired in parallel) or a short delay so a pop finishes before the next push.
+- **Cache reads for display:** `cache.staleX()` (any age) + background revalidate; `cachedX()` (TTL) only decides whether to refetch.
+- **Main thread:** no file/audio/image decode in `body`/`onAppear`/tap handlers — `SFXManager`, `AudioManager`, `AmbientManager` load on background queues; `AssetManager` cache is untracked by Observation.
 
 ## Navigation Rules (CRITICAL)
 

@@ -17,6 +17,7 @@ final class CharacterService {
                 APIEndpoints.character(charId)
             )
             appState.currentCharacter = response.character
+            appState.noteAuthoritativeCurrencyWrite()
         } catch {
             appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                 Task { @MainActor in
@@ -24,6 +25,21 @@ final class CharacterService {
                 }
             }
         }
+    }
+
+    /// Background refresh with no error UI — for reconciling server-derived
+    /// stats (e.g. max HP after an equip) behind an optimistic update the
+    /// player has already seen. A failure leaves the current values; the
+    /// next screen load retries.
+    func refreshCharacterSilently() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        guard let response: CharacterEnvelope = try? await APIClient.shared.get(
+            APIEndpoints.character(charId)
+        ) else { return }
+        // The player may have switched hero while this was in flight.
+        guard appState.currentCharacter?.id == response.character.id else { return }
+        appState.currentCharacter = response.character
+        appState.noteAuthoritativeCurrencyWrite()
     }
 
     // MARK: - Allocate Stats
@@ -36,7 +52,7 @@ final class CharacterService {
                 body: statChanges
             )
             appState.currentCharacter = response.character
-            appState.showToast("Stats saved!", type: .info)
+            // "Stats saved!" is shown optimistically by CharacterViewModel.
             return true
         } catch {
             appState.showToast("Failed to save stats", subtitle: "Changes not applied — try again", type: .error)
@@ -102,6 +118,25 @@ final class CharacterService {
     @discardableResult
     func refillStamina() async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
+        // Latency pass (2026-10-15): the bar fills on the tap (the server
+        // always refills to max). The gem price scales per refill and is
+        // server-known, so gems update when the response lands. A refusal
+        // puts the bar back.
+        let previousStamina = appState.currentCharacter?.currentStamina
+        if var char = appState.currentCharacter {
+            char.currentStamina = char.maxStamina
+            appState.currentCharacter = char
+        }
+        HapticManager.medium()
+        func restoreStamina() {
+            // Only undo our own fill — if stamina moved since (a fight,
+            // regen sync), leave the newer value alone.
+            if let previousStamina, var char = appState.currentCharacter,
+               char.currentStamina == char.maxStamina {
+                char.currentStamina = previousStamina
+                appState.currentCharacter = char
+            }
+        }
         do {
             let response: StaminaRefillResponse = try await APIClient.shared.post(
                 APIEndpoints.staminaRefill,
@@ -122,6 +157,7 @@ final class CharacterService {
             )
             return true
         } catch let error as APIError {
+            restoreStamina()
             if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
@@ -129,6 +165,7 @@ final class CharacterService {
             }
             return false
         } catch {
+            restoreStamina()
             appState.showToast("Refill failed", subtitle: "Check connection and try again", type: .error)
             return false
         }

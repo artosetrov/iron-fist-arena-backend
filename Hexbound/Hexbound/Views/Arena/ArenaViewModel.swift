@@ -114,25 +114,39 @@ final class ArenaViewModel {
 
     func loadOpponents() async {
         // Serve cached opponents instantly, then refresh in background
-        if let cached = cache.cachedOpponents() {
+        if let cached = cache.staleOpponents() {
             opponents = cached
             updateDisplayedOpponents()
         } else {
             isLoadingOpponents = true
         }
         let result = await pvpService.getOpponents()
+        isLoadingOpponents = false
+        // `getOpponents()` returns [] on failure. Don't let a failed refresh
+        // wipe (and cache) a list the player is looking at.
+        guard !result.isEmpty || opponents.isEmpty else { return }
         opponents = result
         updateDisplayedOpponents()
         cache.cacheOpponents(result)
-        isLoadingOpponents = false
 
         // Preload battle data for top opponents so Fight tap is instant
         preloadBattleData(for: result)
     }
 
+    /// True when Fight goes to the dice match screen (/pvp/match/start),
+    /// which never consumes a /pvp/prepare ticket.
+    private var usesInteractiveCombat: Bool {
+        !appState.interactiveCombatLocallyDisabled && cache.gameConfig?.interactiveCombatEnabled == true
+    }
+
     /// Preloads /pvp/prepare data for up to 3 opponents in background.
     /// When user taps Fight, BattlePreloader returns from cache instantly.
+    ///
+    /// Latency pass (2026-10-15): skipped in dice mode. Those tickets were
+    /// never used, cost 3 POSTs per arena visit, and ate the 10/min
+    /// /pvp/prepare rate limit that revenge fights also need.
     private func preloadBattleData(for opponents: [Opponent]) {
+        guard !usesInteractiveCombat else { return }
         guard let _ = appState.currentCharacter?.id else { return }
         for opponent in opponents.prefix(3) {
             Task(priority: .background) {
@@ -143,7 +157,7 @@ final class ArenaViewModel {
 
     func loadRevenge() async {
         // Serve cached revenge instantly
-        if let cached = cache.cachedRevenge() {
+        if let cached = cache.staleRevenge() {
             revengeList = cached
         } else {
             isLoadingRevenge = true
@@ -156,7 +170,7 @@ final class ArenaViewModel {
 
     func loadHistory() async {
         // Serve cached history instantly
-        if let cached = cache.cachedHistory() {
+        if let cached = cache.staleHistory() {
             history = cached
         } else {
             isLoadingHistory = true
@@ -189,6 +203,33 @@ final class ArenaViewModel {
     }
 
     // MARK: - Fight (Instant Battle Flow)
+
+    /// Clear the previous fight and push the combat screen immediately.
+    /// Returns a token that stays valid only while that screen is on top
+    /// (CombatDetailView clears it on disappear).
+    private func pushCombatScreen() -> UUID {
+        appState.combatData = nil
+        appState.combatResult = nil
+        appState.resolveResult = nil
+        appState.pendingLoot = []
+        appState.mainPath.append(AppRoute.combat)
+        let token = UUID()
+        appState.combatScreenToken = token
+        return token
+    }
+
+    /// Is the preparing combat screen from `pushCombatScreen()` still up?
+    private func isCombatScreenShowing(_ token: UUID) -> Bool {
+        appState.combatScreenToken == token
+    }
+
+    /// Pop the preparing screen after a failed prepare — only if it is still
+    /// the one on top (never something the player navigated to since).
+    private func popCombatScreen(ifShowing token: UUID) {
+        guard isCombatScreenShowing(token), !appState.mainPath.isEmpty else { return }
+        appState.combatScreenToken = nil
+        appState.mainPath.removeLast()
+    }
 
     func fight(opponentId: String, forceClassic: Bool = false) async {
         // Kill switch — mirrors the server-side check in /pvp/match/start.
@@ -244,12 +285,26 @@ final class ArenaViewModel {
         fightingOpponentId = opponentId
         showComparison = false
 
-        // 1. Prepare battle FIRST (get seed + stats from server)
+        // Classic fallback after the dice screen 404'd: that screen is still
+        // popping. Let the pop finish so the two transitions don't collide
+        // (the prepare round trip used to separate them).
+        if forceClassic {
+            try? await Task.sleep(for: .milliseconds(350))
+        }
+
+        // Latency pass (2026-10-15): the combat screen is pushed on tap and
+        // shows its "preparing" state while /pvp/prepare runs (or resolves
+        // instantly from the preload cache). It used to be pushed only after
+        // the round trip, leaving 0.3–1 s with the sheet gone and no feedback.
+        let combatToken = pushCombatScreen()
+
+        // 1. Prepare battle (get seed + stats from server)
         //    If a background preload is already in-flight, this awaits it.
         //    BattlePreloader shows specific error toasts (e.g. "Not enough stamina").
         guard let prepareData = await battlePreloader.prepare(opponentId: opponentId) else {
             fightingOpponentId = nil
             // BattlePreloader already showed specific error toast — no duplicate needed
+            popCombatScreen(ifShowing: combatToken)
             return
         }
 
@@ -263,24 +318,21 @@ final class ArenaViewModel {
             appState.currentCharacter = char
         }
 
-        // 3. Reset state and run combat simulation BEFORE navigating
-        appState.combatData = nil
-        appState.combatResult = nil
-        appState.resolveResult = nil
-        appState.pendingLoot = []
         fightingOpponentId = nil
         await battlePreloader.invalidatePreparedBattle(opponentId: opponentId)
 
-        // 4. Run client-side combat simulation (instant, deterministic)
+        // The player backed out of the preparing screen (timeout → back):
+        // don't resolve a fight they never saw.
+        guard isCombatScreenShowing(combatToken) else { return }
+
+        // 3. Run client-side combat simulation (instant, deterministic)
         let combatData = battlePreloader.simulateCombat(prepareData: prepareData)
 
-        // 5. Deliver combat data BEFORE navigation — CombatDetailView has data on first render
+        // 4. Deliver combat data — CombatDetailView (already on screen in its
+        //    preparing state) picks it up via onChange(of: combatData).
         appState.combatData = combatData
 
-        // 6. Navigate to combat screen — data is already available
-        appState.mainPath.append(AppRoute.combat)
-
-        // 7. Resolve on server asynchronously (fire-and-forget)
+        // 5. Resolve on server asynchronously (fire-and-forget)
         let winnerId = combatData.result.winnerId ?? ""
         let seed = prepareData.battleSeed
         Task {
@@ -298,11 +350,16 @@ final class ArenaViewModel {
     func revenge(revengeId: String) async {
         fightingOpponentId = revengeId
 
-        // 1. Prepare battle FIRST (server validates revenge entry + returns seed + stats)
+        // Push first; the combat screen shows "preparing" during the round
+        // trip (see fight()).
+        let combatToken = pushCombatScreen()
+
+        // 1. Prepare battle (server validates revenge entry + returns seed + stats)
         //    BattlePreloader shows specific error toasts.
         guard let prepareData = await battlePreloader.prepare(revengeId: revengeId) else {
             fightingOpponentId = nil
             // BattlePreloader already showed specific error toast — no duplicate needed
+            popCombatScreen(ifShowing: combatToken)
             return
         }
 
@@ -315,22 +372,17 @@ final class ArenaViewModel {
             appState.currentCharacter = char
         }
 
-        // 3. Reset state and run combat simulation BEFORE navigating
-        appState.combatData = nil
-        appState.combatResult = nil
-        appState.resolveResult = nil
-        appState.pendingLoot = []
         fightingOpponentId = nil
         await battlePreloader.invalidatePreparedBattle(revengeId: revengeId)
 
-        // 4. Run client-side combat simulation (instant, deterministic)
+        // Backed out of the preparing screen — don't resolve an unseen fight.
+        guard isCombatScreenShowing(combatToken) else { return }
+
+        // 3. Run client-side combat simulation (instant, deterministic)
         let combatData = battlePreloader.simulateCombat(prepareData: prepareData)
 
-        // 5. Deliver combat data BEFORE navigation — CombatDetailView has data on first render
+        // 4. Deliver combat data to the already-visible combat screen
         appState.combatData = combatData
-
-        // 6. Navigate to combat screen — data is already available
-        appState.mainPath.append(AppRoute.combat)
 
         // 7. Resolve on server asynchronously (fire-and-forget)
         let winnerId = combatData.result.winnerId ?? ""

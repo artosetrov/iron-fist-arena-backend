@@ -33,6 +33,14 @@ struct ClaimRewardConfig: Equatable {
     // Not part of Equatable — always treated as equal
     var onDismiss: (() -> Void)?
 
+    /// View identity for the modal: replacing the config with different
+    /// numbers (an optimistic modal corrected by the server) restarts the
+    /// ceremony instead of keeping counters ticking toward stale targets.
+    var identityKey: String {
+        "\(title)|\(subtitle ?? "")|\(goldReward)|\(gemsReward)|\(xpReward)|"
+            + lootItems.map { "\($0.id)x\($0.quantity)" }.joined(separator: ",")
+    }
+
     static func == (lhs: ClaimRewardConfig, rhs: ClaimRewardConfig) -> Bool {
         lhs.title == rhs.title &&
         lhs.subtitle == rhs.subtitle &&
@@ -79,6 +87,10 @@ struct ClaimRewardModalView: View {
     @State private var goldDisplay = 0
     @State private var gemsDisplay = 0
     @State private var xpDisplay = 0
+    /// Set by a tap on the backdrop: every remaining beat lands at once and
+    /// CONTINUE is available immediately (it used to be locked for
+    /// 1.2–1.8 s with taps on the backdrop swallowed).
+    @State private var ceremonySkipped = false
 
     private let accentColor = DarkFantasyTheme.goldBright
 
@@ -87,7 +99,8 @@ struct ClaimRewardModalView: View {
             // Dimmed background
             DarkFantasyTheme.bgModal
                 .ignoresSafeArea()
-                .onTapGesture { } // absorb taps
+                .contentShape(Rectangle())
+                .onTapGesture { skipCeremony() } // absorb taps + skip ahead
 
             // Particles
             VictoryParticlesView(isVictory: true, particleCount: 25)
@@ -358,6 +371,7 @@ struct ClaimRewardModalView: View {
 
         // 0.8s — Rewards appear + tick-up
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            guard !ceremonySkipped else { return }
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showRewards = true
             }
@@ -370,6 +384,7 @@ struct ClaimRewardModalView: View {
         let lootTime: Double = 1.4
         if !config.lootItems.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + lootTime) {
+                guard !ceremonySkipped else { return }
                 withAnimation(.easeOut(duration: MotionConstants.fast)) {
                     showLoot = true
                 }
@@ -381,9 +396,26 @@ struct ClaimRewardModalView: View {
         // 1.8s (or 1.4s if no loot) — Continue button
         let buttonTime = config.lootItems.isEmpty ? 1.2 : lootTime + 0.4
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonTime) {
+            guard !ceremonySkipped else { return }
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showButton = true
             }
+        }
+    }
+
+    /// Jump to the end state of the ceremony (backdrop tap).
+    private func skipCeremony() {
+        guard !ceremonySkipped, !showButton else { return }
+        ceremonySkipped = true
+        withAnimation(.easeOut(duration: MotionConstants.fast)) {
+            showCard = true
+            showTitle = true
+            showRewards = true
+            showLoot = !config.lootItems.isEmpty
+            showButton = true
+            goldDisplay = config.goldReward
+            gemsDisplay = config.gemsReward
+            xpDisplay = config.xpReward
         }
     }
 
@@ -405,6 +437,7 @@ struct ClaimRewardModalView: View {
         let stepDuration = duration / Double(steps)
         for i in 1...steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(i)) {
+                guard !ceremonySkipped else { return }
                 withAnimation(.linear(duration: stepDuration)) {
                     binding.wrappedValue = Int(Double(target) * Double(i) / Double(steps))
                 }
@@ -426,6 +459,7 @@ extension View {
                     cfg.onDismiss?()
                     config.wrappedValue = nil
                 }
+                .id(cfg.identityKey)
                 .transition(.opacity)
                 .animation(MotionConstants.snappy, value: config.wrappedValue != nil)
                 // No .zIndex here: this is a single-child .overlay, its own

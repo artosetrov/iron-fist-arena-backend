@@ -74,6 +74,9 @@ struct CityBuildingView: View {
             handleTap()
         }
         .onLongPressGesture(minimumDuration: 0.4, perform: {}) { pressing in
+            // Touch-down feedback: `pressing` flips true the moment the
+            // finger lands, long before the tap (touch-up) is recognised.
+            isPressed = pressing && !isLocked
             showLabel = pressing
         }
         .onAppear {}
@@ -128,10 +131,9 @@ struct CityBuildingView: View {
             showLabel = true
         }
 
-        // Navigate after brief delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            onTap(building)
-        }
+        // Navigate immediately — the push is the feedback. A fixed 200 ms
+        // `asyncAfter` used to sit here (latency pass 2026-10-15).
+        onTap(building)
 
         // Reset state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {

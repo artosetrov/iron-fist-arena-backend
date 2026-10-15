@@ -69,6 +69,10 @@ struct DungeonMapBuildingView: View {
         .onTapGesture {
             handleTap()
         }
+        .onLongPressGesture(minimumDuration: 0.4, perform: {}) { pressing in
+            // Touch-down feedback before the tap is recognised on lift.
+            if !isLocked { isPressed = pressing }
+        }
         .onAppear {
             if isNext {
                 withAnimation(
@@ -169,10 +173,9 @@ struct DungeonMapBuildingView: View {
             isPressed = true
         }
 
-        // Navigate after brief delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            onTap(building)
-        }
+        // Navigate immediately (was a fixed 200 ms delay — latency pass
+        // 2026-10-15).
+        onTap(building)
 
         // Reset state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {

@@ -46,7 +46,25 @@ final class GoldMineViewModel {
     // MARK: - Claim Reward Modal
     /// When non-nil, the view presents the shared Gold Mine reward
     /// celebration modal for collect and bonus-round payouts.
-    var claimReward: ClaimRewardData?
+    var claimReward: ClaimRewardData? {
+        didSet {
+            // A shaft cleared by the same collect waits for the reward modal
+            // to close instead of stacking under it.
+            if claimReward == nil, let key = pendingClearedShaftKey {
+                pendingClearedShaftKey = nil
+                clearedShaftKey = key
+            }
+        }
+    }
+    private var pendingClearedShaftKey: ShaftKey?
+
+    /// When the last collect-all started. A /status answer requested before
+    /// that moment may predate the collect and is dropped.
+    private var lastCollectStartedAt: Date?
+
+    /// Whether collect-all would ask for a shaft pick: from /status (newer
+    /// backends) or the last collect. nil = unknown → collect pessimistically.
+    private var shaftPickNeeded: Bool?
 
     struct ClaimRewardData {
         let goldEarned: Int
@@ -204,7 +222,7 @@ final class GoldMineViewModel {
 
     func loadStatus() async {
         // Serve cached data instantly
-        if let cached = cache.cachedGoldMine() {
+        if let cached = cache.staleGoldMine() {
             slots = cached.slots
             maxSlots = cached.maxSlots
         } else {
@@ -216,14 +234,31 @@ final class GoldMineViewModel {
             return
         }
 
+        let requestedAt = Date()
         do {
             let data: GoldMineStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.goldMineStatus,
                 params: ["character_id": charId]
             )
+            if let collectStart = lastCollectStartedAt, collectStart > requestedAt {
+                // Stale: a collect started after this status was requested.
+                isLoading = false
+                return
+            }
+            // A collect in flight owns the slots (its optimistic state, then
+            // its own server snapshot); a status fetched before it landed
+            // would flip collected slots back to READY.
+            guard !isCollectingAll else {
+                isLoading = false
+                return
+            }
             slots = data.slots
             maxSlots = data.maxSlots
             cache.cacheGoldMine(status: data)
+            if let needsPick = data.needsShaftPick {
+                shaftPickNeeded = needsPick
+                activeShaft = data.activeShaft
+            }
             syncVisualCounters()
             isLoading = false
         } catch {
@@ -346,11 +381,61 @@ final class GoldMineViewModel {
         guard !isCollectingAll else { return }
         guard let charId = appState.currentCharacter?.id else { return }
         isCollectingAll = true
+        lastCollectStartedAt = Date()
         defer { isCollectingAll = false }
 
         // Capture pre-collect totals for reward delta
         let goldBefore = appState.currentCharacter?.gold ?? 0
         let gemsBefore = appState.currentCharacter?.gems ?? 0
+
+        // ── Optimistic payout (latency pass 2026-10-15) ──
+        // The server pays exactly Σ reward / gemReward over ready slots whose
+        // bonus round was played (collect-all/route.ts). When no shaft pick
+        // is pending we know that up front: slots go idle, gold/gems are
+        // credited and the reward modal opens on the tap. Anything the
+        // server answers differently rolls this back first.
+        let savedSlots = slots
+        let playedReady = slots.indices.filter {
+            slots[$0].resolvedStatus() == .ready && slots[$0].hasPlayedMinigame
+        }
+        let optimistic = pickedShaftKey == nil && shaftPickNeeded == false && !playedReady.isEmpty
+        var credit = AppState.RewardCredit.none
+        var optimisticGold = 0
+        var optimisticGems = 0
+        if optimistic {
+            optimisticGold = playedReady.reduce(0) { $0 + (slots[$1].reward ?? 0) }
+            optimisticGems = playedReady.reduce(0) { $0 + (slots[$1].gemReward ?? 0) }
+            withAnimation(MotionConstants.smooth) {
+                for index in playedReady {
+                    slots[index].status = .idle
+                    slots[index].startedAt = nil
+                    slots[index].endsAt = nil
+                    slots[index].reward = nil
+                    slots[index].gemReward = nil
+                    slots[index].minigamePlayed = nil
+                    slots[index].minigameSessionId = nil
+                }
+            }
+            credit = appState.creditRewardOptimistically(gold: optimisticGold, gems: optimisticGems, xp: 0)
+            syncVisualCounters()
+            if optimisticGold > 0 || optimisticGems > 0 {
+                claimReward = ClaimRewardData(goldEarned: optimisticGold, gemsEarned: optimisticGems)
+            }
+            HapticManager.success()
+        }
+        func rollBackOptimistic() {
+            guard optimistic else { return }
+            // Only the slots this collect touched — a mine started on another
+            // slot meanwhile keeps its own state.
+            withAnimation(MotionConstants.smooth) {
+                for index in playedReady where index < slots.count && index < savedSlots.count {
+                    slots[index] = savedSlots[index]
+                }
+            }
+            appState.revertRewardCredit(credit)
+            syncVisualCounters()
+            claimReward = nil
+        }
 
         do {
             let data: GoldMineCollectAllResponse = try await APIClient.shared.post(
@@ -363,6 +448,8 @@ final class GoldMineViewModel {
 
             // Branch 1: server wants us to show the picker.
             if data.needsShaftPick == true {
+                rollBackOptimistic()
+                shaftPickNeeded = true
                 unlockedShafts = data.unlockedShafts ?? []
                 shaftPickerSlotIndex = nil  // collectAll context
                 showShaftPicker = true
@@ -375,13 +462,22 @@ final class GoldMineViewModel {
             let newGems = data.gems ?? gemsBefore
             appState.currentCharacter?.gold = newGold
             appState.currentCharacter?.gems = newGems
+            appState.noteAuthoritativeCurrencyWrite()
             syncVisualCounters()
-            appState.invalidateCache("quests")
+            // Keep the cache current so re-entering the mine doesn't flash
+            // the pre-collect "ready" slots.
+            cache.cacheGoldMine(slots: data.slots, maxSlots: maxSlots)
+            // Quest progress (gold_mine_collect) — revalidate in the
+            // background instead of nil-ing the cache, which made the quest
+            // banner on this screen refetch and jump.
+            refreshQuestsInBackground()
 
-            // Show claim reward celebration modal with earned amounts
+            // Show claim reward celebration modal with earned amounts —
+            // unless the optimistic one is already up with the same numbers.
             let goldDelta = max(0, newGold - goldBefore)
             let gemsDelta = max(0, newGems - gemsBefore)
-            if goldDelta > 0 || gemsDelta > 0 {
+            let alreadyShown = optimistic && goldDelta == optimisticGold && gemsDelta == optimisticGems
+            if !alreadyShown, goldDelta > 0 || gemsDelta > 0 {
                 claimReward = ClaimRewardData(goldEarned: goldDelta, gemsEarned: gemsDelta)
             }
 
@@ -389,22 +485,25 @@ final class GoldMineViewModel {
             if let nextShaft = data.activeShaft {
                 let previousKey = activeShaft?.key
                 activeShaft = nextShaft
+                shaftPickNeeded = false
                 // If the shaft key flipped under us mid-cycle, treat as
                 // completion celebration for the previous shaft.
                 if let previousKey, previousKey != nextShaft.key {
-                    clearedShaftKey = previousKey
+                    presentClearedShaft(previousKey)
                 }
             } else {
                 // Shaft cleared this cycle — remember it for the overlay,
                 // reset active so the picker opens on next call.
                 if let previousKey = activeShaft?.key {
-                    clearedShaftKey = previousKey
+                    presentClearedShaft(previousKey)
                 }
                 activeShaft = nil
+                shaftPickNeeded = true
             }
 
-            HapticManager.success()
+            if !optimistic { HapticManager.success() }
         } catch let apiError as APIError {
+            rollBackOptimistic()
             // NO_PLAYABLE_SLOTS → server returns 409 with payload telling us
             // which slots are ready-but-unplayed. Auto-route the player into
             // the first one's bonus minigame so the flow stays one-tap.
@@ -440,12 +539,27 @@ final class GoldMineViewModel {
                 type: .error
             )
         } catch {
+            rollBackOptimistic()
             appState.showToast(
                 "Failed to collect",
                 subtitle: "Check connection and try again",
                 type: .error
             )
         }
+    }
+
+    /// Show the shaft-cleared overlay now, or after the reward modal closes.
+    private func presentClearedShaft(_ key: ShaftKey) {
+        if claimReward != nil {
+            pendingClearedShaftKey = key
+        } else {
+            clearedShaftKey = key
+        }
+    }
+
+    private func refreshQuestsInBackground() {
+        let service = QuestService(appState: appState)
+        Task { _ = try? await service.loadQuests() }
     }
 
     // MARK: - Per-Slot Bonus Minigame (Variant D Phase 2)

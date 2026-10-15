@@ -250,15 +250,19 @@ struct ArenaDetailView: View {
                 vm = ArenaViewModel(appState: appState, cache: cache)
             }
 
-            // Ensure inventory is cached so LowHP banner can check for potions
-            if appState.cachedInventory == nil {
-                let service = InventoryService(appState: appState)
-                _ = await service.loadInventory()
-            }
-
+            // Ensure inventory is cached so LowHP banner can check for
+            // potions — in parallel with the arena data, not before it
+            // (it used to add a full round trip ahead of the opponent list).
+            async let inventoryWarm: Void = warmInventoryIfNeeded()
             await vm?.loadAll()
+            _ = await inventoryWarm
             updateArenaHint()
         }
+    }
+
+    private func warmInventoryIfNeeded() async {
+        guard appState.cachedInventory == nil else { return }
+        _ = await InventoryService(appState: appState).loadInventory()
     }
 
     // MARK: - HP Helpers
@@ -330,7 +334,7 @@ struct ArenaDetailView: View {
         // Optimistic HP update — estimate healing amount (30% of maxHP)
         let maxHp = appState.currentCharacter?.maxHp ?? 1
         let currentHp = appState.currentCharacter?.currentHp ?? 0
-        let estimatedHeal = max(Int(Double(maxHp) * 0.3), 50)
+        let estimatedHeal = InventoryService.estimatedHpRestore(consumableType: potion.consumableType, maxHp: maxHp)
         let newHp = min(currentHp + estimatedHeal, maxHp)
         appState.currentCharacter?.currentHp = newHp
 

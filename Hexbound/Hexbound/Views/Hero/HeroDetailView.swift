@@ -212,7 +212,7 @@ struct HeroDetailView: View {
         appState.cachedInventory = items
         inventoryVM?.items = items
 
-        let estimatedHeal = max(Int(Double(maxHp) * 0.3), 50)
+        let estimatedHeal = InventoryService.estimatedHpRestore(consumableType: potion.consumableType, maxHp: maxHp)
         let newHp = min(previousHp + estimatedHeal, maxHp)
         appState.currentCharacter?.currentHp = newHp
 

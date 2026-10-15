@@ -137,6 +137,12 @@ struct HexboundApp: App {
                 // actually reported. No-op when no DSN is configured.
                 ObservabilityService.start()
 
+                // Latency pass (2026-10-15): warm the tap sounds and the
+                // Taptic Engine while the splash is up, so the first button
+                // press in the hub pays no file I/O or engine spin-up.
+                SFXManager.shared.preloadUI()
+                HapticManager.prepareAll()
+
                 // Wire push service into AppDelegate for token forwarding
                 appDelegate.pushService = pushService
                 appDelegate.routeHandler = { route in
@@ -184,7 +190,12 @@ struct HexboundApp: App {
                     Task { await pushService.unregisterToken() }
                     cache.invalidateAll()
                 }
-                // .characterSelect — don't clear cache or unregister push
+                // .characterSelect — keep account-level cache + push, but
+                // drop the previous hero's data so screens that now show
+                // stale-while-revalidate never flash another hero's state.
+                if screen == .characterSelect, oldScreen == .game {
+                    cache.invalidateCharacterScoped()
+                }
                 _ = oldScreen // suppress unused warning
             }
         }

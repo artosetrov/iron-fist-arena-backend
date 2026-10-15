@@ -564,8 +564,24 @@ final class TutorialManager {
                     amount: nil
                 )
             )
-            // Refresh state
-            await fetchTutorialState(characterId: characterId)
+            // Mark it claimed locally so the NPC banner moves on now; the
+            // full state refresh runs in the background. Awaiting that GET
+            // here put a second round trip in front of the reward popup
+            // (latency pass 2026-10-15).
+            if let idx = tutorialQuests.firstIndex(where: { $0.questId == questId }) {
+                let quest = tutorialQuests[idx]
+                tutorialQuests[idx] = TutorialQuestState(
+                    id: quest.id,
+                    questId: quest.questId,
+                    target: quest.target,
+                    progress: quest.progress,
+                    isCompleted: quest.isCompleted,
+                    rewardClaimed: true,
+                    title: quest.title,
+                    npcMessage: quest.npcMessage
+                )
+            }
+            Task { await self.fetchTutorialState(characterId: characterId) }
             return response
         } catch {
             #if DEBUG

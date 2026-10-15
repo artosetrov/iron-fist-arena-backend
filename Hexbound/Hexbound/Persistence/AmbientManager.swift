@@ -246,6 +246,7 @@ final class AmbientManager {
 
     /// Stop all ambient immediately (no fade). Use for app background / cleanup.
     func stopAll() {
+        layerLoadGeneration += 1
         fadeOutTask?.cancel()
         for player in activeLayers { player.stop() }
         for player in fadingOutPlayers { player.stop() }
@@ -256,24 +257,60 @@ final class AmbientManager {
 
     // MARK: - Private
 
+    /// Bumped on every zone change so a background load that finishes after
+    /// the player has already moved on is dropped instead of started.
+    private var layerLoadGeneration = 0
+
+    /// Latency pass (2026-10-15): `AVAudioPlayer(contentsOf:)` +
+    /// `prepareToPlay()` for 2–3 loops used to run synchronously on main in
+    /// the `onAppear` of Arena/Shop/Dungeon/Hub — i.e. in the middle of the
+    /// push animation. The files are opened and prepared on a background
+    /// queue now; only `play()` + the fade happen back on main.
     private func startLayers(for zone: AmbientZone) {
+        layerLoadGeneration += 1
+        let generation = layerLoadGeneration
+        let layers = zone.layers
+
+        AudioLoadQueue.shared.async {
+            var loaded: [(AVAudioPlayer, Float)] = []
+            for layer in layers {
+                guard let player = AmbientManager.makeLoopPlayer(filename: layer.file) else { continue }
+                loaded.append((player, layer.volume))
+            }
+            DispatchQueue.main.async {
+                self.activateLayers(loaded, generation: generation, zone: zone)
+            }
+        }
+    }
+
+    private func activateLayers(_ loaded: [(AVAudioPlayer, Float)], generation: Int, zone: AmbientZone) {
+        guard generation == layerLoadGeneration, currentZone == zone else { return }
+        guard !settings.isMuted, settings.sfxVolume > 0 else { return }
+
         var newPlayers: [AVAudioPlayer] = []
-
-        for layer in zone.layers {
-            guard let player = loadPlayer(filename: layer.file) else { continue }
-
-            player.numberOfLoops = -1 // Loop forever
+        for (player, baseVolume) in loaded {
             player.volume = 0         // Start silent for fade-in
-            player.prepareToPlay()
             player.play()
-
-            let targetVol = layer.volume * settings.sfxVolume
-            player.setVolume(targetVol, fadeDuration: crossfadeDuration)
-
+            player.setVolume(baseVolume * settings.sfxVolume, fadeDuration: crossfadeDuration)
             newPlayers.append(player)
         }
-
         activeLayers = newPlayers
+    }
+
+    /// Runs on `AudioLoadQueue` — touches no instance state.
+    nonisolated private static func makeLoopPlayer(filename: String) -> AVAudioPlayer? {
+        for ext in ["wav", "mp3"] {
+            if let url = Bundle.main.url(forResource: filename, withExtension: ext),
+               let player = try? AVAudioPlayer(contentsOf: url) {
+                player.numberOfLoops = -1 // Loop forever
+                player.prepareToPlay()
+                return player
+            }
+        }
+        #if DEBUG
+        print("[AmbientManager] File not found: \(filename).wav/.mp3")
+        #endif
+        return nil
     }
 
     private func fadeOutCurrentLayers() {
@@ -299,18 +336,5 @@ final class AmbientManager {
             }
             self?.fadingOutPlayers.removeAll { playersToFade.contains($0) }
         }
-    }
-
-    private func loadPlayer(filename: String) -> AVAudioPlayer? {
-        // Try .wav first, then .mp3
-        for ext in ["wav", "mp3"] {
-            if let url = Bundle.main.url(forResource: filename, withExtension: ext) {
-                return try? AVAudioPlayer(contentsOf: url)
-            }
-        }
-        #if DEBUG
-        print("[AmbientManager] File not found: \(filename).wav/.mp3")
-        #endif
-        return nil
     }
 }

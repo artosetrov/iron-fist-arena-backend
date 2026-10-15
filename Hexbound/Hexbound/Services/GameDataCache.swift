@@ -252,6 +252,44 @@ final class GameDataCache {
     private let revengeTTL: TimeInterval = 30
     private let historyTTL: TimeInterval = 60
 
+    // MARK: - Stale-while-revalidate reads
+    //
+    // Latency pass (2026-10-15): the `cachedX()` getters return nil once the
+    // TTL passes, which is right for "should I refetch?" (Hub prefetch) but
+    // wrong for "what do I show?" — screens fell back to a skeleton while
+    // perfectly good data sat in memory (opponents after 30 s, gold mine
+    // after 15 s, shop after 5 min). Screens that ALWAYS revalidate in the
+    // background read these `staleX()` getters instead: whatever was last
+    // fetched, at any age, or nil if nothing ever was.
+
+    // `invalidateX()` only resets the freshness clock (forcing the next
+    // revalidate), so these read the data itself. Character switch and
+    // logout clear the data (`invalidateCharacterScoped` / `invalidateAll`).
+
+    func staleOpponents() -> [Opponent]? { opponents.isEmpty ? nil : opponents }
+    func staleLeaderboard() -> [String: [LeaderboardEntry]]? { leaderboardEntries.isEmpty ? nil : leaderboardEntries }
+    func staleShop() -> [ShopItem]? { shopItems.isEmpty ? nil : shopItems }
+    func staleAchievements() -> [Achievement]? { achievements.isEmpty ? nil : achievements }
+    func staleBattlePass() -> BattlePassData? { battlePassData }
+    // These two are legitimately empty for many players, so "empty" can't
+    // mean "never fetched" — tracked explicitly.
+    func staleRevenge() -> [RevengeEntry]? { revengeEverFetched ? revengeList : nil }
+    func staleHistory() -> [MatchHistory]? { historyEverFetched ? matchHistory : nil }
+    private var revengeEverFetched = false
+    private var historyEverFetched = false
+    func staleGoldMine() -> (slots: [GoldMineSlotResponse], maxSlots: Int)? {
+        goldMineSlots.isEmpty ? nil : (goldMineSlots, goldMineMaxSlots)
+    }
+    func staleDailyQuests() -> (quests: [Quest], bonusClaimed: Bool)? {
+        dailyQuests.isEmpty ? nil : (dailyQuests, dailyBonusClaimed)
+    }
+
+    /// Patch the cached daily quests in place (e.g. an optimistic claim)
+    /// without resetting their freshness clock.
+    func patchDailyQuests(_ quests: [Quest]) {
+        dailyQuests = quests
+    }
+
     // MARK: - Init data loaded flag
 
     var isInitLoaded = false
@@ -431,6 +469,7 @@ final class GameDataCache {
     func cacheRevenge(_ data: [RevengeEntry]) {
         revengeList = data
         revengeFetchedAt = Date()
+        revengeEverFetched = true
     }
 
     func invalidateRevenge() {
@@ -448,6 +487,7 @@ final class GameDataCache {
     func cacheHistory(_ data: [MatchHistory]) {
         matchHistory = data
         historyFetchedAt = Date()
+        historyEverFetched = true
     }
 
     // Social Status TTL: 2 minutes (badge counts refresh frequently)
@@ -534,6 +574,41 @@ final class GameDataCache {
 
     // MARK: - Reset
 
+    /// Drop everything that belongs to one hero. Called when the player goes
+    /// back to character select, so the next hero never sees the previous
+    /// one's gold mine, quests or opponents — not even for a frame.
+    /// Account-level data (skins, config, flags, leaderboard, dungeon list)
+    /// stays.
+    func invalidateCharacterScoped() {
+        opponents = []
+        opponentsFetchedAt = nil
+        shopItems = []
+        shopFetchedAt = nil
+        achievements = []
+        achievementsFetchedAt = nil
+        battlePassData = nil
+        battlePassFetchedAt = nil
+        dungeonProgress = [:]
+        dungeonProgressFetchedAt = nil
+        goldMineSlots = []
+        goldMineFetchedAt = nil
+        dailyQuests = []
+        dailyBonusClaimed = false
+        dailyQuestsFetchedAt = nil
+        revengeList = []
+        revengeFetchedAt = nil
+        revengeEverFetched = false
+        matchHistory = []
+        historyFetchedAt = nil
+        historyEverFetched = false
+        socialStatus = nil
+        socialStatusFetchedAt = nil
+        incomingChallenges = []
+        incomingChallengesFetchedAt = nil
+        contrabandResponse = nil
+        contrabandFetchedAt = nil
+    }
+
     func invalidateAll() {
         skins = []
         skinsByKey = [:]
@@ -558,8 +633,10 @@ final class GameDataCache {
         dailyQuestsFetchedAt = nil
         revengeList = []
         revengeFetchedAt = nil
+        revengeEverFetched = false
         matchHistory = []
         historyFetchedAt = nil
+        historyEverFetched = false
         socialStatus = nil
         socialStatusFetchedAt = nil
         incomingChallenges = []

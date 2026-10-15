@@ -27,28 +27,21 @@ struct MailMessage: Codable, Identifiable {
         senderType == "battle_invite"
     }
 
-    /// Parse structured battle data from body JSON (arena_result mails only)
+    /// Parse structured battle data from body JSON (arena_result mails only).
+    ///
+    /// Latency pass (2026-10-15): memoized. Inbox rows read this ~5× per
+    /// render, and every read built a JSONDecoder and re-parsed the body on
+    /// the main thread — for up to 50 rows on every list update.
     var battleData: BattleResultData? {
         guard isBattleResult else { return nil }
-        guard let data = body.data(using: .utf8) else { return nil }
-        do {
-            return try JSONDecoder().decode(BattleResultData.self, from: data)
-        } catch {
-            print("⚠️ [MailMessage] Failed to decode BattleResultData: \(error)")
-            return nil
-        }
+        return MailBodyDecodeCache.decode(BattleResultData.self, kind: "battle", id: id, body: body)
     }
 
-    /// Parse battle invite data from body JSON (battle_invite mails only)
+    /// Parse battle invite data from body JSON (battle_invite mails only).
+    /// Memoized like `battleData`.
     var inviteData: BattleInviteData? {
         guard isBattleInvite else { return nil }
-        guard let data = body.data(using: .utf8) else { return nil }
-        do {
-            return try JSONDecoder().decode(BattleInviteData.self, from: data)
-        } catch {
-            print("⚠️ [MailMessage] Failed to decode BattleInviteData: \(error)")
-            return nil
-        }
+        return MailBodyDecodeCache.decode(BattleInviteData.self, kind: "invite", id: id, body: body)
     }
 
     /// Return a copy marked as read
@@ -220,4 +213,41 @@ struct BattleResultData: Codable {
 /// Generic success response used across multiple endpoints
 struct SuccessResponse: Codable {
     let success: Bool
+}
+
+// MARK: - Body decode memo
+
+/// Decoded mail bodies keyed by message id + body length (bodies never
+/// change for a given id). Failures are cached too, so a malformed body is
+/// parsed — and logged — once.
+private enum MailBodyDecodeCache {
+    private final class Box {
+        let value: Any?
+        init(_ value: Any?) { self.value = value }
+    }
+
+    private static let cache: NSCache<NSString, Box> = {
+        let cache = NSCache<NSString, Box>()
+        cache.countLimit = 300
+        return cache
+    }()
+
+    static func decode<T: Decodable>(_ type: T.Type, kind: String, id: String, body: String) -> T? {
+        let key = "\(kind):\(id):\(body.utf8.count)" as NSString
+        if let box = cache.object(forKey: key) {
+            return box.value as? T
+        }
+        var result: T?
+        if let data = body.data(using: .utf8) {
+            do {
+                result = try JSONDecoder().decode(T.self, from: data)
+            } catch {
+                #if DEBUG
+                print("⚠️ [MailMessage] Failed to decode \(T.self): \(error)")
+                #endif
+            }
+        }
+        cache.setObject(Box(result), forKey: key)
+        return result
+    }
 }

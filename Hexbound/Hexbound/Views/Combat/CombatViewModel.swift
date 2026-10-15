@@ -78,8 +78,9 @@ final class CombatViewModel {
         print("[COMBAT] play() started — \(combatData.combatLog.count) turns to animate, Task.isCancelled=\(Task.isCancelled)")
         #endif
 
-        // Small initial delay (non-critical — if cancelled, continue to loop)
-        try? await Task.sleep(for: .seconds(0.5))
+        // Small initial delay so the first frame settles before turn 1
+        // (non-critical — if cancelled, continue to loop). Was 0.5 s.
+        try? await Task.sleep(for: .seconds(0.2))
 
         for i in 0..<combatData.combatLog.count {
             if skipRequested || Task.isCancelled {
@@ -535,10 +536,12 @@ final class CombatViewModel {
         isNavigatingToResult = true
         defer { isNavigatingToResult = false }
 
-        // Wait briefly for resolve result if not yet available (max ~1.5s)
+        // Wait briefly for resolve result if not yet available (max ~1.5s).
+        // Polled every 100 ms (was 500 ms) so the result screen opens as
+        // soon as the server answers instead of on the next half-second.
         if appState.resolveResult == nil {
-            for _ in 0..<3 {
-                try? await Task.sleep(for: .milliseconds(500))
+            for _ in 0..<15 {
+                try? await Task.sleep(for: .milliseconds(100))
                 if appState.resolveResult != nil { break }
             }
         }

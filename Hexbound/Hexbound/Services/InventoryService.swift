@@ -142,6 +142,9 @@ final class InventoryService {
             )
             appState.currentCharacter?.inventorySlots = response.inventorySlots
             let allItems = response.toItems(consumableMapper: mapConsumableToItem)
+            // Pre-compute item alpha-trim rects off main so the Hero grid
+            // renders without per-cell pixel scans.
+            ItemImageView.prewarm(keys: allItems.map(\.imageKey))
 
             appState.cachedInventory = allItems
             return .loaded(allItems)
@@ -178,7 +181,8 @@ final class InventoryService {
             )
             // FTUE: mark gear up complete on first equip
             TutorialManager.shared.completeFTUEObjective(.gearUp)
-            HapticManager.light()
+            // No haptic here: the EQUIP button already fired one on the tap.
+            // This one landed a round trip later and read as lag.
             appState.currentCharacter?.inventorySlots = response.inventorySlots
             return response.toItems(consumableMapper: mapConsumableToItem)
         } catch let error as APIError {
@@ -203,9 +207,11 @@ final class InventoryService {
                 APIEndpoints.inventoryUnequip,
                 body: InventoryMutationBody(characterId: charId, inventoryId: inventoryId)
             )
-            HapticManager.light()
             appState.currentCharacter?.inventorySlots = response.inventorySlots
             return response.toItems(consumableMapper: mapConsumableToItem)
+        } catch let APIError.clientError(_, message, _) {
+            appState.showToast(message, subtitle: "Item returned to its slot", type: .error)
+            return nil
         } catch {
             appState.showToast("Unequip failed", subtitle: "Check connection and try again", type: .error)
             return nil
@@ -336,6 +342,35 @@ final class InventoryService {
     }
 
     // MARK: - Helpers
+
+    // MARK: - Optimistic potion estimates
+    //
+    // Mirror of the backend defaults in lib/game/consumable-effects.ts
+    // (health: small 25% / medium 50% / large 100% of max HP; stamina:
+    // small 30 / medium 60 / large full). The optimistic bar used a flat
+    // "30% of max, at least 50" for every potion, so it overshot or
+    // undershot and visibly jumped when the server answered. Server values
+    // stay authoritative (admin config can override these).
+
+    static func estimatedHpRestore(consumableType: String?, maxHp: Int) -> Int {
+        let fraction: Double
+        switch consumableType {
+        case "health_potion_small": fraction = 0.25
+        case "health_potion_medium": fraction = 0.5
+        case "health_potion_large": fraction = 1.0
+        default: fraction = 0.3
+        }
+        return max(1, Int(Double(maxHp) * fraction))
+    }
+
+    static func estimatedStaminaRestore(consumableType: String?, maxStamina: Int) -> Int {
+        switch consumableType {
+        case "stamina_potion_small": return 30
+        case "stamina_potion_medium": return 60
+        case "stamina_potion_large": return maxStamina
+        default: return max(Int(Double(maxStamina) * 0.3), 20)
+        }
+    }
 
     // MARK: - Consumable Helpers
 

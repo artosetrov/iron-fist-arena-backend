@@ -121,6 +121,7 @@ final class ShopService {
             updateCharacter(from: response)
             // BUG-58: server incremented Big Spender (gold_spent) quest — refresh.
             refreshDailyQuestsAfterGoldSpend()
+            refreshInventoryInBackground()
             return true
         } catch let error as APIError {
             switch error {
@@ -158,6 +159,7 @@ final class ShopService {
             // BUG-58: consumable purchase now tracks gold_spent on the server —
             // invalidate the quest cache so Big Spender counter updates live.
             refreshDailyQuestsAfterGoldSpend()
+            refreshInventoryInBackground()
             return true
         } catch let error as APIError {
             if case .clientError(_, let message, _) = error {
@@ -203,6 +205,15 @@ final class ShopService {
     }
 
     // MARK: - Daily Quest Cache Invalidation
+
+    /// Bring a purchase into the inventory cache without ever emptying it
+    /// (stale-while-revalidate). Replaces the old `cachedInventory = nil`,
+    /// which left the Hero / Arena potion buttons empty until a refetch.
+    /// Covers every caller (Shop, the skill-picker's inline buy, …).
+    private func refreshInventoryInBackground() {
+        let inventoryService = InventoryService(appState: appState)
+        Task { _ = await inventoryService.loadInventory() }
+    }
 
     /// BUG-58 (QA 2026-04-10): After any gold-spending shop action, invalidate
     /// the typed quest cache and kick off a background reload so the Big Spender
@@ -313,18 +324,21 @@ final class ShopService {
     private func updateCharacter(from response: ShopBuyResponse) {
         let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
         applyCharacterCurrency(gold: gold, gems: gems)
-        appState.cachedInventory = nil
+        // No `cachedInventory = nil`: ShopViewModel revalidates the
+        // inventory in the background after a purchase (an empty cache
+        // broke the potion buttons until a refetch).
     }
 
     private func updateCharacter(from response: ShopBuyConsumableResponse) {
         let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
         applyCharacterCurrency(gold: gold, gems: gems)
-        appState.cachedInventory = nil
+        // No `cachedInventory = nil`: ShopViewModel revalidates the
+        // inventory in the background after a purchase (an empty cache
+        // broke the potion buttons until a refetch).
     }
 
     private func updateCharacter(from response: ShopBuyGemsResponse) {
         applyCharacterCurrency(gold: response.gold, gems: response.gems)
-        appState.cachedInventory = nil
     }
 
     private func resolvedCurrency(
@@ -342,6 +356,7 @@ final class ShopService {
             char.gold = gold
             char.gems = gems
             appState.currentCharacter = char
+            appState.noteAuthoritativeCurrencyWrite()
         }
     }
 }

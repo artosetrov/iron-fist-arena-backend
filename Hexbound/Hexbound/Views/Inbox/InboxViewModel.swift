@@ -44,6 +44,21 @@ final class InboxViewModel {
     private let apiClient = APIClient.shared
     private let messageService = MessageService.shared
 
+    // MARK: - Last-known snapshot (latency pass 2026-10-15)
+    //
+    // The inbox had no cache at all: every open showed skeletons for a full
+    // round trip. The last feed is kept for the session (per hero) and shown
+    // instantly on the next open while `fetchAll` revalidates.
+    private struct Snapshot {
+        let characterId: String
+        let messages: [MailMessage]
+        let conversations: [Conversation]
+        let mailUnread: Int
+        let scrollsUnread: Int
+    }
+    private static var lastSnapshot: Snapshot?
+    private var characterId: String?
+
     // MARK: - Unified Feed
 
     /// Merges mail + conversations into a single timeline sorted by date (newest first).
@@ -62,11 +77,32 @@ final class InboxViewModel {
             return a.sortDate > b.sortDate
         }
         unifiedItems = items
+        // Every mutation ends here, so the snapshot never lags a claim/read.
+        if let characterId {
+            Self.lastSnapshot = Snapshot(
+                characterId: characterId,
+                messages: messages,
+                conversations: conversations,
+                mailUnread: mailUnreadCount,
+                scrollsUnread: scrollsUnreadCount
+            )
+        }
     }
 
     // MARK: - Fetch All
 
     func fetchAll(characterId: String) async {
+        if self.characterId != characterId {
+            self.characterId = characterId
+            if messages.isEmpty, conversations.isEmpty,
+               let snapshot = Self.lastSnapshot, snapshot.characterId == characterId {
+                messages = snapshot.messages
+                conversations = snapshot.conversations
+                mailUnreadCount = snapshot.mailUnread
+                scrollsUnreadCount = snapshot.scrollsUnread
+                rebuildUnifiedFeed()
+            }
+        }
         async let mailTask: () = fetchInbox(characterId: characterId)
         async let scrollsTask: () = loadConversations(characterId: characterId)
         _ = await (mailTask, scrollsTask)
@@ -76,7 +112,8 @@ final class InboxViewModel {
     // MARK: - Fetch Mail
 
     func fetchInbox(characterId: String, page: Int = 1) async {
-        isLoading = true
+        // Skeleton only when there is nothing on screen.
+        isLoading = messages.isEmpty
         error = nil
         do {
             let response: MailInboxResponse = try await apiClient.get(
@@ -186,6 +223,21 @@ final class InboxViewModel {
         messages[idx] = messages[idx].withClaimed()
         rebuildUnifiedFeed()
 
+        // Latency pass (2026-10-15): the attachments say exactly what the
+        // server will grant, so the CLAIMED modal (root queue) and the
+        // gold/gems/xp credit land on the tap. This also fixes the modal
+        // showing ACCOUNT TOTALS ("+12,345 gold"): it used `response.gold`,
+        // which is the post-claim balance, not the amount claimed.
+        let attachments = savedMessage.attachments ?? []
+        let credit = appState.creditRewardOptimistically(
+            gold: Self.sum(attachments, type: "gold"),
+            gems: Self.sum(attachments, type: "gems"),
+            xp: Self.sum(attachments, type: "xp")
+        )
+        let config = buildClaimRewardConfig(message: savedMessage, attachments: attachments)
+        appState.claimRewardConfig = config
+        let previousLevel = appState.currentCharacter?.level
+
         // Fire API in background
         Task { [weak self] in
             guard let self else { return }
@@ -195,7 +247,6 @@ final class InboxViewModel {
                     "/api/mail/\(messageId)/claim",
                     body: ["character_id": characterId]
                 )
-                let previousLevel = appState.currentCharacter?.level
 
                 appState.applyAuthoritativeRewardState(
                     gold: response.gold,
@@ -210,12 +261,10 @@ final class InboxViewModel {
                 if response.claimed?.contains(where: { $0.type == "item" || $0.type == "consumable" }) == true {
                     appState.cachedInventory = nil
                 }
-                appState.claimRewardConfig = buildClaimRewardConfig(
-                    message: savedMessage,
-                    response: response
-                )
             } catch {
                 // Revert on failure
+                appState.revertRewardCredit(credit)
+                appState.withdrawClaimReward(config)
                 if let revertIdx = messages.firstIndex(where: { $0.id == messageId }) {
                     messages[revertIdx] = savedMessage
                 }
@@ -225,17 +274,21 @@ final class InboxViewModel {
         }
     }
 
+    private static func sum(_ attachments: [MailAttachment], type: String) -> Int {
+        attachments.filter { $0.type == type }.reduce(0) { $0 + $1.amount }
+    }
+
     private func buildClaimRewardConfig(
         message: MailMessage,
-        response: MailClaimResponse
+        attachments: [MailAttachment]
     ) -> ClaimRewardConfig {
         ClaimRewardConfig(
             title: "CLAIMED!",
             subtitle: message.subject,
-            goldReward: response.gold ?? 0,
-            gemsReward: response.gems ?? 0,
-            xpReward: response.xp ?? 0,
-            lootItems: (response.claimed ?? []).compactMap(buildLootItem)
+            goldReward: Self.sum(attachments, type: "gold"),
+            gemsReward: Self.sum(attachments, type: "gems"),
+            xpReward: Self.sum(attachments, type: "xp"),
+            lootItems: attachments.compactMap(buildLootItem)
         )
     }
 

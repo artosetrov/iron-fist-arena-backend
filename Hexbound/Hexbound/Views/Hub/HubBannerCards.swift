@@ -263,6 +263,14 @@ struct BattleInviteBanner: View {
 
     // MARK: - Actions
 
+    /// Pops the combat screen pushed on tap — only if it is still the top
+    /// route (the player may have navigated away while the accept was in flight).
+    private func popCombat(ifDepth combatDepth: Int) {
+        if appState.mainPath.count == combatDepth, combatDepth > 0 {
+            appState.mainPath.removeLast()
+        }
+    }
+
     private func acceptChallenge(_ challenge: IncomingChallenge) {
         guard !isAccepting else { return }
 
@@ -273,14 +281,21 @@ struct BattleInviteBanner: View {
             return
         }
 
+        guard let charId = appState.currentCharacter?.id else { return }
         isAccepting = true
         HapticManager.heavy()
 
+        // Latency pass (2026-10-15): push the combat screen on the tap — it
+        // shows "preparing" until the server-resolved duel lands (the duel is
+        // computed in this one request). Popped again if the accept fails.
+        appState.combatData = nil
+        appState.combatResult = nil
+        appState.resolveResult = nil
+        appState.pendingLoot = []
+        appState.mainPath.append(AppRoute.combat)
+        let combatDepth = appState.mainPath.count
+
         Task {
-            guard let charId = appState.currentCharacter?.id else {
-                isAccepting = false
-                return
-            }
             do {
                 let result = try await ChallengeService.shared.acceptChallenge(
                     characterId: charId,
@@ -325,12 +340,7 @@ struct BattleInviteBanner: View {
                     source: "challenge", matchId: result.matchId
                 )
 
-                // Clear combat state + navigate
-                appState.combatData = nil
-                appState.combatResult = nil
-                appState.resolveResult = nil
-                appState.pendingLoot = []
-                appState.mainPath.append(AppRoute.combat)
+                // Deliver to the already-visible combat screen
                 appState.combatData = combatData
                 appState.resolveResult = ResolveResult(
                     verified: true, clientMatches: true,
@@ -354,6 +364,7 @@ struct BattleInviteBanner: View {
                     cache.incomingChallenges.filter { $0.id != challenge.id }
                 )
             } catch let apiError as APIError {
+                popCombat(ifDepth: combatDepth)
                 switch apiError {
                 case .serverError(_, let msg):
                     appState.showToast(msg, type: .error)
@@ -362,6 +373,7 @@ struct BattleInviteBanner: View {
                 }
                 HapticManager.error()
             } catch {
+                popCombat(ifDepth: combatDepth)
                 appState.showToast("Failed to start duel", type: .error)
                 HapticManager.error()
             }
@@ -409,6 +421,7 @@ struct BattleInviteBanner: View {
 /// Hidden when no claimable quests exist.
 struct QuestRewardWidget: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
 
     @State private var claimingId: String?
 
@@ -549,50 +562,16 @@ struct QuestRewardWidget: View {
     // MARK: - Claim Logic
 
     private func claimQuest(_ quest: Quest) {
+        guard claimingId == nil else { return }
         claimingId = quest.id
-
-        let questId = quest.id
-        let previousLevel = appState.currentCharacter?.level
+        // Tap feedback now; the CLAIMED modal opens immediately inside
+        // claimQuestOptimistically (latency pass 2026-10-15).
+        HapticManager.success()
+        SFXManager.shared.play(.uiQuestComplete)
         Task {
             let service = QuestService(appState: appState)
-            let result = await service.claimQuest(questId: questId)
+            await service.claimQuestOptimistically(quest, cache: cache)
             claimingId = nil
-
-            guard let result = result else {
-                // QuestService already toasted the specific server reason
-                // (e.g. "Already claimed", "Quest not completed yet"). The
-                // hub card's retry affordance is no longer surfaced here —
-                // the user can tap Claim again from the same card.
-                return
-            }
-
-            appState.applyAuthoritativeRewardState(
-                gold: result.gold,
-                gems: result.gems,
-                xp: result.xp,
-                leveledUp: result.leveledUp,
-                newLevel: result.newLevel,
-                statPointsAwarded: result.statPointsAwarded,
-                passivePointsAwarded: result.passivePointsAwarded,
-                previousLevel: previousLevel
-            )
-
-            if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    appState.cachedTypedQuests?[idx].rewardClaimed = true
-                }
-            }
-
-            HapticManager.success()
-
-            appState.claimRewardConfig = ClaimRewardConfig(
-                title: "CLAIMED!",
-                subtitle: quest.title,
-                goldReward: result.rewardGold,
-                gemsReward: result.rewardGems,
-                xpReward: result.rewardXp,
-                lootItems: []
-            )
         }
     }
 }

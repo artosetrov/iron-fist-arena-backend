@@ -160,6 +160,11 @@ struct GoldMineSlotResponse: Codable, Equatable {
 struct GoldMineStatusResponse: Codable {
     let slots: [GoldMineSlotResponse]
     let maxSlots: Int
+    /// Added 2026-10-15 (optional — older backends omit both). Lets the
+    /// client know, before collecting, whether collect-all will ask for a
+    /// shaft pick, so it can collect optimistically when it won't.
+    let activeShaft: ActiveShaft?
+    let needsShaftPick: Bool?
 }
 
 protocol GoldMineSlotsBridge {
