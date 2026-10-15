@@ -55,3 +55,15 @@ prototypes/*.pdf
 # Python bytecode from the repo scripts
 __pycache__/
 *.pyc
+
+# Root-level downloads and scratch (generated art, music takes, archives).
+# Assets that ship live under Hexbound/…/Resources; the root stays policy-only.
+/*.png
+/*.jpg
+/*.jpeg
+/*.zip
+/*.mp3
+/*.wav
+/npcvo_bundle*.json
+/_to_delete/
+/_music_audition/
