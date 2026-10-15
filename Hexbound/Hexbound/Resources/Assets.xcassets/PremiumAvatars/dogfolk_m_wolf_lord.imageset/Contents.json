@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "dogfolk_m_wolf_lord.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "dogfolk_m_wolf_lord@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "dogfolk_m_wolf_lord@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

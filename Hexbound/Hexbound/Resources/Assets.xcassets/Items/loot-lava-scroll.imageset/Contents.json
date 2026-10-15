@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "loot-lava-scroll.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "loot-lava-scroll@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "loot-lava-scroll@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

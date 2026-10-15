@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-tank-found-rebuke.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-tank-found-rebuke@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-tank-found-rebuke@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

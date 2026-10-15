@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-tank-prot-cleave.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-tank-prot-cleave@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-tank-prot-cleave@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -55,7 +55,9 @@ extension BossRevealData {
             level: boss.level,
             hp: boss.hp,
             dropCount: boss.loot.count,
-            imageKey: boss.fullImage,
+            // DB bosses derive `fullImage` by naming convention; fall back to
+            // the portrait when the full-body asset is not in the catalog.
+            imageKey: UIImage(named: boss.fullImage) != nil ? boss.fullImage : boss.portraitImage,
             accent: accent,
             kind: .dungeonBoss,
             onChallenge: onChallenge,

@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-mage-cryo-glacial.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-mage-cryo-glacial@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-mage-cryo-glacial@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-furnace-worm-full.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-furnace-worm-full@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-furnace-worm-full@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

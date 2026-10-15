@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "amu_heart_of_eternity.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "amu_heart_of_eternity@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "amu_heart_of_eternity@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

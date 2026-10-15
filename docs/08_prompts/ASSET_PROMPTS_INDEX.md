@@ -27,6 +27,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Tavern Interior | Tavern screen background (9:16) + minigame icons (shell game, fortune wheel, dice) + patron busts | `docs/08_prompts/TAVERN_INTERIOR_PROMPTS.md` | Active | 1 bg + 3 icons + 3 patrons |
 | Fortune Wheel Assets | Full asset set: background, wheel texture, Lady Fortuna portrait, sector icons (5), pointer, spin button decoration | `docs/08_prompts/FORTUNE_WHEEL_ASSET_PROMPTS.md` | Active | 1 bg + 1 texture + 1 portrait + 5 icons + 1 pointer + 1 button |
 | Dice & Runes | Combat dice faces (attack/guard), zone emblems, 3/4 dice showcase, rune sockets, 36 class runes (lesser / path / great) | `docs/08_prompts/DICE_RUNES_PROMPTS.md` | Active | 45 |
+| Currency Icons | `icon-gold`, `icon-gems`, `icon-xp`, `icon-stamina` (+ `reward-gold`, `reward-xp`) — pen-and-ink replacements of the cartoon set | `docs/08_prompts/CURRENCY_ICONS_PROMPTS.md` | Active | 4 |
 
 ---
 

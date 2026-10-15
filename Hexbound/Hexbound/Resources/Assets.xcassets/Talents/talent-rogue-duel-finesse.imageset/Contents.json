@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-rogue-duel-finesse.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-rogue-duel-finesse@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-rogue-duel-finesse@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

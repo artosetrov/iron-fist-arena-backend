@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-warrior-exec-decapitate.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-warrior-exec-decapitate@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-warrior-exec-decapitate@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

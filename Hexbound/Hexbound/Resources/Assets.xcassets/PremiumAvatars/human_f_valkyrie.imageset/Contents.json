@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "human_f_valkyrie.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "human_f_valkyrie@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "human_f_valkyrie@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

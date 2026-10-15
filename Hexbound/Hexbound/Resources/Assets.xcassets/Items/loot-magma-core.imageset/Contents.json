@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "loot-magma-core.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "loot-magma-core@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "loot-magma-core@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

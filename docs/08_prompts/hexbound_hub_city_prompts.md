@@ -178,3 +178,25 @@ Pure solid black background. Clean edges. Aspect ratio 4:3 (wider than tall), hi
 - **Анимации**: дым из трубы таверны (частицы), мерцание факелов, пульсация свечения арены, блеск трофея, искры у кузницы — каждое здание живёт
 - **Персонаж Degon**: анимированный спрайт на дороге, idle-анимация
 - **Переход**: при тапе на здание — zoom-in анимация к зданию, потом переход на экран
+
+---
+
+## 10. Регенерация 2026-10-13 (Nano Banana 2.1 через Higgsfield, по правилам ART_STYLE_GUIDE → Generation Rules)
+
+Перегенерированы 5 зданий, которые были 128px и в другой семье рендера: `guild-hall`, `gold-mine`, `dungeon`, `ranks`, `black-market`. Схема промта (используется дословно, меняется только блок ASSET):
+
+```
+Images 1, 2 and 3 are STYLE REFERENCES only: match their art style, rendering, line, palette, light, scale and level of detail exactly; do not copy their composition or building design.
+
+ASSET: a single isolated dark fantasy game building sprite, the <NAME>: <описание здания и пропсов, «blank, no letters» для досок и вывесок>. Same tilted bird's-eye 3/4 view and the same scale as the style references.
+
+Style bible: hand-drawn pen and ink illustration with crosshatching for all shading, bold black ink outlines on every element, coloured with muted watercolour washes; muted palette of dark brown, charcoal grey, bone white and dark iron with one accent: <акцент>; aged and worn surfaces, cracks, moss, cobwebs; lit by one key light from the upper left, warm bone-coloured key, cool slate-grey shadows, no cast shadow on the ground. Painted flames and lit windows are fine but no glow halos, no light rays, no bloom. Only a small patch of packed earth directly under the building, no surrounding terrain, no sky.
+
+Composition: one building only, centred, filling about 80% of the frame, on a flat solid magenta background (#FF00FF), nothing else in the frame. Not a 3D render, not a painting, no blur, no fog, no text, letters or logos, no particles.
+```
+
+Референсы: `building-arena`, `building-tavern`, затем утверждённый `building-guild-hall` как третий (golden anchor). Параметры: 1:1, 2k, thinking medium, 2 кредита/изображение. Результат → `scripts/ingest_generated_sprite.py`.
+
+Урок: генератор затемняет magenta в «карманах» (между балками, под верёвками) и подмешивает его в полупрозрачный дым — скрипт кеит по направлению цвета (не по расстоянию) и разворачивает серый дым поверх ключа заливкой от фона.
+
+> RANKS теперь низкий широкий зал (по решению 2026-10-13), не башня — см. §6 как исторический промт.

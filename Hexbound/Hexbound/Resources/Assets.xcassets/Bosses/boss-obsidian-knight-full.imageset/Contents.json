@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-obsidian-knight-full.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-obsidian-knight-full@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-obsidian-knight-full@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

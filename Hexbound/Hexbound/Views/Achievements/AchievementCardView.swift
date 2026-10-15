@@ -131,12 +131,22 @@ struct AchievementCardView: View {
     @ViewBuilder
     private var categoryIconView: some View {
         let (iconName, iconColor) = achievement.categoryAsset
-        ZStack {
-            Circle()
-                .fill(iconColor.opacity(0.15))
-            Image(systemName: iconName)
-                .font(DarkFantasyTheme.cardTitle.weight(.semibold))
-                .foregroundStyle(iconColor)
+        if UIImage(named: achievement.badgeAsset) != nil {
+            // Badge art (2026-10-14). Not yet earned → muted, earned → full colour.
+            Image(achievement.badgeAsset)
+                .resizable()
+                .scaledToFit()
+                .saturation(achievement.completed ? 1 : 0.2)
+                .opacity(achievement.completed ? 1 : 0.7)
+                .accessibilityHidden(true)
+        } else {
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.15))
+                Image(systemName: iconName)
+                    .font(DarkFantasyTheme.cardTitle.weight(.semibold))
+                    .foregroundStyle(iconColor)
+            }
         }
     }
 

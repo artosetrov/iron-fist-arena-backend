@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "relic_demon_eye.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "relic_demon_eye@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "relic_demon_eye@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

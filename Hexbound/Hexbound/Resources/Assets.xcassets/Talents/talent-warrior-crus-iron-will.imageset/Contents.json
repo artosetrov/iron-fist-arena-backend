@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-warrior-crus-iron-will.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-warrior-crus-iron-will@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-warrior-crus-iron-will@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

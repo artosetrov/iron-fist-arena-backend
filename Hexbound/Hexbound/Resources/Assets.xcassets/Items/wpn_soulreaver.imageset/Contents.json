@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "wpn_soulreaver.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "wpn_soulreaver@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "wpn_soulreaver@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

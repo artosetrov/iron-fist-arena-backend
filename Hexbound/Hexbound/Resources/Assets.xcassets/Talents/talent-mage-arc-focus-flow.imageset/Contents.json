@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "talent-mage-arc-focus-flow.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "talent-mage-arc-focus-flow@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "talent-mage-arc-focus-flow@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

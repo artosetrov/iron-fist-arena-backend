@@ -74,9 +74,9 @@ No new server calls. Everything derived from the existing `InteractiveStrikeResp
 | Strike — zone = head | `icon-helmet` |
 | Strike — zone = chest | `icon-chest` |
 | Strike — zone = legs | `icon-legs` |
-| Crit | `fx-crit-text` (or `fx-critical-text`) |
-| Dodge | `fx-dodge-text` |
-| Miss | `fx-miss-text` |
+| Crit | code-drawn `CombatFXCallout.crit` (`CombatCalloutText`), no PNG — retired 2026-10-13 |
+| Dodge | code-drawn `CombatFXCallout.dodge` (`CombatCalloutText`) |
+| Miss | code-drawn `CombatFXCallout.miss` (`CombatCalloutText`) |
 | Block / shield | `fx-block-hexshield` (generic) |
 | Talent — burst_damage | `fx-magical-burst` or `fx-fire-flame` |
 | Talent — heal_self | `fx-heal-divine` |

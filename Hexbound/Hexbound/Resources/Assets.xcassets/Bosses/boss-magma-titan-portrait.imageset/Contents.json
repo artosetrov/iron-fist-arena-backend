@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-magma-titan-portrait.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-magma-titan-portrait@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-magma-titan-portrait@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -72,7 +72,7 @@ Canonical style reference for all AI-generated art. Use this guide for all DALL-
 
 **Never bake into an image:** glow or bloom, light rays, cast shadows, motion blur, **text or glyphs**, particles, water/fire motion. Each one duplicates an engine effect, breaks alpha, or freezes something that must move. If the reference shows a lit lamp, generate it **unlit-neutral** and add the glow in code.
 
-> Known violations to retire: `fx-dodge-text`, `fx-miss-text`, `fx-crit-text`, `fx-critical-text` (256×256 PNGs with baked text / crosshair, shown fullscreen in combat). Replace with a code-drawn callout (Cinzel-Bold, `DarkFantasyTheme` tokens, opacity-only animation). Tracked in `docs/07_ui_ux/MOTION_AND_JUICE_AUDIT.md` follow-ups.
+> Retired 2026-10-13: `fx-dodge-text`, `fx-miss-text`, `fx-crit-text`, `fx-critical-text` (256×256 PNGs with baked text / crosshair). Replaced by the code-drawn `CombatCalloutText` (`CombatFXCallout`, Oswald + `DarkFantasyTheme` tokens, opacity-only, localized via `combat.dodge` / `combat.miss` / `combat.crit`).
 
 ### 2. The style bible rides on every call, verbatim
 
@@ -121,6 +121,7 @@ Our palette is bone, beige, grey stone — keying on white eats edges and highli
 | Line weight varies between assets | Same bible wording; compare outline widths at display size |
 | Scale / texel density varies | Fixed canvas and fill ratio per class (§4); normalise in code |
 | Halo or fringe around the sprite | Key colour + un-mix edges (§5) |
+| Key background painted as stripes / gradient / a framed card instead of a flat fill (≈1 in 100 generations) | `ingest_generated_sprite.py` prints `WARNING … background was not flat` when >1 % of opaque pixels are key-hued → **regenerate**, adding "The ENTIRE background is one flat, uniform, solid … edge to edge, no pattern, no stripes, no frame, no border". Never ship it, never try to key it harder |
 | Gibberish detail (pseudo-runes, extra fingers, melted props) | Exclude "text, letters, logos" in the prompt (decorative glyphs are part of the style — keep them, but review them at 100%); review at 100%; regenerate |
 | Different design between views/states of one character | Golden anchor + edit-based variants (§3) |
 | A frozen "postcard" | Not an art problem — motion/feedback (`pulse` agent) |
@@ -258,6 +259,26 @@ painting, oil painting, watercolor, digital painting, concept art, realistic, ph
 ---
 
 ## Reference Assets in Project
+
+### Golden anchors — hub buildings (approved 2026-10-13)
+
+Attach as style references on every hub-building generation (Nano Banana 2.1 via Higgsfield, 2K, magenta key):
+- `figma-assets/07_Buildings/building-arena.png` — scale and torch treatment
+- `figma-assets/07_Buildings/building-tavern.png` — timber, shingles, warm windows
+- `Assets.xcassets/building-guild-hall` (regenerated, 2048px source in Higgsfield library) — the first asset made under these rules; current best anchor
+
+### Golden anchors — bosses (approved 2026-10-13)
+
+Boss sprites use the **grotesque ink + watercolour caricature** family (see `BOSS_SPRITES_PROMPTS.md`), not the pen-and-ink rulebook family above. Anchors for every boss generation: `Bosses/boss-fire-imp-full`, `Bosses/boss-fire-imp-portrait`, `Bosses/boss-iron-guardian-full`. Generated under these rules: all 20 Volcanic Forge sprites (`boss-lava-crawler` … `boss-pyrox`, portrait + full), and on 2026-10-14 the 100 sprites for the five DB dungeons (Fungal Grotto, Scorched Mines, Frozen Abyss, Realm of Light, Shadow Realm — prompts in `BOSS_SPRITES_PROMPTS.md`, part 2) plus the `boss-generic-portrait` fallback. Portraits ingest at 360pt, full bodies at 400pt (`BossRevealOverlayView` shows up to 320pt). DB bosses reference assets by name: `dungeon_bosses.image_url = "boss-<slug>-portrait"`, and `DungeonService.toDungeonInfo()` derives `<slug>-full`. Later the same day the remaining 30 DB bosses (Clockwork Citadel, Abyssal Depths, Infernal Throne — part 3) and the 20 legacy Training Camp / Catacombs bosses (part 4, regenerated from their original prompt bodies) went through the same pipeline, so every boss in the game — 110 bosses, 220 sprites — now ships at @1x/@2x/@3x in one style. Defect ledger for the boss runs: 2 of ~200 generations painted a striped key background (caught by the ingest WARNING), 1 false NSFW flag (reworded).
+
+Regenerated under these rules: `building-guild-hall`, `building-gold-mine`, `building-dungeon`, `building-ranks` (now a low hall, not a tower), `building-black-market`. Ingest: `scripts/ingest_generated_sprite.py <raw.png> <asset-name> --pt <points>` (chroma key, haze un-mix, `@1x/@2x/@3x`, `Contents.json`).
+
+### Golden anchors — icons (approved 2026-10-14)
+
+Pen-and-ink rulebook family (this guide's template verbatim, key `#00FF00`, magenta for green subjects). Attach as the single style reference on every call of the class — prompts and job ids in `ACHIEVEMENT_ITEM_ICONS_PROMPTS.md`:
+- Achievement medallions: `Achievements/achievement-pvp-wins-10`; rank crests: `Achievements/achievement-rank-grandmaster` (18 badges, `--pt 96`)
+- Weapons: `Items/wpn_soulreaver`; armour, jewellery, relics, consumables: `Items/chest_godplate` (63 catalog items + 27 dungeon-loot previews, `--pt 128`)
+- The 94 older item icons are painterly, not pen-and-ink; they were left as is by decision (2026-10-14). Do not use them as anchors for new items.
 
 ### Bosses (Full Body — Most Characteristic Style)
 

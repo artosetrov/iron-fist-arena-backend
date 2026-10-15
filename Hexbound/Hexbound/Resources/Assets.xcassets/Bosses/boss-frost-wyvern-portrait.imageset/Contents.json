@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-frost-wyvern-portrait.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-frost-wyvern-portrait@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-frost-wyvern-portrait@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

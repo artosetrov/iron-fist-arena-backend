@@ -123,7 +123,11 @@ struct LootPreview: Identifiable, Hashable {
             case "loot-gold":  return "icon-gold"
             case "loot-xp":    return "icon-xp"
             case "loot-gems":  return "icon-gems"
+            case "loot-rusty-blade": return "wpn_rusty_sword"
             default:
+                // 2026-10-14: named dungeon loot now ships its own art
+                // (Assets.xcassets/Items/loot-*.imageset); use it when bundled.
+                if key.hasPrefix("loot-"), UIImage(named: key) != nil { return key }
                 // Real asset key from server (e.g. "wpn_excalibur") — use as-is
                 if !key.hasPrefix("loot-") { return key }
             }

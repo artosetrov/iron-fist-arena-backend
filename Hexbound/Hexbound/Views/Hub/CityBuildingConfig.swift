@@ -102,7 +102,7 @@ let defaultCityBuildings: [CityBuilding] = [
         route: .leaderboard,
         relativeX: 0.90,
         relativeY: 0.17,
-        relativeSize: 0.32,
+        relativeSize: 0.26, // 2026-10-13: sprite is now a low wide hall (was a tall tower at 0.32)
         glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "trophy.fill",
         labelYOffset: -0.04

@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-rot-witch-portrait.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-rot-witch-portrait@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-rot-witch-portrait@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

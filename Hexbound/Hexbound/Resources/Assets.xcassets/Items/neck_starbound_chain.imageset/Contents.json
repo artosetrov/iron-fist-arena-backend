@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "neck_starbound_chain.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "neck_starbound_chain@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "neck_starbound_chain@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

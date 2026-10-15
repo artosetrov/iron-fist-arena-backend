@@ -51,7 +51,7 @@ struct MineClaimRewardView: View {
                         }
                         if gemsEarned > 0 {
                             rewardItem(
-                                icon: "icon-gem",
+                                icon: "icon-gems",
                                 value: animatedGems,
                                 color: DarkFantasyTheme.cyan
                             )

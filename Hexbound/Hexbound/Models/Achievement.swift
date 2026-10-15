@@ -40,6 +40,13 @@ struct Achievement: Codable, Identifiable {
         Self.numberFormatter.string(from: NSNumber(value: target)) ?? "\(target)"
     }
 
+    /// Per-achievement badge art in Assets.xcassets/Achievements
+    /// ("pvp_first_blood" → "achievement-pvp-first-blood"). Added 2026-10-14;
+    /// keys without art fall back to `categoryAsset`.
+    var badgeAsset: String {
+        "achievement-" + key.replacingOccurrences(of: "_", with: "-")
+    }
+
     /// SF Symbol name + color per category. Used by AchievementCardView instead of emoji.
     var categoryAsset: (String, Color) {
         switch category {

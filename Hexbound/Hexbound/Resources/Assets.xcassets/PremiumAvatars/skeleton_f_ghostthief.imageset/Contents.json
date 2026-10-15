@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "skeleton_f_ghostthief.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "skeleton_f_ghostthief@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "skeleton_f_ghostthief@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

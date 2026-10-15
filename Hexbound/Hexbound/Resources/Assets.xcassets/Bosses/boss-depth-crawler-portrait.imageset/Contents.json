@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-depth-crawler-portrait.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-depth-crawler-portrait@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-depth-crawler-portrait@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

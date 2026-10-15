@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "orc_f_war_queen.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "orc_f_war_queen@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "orc_f_war_queen@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

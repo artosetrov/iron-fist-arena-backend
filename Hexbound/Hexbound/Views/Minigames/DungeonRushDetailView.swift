@@ -82,9 +82,11 @@ struct DungeonRushDetailView: View {
         revealedMinibossIdx = vm.currentRoomIndex
 
         DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
-            let imageKey = "rush-miniboss-" + vm.enemyName
-                .lowercased()
-                .replacingOccurrences(of: " ", with: "-")
+            // 2026-10-14: was "rush-miniboss-<name>", an asset family that never
+            // existed — the reveal showed an empty frame. Resolve the real
+            // rush-<slug>-portrait/-full sprite, else the generic boss bust.
+            let imageKey = EnemyPortraitResolver.rushEnemyPortrait(for: vm.enemyName)
+                ?? "boss-generic-portrait"
             let data = BossRevealData.fromRushMiniboss(
                 name: vm.enemyName,
                 level: vm.enemyLevel,

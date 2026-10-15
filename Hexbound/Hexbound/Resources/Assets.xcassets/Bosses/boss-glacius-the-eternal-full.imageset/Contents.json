@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-glacius-the-eternal-full.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-glacius-the-eternal-full@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-glacius-the-eternal-full@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

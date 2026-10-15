@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "boss-dark-stalker-portrait.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "boss-dark-stalker-portrait@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "boss-dark-stalker-portrait@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
