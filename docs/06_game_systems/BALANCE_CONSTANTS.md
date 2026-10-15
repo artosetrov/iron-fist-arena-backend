@@ -422,12 +422,14 @@ Bundle extras now route to the user's most-recently updated character.
 
 | SKU | Gems | Gold | Premium | Monthly Card | Price | Status |
 |-----|------|------|---------|-------------|-------|--------|
-| starter_bundle | 200 | 3,000 | No | No | $2.99 | Active |
-| monthly_gem_card | 50 | 0 | No | **Yes** | $4.99 | Active |
+| starter_bundle | 200 | 3,000 | No | No | $2.99 | Active — once per account |
+| monthly_gem_card | 150 | 0 | No | **Yes** | $4.99 | Active |
 | premium_forever | 0 | 0 | **Yes** | No | $9.99 | **Disabled (new sales)** — grandfathered for existing owners |
 | premium_pass_monthly | 0 | 0 | **30-day entitlement** | No | $4.99 | Backend/runtime-ready successor; storefront transition still partial |
 
-**Monthly Gem Card:** 50 instant gems + 10 gems/day for 30 days (350 total)
+**Monthly Gem Card (2026-10-15):** 150 instant gems + 50 gems/day for 30 days — up to 1,650 (≈331 gems/$, 3× the $4.99 gem pack). Daily gems are paid once per UTC day the player opens the game; missed days are not paid out. Buying again while a card is active adds 30 days (it used to reset the card). Was 50 + 10/day = 350 (≈70 gems/$ — below the 110 gems/$ of `gems_medium`).
+
+**Starter Bundle:** once per account (ECONOMY_RULES.md R10.3) — `oneTime` in `IAP_PRODUCTS`; `GET /api/iap/offers` withdraws it after the first purchase.
 
 ---
 
@@ -613,7 +615,7 @@ Max Stamina: 180 (regenerates 1 pt every 8 min)
 2. **Extra PvP:** 50 gems = +5 stamina immediately
 3. **Inventory Expansion:** 5000 gold = +10 slots (tradeable in time)
 4. **Skill Upgrades:** 1000–3000 gold per rank
-5. **Monthly Card:** $4.99 = 350 total gems over 30 days
+5. **Monthly Card:** $4.99 = up to 1,650 gems over 30 days (150 now + 50/day)
 
 **Fair Play Guarantee:** No pay-to-win stat advantages; only acceleration/cosmetics.
 

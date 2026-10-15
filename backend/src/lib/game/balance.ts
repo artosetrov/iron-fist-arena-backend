@@ -118,12 +118,20 @@ export const HP_REGEN = {
 } as const;
 
 // --- Monthly Gem Card ---
-// Sold as "50 gems now + 10 gems a day for 30 days". The instant 50 come from
-// IAP_PRODUCTS.monthly_gem_card.gems; the daily part is claimed lazily by
-// `grantDailyGemCard` on /api/game/init (nothing paid it out before
+// Sold as "150 gems now + 50 gems a day for 30 days" (up to 1,650). The instant
+// part is IAP_PRODUCTS.monthly_gem_card.gems; the daily part is claimed lazily
+// by `grantDailyGemCard` on /api/game/init — once per UTC day the player opens
+// the game, so missed days are not paid out (nothing paid it at all before
 // AUDIT-2026-10-13 H3).
+//
+// 2026-10-15: was 50 + 10/day = 350 (≈70 gems/$) — less per dollar than the
+// $4.99 gem pack (550, ≈110 gems/$) while the store sold it as the best deal.
+// Up to 1,650 is ≈331 gems/$, 3× the pack, and still time-gated: 50/day is one
+// first-of-day stamina refill (GEM_COSTS.STAMINA_REFILL), so money cannot buy
+// it faster. A repeat purchase extends the card by DAYS (startOrExtendGemCard).
 export const MONTHLY_GEM_CARD = {
-  DAILY_GEMS: 10,
+  INSTANT_GEMS: 150,
+  DAILY_GEMS: 50,
   DAYS: 30,
 } as const;
 
@@ -274,8 +282,11 @@ export interface IapProduct {
   gems: number;
   gold: number;
   premium: boolean; // grants permanent premium (legacy: premium_forever). For subscriptions, use `subscription` instead.
-  monthlyGemCard: boolean; // activates daily gem card (50 instant + 10/day x30)
+  monthlyGemCard: boolean; // starts or extends the Monthly Gem Card (see MONTHLY_GEM_CARD)
   price: number;
+  // Once per account (ECONOMY_RULES.md R10.3). /api/iap/offers reports it as
+  // unavailable after the first purchase so the client stops offering it.
+  oneTime?: boolean;
   enabled?: boolean; // default: true. If false, /api/iap/products hides it and /verify-receipt rejects new purchases.
   items?: IapItemGrant[]; // optional consumable grants for bundle SKUs
   // Premium Pass Phase 2 (2026-04-14): auto-renewable subscription marker.
@@ -313,11 +324,11 @@ export const IAP_PRODUCTS: Record<string, IapProduct> = {
     items: [{ type: 'protection_scroll', quantity: 3 }, { type: 'legendary_shard', quantity: 1 }] },
   adventurer_bundle_III: { gems: 3200, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99,
     items: [{ type: 'protection_scroll', quantity: 5 }, { type: 'legendary_shard', quantity: 5 }] },
-  // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry;
-  // the 10/day is granted lazily by /api/game/init — see MONTHLY_GEM_CARD)
-  monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
-  // Starter Bundle — one-time purchase for new players (best value, creates habit)
-  starter_bundle: { gems: 200, gold: 3000, premium: false, monthlyGemCard: false, price: 2.99 },
+  // Monthly Gem Card (instant gems here + a daily_gem_card row; the daily part
+  // is granted lazily by /api/game/init — see MONTHLY_GEM_CARD)
+  monthly_gem_card: { gems: MONTHLY_GEM_CARD.INSTANT_GEMS, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
+  // Starter Bundle — once per account for new players (creates habit)
+  starter_bundle: { gems: 200, gold: 3000, premium: false, monthlyGemCard: false, price: 2.99, oneTime: true },
   // Premium Forever — DISABLED for new purchases in Economy v3.
   // Existing owners keep entitlement (server checks `premiumUntil`). New monetization path:
   // Premium Pass (30-day subscription) — see docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.

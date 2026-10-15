@@ -212,7 +212,7 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | `adventurer_bundle_I` | 600 | 3000 | — | — | $4.99 |
 | `adventurer_bundle_II` | 1400 | 10000 | — | — | $9.99 |
 | `adventurer_bundle_III` | 3200 | 20000 | — | — | $19.99 |
-| `monthly_gem_card` | 50 | 0 | — | yes | $4.99 |
+| `monthly_gem_card` | 150 | 0 | — | yes | $4.99 |
 | `starter_bundle` | 200 | 3000 | — | — | $2.99 |
 | `premium_forever` | 0 | 0 | yes | — | $9.99 |
 | `premium_pass_monthly` | 0 | 0 | — | — | $4.99 |

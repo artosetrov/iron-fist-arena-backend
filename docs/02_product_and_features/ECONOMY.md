@@ -169,10 +169,11 @@ to the user's most-recently updated character.
 
 #### Monthly Gem Card ($4.99)
 - Active
-- 50 gems instant + 10 gems/day × 30 days = 350 gems total
+- 150 gems instant + 50 gems/day × 30 days = up to 1,650 gems (2026-10-15; was 350)
+- Daily gems need a login that UTC day; buying again while active adds 30 days
 
 #### Starter Bundle ($2.99, one-time)
-- 200 gems + 3000 gold — best $/value in the game, creates habit
+- 200 gems + 3000 gold, once per account (enforced since 2026-10-15 via `GET /api/iap/offers`)
 
 #### Premium Pass Monthly ($4.99, successor rollout)
 
