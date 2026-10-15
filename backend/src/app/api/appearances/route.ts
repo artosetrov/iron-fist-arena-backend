@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 /**
  * Skin catalog. Anonymous callers (onboarding before sign-in) get the plain
@@ -12,6 +13,12 @@ import { getAuthUser } from '@/lib/auth'
  */
 export async function GET(req: NextRequest) {
   try {
+    // Unauthenticated GET — IP rate limit (backend/CLAUDE.md, Rate Limiting).
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+    if (!(await rateLimit(`appearances:${ip}`, 60, 60_000))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const skins = await prisma.appearanceSkin.findMany({
       orderBy: [{ origin: 'asc' }, { gender: 'asc' }, { sortOrder: 'asc' }],
       select: {
