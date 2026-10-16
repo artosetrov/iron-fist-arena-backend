@@ -40,19 +40,22 @@ export async function GET(req: NextRequest) {
 
     const matches = await prisma.pvpMatch.findMany({
       where: {
-        OR: [
-          { player1Id: characterId },
-          { player2Id: characterId },
+        AND: [
+          { OR: [{ player1Id: characterId }, { player2Id: characterId }] },
+          // Interactive fights are written as 'in_progress' with no winner on
+          // /pvp/match/start — listing them read as a loss ("beat you 5m ago").
+          // Legacy rows may carry a NULL status; they are finished fights.
+          { OR: [{ status: null }, { status: { not: 'in_progress' } }] },
         ],
       },
       orderBy: { playedAt: 'desc' },
       take: limit,
       include: {
         player1: {
-          select: { id: true, characterName: true, class: true, level: true },
+          select: { id: true, characterName: true, class: true, level: true, avatar: true },
         },
         player2: {
-          select: { id: true, characterName: true, class: true, level: true },
+          select: { id: true, characterName: true, class: true, level: true, avatar: true },
         },
       },
     })
@@ -80,6 +83,7 @@ export async function GET(req: NextRequest) {
           name: opponent.characterName,
           class: opponent.class,
           level: opponent.level,
+          avatar: opponent.avatar,
         },
         won,
         ratingBefore,
