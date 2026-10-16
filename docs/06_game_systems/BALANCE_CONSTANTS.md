@@ -357,6 +357,16 @@ Players earn free gems from:
 **Example (3 slots, all mining):**
 - 4 hours later → collect 3 slots → ~210 gold + (30% chance) gems
 
+### Expedition chest (2026-10-16)
+
+| Property | Value | Details |
+|----------|-------|---------|
+| Hauls per expedition | 5 | One per cart collected (single slot or Collect All alike; extra carts carry over) — `SHAFT_TOTAL_EXTRACTIONS` |
+| Chest reward | 150 gold + 2 gems | `EXPEDITION_CHEST_GOLD` / `EXPEDITION_CHEST_GEMS` in `gold-mine-expedition.ts` — ≈ +30 gold / +0.4 gems per cart |
+| Next expedition | starts automatically | No picker; shafts alternate the bonus-round backdrop |
+
+The bonus round (coin rush) is **optional** since 2026-10-16: a ready cart is collected whether or not its bonus was played; an unplayed bonus is forfeited at collect.
+
 ### Boost Mechanics
 
 | Cost | Effect |

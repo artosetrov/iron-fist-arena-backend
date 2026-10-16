@@ -1,12 +1,11 @@
 /**
  * POST /api/minigames/gold-mine/slot-minigame/submit
  *
- * Finalizes a per-slot bonus mini-game session (Variant D Phase 2).
- * Mirrors the legacy /minigame-bonus logic but targets a specific gold-mine
- * slot via `slot_index`. Credits bonus gold/gems immediately and stamps the
- * slot as played — the slot's passive reward is still collected separately
- * via /collect or /collect-all (and those endpoints refuse to pay out unless
- * this has been called first).
+ * Finalizes a per-slot bonus mini-game session (the optional bonus run).
+ * Targets a specific gold-mine slot via `slot_index`. Credits bonus
+ * gold/gems immediately and stamps the slot as played — the slot's own cart
+ * is still collected separately via /collect or /collect-all, which pay out
+ * whether or not this was ever called (bonus optional since 2026-10-16).
  *
  * Request body:
  *   {
@@ -34,10 +33,8 @@
  *     type gold_mine_rush.
  *   - Clamp + cap on server (bonus_gold = min(gold_claim, capGold)).
  *   - Mark slot minigamePlayedAt = now, minigameSessionId = null.
- *   - Does NOT advance shaft progress — shaft advancement is moved to the
- *     /collect-all endpoint so that one collect-all cycle = 1 extraction
- *     regardless of how many slots are played. This preserves legacy
- *     balance (5 collect cycles per shaft).
+ *   - Does NOT advance the expedition — only collected carts do (one haul
+ *     per cart, see gold-mine-expedition.ts).
  */
 
 import { NextRequest, NextResponse } from 'next/server'

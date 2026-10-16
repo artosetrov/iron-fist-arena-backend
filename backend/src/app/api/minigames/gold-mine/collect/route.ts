@@ -1,10 +1,10 @@
 /**
  * POST /api/minigames/gold-mine/collect
  *
- * Drains a single ready slot. Gated on the per-slot bonus minigame having
- * been played first (Variant D Phase 2). Advances shaft progress by +1 per
- * successful call so that the shaft cadence matches /collect-all (each
- * "drain action" = one extraction).
+ * Drains a single ready slot. The bonus round is optional (2026-10-16): a
+ * ready cart can be collected whether or not its bonus was played; a bonus
+ * not played by then is simply forfeited. Each collect is one expedition
+ * haul — the 5th opens the expedition chest (see gold-mine-expedition.ts).
  *
  * Request body:
  *   { character_id: string, slot_index: number }
@@ -12,11 +12,12 @@
  * Response shape (success):
  *   {
  *     slots: SlotInfo[],
- *     gold_collected: number,
+ *     gold_collected: number,          // the haul only
  *     gems_collected: number,
- *     gold: number,
+ *     gold: number,                    // balances after haul + chest
  *     gems: number,
- *     active_shaft: { key, progress, total } | null,
+ *     active_shaft: { key, progress, total, ... },
+ *     expedition_chest: { gold, gems, shaft_key } | null,
  *   }
  */
 
@@ -27,10 +28,10 @@ import { buildSlotsArray } from '@/lib/game/gold-mine'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import {
-  SHAFTS,
-  SHAFT_TOTAL_EXTRACTIONS,
-  type ShaftKey,
-} from '@/lib/game/shaft-catalog'
+  activeShaftJson,
+  advanceExpedition,
+  chestJson,
+} from '@/lib/game/gold-mine-expedition'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -49,6 +50,10 @@ export async function POST(req: NextRequest) {
 
     // Use interactive transaction with row-level lock to prevent double-collect
     const result = await prisma.$transaction(async (tx) => {
+      // Serialise collects of one character: the expedition counter below is
+      // read-modify-write, so two collects at 4/5 must not both pay the chest.
+      await tx.$queryRawUnsafe(`SELECT id FROM characters WHERE id = $1 FOR UPDATE`, character_id)
+
       // Verify character ownership
       const character = await tx.character.findUnique({
         where: { id: character_id },
@@ -57,8 +62,7 @@ export async function POST(req: NextRequest) {
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
-      // Lock the session row for update to prevent double-collect. Also
-      // fetch minigame_played_at so we can enforce the per-slot bonus gate.
+      // Lock the session row for update to prevent double-collect.
       const [sessionRow] = await tx.$queryRawUnsafe<
         Array<{
           id: string
@@ -66,10 +70,9 @@ export async function POST(req: NextRequest) {
           reward: number
           gem_reward: number
           ends_at: Date
-          minigame_played_at: Date | null
         }>
       >(
-        `SELECT id, collected, reward, gem_reward, ends_at, minigame_played_at
+        `SELECT id, collected, reward, gem_reward, ends_at
            FROM gold_mine_sessions
           WHERE character_id = $1
             AND slot_index = $2
@@ -83,9 +86,6 @@ export async function POST(req: NextRequest) {
 
       const now = new Date()
       if (now < sessionRow.ends_at) throw new Error('NOT_READY')
-      if (sessionRow.minigame_played_at == null) {
-        throw new Error('MINIGAME_REQUIRED')
-      }
 
       // Mark collected
       await tx.goldMineSession.update({
@@ -93,57 +93,31 @@ export async function POST(req: NextRequest) {
         data: { collected: true },
       })
 
-      // Add gold to user
-      const updatedUser = await tx.user.update({
+      // Credit the haul
+      await tx.user.update({
         where: { id: user.id },
-        data: { gold: { increment: sessionRow.reward } },
+        data: {
+          gold: { increment: sessionRow.reward },
+          gems: { increment: sessionRow.gem_reward },
+        },
       })
 
-      // Add gems to user if any
-      let updatedUserWithGems = updatedUser
-      if (sessionRow.gem_reward > 0) {
-        updatedUserWithGems = await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: sessionRow.gem_reward } },
-        })
-      }
+      // One haul on the expedition; the last one also credits the chest.
+      const expedition = await advanceExpedition(tx, character)
 
-      // Advance shaft progress by +1. Each drain action (single or all)
-      // costs one extraction, preserving balance across player behaviours.
-      let nextShaftKey: ShaftKey | null =
-        character.activeShaftKey as ShaftKey | null
-      let nextShaftProgress = character.shaftProgress
-      const shaftTotal = character.shaftTotal || SHAFT_TOTAL_EXTRACTIONS
-      if (nextShaftKey) {
-        nextShaftProgress = character.shaftProgress + 1
-        if (nextShaftProgress >= shaftTotal) {
-          nextShaftProgress = 0
-          nextShaftKey = null
-        }
-        await tx.character.update({
-          where: { id: character_id },
-          data: {
-            activeShaftKey: nextShaftKey,
-            shaftProgress: nextShaftProgress,
-            shaftTotal,
-          },
-        })
-      }
+      const balances = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { gold: true, gems: true },
+      })
 
       return {
-        updatedUser: updatedUserWithGems,
+        balances,
         reward: sessionRow.reward,
         gemReward: sessionRow.gem_reward,
         goldMineSlots: character.goldMineSlots,
-        activeShaftKey: nextShaftKey,
-        shaftProgress: nextShaftProgress,
-        shaftTotal,
+        expedition,
       }
     })
-
-    // Get current user gems/gold from updated user
-    const userGems = result.updatedUser.gems
-    const userGold = result.updatedUser.gold
 
     // Update daily + weekly quest progress (outside transaction, non-critical)
     await Promise.all([
@@ -152,27 +126,21 @@ export async function POST(req: NextRequest) {
       updateWeeklyChallengeProgress(prisma, character_id, 'gold_mine_collect'),
     ])
 
-    const slots = await buildSlotsArray(prisma, character_id, result.goldMineSlots)
-
-    const activeShaft = result.activeShaftKey
-      ? {
-          key: result.activeShaftKey,
-          progress: result.shaftProgress,
-          total: result.shaftTotal,
-          display_name: SHAFTS[result.activeShaftKey as ShaftKey].displayName,
-          background_asset:
-            SHAFTS[result.activeShaftKey as ShaftKey].backgroundAssetName,
-          thumb_asset: SHAFTS[result.activeShaftKey as ShaftKey].thumbAssetName,
-        }
-      : null
+    const slots = await buildSlotsArray(prisma, character_id, result.goldMineSlots, true)
+    const { expedition } = result
 
     return NextResponse.json({
       slots,
       gold_collected: result.reward,
       gems_collected: result.gemReward,
-      gold: userGold,
-      gems: userGems,
-      active_shaft: activeShaft,
+      gold: result.balances.gold,
+      gems: result.balances.gems,
+      active_shaft: activeShaftJson(
+        expedition.activeShaftKey,
+        expedition.shaftProgress,
+        expedition.shaftTotal
+      ),
+      expedition_chest: chestJson(expedition.chest),
     })
   } catch (error) {
     if (error instanceof Error) {
@@ -189,14 +157,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           { error: 'Mining session not yet complete' },
           { status: 400 }
-        )
-      if (error.message === 'MINIGAME_REQUIRED')
-        return NextResponse.json(
-          {
-            error: 'Play the bonus minigame for this slot before collecting',
-            code: 'MINIGAME_REQUIRED',
-          },
-          { status: 409 }
         )
     }
     console.error('gold-mine collect error:', error)

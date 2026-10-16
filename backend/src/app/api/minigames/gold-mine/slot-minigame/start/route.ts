@@ -19,16 +19,14 @@
  *     }
  *   }
  *
- * Response shape (needs shaft pick):
- *   { needs_shaft_pick: true, unlocked_shafts: ShaftKey[], slots: SlotInfo[] }
- *
  * Rules:
  *   - Slot must exist, be uncollected, and not already have
  *     `minigamePlayedAt != null` (one play per slot, no replay).
  *   - If a minigame session is already in flight for this slot AND not
  *     expired, return the existing session (idempotent — player can re-open
  *     the cover).
- *   - Must have an active shaft (or pick one in-call).
+ *   - With no running expedition one starts on its own (no picker since
+ *     2026-10-16); `picked_shaft_key` is honoured when sent and unlocked.
  *   - Cap scales with goldMineSlots level via `calcSlotMinigameCap`.
  *   - Bonus gold/gems are credited only after /submit — opening does NOT
  *     pay out.
@@ -50,6 +48,7 @@ import {
   type ShaftKey,
   expectedSpawnCount,
 } from '@/lib/game/shaft-catalog'
+import { nextShaftKey } from '@/lib/game/gold-mine-expedition'
 
 interface StartBody {
   character_id?: string
@@ -90,27 +89,19 @@ export async function POST(req: NextRequest) {
       const unlockedShafts = getUnlockedShaftKeys(character.goldMineSlots)
 
       if (!activeShaftKey) {
-        if (picked_shaft_key && isValidShaftKey(picked_shaft_key)) {
-          if (!unlockedShafts.includes(picked_shaft_key)) {
-            throw new Error('SHAFT_LOCKED')
-          }
-          activeShaftKey = picked_shaft_key
-          shaftProgress = 0
-          await tx.character.update({
-            where: { id: character_id },
-            data: {
-              activeShaftKey: picked_shaft_key,
-              shaftProgress: 0,
-              shaftTotal,
-            },
-          })
-        } else {
-          return {
-            needsShaftPick: true as const,
-            unlockedShafts,
-            character,
-          }
+        if (picked_shaft_key && isValidShaftKey(picked_shaft_key)
+            && !unlockedShafts.includes(picked_shaft_key)) {
+          throw new Error('SHAFT_LOCKED')
         }
+        // No picker any more (2026-10-16): with no running expedition one
+        // starts on its own — the requested shaft when sent, else the first
+        // unlocked one. The shaft only picks the bonus-round backdrop.
+        activeShaftKey = nextShaftKey(character.goldMineSlots, null, picked_shaft_key)
+        shaftProgress = 0
+        await tx.character.update({
+          where: { id: character_id },
+          data: { activeShaftKey, shaftProgress: 0, shaftTotal },
+        })
       }
 
       // Lock the slot row.
@@ -225,19 +216,6 @@ export async function POST(req: NextRequest) {
         resumed: false as const,
       }
     })
-
-    if (result.needsShaftPick) {
-      const slots = await buildSlotsArray(
-        prisma,
-        character_id,
-        result.character.goldMineSlots
-      )
-      return NextResponse.json({
-        needs_shaft_pick: true,
-        unlocked_shafts: result.unlockedShafts,
-        slots,
-      })
-    }
 
     const slots = await buildSlotsArray(
       prisma,

@@ -6,6 +6,8 @@ export const MINE_DURATION_HOURS = 4
 export const MINE_REWARD_MIN = 40
 export const MINE_REWARD_MAX = 100
 export const MAX_GOLD_MINE_SLOTS = 3
+/** A boosted ("double haul") cart pays this many times its gold and gems. */
+export const BOOST_MULTIPLIER = 2
 
 // Lazy getters for gem costs (read from live config)
 let _cachedGemConfig: Awaited<ReturnType<typeof getGemCostsConfig>> | null = null
@@ -51,8 +53,8 @@ export interface SlotInfo {
   gem_reward?: number
   boosted?: boolean
   // Per-slot bonus mini-game (Variant D Phase 2).
-  // `minigame_played` = true once the player has completed the bonus game
-  // for this slot. A slot cannot be collected until this is true.
+  // `minigame_played` = true once the player has completed the (optional)
+  // bonus game for this slot. Collecting does not require it.
   minigame_played?: boolean
   // When a minigame session is currently in flight for this slot, this is
   // the id of the MinigameSession row. The client uses this to resume a

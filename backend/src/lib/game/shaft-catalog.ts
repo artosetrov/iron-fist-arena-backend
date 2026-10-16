@@ -42,8 +42,8 @@ export const SHAFTS: Record<ShaftKey, ShaftConfig> = {
 }
 
 /**
- * Number of extraction plays required to clear one shaft cycle.
- * Each successful Collect All counts as one extraction (~20%).
+ * Carts per expedition (the chest opens on the last one).
+ * Every collected cart counts as one haul — see gold-mine-expedition.ts.
  * Balance: see docs/features/gold-mine/GOLD_MINE_MINIGAME_BALANCE_AUDIT.md Section 6.
  */
 export const SHAFT_TOTAL_EXTRACTIONS = 5
@@ -76,17 +76,6 @@ export function isValidShaftKey(value: unknown): value is ShaftKey {
  */
 export function getUnlockedShaftKeys(goldMineSlots: number): ShaftKey[] {
   return SHAFT_KEY_VALUES.filter((key) => SHAFTS[key].unlockSlotLevel <= goldMineSlots)
-}
-
-/**
- * Server-authoritative cap calculation (legacy — aggregate pool Variant D
- * Phase 1). Kept for backward compatibility with old clients still calling
- * /collect-all + /minigame-bonus; new per-slot flow uses `calcSlotMinigameCap`.
- * c = floor(passivePool * 0.15)
- */
-export function calcMinigameCap(passiveGoldAmount: number): number {
-  if (passiveGoldAmount <= 0) return 0
-  return Math.floor(passiveGoldAmount * MINIGAME_CAP_PERCENT)
 }
 
 /**
@@ -171,6 +160,11 @@ export function calcSlotMinigameCap(
   goldMineSlotsLevel: number
 ): number {
   if (slotReward <= 0) return 0
+  return Math.floor(slotReward * slotMinigameCapFraction(goldMineSlotsLevel))
+}
+
+/** Share of a slot's haul the bonus round can add at this mine level (0.15, 0.1725, 0.195…). */
+export function slotMinigameCapFraction(goldMineSlotsLevel: number): number {
   const levelMult = 1.0 + 0.15 * Math.max(0, goldMineSlotsLevel - 1)
-  return Math.floor(slotReward * MINIGAME_CAP_PERCENT * levelMult)
+  return MINIGAME_CAP_PERCENT * levelMult
 }

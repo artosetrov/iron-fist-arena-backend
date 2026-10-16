@@ -1,9 +1,13 @@
 /**
  * POST /api/minigames/gold-mine/collect-all
  *
- * Drains all READY and MINIGAME-PLAYED gold-mine slots in a single
- * transaction. Under Variant D Phase 2 (per-slot minigame), collection is
- * gated on the per-slot bonus minigame having been played first.
+ * Drains every READY gold-mine slot in one transaction (2026-10-16 rework):
+ *   - The bonus round is optional — played or not, a ready cart is paid.
+ *   - No shaft picker: with no running expedition one starts on its own
+ *     (`picked_shaft_key` is still honoured when sent and unlocked).
+ *   - Every cart drained is one expedition haul (same as collecting it on its
+ *     own); the 5th opens the expedition chest and the next expedition
+ *     starts right away, extra carts carrying over (gold-mine-expedition.ts).
  *
  * Request body:
  *   { character_id: string, picked_shaft_key?: 'stone' | 'ice' }
@@ -11,36 +15,16 @@
  * Response shape (success):
  *   {
  *     slots: SlotInfo[],
- *     gold_collected: number,
+ *     gold_collected: number,          // carts only
  *     gems_collected: number,
- *     gold: number,
+ *     gold: number,                    // balances after carts + chest
  *     gems: number,
- *     active_shaft: { key, progress, total, ... } | null,
- *     needs_shaft_pick?: true,
- *     unlocked_shafts?: ShaftKey[],
+ *     active_shaft: { key, progress, total, ... },
+ *     expedition_chest: { gold, gems, shaft_key } | null,
+ *     unplayed_ready_slot_indices: [],  // kept for older clients
  *   }
  *
- * Response shape (no playable slots — ready but unplayed):
- *   {
- *     error: 'No playable slots — finish the bonus minigame first',
- *     unplayed_ready_slot_indices: number[],
- *     slots: SlotInfo[],
- *   } with status 409
- *
- * Variant D Phase 2 rules:
- *   - Player must have an active shaft (or picks one in-call).
- *   - Only slots with `minigamePlayedAt != null` can be drained. Slots that
- *     are ready but unplayed are LEFT behind — player must go play the
- *     per-slot bonus minigame first via /slot-minigame/start + /submit.
- *   - Each collect-all cycle advances shaft progress by +1 (preserving
- *     legacy pacing: ~5 cycles per shaft). Shaft progress advancement is
- *     no longer tied to the minigame endpoint — it lives here so that
- *     multi-slot players don't blast through shafts.
- *   - Shaft clears when `shaftProgress >= shaftTotal` → activeShaftKey
- *     reset to NULL so the client re-prompts for a new shaft pick.
- *
- * Server-authoritative — client never calculates gold, gems, caps, or
- * shaft progress.
+ * Server-authoritative — client never calculates gold, gems or progress.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -49,13 +33,12 @@ import { prisma } from '@/lib/prisma'
 import { buildSlotsArray } from '@/lib/game/gold-mine'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { isValidShaftKey } from '@/lib/game/shaft-catalog'
 import {
-  SHAFTS,
-  SHAFT_TOTAL_EXTRACTIONS,
-  getUnlockedShaftKeys,
-  isValidShaftKey,
-  type ShaftKey,
-} from '@/lib/game/shaft-catalog'
+  activeShaftJson,
+  advanceExpedition,
+  chestJson,
+} from '@/lib/game/gold-mine-expedition'
 
 interface CollectAllBody {
   character_id?: string
@@ -66,80 +49,34 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Hoisted so the catch block can rebuild the slots snapshot for
-  // NO_PLAYABLE_SLOTS without re-parsing the body.
-  let character_id: string | undefined
-  let goldMineSlotsLevel: number | undefined
-
   try {
     const body = (await req.json()) as CollectAllBody
-    character_id = body.character_id
-    const { picked_shaft_key } = body
+    const { character_id, picked_shaft_key } = body
 
     if (!character_id) {
       return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
     }
-
-    // Pre-transaction: validate shaft pick format. Anything else is validated
-    // inside the transaction (against character state).
     if (picked_shaft_key !== undefined && !isValidShaftKey(picked_shaft_key)) {
       return NextResponse.json({ error: 'Invalid shaft key' }, { status: 400 })
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // Load + ownership check.
+      // Serialise collects of one character: the expedition counter below is
+      // read-modify-write, so two collects at 4/5 must not both pay the chest.
+      await tx.$queryRawUnsafe(`SELECT id FROM characters WHERE id = $1 FOR UPDATE`, character_id)
+
       const character = await tx.character.findUnique({
         where: { id: character_id },
       })
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
-      goldMineSlotsLevel = character.goldMineSlots
 
-      // Resolve active shaft (existing or picked this call).
-      let activeShaftKey: ShaftKey | null = character.activeShaftKey as ShaftKey | null
-      let shaftProgress = character.shaftProgress
-      const shaftTotal = character.shaftTotal || SHAFT_TOTAL_EXTRACTIONS
-      const unlockedShafts = getUnlockedShaftKeys(character.goldMineSlots)
-
-      if (!activeShaftKey) {
-        if (picked_shaft_key && isValidShaftKey(picked_shaft_key)) {
-          if (!unlockedShafts.includes(picked_shaft_key)) {
-            throw new Error('SHAFT_LOCKED')
-          }
-          activeShaftKey = picked_shaft_key
-          shaftProgress = 0
-          await tx.character.update({
-            where: { id: character_id },
-            data: {
-              activeShaftKey: picked_shaft_key,
-              shaftProgress: 0,
-              shaftTotal,
-            },
-          })
-        } else {
-          // No active shaft, no pick — client must show the picker.
-          return {
-            needsShaftPick: true as const,
-            unlockedShafts,
-            character,
-          }
-        }
-      }
-
-      // Lock all ready sessions for this character — both played and unplayed,
-      // so we can partition them and return helpful info about the unplayed
-      // ones.
+      // Lock every ready, uncollected session of this character.
       const now = new Date()
       const readySessions = await tx.$queryRawUnsafe<
-        Array<{
-          id: string
-          slot_index: number
-          reward: number
-          gem_reward: number
-          minigame_played_at: Date | null
-        }>
+        Array<{ id: string; reward: number; gem_reward: number }>
       >(
-        `SELECT id, slot_index, reward, gem_reward, minigame_played_at
+        `SELECT id, reward, gem_reward
            FROM gold_mine_sessions
           WHERE character_id = $1
             AND collected = false
@@ -153,125 +90,63 @@ export async function POST(req: NextRequest) {
         throw new Error('NO_READY_SLOTS')
       }
 
-      const playedReady = readySessions.filter((s) => s.minigame_played_at != null)
-      const unplayedReady = readySessions.filter((s) => s.minigame_played_at == null)
+      const gold = readySessions.reduce((sum, s) => sum + s.reward, 0)
+      const gems = readySessions.reduce((sum, s) => sum + s.gem_reward, 0)
 
-      if (playedReady.length === 0) {
-        // Everything ready, nothing played → signal to client to open the
-        // per-slot minigame on one of these slots first.
-        const err = new Error('NO_PLAYABLE_SLOTS') as Error & {
-          unplayedSlotIndices?: number[]
-        }
-        err.unplayedSlotIndices = unplayedReady.map((s) => s.slot_index)
-        throw err
-      }
-
-      const passiveGold = playedReady.reduce((sum, s) => sum + s.reward, 0)
-      const passiveGems = playedReady.reduce((sum, s) => sum + s.gem_reward, 0)
-
-      // Mark only the played-ready sessions as collected. Unplayed ready
-      // slots stay on the board so the player can come back, play their
-      // per-slot bonus minigame, and collect on the next call.
       await tx.goldMineSession.updateMany({
-        where: { id: { in: playedReady.map((s) => s.id) } },
+        where: { id: { in: readySessions.map((s) => s.id) } },
         data: { collected: true },
       })
 
-      // Credit the player the passive pool immediately.
-      const updatedUserAfterGold = await tx.user.update({
+      await tx.user.update({
         where: { id: user.id },
-        data: { gold: { increment: passiveGold } },
-      })
-      let updatedUser = updatedUserAfterGold
-      if (passiveGems > 0) {
-        updatedUser = await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: passiveGems } },
-        })
-      }
-
-      // Advance shaft progress by 1 per cycle. This preserves the legacy
-      // pacing (~5 cycles per shaft) regardless of how many slots the
-      // player unlocked, because it's per cycle, not per slot played.
-      let nextShaftKey: ShaftKey | null = activeShaftKey
-      let nextShaftProgress = shaftProgress + 1
-      if (nextShaftProgress >= shaftTotal) {
-        nextShaftProgress = 0
-        nextShaftKey = null
-      }
-      await tx.character.update({
-        where: { id: character_id },
-        data: {
-          activeShaftKey: nextShaftKey,
-          shaftProgress: nextShaftProgress,
-          shaftTotal,
-        },
+        data: { gold: { increment: gold }, gems: { increment: gems } },
       })
 
-      return {
-        needsShaftPick: false as const,
+      // One haul per cart — the same count as collecting them one by one.
+      const expedition = await advanceExpedition(
+        tx,
         character,
-        activeShaftKey: nextShaftKey,
-        shaftProgress: nextShaftProgress,
-        shaftTotal,
-        passiveGold,
-        passiveGems,
-        updatedUser,
-        unplayedReadySlotIndices: unplayedReady.map((s) => s.slot_index),
-      }
+        picked_shaft_key,
+        readySessions.length
+      )
+
+      const balances = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { gold: true, gems: true },
+      })
+
+      return { character, gold, gems, expedition, balances, carts: readySessions.length }
     })
 
-    // Handle shaft-pick branch (no drain).
-    if (result.needsShaftPick) {
-      const slots = await buildSlotsArray(
-        prisma,
-        character_id,
-        result.character.goldMineSlots
-      )
-      return NextResponse.json({
-        slots,
-        gold_collected: 0,
-        gems_collected: 0,
-        needs_shaft_pick: true,
-        unlocked_shafts: result.unlockedShafts,
-        active_shaft: null,
-      })
-    }
-
-    // Update quest progress (outside transaction, non-critical).
+    // Quest progress — one per cart, like collecting them one by one
+    // (outside the transaction, non-critical).
     await Promise.all([
-      updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect'),
-      updateWeeklyChallengeProgress(prisma, character_id, 'gold_mine_collect'),
+      updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect', result.carts),
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_mine_collect', result.carts),
     ])
 
     const slots = await buildSlotsArray(
       prisma,
       character_id,
-      result.character.goldMineSlots
+      result.character.goldMineSlots,
+      true
     )
-
-    // Shaft may have cleared this cycle — if so, active_shaft is null and
-    // the client will re-prompt with the shaft picker on the next call.
-    const activeShaft = result.activeShaftKey
-      ? {
-          key: result.activeShaftKey,
-          progress: result.shaftProgress,
-          total: result.shaftTotal,
-          display_name: SHAFTS[result.activeShaftKey as ShaftKey].displayName,
-          background_asset:
-            SHAFTS[result.activeShaftKey as ShaftKey].backgroundAssetName,
-          thumb_asset: SHAFTS[result.activeShaftKey as ShaftKey].thumbAssetName,
-        }
-      : null
+    const { expedition } = result
 
     return NextResponse.json({
       slots,
-      gold_collected: result.passiveGold,
-      gems_collected: result.passiveGems,
-      gold: result.updatedUser.gold,
-      gems: result.updatedUser.gems,
-      active_shaft: activeShaft,
-      unplayed_ready_slot_indices: result.unplayedReadySlotIndices,
+      gold_collected: result.gold,
+      gems_collected: result.gems,
+      gold: result.balances.gold,
+      gems: result.balances.gems,
+      active_shaft: activeShaftJson(
+        expedition.activeShaftKey,
+        expedition.shaftProgress,
+        expedition.shaftTotal
+      ),
+      expedition_chest: chestJson(expedition.chest),
+      unplayed_ready_slot_indices: [],
     })
   } catch (error) {
     if (error instanceof Error) {
@@ -281,43 +156,10 @@ export async function POST(req: NextRequest) {
       if (error.message === 'FORBIDDEN') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
-      if (error.message === 'SHAFT_LOCKED') {
-        return NextResponse.json(
-          { error: 'Selected shaft is not unlocked yet' },
-          { status: 400 }
-        )
-      }
       if (error.message === 'NO_READY_SLOTS') {
         return NextResponse.json(
           { error: 'No ready slots to collect' },
           { status: 400 }
-        )
-      }
-      if (error.message === 'NO_PLAYABLE_SLOTS') {
-        const unplayed =
-          (error as Error & { unplayedSlotIndices?: number[] })
-            .unplayedSlotIndices ?? []
-        let slots: unknown[] = []
-        if (character_id && goldMineSlotsLevel != null) {
-          try {
-            slots = await buildSlotsArray(
-              prisma,
-              character_id,
-              goldMineSlotsLevel
-            )
-          } catch {
-            // non-critical — client can refetch
-          }
-        }
-        return NextResponse.json(
-          {
-            error:
-              'No playable slots — finish the bonus minigame on a ready slot first',
-            code: 'NO_PLAYABLE_SLOTS',
-            unplayed_ready_slot_indices: unplayed,
-            slots,
-          },
-          { status: 409 }
         )
       }
     }

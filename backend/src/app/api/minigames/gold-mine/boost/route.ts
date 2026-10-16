@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { buildSlotsArray, getBOOST_COST_GEMS } from '@/lib/game/gold-mine'
+import { BOOST_MULTIPLIER, buildSlotsArray, getBOOST_COST_GEMS } from '@/lib/game/gold-mine'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
       if (!sessionRow) throw new Error('NO_SESSION')
       if (sessionRow.boosted) throw new Error('ALREADY_BOOSTED')
 
-      const boostedReward = sessionRow.reward * 2
-      const boostedGemReward = sessionRow.gem_reward * 2
+      const boostedReward = sessionRow.reward * BOOST_MULTIPLIER
+      const boostedGemReward = sessionRow.gem_reward * BOOST_MULTIPLIER
 
       const updatedUser = await tx.user.update({
         where: { id: user.id },
