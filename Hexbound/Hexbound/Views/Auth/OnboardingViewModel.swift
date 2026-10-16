@@ -56,23 +56,102 @@ private struct CharacterCreateResponse: Decodable {
     }
 }
 
+// MARK: - Creation options (GET /api/characters/creation-options)
+
+/// Starting-stat rules as the server applies them. Fetched so the Forge Stage
+/// never advertises a bonus the server doesn't grant (2026-10-16: class
+/// bonuses became real on the server; origin numbers on the client had drifted).
+struct CreationOptions: Decodable {
+    struct ClassOption: Decodable {
+        let bonus: [String: Int]
+        let mainStat: String
+    }
+
+    let baseStat: Int
+    let origins: [String: [String: Int]]
+    let classes: [String: ClassOption]
+
+    /// Mirror of backend/src/lib/game/creation-stats.ts — used until (or if)
+    /// the request fails. Keep in sync with the server file.
+    static let fallback = CreationOptions(
+        baseStat: 10,
+        origins: [
+            "human": ["cha": 2, "wis": 1],
+            "orc": ["str": 3, "int": -1],
+            "skeleton": ["end": 2, "agi": 1],
+            "demon": ["int": 2, "wis": 2, "cha": -1],
+            "dogfolk": ["agi": 2, "luk": 1],
+        ],
+        classes: [
+            "warrior": .init(bonus: ["str": 3, "vit": 2], mainStat: "str"),
+            "rogue": .init(bonus: ["agi": 3, "luk": 2], mainStat: "agi"),
+            "mage": .init(bonus: ["int": 3, "wis": 2], mainStat: "int"),
+            "tank": .init(bonus: ["vit": 3, "end": 2], mainStat: "vit"),
+        ]
+    )
+}
+
+/// One stat change shown as a chip ("Strength +3").
+struct StatBonus: Identifiable, Equatable {
+    let key: String
+    let value: Int
+    var id: String { key }
+    var label: String { ForgeStat.name(key) }
+}
+
+/// Stat key helpers shared by the Forge Stage views.
+enum ForgeStat {
+    static let order = ["str", "agi", "vit", "end", "int", "wis", "luk", "cha"]
+
+    static func name(_ key: String) -> String {
+        switch key {
+        case "str": "Strength"
+        case "agi": "Agility"
+        case "vit": "Vitality"
+        case "end": "Endurance"
+        case "int": "Intellect"
+        case "wis": "Wisdom"
+        case "luk": "Luck"
+        case "cha": "Charisma"
+        default: key.uppercased()
+        }
+    }
+
+    static func value(_ key: String, of character: Character) -> Int? {
+        switch key {
+        case "str": character.strength
+        case "agi": character.agility
+        case "vit": character.vitality
+        case "end": character.endurance
+        case "int": character.intelligence
+        case "wis": character.wisdom
+        case "luk": character.luck
+        case "cha": character.charisma
+        default: nil
+        }
+    }
+}
+
 @MainActor @Observable
 final class OnboardingViewModel {
-    // 3-step wizard: 0 = Class, 1 = Appearance (race + gender + avatar), 2 = Name
+    // Forge Stage: 0 = Origin (race + gender + look), 1 = Class, 2 = Name.
+    // Then the in-view ceremony: forging → reveal.
     var step = 0
-    var selectedClass: CharacterClass?
+    var selectedClass: CharacterClass? = .warrior
     var selectedOrigin: CharacterOrigin? = .human
     var selectedGender: CharacterGender = .male
     var selectedSkinKey: String?
 
-    // Appearance step: avatar navigation
-    var avatarIndex: Int = 0
-    var slideDirection: SlideDirection = .none
-    var diceRotation: Double = 0
-
-    enum SlideDirection {
-        case none, left, right
+    enum Phase: Equatable {
+        case editing
+        case forging
+        case revealed
     }
+    var phase: Phase = .editing
+    /// The hero returned by the server — the reveal shows its real stats.
+    var createdCharacter: Character?
+
+    var avatarIndex: Int = 0
     var characterName = ""
     var errorMessage = ""
     var isCreating = false
@@ -80,6 +159,10 @@ final class OnboardingViewModel {
     // Skins fetched from API
     var allSkins: [AppearanceSkin] = []
     var isLoadingSkins = false
+
+    // Server starting-stat rules
+    var options: CreationOptions = .fallback
+    private var optionsTask: Task<Void, Never>?
 
     // Name availability check
     enum NameAvailability: Equatable {
@@ -96,24 +179,17 @@ final class OnboardingViewModel {
     private var nameCache: [String: (result: NameAvailability, at: Date)] = [:]
     private let nameCacheTTL: TimeInterval = 30
 
+    /// Minimum time the forging ceremony stays on screen, even if the
+    /// server answers instantly — the anvil needs a moment.
+    static let minForgeDuration: Duration = .milliseconds(2600)
     static let totalSteps = 3
-
-    // MARK: - Step Bar Labels
-
-    var stepLabels: [(number: Int, title: String, subtitle: String?)] {
-        [
-            (1, "CLASS", selectedClass?.sfName),
-            (2, "APPEARANCE", nil),
-            (3, "NAME", nil)
-        ]
-    }
 
     // MARK: - Can Proceed
 
     var canProceed: Bool {
         switch step {
-        case 0: selectedClass != nil
-        case 1: selectedOrigin != nil && selectedSkinKey != nil
+        case 0: selectedOrigin != nil && selectedSkinKey != nil
+        case 1: selectedClass != nil
         case 2: characterName.count >= 3 && characterName.count <= 16 && isValidName && nameAvailability == .available
         default: false
         }
@@ -129,13 +205,17 @@ final class OnboardingViewModel {
         }
     }
 
-    /// Currently selected skin object (for preview)
+    /// Currently selected skin object (portrait on the stage)
     var selectedSkin: AppearanceSkin? {
         guard let key = selectedSkinKey else { return nil }
         return allSkins.first { $0.skinKey == key }
     }
 
-    // MARK: - Fetch Skins
+    var lookLabel: String {
+        let count = availableSkins.count
+        guard count > 1 else { return "" }
+        return "Look \(avatarIndex + 1) of \(count)"
+    }
 
     func fetchSkins() {
         skinsTask?.cancel()
@@ -146,12 +226,10 @@ final class OnboardingViewModel {
                 guard !Task.isCancelled else { return }
                 allSkins = response.skins
                 isLoadingSkins = false
-                // Auto-select first skin for the default origin (human)
                 if selectedSkinKey == nil, selectedOrigin != nil {
-                    let valid = availableSkins
-                    selectedSkinKey = valid.first?.skinKey
+                    selectedSkinKey = availableSkins.first?.skinKey
                 }
-                // Prefetch all skin images into cache so scrolling is instant
+                // Prefetch all skin images into cache so switching looks is instant
                 for skin in response.skins {
                     Task {
                         _ = await AssetManager.shared.fetchIfNeeded(key: skin.resolvedImageKey, url: skin.imageUrl)
@@ -164,49 +242,69 @@ final class OnboardingViewModel {
         }
     }
 
-    // MARK: - Origin-Only Bonuses (for race selection widget)
+    // MARK: - Creation options
 
-    var originBonuses: [(stat: String, value: Int)] {
+    func fetchCreationOptions() {
+        optionsTask?.cancel()
+        optionsTask = Task {
+            do {
+                let fetched: CreationOptions = try await APIClient.shared.get(APIEndpoints.creationOptions)
+                guard !Task.isCancelled else { return }
+                options = fetched
+            } catch {
+                // Keep the bundled fallback (same numbers as the server file).
+            }
+        }
+    }
+
+    var originBonuses: [StatBonus] {
         guard let origin = selectedOrigin else { return [] }
-        let order = ["Strength", "Agility", "Vitality", "Endurance", "Intelligence", "Wisdom", "Luck", "Charisma"]
-        let bonuses = originBonusMap(origin)
-        return order.compactMap { stat in
-            guard let val = bonuses.first(where: { $0.0 == stat })?.1, val != 0 else { return nil }
-            return (stat: stat, value: val)
+        return bonusList(options.origins[origin.rawValue] ?? [:])
+    }
+
+    var classBonuses: [StatBonus] {
+        guard let cls = selectedClass else { return [] }
+        return bonusList(options.classes[cls.rawValue]?.bonus ?? [:])
+    }
+
+    var mainStatKey: String {
+        guard let cls = selectedClass else { return "str" }
+        return options.classes[cls.rawValue]?.mainStat ?? "str"
+    }
+
+    private func bonusList(_ map: [String: Int]) -> [StatBonus] {
+        ForgeStat.order.compactMap { key in
+            guard let value = map[key], value != 0 else { return nil }
+            return StatBonus(key: key, value: value)
         }
     }
 
-    // MARK: - Combined Bonuses
+    /// Accent of the stage: gold while choosing origin, class colour after.
+    var accentColor: Color {
+        guard step >= 1 || phase != .editing, let cls = selectedClass else { return DarkFantasyTheme.gold }
+        return DarkFantasyTheme.classColor(for: cls)
+    }
 
-    var combinedBonuses: [(stat: String, value: Int)] {
-        var totals: [String: Int] = [:]
+    var heroLine: String {
+        [selectedGender.displayName, selectedOrigin?.displayName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+            .uppercased()
+    }
 
-        if let origin = selectedOrigin {
-            for (stat, val) in originBonusMap(origin) {
-                totals[stat, default: 0] += val
-            }
-        }
-
-        if let cls = selectedClass {
-            for (stat, val) in classBonusMap(cls) {
-                totals[stat, default: 0] += val
-            }
-        }
-
-        let order = ["Strength", "Agility", "Vitality", "Endurance", "Intelligence", "Wisdom", "Luck", "Charisma"]
-        return order.compactMap { stat in
-            guard let val = totals[stat], val != 0 else { return nil }
-            return (stat: stat, value: val)
+    var stageTitle: String {
+        switch step {
+        case 0: return (selectedOrigin?.displayName ?? "Hero").uppercased()
+        case 1: return (selectedClass?.displayName ?? "Hero").uppercased()
+        default:
+            let trimmed = characterName.trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? (selectedClass?.displayName ?? "Hero").uppercased() : trimmed.uppercased()
         }
     }
 
-    var heroSummary: String {
-        let parts = [
-            selectedGender.displayName,
-            selectedOrigin?.displayName,
-            selectedClass?.displayName
-        ].compactMap { $0 }
-        return parts.joined(separator: " ")
+    var displayName: String {
+        let trimmed = characterName.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? "HERO" : trimmed.uppercased()
     }
 
     // MARK: - Validation
@@ -237,62 +335,45 @@ final class OnboardingViewModel {
         }
     }
 
-    func onGenderChanged() {
-        slideDirection = .none
+    func selectOrigin(_ origin: CharacterOrigin) {
+        guard selectedOrigin != origin else { return }
+        selectedOrigin = origin
+        reconcileSkin()
+    }
+
+    func selectGender(_ gender: CharacterGender) {
+        guard selectedGender != gender else { return }
+        selectedGender = gender
+        reconcileSkin()
+    }
+
+    /// Keep the current look if it still matches race + gender, else pick the first.
+    private func reconcileSkin() {
         let valid = availableSkins
-        // Preserve current selection if still valid, otherwise pick first
-        if let current = selectedSkinKey, valid.contains(where: { $0.skinKey == current }) {
-            avatarIndex = valid.firstIndex(where: { $0.skinKey == current }) ?? 0
+        if let current = selectedSkinKey, let index = valid.firstIndex(where: { $0.skinKey == current }) {
+            avatarIndex = index
         } else {
             avatarIndex = 0
             selectedSkinKey = valid.first?.skinKey
         }
     }
 
-    func onOriginChanged() {
-        slideDirection = .none
-        let valid = availableSkins
-        // Preserve current selection if still valid, otherwise pick first
-        if let current = selectedSkinKey, valid.contains(where: { $0.skinKey == current }) {
-            avatarIndex = valid.firstIndex(where: { $0.skinKey == current }) ?? 0
-        } else {
-            avatarIndex = 0
-            selectedSkinKey = valid.first?.skinKey
-        }
-    }
-
-    func toggleGender() {
-        selectedGender = selectedGender == .male ? .female : .male
-        onGenderChanged()
-    }
-
-    func nextAvatar() {
+    func nextLook() {
         let skins = availableSkins
         guard !skins.isEmpty else { return }
-        slideDirection = .left
         avatarIndex = (avatarIndex + 1) % skins.count
         selectedSkinKey = skins[avatarIndex].skinKey
     }
 
-    func prevAvatar() {
+    func prevLook() {
         let skins = availableSkins
         guard !skins.isEmpty else { return }
-        slideDirection = .right
         avatarIndex = (avatarIndex - 1 + skins.count) % skins.count
         selectedSkinKey = skins[avatarIndex].skinKey
     }
 
-    func selectAvatar(at index: Int) {
-        let skins = availableSkins
-        guard index >= 0, index < skins.count else { return }
-        slideDirection = .none
-        avatarIndex = index
-        selectedSkinKey = skins[index].skinKey
-    }
-
     // MARK: - Name Availability Check (debounced + cached)
 
-    /// Check name availability.
     /// - Parameter immediate: Skip debounce delay (use after dice roll — name is already complete).
     func checkNameAvailability(immediate: Bool = false) {
         nameCheckTask?.cancel()
@@ -303,7 +384,6 @@ final class OnboardingViewModel {
             return
         }
 
-        // Return cached result instantly — expires after nameCacheTTL seconds
         if let cached = nameCache[name.lowercased()],
            Date().timeIntervalSince(cached.at) < nameCacheTTL {
             nameAvailability = cached.result
@@ -313,7 +393,6 @@ final class OnboardingViewModel {
         nameAvailability = .checking
 
         nameCheckTask = Task {
-            // Debounce: wait while user is still typing; skip for immediate calls (dice button)
             if !immediate {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
@@ -337,38 +416,28 @@ final class OnboardingViewModel {
         }
     }
 
-    // MARK: - Randomize (both genders within current race)
+    // MARK: - Randomize
 
-    func randomize() {
-        // Pick from ALL default skins of current race — both genders
-        let raceSkins = allSkins.filter { skin in
-            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            return matchesOrigin && skin.isDefault
-        }
-        guard !raceSkins.isEmpty else { return }
-
-        let currentKey = selectedSkinKey
-        var pick: AppearanceSkin
-        if raceSkins.count == 1 {
-            pick = raceSkins[0]
+    /// Dice in the top bar: a whole random hero (race, gender, look, class —
+    /// and a name when already on the name step).
+    func randomizeHero() {
+        let origin = CharacterOrigin.allCases.randomElement() ?? .human
+        let gender: CharacterGender = Bool.random() ? .male : .female
+        selectedOrigin = origin
+        selectedGender = gender
+        let skins = availableSkins
+        if !skins.isEmpty {
+            avatarIndex = Int.random(in: 0..<skins.count)
+            selectedSkinKey = skins[avatarIndex].skinKey
         } else {
-            repeat {
-                pick = raceSkins.randomElement()!
-            } while pick.skinKey == currentKey
+            reconcileSkin()
         }
-
-        // Switch gender if the picked skin is different gender
-        if let newGender = CharacterGender(rawValue: pick.gender), newGender != selectedGender {
-            selectedGender = newGender
+        selectedClass = CharacterClass.allCases.randomElement() ?? .warrior
+        if step == 2 {
+            generateRandomName()
+            checkNameAvailability(immediate: true)
         }
-        // Update avatar index within gender-filtered list (now matches new gender)
-        let genderSkins = availableSkins
-        avatarIndex = genderSkins.firstIndex(where: { $0.skinKey == pick.skinKey }) ?? 0
-        slideDirection = .none
-        selectedSkinKey = pick.skinKey
     }
-
-    // MARK: - Random Name Generator
 
     private let namePrefixes = [
         "Shadow", "Iron", "Storm", "Dark", "Blood", "Flame", "Frost", "Thunder",
@@ -388,66 +457,23 @@ final class OnboardingViewModel {
         characterName = prefix + suffix
     }
 
-    // MARK: - Select Class by Index
+    // MARK: - Forge (create on server + ceremony)
 
-    func selectClass(at index: Int) {
-        let classes = CharacterClass.allCases
-        guard index >= 0, index < classes.count else { return }
-        withAnimation(MotionConstants.snappy) {
-            selectedClass = classes[index]
-        }
-    }
-
-    var selectedClassIndex: Int {
-        guard let cls = selectedClass else { return 0 }
-        return CharacterClass.allCases.firstIndex(of: cls) ?? 0
-    }
-
-    func selectPreviousClass() {
-        let classes = CharacterClass.allCases
-        let current = selectedClassIndex
-        let newIndex = (current - 1 + classes.count) % classes.count
-        selectClass(at: newIndex)
-    }
-
-    func selectNextClass() {
-        let classes = CharacterClass.allCases
-        let current = selectedClassIndex
-        let newIndex = (current + 1) % classes.count
-        selectClass(at: newIndex)
-    }
-
-    // MARK: - Create Character
-
-    func createCharacter(appState: AppState, cache: GameDataCache) async {
-        guard !isCreating else { return } // prevent double-tap
+    func forge() async {
+        guard !isCreating, canProceed else { return }
         let gender = selectedGender
         guard let charClass = selectedClass,
               let origin = selectedOrigin,
-              let skinKey = selectedSkinKey,
-              characterName.count >= 3 else {
+              let skinKey = selectedSkinKey else {
             errorMessage = "Please complete all steps"
             return
         }
 
         isCreating = true
         errorMessage = ""
-
-        // BUG-08: Raise the root-level "Forging Your Hero..." overlay BEFORE
-        // the API call. It stays up across the subsequent `currentScreen`
-        // cross-fade, covering the window during which the destination view
-        // (OnboardingCinematicView / CharacterSelectionView) is synchronously
-        // decoding its backdrop assets. Cleared after a short settle delay
-        // once the destination screen has had time to paint its first frame.
-        appState.isForgingHero = true
-
-        defer {
-            // Whatever happens — success, parse fallback, or thrown error —
-            // never leave the VM stuck in the "creating" state, and never
-            // leave the root overlay stranded if an exception bypasses the
-            // explicit success path below.
-            isCreating = false
-        }
+        withAnimation(MotionConstants.smooth) { phase = .forging }
+        let started = ContinuousClock.now
+        defer { isCreating = false }
 
         do {
             let body = CharacterCreateRequest(
@@ -457,71 +483,51 @@ final class OnboardingViewModel {
                 gender: gender.rawValue,
                 avatar: skinKey
             )
-
             let result: CharacterCreateResponse = try await APIClient.shared.post(
                 APIEndpoints.characters,
                 body: body
             )
 
-            let character = result.character
-
-            appState.currentCharacter = character
-            appState.userCharacters.append(character)
-            if !allSkins.isEmpty {
-                cache.cacheSkins(allSkins)
+            let elapsed = ContinuousClock.now - started
+            if elapsed < Self.minForgeDuration {
+                try? await Task.sleep(for: Self.minForgeDuration - elapsed)
             }
-            // 2026-04-10 — scripted tutorial tunnel disabled (was broken).
-            // Skip cinematicOpen → scriptedTutorial → tutorialVictory, go straight to loreIntro.
-            // First hero flow is now:
-            //   loreIntro → game
-            // Additional heroes skip the whole onboarding tunnel as before.
-            if appState.userCharacters.count <= 1 {
-                // First hero — straight to lore cinematic, skipping the broken tutorial fight
-                appState.currentScreen = .loreIntro(heroName: character.characterName)
-            } else {
-                // Additional hero — go to selection screen
-                appState.currentScreen = .characterSelect
-            }
-            appState.authPath = NavigationPath()
-
-            // BUG-08: give the destination view ~350 ms to mount + paint its
-            // first frame under the overlay. 300 ms matches the currentScreen
-            // cross-fade; the extra ~50 ms buys one frame of decode headroom
-            // on older devices. Overlay fades out cleanly over its own
-            // `.animation(.easeInOut(duration: 0.3), value: isForgingHero)`
-            // binding in HexboundApp.
-            try? await Task.sleep(for: .milliseconds(350))
-            appState.isForgingHero = false
+            createdCharacter = result.character
+            SFXManager.shared.play(.uiLevelUp)
+            withAnimation(MotionConstants.smooth) { phase = .revealed }
         } catch {
-            // Drop the overlay so the user can see the error message we're
-            // about to set on the onboarding form.
-            appState.isForgingHero = false
             if let apiError = error as? APIError {
                 errorMessage = apiError.localizedDescription
             } else {
                 errorMessage = "Failed to create character"
             }
+            SFXManager.shared.play(.uiError)
+            withAnimation(MotionConstants.smooth) { phase = .editing }
         }
     }
 
-    // MARK: - Bonus Maps
+    /// "Enter the city" on the reveal — hands the new hero to the app.
+    func enterCity(appState: AppState, cache: GameDataCache) async {
+        guard let character = createdCharacter else { return }
 
-    private func originBonusMap(_ origin: CharacterOrigin) -> [(String, Int)] {
-        switch origin {
-        case .human:    [("Charisma", 2), ("Luck", 1)]
-        case .orc:      [("Strength", 3), ("Charisma", -1)]
-        case .skeleton: [("Endurance", 2), ("Intelligence", 1)]
-        case .demon:    [("Intelligence", 2), ("Strength", 1)]
-        case .dogfolk:  [("Agility", 2), ("Wisdom", 1)]
-        }
-    }
+        // BUG-08: root-level cover stays up across the `currentScreen`
+        // cross-fade while the destination decodes its large backdrops.
+        appState.isForgingHero = true
 
-    private func classBonusMap(_ cls: CharacterClass) -> [(String, Int)] {
-        switch cls {
-        case .warrior: [("Strength", 3), ("Vitality", 2)]
-        case .rogue:   [("Agility", 3), ("Luck", 2)]
-        case .mage:    [("Intelligence", 3), ("Wisdom", 2)]
-        case .tank:    [("Vitality", 3), ("Endurance", 2)]
+        appState.currentCharacter = character
+        appState.userCharacters.append(character)
+        if !allSkins.isEmpty {
+            cache.cacheSkins(allSkins)
         }
+        // First hero → lore cinematic; additional heroes → selection screen.
+        if appState.userCharacters.count <= 1 {
+            appState.currentScreen = .loreIntro(heroName: character.characterName)
+        } else {
+            appState.currentScreen = .characterSelect
+        }
+        appState.authPath = NavigationPath()
+
+        try? await Task.sleep(for: .milliseconds(350))
+        appState.isForgingHero = false
     }
 }

@@ -14,6 +14,7 @@ enum APIEndpoints {
     // MARK: - Characters
     static let characters = "/api/characters"
     static let checkName = "/api/characters/check-name"
+    static let creationOptions = "/api/characters/creation-options"
     static func character(_ id: String) -> String { "/api/characters/\(id)" }
     static func characterProfile(_ id: String) -> String { "/api/characters/\(id)/profile" }
     static func allocateStats(_ id: String) -> String { "/api/characters/\(id)/allocate-stats" }

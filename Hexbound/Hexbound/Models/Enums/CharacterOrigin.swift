@@ -35,11 +35,11 @@ enum CharacterOrigin: String, Codable, CaseIterable, Identifiable {
 
     var bonuses: String {
         switch self {
-        case .human: "+2 Charisma  +1 Luck"
+        case .human: "+2 Charisma  +1 Wisdom"
         case .orc: "+3 Strength  -1 Charisma"
-        case .skeleton: "+2 Endurance  +1 Intelligence"
-        case .demon: "+2 Intelligence  +1 Strength"
-        case .dogfolk: "+2 Agility  +1 Wisdom"
+        case .skeleton: "+2 Endurance  +1 Agility"
+        case .demon: "+2 Intelligence  +2 Wisdom  -1 Charisma"
+        case .dogfolk: "+2 Agility  +1 Luck"
         }
     }
 

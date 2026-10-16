@@ -331,9 +331,9 @@
 		A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790428D0ACD6FA1C13F6B19C /* AchievementCardView.swift */; };
 		A1B2C3D4E5F60001AABB0001 /* DungeonInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */; };
 		A1B2C3D4E5F60001AABB0003 /* LootPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0004 /* LootPreviewSheet.swift */; };
-		A1B2C3D4E5F60718A9B0C1D2 /* ClassSelectionStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */; };
-		A1B2C3D4E5F60718A9B0C1D4 /* AppearanceStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */; };
-		A1B2C3D4E5F60718A9B0C1D6 /* NameStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D7 /* NameStepView.swift */; };
+		A1B2C3D4E5F60718A9B0C1D2 /* ForgeClassPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D3 /* ForgeClassPanel.swift */; };
+		A1B2C3D4E5F60718A9B0C1D4 /* ForgeOriginPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D5 /* ForgeOriginPanel.swift */; };
+		A1B2C3D4E5F60718A9B0C1D6 /* ForgeNamePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D7 /* ForgeNamePanel.swift */; };
 		A1B2C3D4E5F6789012340001 /* TutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340002 /* TutorialView.swift */; };
 		A1B2C3D4E5F6789012340003 /* TutorialStepCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340004 /* TutorialStepCard.swift */; };
 		A1B2C3D4E5F6789012340005 /* NPCSpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340006 /* NPCSpeechBubble.swift */; };
@@ -842,9 +842,9 @@
 		A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonInfoSheet.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001AABB0004 /* LootPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LootPreviewSheet.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionStepView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceStepView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718A9B0C1D7 /* NameStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameStepView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718A9B0C1D3 /* ForgeClassPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeClassPanel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718A9B0C1D5 /* ForgeOriginPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeOriginPanel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718A9B0C1D7 /* ForgeNamePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgeNamePanel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012340002 /* TutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012340004 /* TutorialStepCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialStepCard.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012340006 /* NPCSpeechBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCSpeechBubble.swift; sourceTree = "<group>"; };
@@ -1383,19 +1383,19 @@
 		1F2457CDDB85F1EA2EDA331D /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */,
+				A1B2C3D4E5F60718A9B0C1D5 /* ForgeOriginPanel.swift */,
 				2FB747C6FDAB2BFE84A10570 /* AuthBackground.swift */,
 				4E1229239D447F7D8DC2DB37 /* AuthView.swift */,
 				F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */,
 				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
 				E77652C9FE7EBA66EE8BDC30 /* OnboardingCinematicView.swift */,
-				A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */,
+				A1B2C3D4E5F60718A9B0C1D3 /* ForgeClassPanel.swift */,
 				B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */,
 				8295F58FEE8531E138102511 /* LoginView.swift */,
 				8295F58FEE8531E138102512 /* WelcomeView.swift */,
 				02F525698FF57035C2C32D1B /* LoginViewModel.swift */,
 				C32A0D0D13CFB0AAECC6847C /* HeroForgeOverlayView.swift */,
-				A1B2C3D4E5F60718A9B0C1D7 /* NameStepView.swift */,
+				A1B2C3D4E5F60718A9B0C1D7 /* ForgeNamePanel.swift */,
 				C413E383C1949E4D72157CC2 /* OnboardingDetailView.swift */,
 				2664891309A585651CF5E2CD /* OnboardingViewModel.swift */,
 				DF910FAC6901DEB5410930AB /* RegisterDetailView.swift */,
@@ -2578,9 +2578,9 @@
 				311ACBEFCDC1EE7D10D6373E /* MockData.swift in Sources */,
 				9C5D1E6F7A8B9C0D1E2F3A4B /* MerchantTipProvider.swift in Sources */,
 				1E7F3A8B9C0D1E2F3A4B5C6D /* MerchantStripView.swift in Sources */,
-				A1B2C3D4E5F60718A9B0C1D4 /* AppearanceStepView.swift in Sources */,
-				A1B2C3D4E5F60718A9B0C1D2 /* ClassSelectionStepView.swift in Sources */,
-				A1B2C3D4E5F60718A9B0C1D6 /* NameStepView.swift in Sources */,
+				A1B2C3D4E5F60718A9B0C1D4 /* ForgeOriginPanel.swift in Sources */,
+				A1B2C3D4E5F60718A9B0C1D2 /* ForgeClassPanel.swift in Sources */,
+				A1B2C3D4E5F60718A9B0C1D6 /* ForgeNamePanel.swift in Sources */,
 				B2C3D4E5F60718A9B0C1D2E5 /* NetworkMonitor.swift in Sources */,
 				C3D4E5F60718A9B0C1D2E3F4 /* HPBarView.swift in Sources */,
 				B2C3D4E5F60718A9B0C1D2E3 /* OfflineBannerView.swift in Sources */,
