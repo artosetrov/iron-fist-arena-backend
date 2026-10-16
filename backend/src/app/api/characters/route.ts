@@ -6,22 +6,12 @@ import { isCharacterNameAllowed } from '@/lib/moderation'
 import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { baseStatsFor, calculateMaxHp, STAT_KEYS } from '@/lib/game/creation-stats'
 
 // Avatar validation is done against the appearance_skins DB table at runtime
 
-const ORIGIN_BONUSES: Record<CharacterOrigin, Partial<Record<string, number>>> = {
-  human:    { cha: 2, wis: 1 },
-  orc:      { str: 3, int: -1 },
-  skeleton: { end: 2, agi: 1 },
-  demon:    { int: 2, wis: 2, cha: -1 },
-  dogfolk:  { agi: 2, luk: 1 },
-}
 
-const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
-function calculateMaxHp(vit: number, end: number): number {
-  return 80 + vit * 5 + end * 3
-}
 
 type CharacterListRow = {
   id: string
@@ -371,13 +361,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const bonuses = ORIGIN_BONUSES[origin as CharacterOrigin]
-    const baseStatValue = 10
-
-    const stats: Record<string, number> = {}
-    for (const key of STAT_KEYS) {
-      stats[key] = baseStatValue + (bonuses[key] ?? 0)
-    }
+    // Base 10 + origin bonus + class bonus (lib/game/creation-stats.ts).
+    const stats: Record<string, number> = baseStatsFor(charClass as CharacterClass, origin as CharacterOrigin)
 
     const maxHp = calculateMaxHp(stats.vit, stats.end)
 
@@ -389,6 +374,7 @@ export async function POST(req: NextRequest) {
         origin: origin as CharacterOrigin,
         gender: charGender,
         avatar: charAvatar ?? undefined,
+        classBonusApplied: true,
         str: stats.str,
         agi: stats.agi,
         vit: stats.vit,

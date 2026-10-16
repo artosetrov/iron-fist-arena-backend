@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CharacterOrigin, CharacterGender } from '@prisma/client'
+import { ORIGIN_BONUSES, STAT_KEYS, calculateMaxHp } from '@/lib/game/creation-stats'
 
 const APPEARANCE_CHANGE_COST = 100 // gold
 
-const ORIGIN_BONUSES: Record<string, Partial<Record<string, number>>> = {
-  human:    { cha: 2, wis: 1 },
-  orc:      { str: 3, int: -1 },
-  skeleton: { end: 2, agi: 1 },
-  demon:    { int: 2, wis: 2, cha: -1 },
-  dogfolk:  { agi: 2, luk: 1 },
-}
 
-const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
-function calculateMaxHp(vit: number, end: number): number {
-  return 80 + vit * 5 + end * 3
-}
 
 export async function PATCH(
   req: NextRequest,
@@ -131,8 +121,8 @@ export async function PATCH(
       }
 
       if (originChanged) {
-        const oldBonuses = ORIGIN_BONUSES[charRow.origin] || {}
-        const newBonuses = ORIGIN_BONUSES[newOrigin] || {}
+        const oldBonuses: Record<string, number> = ORIGIN_BONUSES[charRow.origin as keyof typeof ORIGIN_BONUSES] || {}
+        const newBonuses: Record<string, number> = ORIGIN_BONUSES[newOrigin as keyof typeof ORIGIN_BONUSES] || {}
 
         const newStats: Record<string, number> = {}
         for (const key of STAT_KEYS) {

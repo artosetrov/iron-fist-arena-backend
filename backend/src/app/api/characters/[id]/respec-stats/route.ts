@@ -5,18 +5,10 @@ import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
 import { CharacterOrigin } from '@prisma/client'
+import { baseStatsFor, STAT_KEYS } from '@/lib/game/creation-stats'
 
-const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
-const ORIGIN_BONUSES: Record<CharacterOrigin, Partial<Record<string, number>>> = {
-  human:    { cha: 2, wis: 1 },
-  orc:      { str: 3, int: -1 },
-  skeleton: { end: 2, agi: 1 },
-  demon:    { int: 2, wis: 2, cha: -1 },
-  dogfolk:  { agi: 2, luk: 1 },
-}
 
-const BASE_STAT_VALUE = 10
 const RESPEC_GEM_COST = 50
 
 // POST — Respec (reset) all base stats to initial values, refund stat points. Costs gems.
@@ -38,7 +30,7 @@ export async function POST(
       const character = await tx.character.findUnique({
         where: { id },
         select: {
-          userId: true, level: true, origin: true,
+          userId: true, level: true, origin: true, class: true,
           str: true, agi: true, vit: true, end: true,
           int: true, wis: true, luk: true, cha: true,
           statPointsAvailable: true,
@@ -57,17 +49,15 @@ export async function POST(
       }
 
       // Calculate base stats (initial values for this origin)
-      const bonuses = ORIGIN_BONUSES[character.origin] ?? {}
-      const baseStats: Record<string, number> = {}
-      for (const key of STAT_KEYS) {
-        baseStats[key] = BASE_STAT_VALUE + (bonuses[key] ?? 0)
-      }
+      const baseStats: Record<string, number> = baseStatsFor(character.class, character.origin)
 
       // Calculate total allocated points (current stats minus base stats)
       let totalAllocated = 0
       for (const key of STAT_KEYS) {
         const current = (character as unknown as Record<string, number>)[key]
-        totalAllocated += current - baseStats[key]
+        // Clamp per stat: a character created before class bonuses existed
+        // can sit below the new baseline until the backfill migration runs.
+        totalAllocated += Math.max(0, current - baseStats[key])
       }
 
       if (totalAllocated <= 0) {
