@@ -46,27 +46,25 @@ enum AmbientZone: String, CaseIterable {
     /// all. One `setZone` now answers both questions: what it sounds like
     /// here, and what plays here.
     ///
-    /// `nil` means "keep whatever is playing" rather than "silence". That is
-    /// the behaviour those zones already had, so a zone still waiting for its
-    /// track sounds exactly as it does today instead of going quiet — and
-    /// giving it one later is a single line here.
+    /// `nil` means "keep whatever is playing" rather than "silence" — the
+    /// cinematic keeps the track it was entered with, because
+    /// OnboardingCinematicView drives its own music per page.
     ///
     /// Track plan and intent: docs/08_prompts/SOUND_CATALOG.md (M1-M12) and
-    /// docs/08_prompts/MUSIC_PROMPTS.md for the ones not yet made.
+    /// docs/08_prompts/MUSIC_PROMPTS.md.
     var bgmTrack: String? {
         switch self {
         case .hub, .hubRain:    "stray-city.mp3"      // M2
         case .arena:            "arena-pvp.mp3"       // M6
         case .arenaFight:       "battle-combat.mp3"   // M3
         case .cinematic:        nil  // OnboardingCinematicView drives its own, per page
-        // Waiting on a track — see MUSIC_PROMPTS.md:
-        case .dungeon, .dungeonDeep: nil  // M7
-        case .dungeonBoss:      nil       // M8
-        case .shop:             nil       // M9
-        case .tavern:           nil       // M10
-        case .forge:            nil       // M13
-        case .goldMine:         nil       // M14
-        case .hallOfFame:       nil       // M15
+        case .dungeon, .dungeonDeep: "music-dungeon.mp3"       // M7
+        case .dungeonBoss:      "music-boss.mp3"               // M8
+        case .shop:             "music-shop.mp3"               // M9
+        case .tavern:           "music-tavern.mp3"             // M10
+        case .forge:            "music-forge.mp3"              // M13
+        case .goldMine:         "music-gold-mine.mp3"          // M14
+        case .hallOfFame:       "music-hall-of-fame.mp3"       // M15
         }
     }
 

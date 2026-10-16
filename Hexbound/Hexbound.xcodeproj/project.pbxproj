@@ -148,6 +148,13 @@
 		42A1B2C3D4E5F60DM3MP002 /* DungeonMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM3MP001 /* DungeonMapView.swift */; };
 		42A1B2C3D4E5F60DM4ED002 /* DungeonMapEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM4ED001 /* DungeonMapEditorView.swift */; };
 		43BF9C17F3A15E1B1CA230F4 /* DungeonSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */; };
+		CA04E5F6B4584A2F6FC992D0 /* music-dungeon.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5EA3B7CC187AA9D9F65AE2FE /* music-dungeon.mp3 */; };
+		514ADD744C383B446E93A385 /* music-boss.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3675AE50D5729C8012428DA7 /* music-boss.mp3 */; };
+		CE392BC44D3979DCC9462C2C /* music-shop.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6AFD9772233361038E7F1DFA /* music-shop.mp3 */; };
+		208FDAB886B3F53920664BE1 /* music-tavern.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A3ECE7E2559116834620E155 /* music-tavern.mp3 */; };
+		613B2E07D07035464C56AB54 /* music-forge.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BEDB85F0E6DEDD37D687CB1A /* music-forge.mp3 */; };
+		4415F9D69C1F6A7A718F8479 /* music-gold-mine.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 945D88CEA16B200489158E0D /* music-gold-mine.mp3 */; };
+		B05371740678238AB0C52238 /* music-hall-of-fame.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 68024C2B985751FC34491C7F /* music-hall-of-fame.mp3 */; };
 		43E26780CD3C075BC32EF785 /* stray-city.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A9606814424887E99EA0D068 /* stray-city.mp3 */; };
 		43F77EF725E398D60158C767 /* ContextualHintBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8FA34A0C0EE75D22B6C2B9 /* ContextualHintBar.swift */; };
 		4402F9246B80EE080DD69B73 /* chest_close_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 566F557D757FC32D5E7F9F97 /* chest_close_2.wav */; };
@@ -873,6 +880,13 @@
 		A8DE9B9F60FF0416FC335685 /* combat_miss.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_miss.wav; sourceTree = "<group>"; };
 		A922EA25000767703C285688 /* creature_growl.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = creature_growl.wav; sourceTree = "<group>"; };
 		A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineViewModel.swift; sourceTree = "<group>"; };
+		5EA3B7CC187AA9D9F65AE2FE /* music-dungeon.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-dungeon.mp3"; path = "Hexbound/Resources/Audio/BGM/music-dungeon.mp3"; sourceTree = SOURCE_ROOT; };
+		3675AE50D5729C8012428DA7 /* music-boss.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-boss.mp3"; path = "Hexbound/Resources/Audio/BGM/music-boss.mp3"; sourceTree = SOURCE_ROOT; };
+		6AFD9772233361038E7F1DFA /* music-shop.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-shop.mp3"; path = "Hexbound/Resources/Audio/BGM/music-shop.mp3"; sourceTree = SOURCE_ROOT; };
+		A3ECE7E2559116834620E155 /* music-tavern.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-tavern.mp3"; path = "Hexbound/Resources/Audio/BGM/music-tavern.mp3"; sourceTree = SOURCE_ROOT; };
+		BEDB85F0E6DEDD37D687CB1A /* music-forge.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-forge.mp3"; path = "Hexbound/Resources/Audio/BGM/music-forge.mp3"; sourceTree = SOURCE_ROOT; };
+		945D88CEA16B200489158E0D /* music-gold-mine.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-gold-mine.mp3"; path = "Hexbound/Resources/Audio/BGM/music-gold-mine.mp3"; sourceTree = SOURCE_ROOT; };
+		68024C2B985751FC34491C7F /* music-hall-of-fame.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "music-hall-of-fame.mp3"; path = "Hexbound/Resources/Audio/BGM/music-hall-of-fame.mp3"; sourceTree = SOURCE_ROOT; };
 		A9606814424887E99EA0D068 /* stray-city.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "stray-city.mp3"; path = "Hexbound/Resources/Audio/BGM/stray-city.mp3"; sourceTree = SOURCE_ROOT; };
 		A9A1090A17C031D04345FBF9 /* war_drums.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = war_drums.wav; sourceTree = "<group>"; };
 		A9F77C1F26D7F3F4A893CD9D /* PvPRank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPRank.swift; sourceTree = "<group>"; };
@@ -1793,6 +1807,13 @@
 				03211693FA838BABF0DDF071 /* battle-combat.mp3 */,
 				8680209AC977567266A09DA1 /* defeat-sting.mp3 */,
 				8A933FE01392FF1908BB0C9A /* main-theme.mp3 */,
+				5EA3B7CC187AA9D9F65AE2FE /* music-dungeon.mp3 */,
+				3675AE50D5729C8012428DA7 /* music-boss.mp3 */,
+				6AFD9772233361038E7F1DFA /* music-shop.mp3 */,
+				A3ECE7E2559116834620E155 /* music-tavern.mp3 */,
+				BEDB85F0E6DEDD37D687CB1A /* music-forge.mp3 */,
+				945D88CEA16B200489158E0D /* music-gold-mine.mp3 */,
+				68024C2B985751FC34491C7F /* music-hall-of-fame.mp3 */,
 				A9606814424887E99EA0D068 /* stray-city.mp3 */,
 				31EE7709FEE6A29F15A412EE /* victory-fanfare.mp3 */,
 			);
@@ -2312,6 +2333,13 @@
 				007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */,
 				E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */,
 				L10N002BLD000000000000A3 /* Localizable.strings in Resources */,
+				CA04E5F6B4584A2F6FC992D0 /* music-dungeon.mp3 in Resources */,
+				514ADD744C383B446E93A385 /* music-boss.mp3 in Resources */,
+				CE392BC44D3979DCC9462C2C /* music-shop.mp3 in Resources */,
+				208FDAB886B3F53920664BE1 /* music-tavern.mp3 in Resources */,
+				613B2E07D07035464C56AB54 /* music-forge.mp3 in Resources */,
+				4415F9D69C1F6A7A718F8479 /* music-gold-mine.mp3 in Resources */,
+				B05371740678238AB0C52238 /* music-hall-of-fame.mp3 in Resources */,
 				43E26780CD3C075BC32EF785 /* stray-city.mp3 in Resources */,
 				291EFF46B7F8D6F2B69E7CA3 /* ui_back.wav in Resources */,
 				1F0B4725284403BD3725ECC6 /* ui_close.wav in Resources */,

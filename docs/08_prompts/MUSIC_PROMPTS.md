@@ -1,14 +1,19 @@
 # Hexbound — Music Prompts
 
-Prompts for the background tracks that do not exist yet. Companion to
+Prompts behind the background tracks. Companion to
 `SOUND_CATALOG.md`, which numbered the tracks (M1–M12) back in March and
 described what each one is for; this file is what you paste into a
 generator to get them.
 
-**Status at 2026-10-15.** Six tracks exist. Three of them —
-`battle-combat.mp3`, `victory-fanfare.mp3`, `defeat-sting.mp3` — were
-generated to that plan and then referenced by no code at all until today.
-Seven zones still play whatever the previous screen left running.
+**Status at 2026-10-16.** All thirteen tracks exist and are wired. The
+seven below were generated in Mureka (V9.5, Custom, Instrumental) from the
+prompts in this file, two variants each; variant A is in the bundle and both
+sit in `_music_audition/normalized/` for comparison. Swapping a zone to its
+B take is a file copy over the same name — no project or code change.
+
+Levels: each take was trimmed to -15 LUFS to match the existing tracks, or
+further if that left the true peak above -1.5 dBFS, then re-encoded at
+192 kbps. `scripts/check_audio_levels.py` covers them from here.
 
 | # | Zone (`AmbientZone`) | File | Status |
 |---|---|---|---|
@@ -18,13 +23,13 @@ Seven zones still play whatever the previous screen left running.
 | M4 | — (result screen, win) | `victory-fanfare.mp3` | ✅ wired 2026-10-15 |
 | M5 | — (result screen, loss) | `defeat-sting.mp3` | ✅ wired 2026-10-15 |
 | M6 | `arena` | `arena-pvp.mp3` | ✅ |
-| M7 | `dungeon`, `dungeonDeep` | `music-dungeon.mp3` | ❌ below |
-| M8 | `dungeonBoss` | `music-boss.mp3` | ❌ below |
-| M9 | `shop` | `music-shop.mp3` | ❌ below |
-| M10 | `tavern` | `music-tavern.mp3` | ❌ below |
-| M13 | `forge` | `music-forge.mp3` | ❌ below |
-| M14 | `goldMine` | `music-gold-mine.mp3` | ❌ below |
-| M15 | `hallOfFame` | `music-hall-of-fame.mp3` | ❌ below |
+| M7 | `dungeon`, `dungeonDeep` | `music-dungeon.mp3` | ✅ wired 2026-10-16 |
+| M8 | `dungeonBoss` | `music-boss.mp3` | ✅ wired 2026-10-16 |
+| M9 | `shop` | `music-shop.mp3` | ✅ wired 2026-10-16 |
+| M10 | `tavern` | `music-tavern.mp3` | ✅ wired 2026-10-16 |
+| M13 | `forge` | `music-forge.mp3` | ✅ wired 2026-10-16 |
+| M14 | `goldMine` | `music-gold-mine.mp3` | ✅ wired 2026-10-16 |
+| M15 | `hallOfFame` | `music-hall-of-fame.mp3` | ✅ wired 2026-10-16 |
 
 M11 (character creation) and M12 (dungeon rush) from the old catalog are
 deliberately not here — onboarding drives its own per-page track, and
