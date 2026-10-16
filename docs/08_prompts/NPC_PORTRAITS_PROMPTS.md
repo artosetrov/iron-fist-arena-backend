@@ -37,3 +37,13 @@ Canon characters (merchant, finch, fortuna) swap the first sentence for:
 | `npc-fortuna` | Lady Fortuna · Vesper | `#00FF00` | identity: Image 1 | Lady Fortuna from Image 1: an ancient fortune-teller crone with long silver hair, a violet head-wrap with a gold coin pendant on her brow, a deep violet and burgundy shawl, long-nailed fingers holding up a single tarot card with its plain back toward the viewer, a knowing crooked smile — violet, burgundy and bone tones, gold accents | `f3574fb6-e34c-4c4d-9844-bcfdc6a92ee6` |
 
 Defect ledger: 1 false NSFW flag (Field Medic — "army surgeon … stained apron … suture needle"), reworded to "camp healer … rolled bandage and tonic bottle" and accepted. 2 submissions hit the provider rate limit (429) and were resubmitted unchanged. Higgsfield upload from the container/VM is blocked by egress; reference images were imported from `raw.githubusercontent.com` (public repo) instead.
+
+## Added 2026-10-16 — the Scavenger (Black Market keeper, not voiced yet)
+
+| Asset | Speaker | Key | Anchor | Subject | Job |
+|---|---|---|---|---|---|
+| `npc-scavenger` | The Scavenger (Black Market) · no voice yet | `#00FF00` | style ×3 | the Scavenger, a shady black-market fence: a gaunt hunched rat-faced ratfolk smuggler with a long twitching nose, whiskers, small sharp yellow eyes under a deep tattered charcoal hood, a ragged dark crimson scarf, a patched black leather coat with hidden pockets of stolen trinkets, a silver locket and a bundle of mismatched keys at his neck, holding up a small iron lantern with a deep magenta flame painted as solid colour, one finger to his lips (hush), a sly crooked buck-toothed grin — charcoal, soot grey and dark leather tones, crimson and magenta accents | `9debcae5-729c-41e1-8b03-ce04b5ff2a04` |
+
+Turned slightly toward the LEFT in the source; `ShopkeeperHeader` mirrors every keeper so they face the content. Head crop `npc-scavenger-face` = raw 2048 px crop (620,60)–(1480,920), `--pt 64`.
+
+Background `bg-black-market` (job `40914a8a-5c19-4b26-a975-61f08a7e281e`, 9:16, style anchors merchant + fortuna): the Scavenger's cellar den — vaulted brick, contraband shelves, cages, iron-banded chests, stairs to a barred trapdoor, magenta/crimson lanterns as flat colour, a counter with brass scales, a dagger, a ledger and coins across the lower third; darker empty upper third for the title. Shipped as a 1536×2752 JPEG (q86).
