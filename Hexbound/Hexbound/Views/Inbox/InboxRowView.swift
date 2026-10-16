@@ -326,29 +326,21 @@ struct InboxRowView: View {
 
     // MARK: - Attachment Pills
 
+    /// Inline "icon amount" pairs — no capsules, so they fit beside the
+    /// sender and date on a phone-width row.
     private func attachmentPills(_ attachments: [MailAttachment]) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             ForEach(Array(attachments.prefix(2).enumerated()), id: \.offset) { _, attachment in
-                HStack(spacing: LayoutConstants.spaceXS) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Image(attachmentAsset(for: attachment.type))
                         .resizable()
                         .scaledToFit()
                         .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
 
                     Text(formatAmount(attachment.amount))
-                        .font(DarkFantasyTheme.body)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(
-                    Capsule()
-                        .fill(DarkFantasyTheme.bgTertiary)
-                        .overlay(
-                            Capsule()
-                                .stroke(DarkFantasyTheme.goldDim.opacity(0.3), lineWidth: 0.5)
-                        )
-                )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(attachment.amount) \(attachmentLabel(for: attachment.type))")
             }
