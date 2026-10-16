@@ -8,7 +8,7 @@ vi.mock('../../src/lib/game/tutorial-analytics', () => ({
   logTutorialEvent: mockLogTutorialEvent,
 }))
 
-import { awardReferralQualificationIfEligible } from '../../src/lib/game/tutorial'
+import { REFERRAL_BONUS, awardReferralQualificationIfEligible } from '../../src/lib/game/tutorial'
 
 describe('tutorial referral qualification rewards', () => {
   beforeEach(() => {
@@ -30,6 +30,7 @@ describe('tutorial referral qualification rewards', () => {
       },
       referralRewardClaim: {
         create: vi.fn(async () => ({})),
+        count: vi.fn(async () => 0),
       },
     }
 
@@ -79,6 +80,7 @@ describe('tutorial referral qualification rewards', () => {
         update: vi.fn(async () => ({})),
       },
       referralRewardClaim: {
+        count: vi.fn(async () => 0),
         create: vi.fn(async () => {
           const error = new Error('duplicate') as Error & { code?: string }
           error.code = 'P2002'
@@ -92,5 +94,34 @@ describe('tutorial referral qualification rewards', () => {
     expect(result).toBeNull()
     expect(tx.user.update).not.toHaveBeenCalled()
     expect(mockLogTutorialEvent).not.toHaveBeenCalled()
+  })
+
+  it('stops paying once the referrer has reached maxReferrals', async () => {
+    const tx = {
+      character: {
+        findUnique: vi.fn(async () => ({ referredBy: 'referrer-1' })),
+        findFirst: vi.fn(async () => ({
+          id: 'referrer-1',
+          userId: 'user-2',
+          referralCode: 'FRIEND88',
+        })),
+      },
+      user: {
+        update: vi.fn(async () => ({})),
+      },
+      referralRewardClaim: {
+        create: vi.fn(async () => ({})),
+        count: vi.fn(async () => REFERRAL_BONUS.maxReferrals),
+      },
+    }
+
+    const result = await awardReferralQualificationIfEligible(tx, 'invitee-21', 5)
+
+    expect(result).toBeNull()
+    expect(tx.referralRewardClaim.create).not.toHaveBeenCalled()
+    expect(tx.user.update).not.toHaveBeenCalled()
+    expect(mockLogTutorialEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'referral_cap_reached', referrerCharacterId: 'referrer-1' }),
+    )
   })
 })

@@ -413,7 +413,8 @@ export async function getUpgradeSuccessChance(currentUpgradeLevel: number): Prom
   // UI advertised 30/20 and the server rolled 25/15.
   const chances = await getUpgradeChancesConfig()
   if (currentUpgradeLevel >= chances.length) return 0
-  return chances[currentUpgradeLevel]
+  if (currentUpgradeLevel < 0) return chances[0] ?? 0
+  return chances[currentUpgradeLevel] ?? 0
 }
 
 /**

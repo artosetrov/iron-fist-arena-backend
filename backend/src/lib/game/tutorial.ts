@@ -167,6 +167,7 @@ type ReferralQualificationClaimWriter = {
       inviteeCharacterId: string
     }
   }): Promise<unknown>
+  count(args: { where: { referrerCharacterId: string } }): Promise<number>
 }
 
 export type ReferralQualificationExecutor = {
@@ -339,6 +340,27 @@ export async function awardReferralQualificationIfEligible(
   })
 
   if (!referrer || referrer.id === inviteeCharacterId) {
+    return null
+  }
+
+  // `maxReferrals` was declared with the bonus and read by nothing: every
+  // fresh account that reached L5 paid its referrer 500 gold + 10 gems,
+  // without limit (2026-10-16 balance audit). Count before the claim row so
+  // the cap holds; the unique index on (referrer, invitee) still blocks
+  // double pay for one invitee.
+  const paidReferrals = await tx.referralRewardClaim.count({
+    where: { referrerCharacterId: referrer.id },
+  })
+  if (paidReferrals >= REFERRAL_BONUS.maxReferrals) {
+    logTutorialEvent({
+      event: 'referral_cap_reached',
+      characterId: inviteeCharacterId,
+      referrerCharacterId: referrer.id,
+      referrerCode: referrer.referralCode,
+      qualifiedLevel: newLevel,
+      rewardGold: 0,
+      rewardGems: 0,
+    })
     return null
   }
 

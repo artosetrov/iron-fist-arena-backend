@@ -405,9 +405,11 @@ export async function getUpgradeChancesConfig(): Promise<number[]> {
 // --- Win Streak Bonuses ---
 export async function getWinStreakConfig() {
   const configs = await getGameConfigs({
-    'win_streak.3_bonus': WIN_STREAK_BONUSES[3] ?? 0.2,
-    'win_streak.5_bonus': WIN_STREAK_BONUSES[5] ?? 0.5,
-    'win_streak.8_bonus': WIN_STREAK_BONUSES[8] ?? 1.0,
+    // Fallbacks match the capped W3.D3 table; the old 0.2/0.5/1.0 would
+    // have quietly restored the ×2 streak if the array ever shrank.
+    'win_streak.3_bonus': WIN_STREAK_BONUSES[3] ?? 0.15,
+    'win_streak.5_bonus': WIN_STREAK_BONUSES[5] ?? 0.3,
+    'win_streak.8_bonus': WIN_STREAK_BONUSES[8] ?? 0.5,
   })
   return {
     BONUS_3: configs['win_streak.3_bonus'] as number,

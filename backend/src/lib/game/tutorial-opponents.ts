@@ -102,9 +102,11 @@ export const TUTORIAL_OPPONENTS: Record<ScriptedOpponentKey, ScriptedOpponent> =
       equippedSkills: [],
       passiveBonuses: undefined,
     },
-    // Placeholder — replaced by find-tutorial-seed.ts result.
-    // DO NOT SHIP WITH THIS VALUE. Run seed-search before W2.D3 commit.
-    guaranteedVictorySeed: 0xDEADBEEF,
+    // scripts/find-tutorial-seed.ts, 2026-10-16: seed 26 wins for all four
+    // classes in exactly 5 turns at the default L1 loadout. Re-run the script
+    // after any combat-formula change; the resolve route logs SEED DRIFT if
+    // the hero ever loses on this seed.
+    guaranteedVictorySeed: 26,
     forcedStance: { attack: 'head', defense: 'chest' },
     maxTurnsForVictory: 5,
   },

@@ -32,7 +32,10 @@ export const GEM_PACKS: Record<GemPackCatalogId, GemPackDef> = {
   gem_pack_medium: {
     catalogId: 'gem_pack_medium',
     gemsAmount: 50,
-    goldPrice: 1200,
+    // 1,750 → 35 gold/gem. Was 1,200 (24/gem): cheaper per gem than the
+    // large pack (30/gem), so the ladder rewarded the middle rung and the
+    // large pack was never the right buy. Small 50 → medium 35 → large 30.
+    goldPrice: 1750,
     requiredLevel: 5,
   },
   gem_pack_large: {

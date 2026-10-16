@@ -68,7 +68,10 @@ export function shouldResetStreak(lastClaimDate: Date | null): boolean {
  */
 export async function getDailyReward(day: number): Promise<DailyLoginRewardDef> {
   const rewards = await getDailyLoginRewardsConfig();
-  // Cycle through the reward table
-  const index = ((day - 1) % rewards.length);
+  // Cycle through the reward table. `day` is 1-based; anything below that
+  // (a fresh row before the first claim, a reset) reads as day 1 instead of
+  // `rewards[-1]` → undefined.
+  const safeDay = Number.isFinite(day) && day >= 1 ? Math.floor(day) : 1;
+  const index = ((safeDay - 1) % rewards.length);
   return rewards[index];
 }

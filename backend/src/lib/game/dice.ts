@@ -305,7 +305,20 @@ export function strikeCalc(c: StrikeCtx, cfg: DiceConfig = DEFAULT_DICE_CONFIG):
   const base = { rawMult, opens: 0, halved: false }
   const blocked = !c.omen && !unblockable && guardActive && gZone === zone
   if (blocked) {
-    if (ar === 'dagger') return { ...base, out: 'pierce', mult: mult * RP.dagger.pierce, missChance: 0, firedA: ar, firedD: null }
+    if (ar === 'dagger') {
+      // The pierce goes through the block, not through the armour runes:
+      // Mail/Barrier/Stone/Unbreakable reduce what the holder takes on an
+      // open face, so they must reduce the pierce too. Returning before that
+      // block made a blocked Dagger (×0.8) hit harder than an unblocked one
+      // into Stone (×0.6) — blocking was the wrong call (2026-10-16 audit).
+      let pierce = mult * RP.dagger.pierce
+      let armourRune: string | null = null
+      if (gr === 'mail') { pierce *= RP.mail.take; armourRune = gr }
+      if (gr === 'barrier') { pierce *= RP.barrier.take; armourRune = gr }
+      if (gr === 'stone') { pierce *= RP.stone.take; armourRune = gr }
+      if (gr === 'unbreakable') { pierce *= RP.unbreakable.take; armourRune = gr }
+      return { ...base, out: 'pierce', mult: pierce, missChance: 0, firedA: ar, firedD: armourRune }
+    }
     return { ...base, out: 'blocked', mult: 0, missChance: 0, firedA, firedD: gr }
   }
 
