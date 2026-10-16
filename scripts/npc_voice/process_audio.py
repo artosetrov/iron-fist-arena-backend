@@ -16,7 +16,7 @@ OUT = os.path.join(HERE, "../../Hexbound/Hexbound/Resources/Audio/NPC")
 # semitones; 0 = untouched. Female voices and Finch (a quick trickster) stay lighter.
 PITCH = {"tavern": -1.5, "arena": -2, "merchant": -1, "sage": -1, "smith": -2.5, "dungeon": -2,
          "mine": -2, "herald": -1, "chronicler": -1, "finch": -0.5,
-         "healer": 0, "medic": 0, "fortuna": 0}
+         "healer": 0, "medic": 0, "fortuna": 0, "scavenger": -1.5}
 WARM = "equalizer=f=140:t=q:w=1.2:g=3,equalizer=f=3200:t=q:w=1.5:g=-2,lowpass=f=10000"
 
 def main(src):

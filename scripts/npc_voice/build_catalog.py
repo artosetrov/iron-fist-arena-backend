@@ -44,9 +44,17 @@ for seg in re.findall(r'MerchantTip\(segments: \[(.*?)\]\)', mt, re.S):
 # 6. Arena master plain line
 add("Arena Master", "Pick an opponent and fight to climb the ranks.", "arena_widget")
 
+# 7. Shop / Black Market keepers (ShopkeeperHeader)
+sk = open(f"{SRC}/Views/Shop/ShopkeeperHeader.swift").read()
+for who, spk in (("merchant", "Merchant"), ("scavenger", "The Scavenger")):
+    blk = sk[sk.index(f"static let {who} = ["):]
+    blk = blk[:blk.index("]")]
+    for x in re.findall(r'"([^"]+)"', blk): add(spk, x, f"keeper:{who}")
+
 SPEAKER = {"Tavern Keeper":"tavern","Guide":"tavern","Arena Master":"arena","Merchant":"merchant","Sage":"sage","Healer":"healer",
   "Field Medic":"medic","Blacksmith":"smith","Dungeon Guide":"dungeon","Dungeon Keeper":"dungeon","Mine Foreman":"mine",
-  "Herald":"herald","Chronicler":"chronicler","Trickster":"finch","Finch":"finch","Lady Fortuna":"fortuna"}
+  "Herald":"herald","Chronicler":"chronicler","Trickster":"finch","Finch":"finch","Lady Fortuna":"fortuna",
+  "The Scavenger":"scavenger"}
 def key(text): return "".join(ch for ch in text.lower() if ch.isascii() and ch.isalnum())
 out, seen = [], {}
 for sp, text, src in lines:

@@ -115,6 +115,7 @@ final class NPCVoice {
 enum NPCSpeaker: String, CaseIterable {
     case tavern, arena, merchant, sage, healer, medic, smith
     case dungeon, mine, herald, chronicler, finch, fortuna
+    case scavenger
 
     /// Waist-up portrait — the big avatar that peeks over the speech card.
     var portrait: String { "npc-\(rawValue)" }
@@ -137,6 +138,7 @@ enum NPCSpeaker: String, CaseIterable {
         case "Chronicler": self = .chronicler
         case "Trickster", "Finch": self = .finch
         case "Lady Fortuna": self = .fortuna
+        case "The Scavenger", "Scavenger": self = .scavenger
         default: return nil
         }
     }

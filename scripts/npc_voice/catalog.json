@@ -886,5 +886,69 @@
   "tts": "Pick an opponent and fight to climb the ranks.",
   "source": "arena_widget",
   "voice": "1ad38ba4-9cc4-4f2f-9fde-b0fefdf67ae5"
+ },
+ {
+  "id": "npc_merchant_72246d09",
+  "speaker": "merchant",
+  "text": "Steel, leather, potions — all honest. Mostly.",
+  "tts": "Steel, leather, potions — all honest. Mostly.",
+  "source": "keeper:merchant",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_33a79639",
+  "speaker": "merchant",
+  "text": "Gold first. Then we talk.",
+  "tts": "Gold first. Then we talk.",
+  "source": "keeper:merchant",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_68799652",
+  "speaker": "merchant",
+  "text": "Touch it, you've bought it.",
+  "tts": "Touch it, you've bought it.",
+  "source": "keeper:merchant",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_merchant_1d1c6cd7",
+  "speaker": "merchant",
+  "text": "Fresh stock every dawn.",
+  "tts": "Fresh stock every dawn.",
+  "source": "keeper:merchant",
+  "voice": "dc382508-c8bd-443c-8cb2-46e57b8d2e6f"
+ },
+ {
+  "id": "npc_scavenger_0b7ad864",
+  "speaker": "scavenger",
+  "text": "Psst. Fell off a wagon. Don't ask which.",
+  "tts": "Psst. Fell off a wagon. Don't ask which.",
+  "source": "keeper:scavenger",
+  "voice": "195e386a-cb61-5c1b-a53b-0e2f0669c408"
+ },
+ {
+  "id": "npc_scavenger_a1bd1fc6",
+  "speaker": "scavenger",
+  "text": "Keep your voice down.",
+  "tts": "Keep your voice down.",
+  "source": "keeper:scavenger",
+  "voice": "195e386a-cb61-5c1b-a53b-0e2f0669c408"
+ },
+ {
+  "id": "npc_scavenger_a2df6bce",
+  "speaker": "scavenger",
+  "text": "You didn't see me.",
+  "tts": "You didn't see me.",
+  "source": "keeper:scavenger",
+  "voice": "195e386a-cb61-5c1b-a53b-0e2f0669c408"
+ },
+ {
+  "id": "npc_scavenger_3c612516",
+  "speaker": "scavenger",
+  "text": "Everything's for sale. Even the lamp.",
+  "tts": "Everything's for sale. Even the lamp.",
+  "source": "keeper:scavenger",
+  "voice": "195e386a-cb61-5c1b-a53b-0e2f0669c408"
  }
 ]

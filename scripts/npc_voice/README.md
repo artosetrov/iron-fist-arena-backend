@@ -33,3 +33,4 @@ Each speaker also has a face: `Assets.xcassets/NPC/npc-<speaker>` (waist-up, 256
 | chronicler | Chronicler | Caspian |
 | finch | Finch (Shell game) | Callum |
 | fortuna | Lady Fortuna | Vesper |
+| scavenger | The Scavenger (Black Market keeper) | Knox |

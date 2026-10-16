@@ -112,12 +112,7 @@ struct ShopDetailView: View {
                 tagline: "Goblin trading post",
                 keeperName: "Sterling the merchant",
                 keeperImage: NPCSpeaker.merchant.portrait,
-                lines: [
-                    "Steel, leather, potions — all honest. Mostly.",
-                    "Gold first. Then we talk.",
-                    "Touch it, you've bought it.",
-                    "Fresh stock every dawn."
-                ]
+                lines: ShopkeeperLines.merchant
             )
 
             currencyBar(vm)

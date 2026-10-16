@@ -80,12 +80,7 @@ struct BlackMarketDetailView: View {
                 tagline: "No questions · No refunds",
                 keeperName: "The Scavenger",
                 keeperImage: "npc-scavenger",
-                lines: [
-                    "Psst. Fell off a wagon. Don't ask which.",
-                    "Keep your voice down.",
-                    "You didn't see me.",
-                    "Everything's for sale. Even the lamp."
-                ]
+                lines: ShopkeeperLines.scavenger
             )
 
             currencyBar(vm)
@@ -111,7 +106,7 @@ struct BlackMarketDetailView: View {
     // MARK: - Lore
 
     private var lore: some View {
-        Text("One crate a day, no questions, no refunds. Come back when the lamp is lit.")
+        Text("One crate a day. Odd crates are free, even ones cost gold.")
             .font(DarkFantasyTheme.caption)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .multilineTextAlignment(.center)

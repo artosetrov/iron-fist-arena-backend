@@ -54,6 +54,11 @@ struct ShopkeeperHeader: View {
         .onAppear {
             lineIndex = lines.isEmpty ? 0 : Int.random(in: 0..<lines.count)
             if !reduceMotion { lanternLit = true }
+            // Greets once per launch; tapping the keeper always speaks.
+            if lines.indices.contains(lineIndex) { NPCVoice.shared.speakOnce(lines[lineIndex]) }
+        }
+        .onDisappear {
+            if lines.indices.contains(lineIndex) { NPCVoice.shared.stop(lines[lineIndex]) }
         }
     }
 
@@ -125,6 +130,7 @@ struct ShopkeeperHeader: View {
             withAnimation(MotionConstants.snappy) {
                 lineIndex = (lineIndex + 1) % lines.count
             }
+            NPCVoice.shared.speak(lines[lineIndex])
         } label: {
             Image(keeperImage)
                 .resizable()
@@ -199,6 +205,27 @@ struct ShopkeeperHeader: View {
     private var bubbleBorder: Color {
         style == .shop ? DarkFantasyTheme.gold.opacity(0.45) : DarkFantasyTheme.contrabandAccent.opacity(0.55)
     }
+}
+
+// MARK: - Keeper lines
+
+/// What the keepers say in `ShopkeeperHeader`. Voiced: these arrays are read
+/// by `scripts/npc_voice/build_catalog.py` (section 7) — re-voice a line
+/// whenever you change its wording.
+enum ShopkeeperLines {
+    static let merchant = [
+        "Steel, leather, potions — all honest. Mostly.",
+        "Gold first. Then we talk.",
+        "Touch it, you've bought it.",
+        "Fresh stock every dawn."
+    ]
+
+    static let scavenger = [
+        "Psst. Fell off a wagon. Don't ask which.",
+        "Keep your voice down.",
+        "You didn't see me.",
+        "Everything's for sale. Even the lamp."
+    ]
 }
 
 // MARK: - Counter (currency bar background)
