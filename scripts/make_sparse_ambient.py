@@ -68,9 +68,14 @@ def build(src, channels, rate, bed_s, gap_lo, gap_hi, gain_lo, gain_hi, rng):
     # at each loop seam; strip it before anything is placed.
     dc = sum(src) / len(src) if len(src) else 0.0
 
-    pos = rng.uniform(0, gap_hi)
+    src_s = src_frames / rate
+    # Hits are kept whole inside the bed: nothing crosses the loop seam, so the
+    # file starts and ends in silence. That matters for the .mp3 copies — the
+    # encoder pads both ends, and padding inside a hit would clip it.
+    last_start = bed_s - src_s - 0.2
+    pos = rng.uniform(0.2, gap_hi)
     placed = 0
-    while pos < bed_s:
+    while pos < last_start:
         gain = rng.uniform(gain_lo, gain_hi)
         # Slight stereo placement so repeats do not land in the same spot.
         pan = rng.uniform(-0.35, 0.35)
@@ -78,7 +83,9 @@ def build(src, channels, rate, bed_s, gap_lo, gap_hi, gain_lo, gain_hi, rng):
         gr = gain * min(1.0, 1.0 + pan)
         start = int(pos * rate)
         for i in range(src_frames):
-            dst = (start + i) % frames          # wrap: the seam stays seamless
+            dst = start + i
+            if dst >= frames:
+                break
             for c in range(channels):
                 g = gl if c == 0 else gr
                 bed[dst * channels + c] += (src[i * channels + c] - dc) * g
