@@ -43,7 +43,7 @@ prisma generate && next build
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — shared rate limiting (without them each lambda keeps its own in-memory counters)
 - `BOT_TICKET_SECRET` — HMAC for bot-match tickets
 - `INTERACTIVE_COMBAT_V1` — interactive combat flag
-- **IAP:** `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`, `APPLE_IAP_ENVIRONMENT`, `APPLE_BUNDLE_ID` — `/verify-receipt` **rejects every purchase in production** when these are missing
+- **IAP:** `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`, `APPLE_IAP_ENVIRONMENT`, `APPLE_BUNDLE_ID` — `/verify-receipt` **rejects every purchase in production** when these are missing. `APPLE_IAP_ENVIRONMENT` (`production` by default) only picks the environment asked first; a 404 there is retried in the other one. That is how App Review and TestFlight purchases (sandbox, production-signed build) succeed. Production logs mark them `Sandbox transaction … accepted in production`.
 - **Apple webhook:** `APPLE_APP_APPLE_ID`, `APPLE_ROOT_CERTS` (or `APPLE_ROOT_CERTS_DIR`) — `/iap/apple-notifications` returns 503 until set
 - **Push:** `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_AUTH_KEY` (.p8 contents), `APNS_BUNDLE_ID`, `APNS_ENV=production`
 - **Cron:** `CRON_SECRET` — Vercel Cron auth for `/api/cron/*` (`backend/vercel.json`)
