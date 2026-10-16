@@ -245,6 +245,30 @@ enum DarkFantasyTheme {
     static let bgPremiumDeep = Color(hex: 0x1A0A2E)
     static let borderPremium = Color(hex: 0x352050)
 
+    // MARK: - Shopkeeper Headers (Shop / Black Market, 2026-10-16)
+
+    /// Shop: oak signboard + counter, gold lettering.
+    static let shopSignTop = Color(hex: 0x5A3E22)
+    static let shopSignBottom = Color(hex: 0x3B2814)
+    static let shopSignEdge = Color(hex: 0x1E140A)
+    static let shopSignTagline = Color(hex: 0xE2C68A)
+    static let shopCounterTop = Color(hex: 0x4A3420)
+    static let shopCounterBottom = Color(hex: 0x2E2013)
+    static let shopCounterEdge = Color(hex: 0x7A5A30)
+    static let shopChain = Color(hex: 0x6B5A3A)
+    /// Black Market: charred board, crimson lettering, lantern light.
+    static let contrabandBright = Color(hex: 0xE06A8A)
+    static let contrabandMuted = Color(hex: 0x9A7F88)
+    static let contrabandInk = Color(hex: 0xF0D8DF)
+    static let bmSignTop = Color(hex: 0x2A1E1E)
+    static let bmSignBottom = Color(hex: 0x160F10)
+    static let bmSignEdge = Color(hex: 0x050304)
+    static let bmCounterTop = Color(hex: 0x221519)
+    static let bmCounterBottom = Color(hex: 0x120B0E)
+    static let bmCounterEdge = Color(hex: 0x6E2A3E)
+    static let bmChain = Color(hex: 0x4A3A40)
+    static let bmBubble = Color(hex: 0x140C12)
+
     // MARK: - VFX Glow Colors
 
     static let vfxPoisonGlow = Color(hex: 0x7CFC00)

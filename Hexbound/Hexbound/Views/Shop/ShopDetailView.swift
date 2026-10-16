@@ -23,7 +23,7 @@ struct ShopDetailView: View {
                     .clipped()
             }
             .ignoresSafeArea()
-            DarkFantasyTheme.bgBackdrop
+            ShopRoomScrim()
                 .ignoresSafeArea()
 
             if let vm {
@@ -106,8 +106,19 @@ struct ShopDetailView: View {
     private func mainContent(_ vm: ShopViewModel) -> some View {
         VStack(spacing: 0) {
             // Screen title
-            OrnamentalTitle("SHOP")
-                .padding(.top, LayoutConstants.spaceSM)
+            ShopkeeperHeader(
+                style: .shop,
+                title: "SHOP",
+                tagline: "Goblin trading post",
+                keeperName: "Sterling the merchant",
+                keeperImage: NPCSpeaker.merchant.portrait,
+                lines: [
+                    "Steel, leather, potions — all honest. Mostly.",
+                    "Gold first. Then we talk.",
+                    "Touch it, you've bought it.",
+                    "Fresh stock every dawn."
+                ]
+            )
 
             currencyBar(vm)
 
@@ -193,12 +204,7 @@ struct ShopDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceMD)
         .padding(.bottom, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.bgSecondary)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle)
-                .frame(height: 1)
-        }
+        .background(ShopCounterBackground(style: .shop))
     }
 
     // MARK: - Shop Content (grid states)

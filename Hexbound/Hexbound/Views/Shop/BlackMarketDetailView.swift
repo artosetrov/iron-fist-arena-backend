@@ -16,19 +16,17 @@ struct BlackMarketDetailView: View {
 
     var body: some View {
         ZStack {
-            // No dedicated art yet — the shop plate under a heavier scrim
-            // reads as the alley behind it. Swap in `bg-black-market` when
-            // the asset lands (prompt: docs/08_prompts).
+            // The Scavenger's cellar den (2026-10-16) — its own room, so the
+            // black market never reads as a second copy of the shop.
             GeometryReader { geo in
-                Image("bg-shop")
+                Image("bg-black-market")
                     .resizable()
                     .scaledToFill()
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
-                    .saturation(0.5)
             }
             .ignoresSafeArea()
-            DarkFantasyTheme.bgBackdrop
+            ShopRoomScrim()
                 .ignoresSafeArea()
 
             if let vm {
@@ -76,8 +74,19 @@ struct BlackMarketDetailView: View {
     @ViewBuilder
     private func content(_ vm: BlackMarketViewModel) -> some View {
         VStack(spacing: 0) {
-            OrnamentalTitle("BLACK MARKET", accentColor: DarkFantasyTheme.contrabandAccent)
-                .padding(.top, LayoutConstants.spaceSM)
+            ShopkeeperHeader(
+                style: .blackMarket,
+                title: "BLACK MARKET",
+                tagline: "No questions · No refunds",
+                keeperName: "The Scavenger",
+                keeperImage: "npc-scavenger",
+                lines: [
+                    "Psst. Fell off a wagon. Don't ask which.",
+                    "Keep your voice down.",
+                    "You didn't see me.",
+                    "Everything's for sale. Even the lamp."
+                ]
+            )
 
             currencyBar(vm)
 
@@ -132,6 +141,6 @@ struct BlackMarketDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceMD)
         .padding(.bottom, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.bgSecondary)
+        .background(ShopCounterBackground(style: .blackMarket))
     }
 }

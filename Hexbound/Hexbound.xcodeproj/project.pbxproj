@@ -214,6 +214,7 @@
 		5E3C9AF0C4C08CC4A7FC5D3A /* cloth_rustle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 301C6BA7258E83F436B0CB45 /* cloth_rustle.wav */; };
 		5EB28B015A23710BE4ACA3EC /* ItemType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5D33D5ACD1B39D871AF34E /* ItemType.swift */; };
 		5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */; };
+		274AD022E170C559B01A8072 /* ShopkeeperHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33EBD10D82F8AB4DDA2DBD61 /* ShopkeeperHeader.swift */; };
 		600A146E5D99B2A6FC72C29A /* combat_dodge_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 97CC50C7BEE675295DA8B42A /* combat_dodge_2.wav */; };
 		60495F548BED9C6323A7379B /* pouch_drop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8EF4AED0FE3D95B79C277E1C /* pouch_drop.wav */; };
 		6056EEBEF912AA9AF2CADE12 /* LevelUpModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */; };
@@ -755,6 +756,7 @@
 		72001EBEE34102013203899D /* hit_physical_6.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_physical_6.wav; sourceTree = "<group>"; };
 		720116DA77938BB71D6534EE /* hit_rogue.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue.wav; sourceTree = "<group>"; };
 		72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandWidget.swift; sourceTree = "<group>"; };
+		33EBD10D82F8AB4DDA2DBD61 /* ShopkeeperHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopkeeperHeader.swift; sourceTree = "<group>"; };
 		72EA4C895475B605C383CFF6 /* combat_shield_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_shield_4.wav; sourceTree = "<group>"; };
 		72EF7713231AE7CC70F90414 /* hit_magical_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical_4.wav; sourceTree = "<group>"; };
 		749DEEB03F6692260E1D3C34 /* combat_poison_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_poison_3.wav; sourceTree = "<group>"; };
@@ -1181,6 +1183,7 @@
 			isa = PBXGroup;
 			children = (
 				72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */,
+				33EBD10D82F8AB4DDA2DBD61 /* ShopkeeperHeader.swift */,
 				9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */,
 				4DE0AB79224E9E90C7D7C109 /* PurchaseRewardRevealView.swift */,
 				312398C6371CC3A67934903A /* CurrencyOfferCards.swift */,
@@ -2656,6 +2659,7 @@
 				07C779CE0DD60E548BAB6E9A /* LoadOutcome.swift in Sources */,
 				321B27F3C40A3730316A4B4E /* PvPLadder.swift in Sources */,
 				5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */,
+				274AD022E170C559B01A8072 /* ShopkeeperHeader.swift in Sources */,
 				OFFER001BLD00001 /* ShopOffer.swift in Sources */,
 				OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */,
 				4442F83247EBA7804A2839E5 /* ShopService.swift in Sources */,
