@@ -346,6 +346,8 @@ model Character {
   currentXp           Int            @default(0) @map("current_xp")
   prestigeLevel       Int            @default(0) @map("prestige_level")
   statPointsAvailable    Int         @default(0) @map("stat_points_available")
+  /// true once CLASS_BONUSES are baked into base stats (new heroes, or 20261016 backfill)
+  classBonusApplied      Boolean     @default(false) @map("class_bonus_applied")
   passivePointsAvailable Int         @default(0) @map("passive_points_available")
 
   // Stats (default 10 each)
