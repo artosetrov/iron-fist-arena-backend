@@ -28,7 +28,7 @@ extension GuildHallDetailView {
 
         case .loaded:
             if vm.incomingChallenges.isEmpty && vm.outgoingChallenges.isEmpty && vm.completedChallenges.isEmpty {
-                duelsEmptyState
+                duelsEmptyState(vm)
             } else {
                 duelsContent(vm)
             }
@@ -433,35 +433,74 @@ extension GuildHallDetailView {
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
     }
 
-    var duelsEmptyState: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: GameIcon.battle)
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-            Text("No Duels Yet")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-            Text("Challenge opponents from the Arena or Leaderboard.")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .multilineTextAlignment(.center)
-
-            Button {
-                appState.mainPath.append(AppRoute.arena)
-            } label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "figure.fencing")
-                    Text("Go to Arena")
+    /// Empty Duels: how a duel works, then warriors you've met with one-tap
+    /// CHALLENGE. Before the first Arena fight there is nobody to suggest, so
+    /// the Arena becomes the main action.
+    @ViewBuilder
+    func duelsEmptyState(_ vm: GuildHallViewModel) -> some View {
+        if vm.metWarriorsLoaded {
+            duelsEmptyContent(vm)
+        } else {
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                        .frame(height: 100)
+                        .shimmer()
                 }
             }
-            .buttonStyle(.secondary)
-            .frame(width: 200)
+            .padding(.horizontal, LayoutConstants.screenPadding)
         }
-        .padding(.vertical, LayoutConstants.space2XL)
-        .frame(maxWidth: .infinity)
+    }
+
+    private func duelsEmptyContent(_ vm: GuildHallViewModel) -> some View {
+        let rivals = vm.duelSuggestions
+
+        return VStack(spacing: LayoutConstants.spaceMD) {
+            EmptyStateHeader(
+                art: "empty-duels",
+                title: "No duels yet",
+                message: "Challenge any warrior to a one-on-one fight — it counts for rating."
+            )
+
+            // Facts mirror backend/src/app/api/social/challenges/route.ts:
+            // CHALLENGE_EXPIRY_HOURS = 24; on resolve both sides get gold + XP,
+            // rating moves by Elo.
+            EmptyStateSteps(steps: [
+                rivals.isEmpty
+                    ? "Open a warrior's profile and tap Challenge"
+                    : "Tap Challenge below or on a warrior's profile",
+                "They have 24 hours to accept",
+                "Both earn gold and XP — the winner takes rating"
+            ])
+
+            if !rivals.isEmpty {
+                OrnamentalSectionHeader(title: "Warriors You've Met", accentColor: DarkFantasyTheme.gold)
+                    .padding(.top, LayoutConstants.spaceXS)
+
+                ForEach(rivals) { warrior in
+                    metWarriorRow(
+                        warrior,
+                        actionLabel: "Challenge",
+                        isSent: vm.challengeSentIds.contains(warrior.id),
+                        action: { vm.challenge(warrior) }
+                    )
+                }
+            }
+
+            Group {
+                if rivals.isEmpty {
+                    Button { appState.mainPath.append(AppRoute.arena) } label: { Text("Go to Arena") }
+                        .buttonStyle(.primary)
+                } else {
+                    Button { appState.mainPath.append(AppRoute.arena) } label: { Text("Go to Arena") }
+                        .buttonStyle(.secondary)
+                }
+            }
+            .padding(.top, LayoutConstants.spaceSM)
+        }
         .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceSM)
     }
 
     // MARK: - Challenge Status Helpers

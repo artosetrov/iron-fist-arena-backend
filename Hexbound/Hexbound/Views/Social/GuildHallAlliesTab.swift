@@ -32,8 +32,7 @@ extension GuildHallDetailView {
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
         case .loaded where vm.friends.isEmpty:
-            emptyAlliesPanel
-                .padding(.horizontal, LayoutConstants.screenPadding)
+            emptyAllies(vm)
 
         case .loaded, .idle:
             // Online friends
@@ -360,38 +359,106 @@ extension GuildHallDetailView {
 
     // MARK: - Empty & Error States
 
-    var emptyAlliesPanel: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: "person.2.slash")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
+    /// Empty Allies: warriors you've fought, one tap to ask them — or, before
+    /// your first Arena fight, the full scene pointing at the Leaderboard.
+    @ViewBuilder
+    func emptyAllies(_ vm: GuildHallViewModel) -> some View {
+        let suggestions = vm.allySuggestions
+        if !vm.metWarriorsLoaded {
+            alliesSkeletons
+                .padding(.horizontal, LayoutConstants.screenPadding)
+        } else if suggestions.isEmpty {
+            EmptyStateScene(
+                art: "empty-allies",
+                title: "No allies yet",
+                message: "Allies show up here with their online status — write to them or call them to a duel right from this list.",
+                actionLabel: "Find Warriors",
+                action: { appState.mainPath.append(AppRoute.leaderboard) }
+            )
+        } else {
+            VStack(spacing: LayoutConstants.spaceMD) {
+                EmptyStateHeader(
+                    art: "empty-allies",
+                    title: "No allies yet",
+                    message: "Add warriors you've fought — you'll see when they're online."
+                )
 
-            Text("No Allies Yet")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                OrnamentalSectionHeader(title: "Warriors You've Met", accentColor: DarkFantasyTheme.gold)
 
-            Text("Find warriors on the Leaderboard and send them an ally request.")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, LayoutConstants.spaceLG)
-
-            Button {
-                appState.mainPath.append(AppRoute.leaderboard)
-            } label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image("icon-leaderboard")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                    Text("Go to Leaderboard")
+                ForEach(suggestions) { warrior in
+                    metWarriorRow(
+                        warrior,
+                        actionLabel: "Add",
+                        isSent: vm.allyRequestSentIds.contains(warrior.id),
+                        action: { vm.sendAllyRequest(to: warrior) }
+                    )
                 }
-                .frame(maxWidth: .infinity)
+
+                Button {
+                    appState.mainPath.append(AppRoute.leaderboard)
+                } label: {
+                    Text("Find More on the Leaderboard")
+                }
+                .buttonStyle(.secondary)
+                .padding(.top, LayoutConstants.spaceSM)
             }
-            .buttonStyle(.primary)
-            .padding(.horizontal, LayoutConstants.spaceLG)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.top, LayoutConstants.spaceSM)
         }
-        .padding(.vertical, LayoutConstants.spaceXL)
+    }
+
+    /// A warrior from your recent fights. The row opens their profile; the
+    /// button does the one thing this tab is about (add / challenge).
+    func metWarriorRow(
+        _ warrior: MetWarrior,
+        actionLabel: String,
+        isSent: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            Button {
+                appState.mainPath.append(
+                    AppRoute.characterProfile(characterId: warrior.id, characterName: warrior.name)
+                )
+            } label: {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    characterAvatar(
+                        name: warrior.name,
+                        className: warrior.characterClass.rawValue,
+                        avatar: warrior.avatar
+                    )
+
+                    VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                        Text(warrior.name)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .lineLimit(1)
+
+                        Text("Lv.\(warrior.level) · \(warrior.lastFight)")
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(warrior.name), level \(warrior.level), \(warrior.lastFight)")
+            .accessibilityHint("Opens their profile")
+
+            Button(action: action) {
+                Text(isSent ? "Sent" : actionLabel)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+                    .frame(minWidth: 64, minHeight: LayoutConstants.touchMin - LayoutConstants.spaceSM * 2)
+            }
+            .buttonStyle(.compactOutline(color: isSent ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright))
+            .disabled(isSent)
+            .accessibilityLabel(isSent ? "\(actionLabel) sent to \(warrior.name)" : "\(actionLabel) \(warrior.name)")
+        }
+        .padding(LayoutConstants.spaceSM)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -402,7 +469,8 @@ extension GuildHallDetailView {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
-        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 14, thickness: 1.5)
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1)
+        .compositingGroup()
         .cardShadow()
     }
 

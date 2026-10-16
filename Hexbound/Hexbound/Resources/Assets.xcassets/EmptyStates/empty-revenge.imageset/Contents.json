@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "empty-revenge.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "empty-revenge@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "empty-revenge@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -31,7 +31,15 @@ extension GuildHallDetailView {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
         } else if vm.conversations.isEmpty && vm.scrollsLoadState == .loaded {
-            scrollsEmptyState
+            // Messaging needs no friendship — backend only refuses blocked
+            // pairs (api/social/messages). The profile button is "Message".
+            EmptyStateScene(
+                art: "empty-scrolls",
+                title: "No scrolls yet",
+                message: "Scrolls are private letters between warriors. Open anyone's profile and tap Message — they don't have to be your ally.",
+                actionLabel: "Find a Warrior",
+                action: { appState.mainPath.append(AppRoute.leaderboard) }
+            )
         } else {
             ForEach(vm.conversations) { convo in
                 conversationRow(convo, vm: vm)
@@ -110,26 +118,6 @@ extension GuildHallDetailView {
             .cardShadow()
         }
         .buttonStyle(.plain)
-    }
-
-    var scrollsEmptyState: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: "scroll.fill")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-            Text("No Scrolls Yet")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-            Text("Send a message to an ally from their profile.")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, LayoutConstants.space2XL)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     // MARK: - Thread View (ChatGPT-style)

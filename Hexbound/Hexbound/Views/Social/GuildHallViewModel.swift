@@ -732,4 +732,146 @@ class GuildHallViewModel {
     var pendingOutgoingCount: Int {
         outgoingChallenges.filter { $0.status == "pending" }.count
     }
+
+    // MARK: - Warriors You've Met (empty Allies / Duels)
+
+    /// Real players from recent Arena fights, newest first — the next step on
+    /// an empty Allies or Duels tab. Bot and boss fights carry no opponent row
+    /// in /api/pvp/history, so they never show up here.
+    var metWarriors: [MetWarrior] = []
+    /// False until the first history read — the empty tabs show skeletons
+    /// meanwhile instead of jumping from the full scene to the list.
+    var metWarriorsLoaded = false
+    /// Ally requests sent from the empty Allies tab (button shows SENT).
+    var allyRequestSentIds: Set<String> = []
+    /// Challenges sent from the empty Duels tab (button shows SENT).
+    var challengeSentIds: Set<String> = []
+
+    /// Warriors you can still ask to be allies: not an ally yet, no request
+    /// either way.
+    var allySuggestions: [MetWarrior] {
+        let taken = Set(friends.map(\.id))
+            .union(incomingRequests.map(\.id))
+            .union(outgoingRequests.map(\.id))
+        return Array(metWarriors.filter { !taken.contains($0.id) }.prefix(3))
+    }
+
+    var duelSuggestions: [MetWarrior] {
+        Array(metWarriors.prefix(2))
+    }
+
+    /// Cache-first: Arena already keeps the match history warm.
+    func loadMetWarriors(cache: GameDataCache) async {
+        defer { metWarriorsLoaded = true }
+        let stale = cache.staleHistory()
+        if let stale {
+            metWarriors = Self.buildMetWarriors(from: stale, excluding: characterId)
+            metWarriorsLoaded = true
+        }
+        guard cache.cachedHistory() == nil else { return }
+        let fresh = await PvPService(appState: appState).getHistory()
+        // getHistory() returns [] on any failure, and history never shrinks —
+        // don't let a failed fetch wipe known warriors (or Arena's HISTORY).
+        if fresh.isEmpty, let stale, !stale.isEmpty { return }
+        cache.cacheHistory(fresh)
+        metWarriors = Self.buildMetWarriors(from: fresh, excluding: characterId)
+    }
+
+    private static func buildMetWarriors(from history: [MatchHistory], excluding selfId: String) -> [MetWarrior] {
+        var seen = Set<String>()
+        return history.compactMap { match in
+            let opponent = match.opponent
+            guard opponent.id != selfId, seen.insert(opponent.id).inserted else { return nil }
+            let ago = match.timeAgo
+            let outcome = match.won ? "you won" : "beat you"
+            return MetWarrior(
+                id: opponent.id,
+                name: opponent.name,
+                characterClass: opponent.characterClass,
+                level: opponent.level,
+                avatar: opponent.avatar,
+                lastFight: ago.isEmpty ? outcome : "\(outcome) \(ago)"
+            )
+        }
+    }
+
+    func sendAllyRequest(to warrior: MetWarrior) {
+        guard !allyRequestSentIds.contains(warrior.id) else { return } // double-tap guard
+        allyRequestSentIds.insert(warrior.id)
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            if let error = await self.socialService.sendFriendRequest(
+                characterId: self.characterId,
+                targetId: warrior.id
+            ) {
+                self.allyRequestSentIds.remove(warrior.id)
+                self.actionError = error
+            } else {
+                self.appState.showToast("Ally Request Sent", subtitle: warrior.name, type: .info)
+                // Moves the warrior into the "sent" list above the suggestions,
+                // which filters them out — so the SENT mark can go. Keeping it
+                // would bring them back disabled after a decline.
+                await self.loadFriends()
+                self.allyRequestSentIds.remove(warrior.id)
+            }
+        }
+    }
+
+    func challenge(_ warrior: MetWarrior) {
+        guard !challengeSentIds.contains(warrior.id) else { return } // double-tap guard
+        // Sending costs PvP stamina server-side (api/social/challenges).
+        // Same pre-check as acceptChallenge: a Refill toast, not an error.
+        let staminaCost = AppConstants.pvpStaminaCost
+        if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
+            CharacterService.showOutOfStamina(appState: appState, refillGemCost: nil)
+            return
+        }
+        challengeSentIds.insert(warrior.id)
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.challengeService.sendChallenge(
+                    characterId: self.characterId,
+                    targetId: warrior.id,
+                    message: nil
+                )
+                if let stamina = self.appState.currentCharacter?.currentStamina {
+                    self.appState.currentCharacter?.currentStamina = max(0, stamina - staminaCost)
+                }
+                self.appState.showToast(
+                    "Challenge Sent",
+                    subtitle: "\(warrior.name) has 24h to respond",
+                    type: .info
+                )
+                // The tab turns into the SENT CHALLENGES list; drop the SENT
+                // mark so a cancelled/expired challenge doesn't leave it stuck.
+                await self.loadChallenges()
+                self.challengeSentIds.remove(warrior.id)
+            } catch {
+                self.challengeSentIds.remove(warrior.id)
+                // Server copy is player-facing: daily limit, no stamina, busy target.
+                switch error as? APIError {
+                case .serverError(_, let message)?, .clientError(_, let message, _)?, .rateLimited(let message)?:
+                    self.actionError = message
+                default:
+                    self.actionError = "Failed to send challenge"
+                }
+            }
+        }
+    }
+}
+
+/// A real player from your recent Arena fights.
+struct MetWarrior: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let characterClass: CharacterClass
+    let level: Int
+    let avatar: String?
+    /// "beat you 2h ago" / "you won 1d ago"
+    let lastFight: String
 }

@@ -210,12 +210,46 @@ struct ShopDetailView: View {
         } else if vm.isLoading && vm.items.isEmpty {
             skeletonGrid()
         } else if vm.filteredItems.isEmpty {
-            Spacer()
-            EmptyStateView.shopEmpty
-            Spacer()
+            // Short screens: the scene scrolls instead of clipping.
+            ViewThatFits(in: .vertical) {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    shopEmptyState(vm)
+                    Spacer(minLength: 0)
+                }
+                ScrollView { shopEmptyState(vm) }
+            }
         } else {
             itemGrid(vm)
         }
+    }
+
+    /// The shop only lists what this class can wear at this level, so an
+    /// empty tab is never "sold out" — say why, and when it changes.
+    private func shopEmptyState(_ vm: ShopViewModel) -> some View {
+        let noun = ShopViewModel.tabNouns[vm.selectedTab]
+        let isGearTab = vm.selectedTab != 3
+        let nextLevel = vm.nextUnlockLevelInTab
+        // Gear is gated by gearLevel — equal to level until prestige, which
+        // unlocks every level; then only the class filter can empty a tab.
+        let atLevel = vm.gearLevel == vm.playerLevel ? " at level \(vm.playerLevel)" : ""
+        // Potions carry no class restriction — only the level gate applies.
+        let fits = isGearTab
+            ? "Nothing here fits your \(vm.playerClassName)\(atLevel)."
+            : "None are sold\(atLevel) yet."
+        let canSeeAll = vm.selectedTab != 0 && vm.hasAnyEquippableItem
+        var seeAll: (() -> Void)?
+        if canSeeAll { seeAll = { vm.selectedTab = 0 } }
+
+        return EmptyStateScene(
+            art: "empty-shop",
+            title: nextLevel == nil ? "No \(noun) for you here" : "No \(noun) for you yet",
+            message: nextLevel.map { "\(fits) Level \($0) unlocks new \(noun)." } ?? fits,
+            actionLabel: canSeeAll ? "See All Items" : nil,
+            action: seeAll,
+            // Loot rolls a random item type after Arena and dungeon fights (lib/game/loot.ts).
+            hint: isGearTab ? "Gear also drops from Arena fights and dungeons." : nil
+        )
     }
 
     // MARK: - Skeleton Grid

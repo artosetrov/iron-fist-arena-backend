@@ -502,7 +502,20 @@ struct ArenaDetailView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             } else if vm.revengeList.isEmpty {
-                emptyState(icon: "shield", message: "No one has attacked you yet.\nYou're safe... for now.")
+                // 72h = revengeQueue expiresAt in pvp/match/complete. The gold
+                // bonus is live-tunable (gold_rewards.revenge_multiplier), so
+                // the copy names no number.
+                EmptyStateScene(
+                    art: "empty-revenge",
+                    title: "No one has attacked you",
+                    message: "If a warrior beats you, they wait here for 72 hours. Win the rematch for bonus gold.",
+                    actionLabel: "Find Opponents",
+                    action: {
+                        vm.selectedTab = 0
+                        vm.loadTabData()
+                    },
+                    hint: "You're safe… for now."
+                )
             } else {
                 ForEach(vm.revengeList) { entry in
                     revengeCard(entry, vm: vm)

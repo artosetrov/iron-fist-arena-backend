@@ -6,9 +6,11 @@ struct MatchOpponent: Codable {
     let name: String
     let characterClass: CharacterClass
     let level: Int
+    /// Skin key; optional — older backends don't send it.
+    let avatar: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, level
+        case id, name, level, avatar
         case characterClass = "class"
     }
 }

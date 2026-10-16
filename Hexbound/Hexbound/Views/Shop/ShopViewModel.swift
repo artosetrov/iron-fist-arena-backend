@@ -95,6 +95,33 @@ final class ShopViewModel {
         return equippableItems.filter { types.contains($0.itemType) }
     }
 
+    // MARK: - Empty Tab
+
+    /// What the current tab is called in empty-state copy.
+    static let tabNouns = ["items", "weapons", "gear", "potions"]
+
+    /// Lowest required level among items in the current tab that this class
+    /// can wear but hasn't reached yet — "new weapons unlock at level N".
+    /// nil when nothing of this kind is ever coming for the class.
+    var nextUnlockLevelInTab: Int? {
+        let types = Self.tabTypes[selectedTab]
+        return items
+            .filter { item in
+                (types.isEmpty || types.contains(item.itemType))
+                    && item.requiredLevel > gearLevel
+                    && Character.canWear(characterClass: playerClass, restriction: item.classRestriction)
+            }
+            .map(\.requiredLevel)
+            .min()
+    }
+
+    /// Whether "All" has anything to show — gates the SEE ALL ITEMS action.
+    var hasAnyEquippableItem: Bool { !equippableItems.isEmpty }
+
+    var playerClassName: String {
+        appState.currentCharacter?.characterClass.displayName ?? "Warrior"
+    }
+
     /// Items filtered by level and class restriction (base for all display)
     private var equippableItems: [ShopItem] {
         items.filter { item in

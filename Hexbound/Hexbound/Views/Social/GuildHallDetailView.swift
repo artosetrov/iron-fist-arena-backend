@@ -109,7 +109,8 @@ struct GuildHallDetailView: View {
                 async let friendsTask: () = viewModel.loadFriends()
                 async let challengesTask: () = viewModel.loadChallenges()
                 async let scrollsTask: () = viewModel.loadConversations()
-                _ = await (friendsTask, challengesTask, scrollsTask)
+                async let metTask: () = viewModel.loadMetWarriors(cache: cache)
+                _ = await (friendsTask, challengesTask, scrollsTask, metTask)
             }
         }
         .onChange(of: vm?.selectedTab) { _, newTab in
