@@ -14,7 +14,9 @@ import SwiftUI
 ///   NPC image peeks out from bottom-left behind card.
 ///
 /// Avatar modes:
-/// - Static asset: pass `npcImageName` (e.g. "shopkeeper")
+/// - Static asset: pass `npcImageName` (e.g. `NPCSpeaker.merchant.portrait`).
+///   A voiced line overrides it with its speaker's portrait, so the face
+///   always matches the voice.
 /// - Player character: pass `avatarSkinKey` + `avatarClass` to use `AvatarImageView`
 @MainActor
 struct NPCGuideWidget: View {
@@ -23,7 +25,7 @@ struct NPCGuideWidget: View {
     let onDismiss: () -> Void
 
     // MARK: - Avatar (provide ONE mode)
-    /// Static NPC image asset name (e.g. "shopkeeper", "npc-arena-master")
+    /// Static NPC image asset name (e.g. `NPCSpeaker.arena.portrait`)
     var npcImageName: String? = nil
     /// Player character avatar — skinKey + class for AvatarImageView
     var avatarSkinKey: String? = nil
@@ -98,6 +100,16 @@ struct NPCGuideWidget: View {
         if let plainMessage, !plainMessage.isEmpty { return plainMessage }
         if let attributedMessage { return String(attributedMessage.characters) }
         return nil
+    }
+
+    /// One face per voice: a recorded line shows the portrait of whoever
+    /// voices it; silent lines fall back to the image the call site passed.
+    private var portraitName: String? {
+        if let spokenText, let speaker = NPCVoice.shared.speaker(for: spokenText),
+           UIImage(named: speaker.portrait) != nil {
+            return speaker.portrait
+        }
+        return npcImageName
     }
 
     var body: some View {
@@ -345,7 +357,7 @@ struct NPCGuideWidget: View {
                         characterClass: avatarClass ?? .warrior,
                         size: customAvatarSize ?? LayoutConstants.npcAvatarSize
                     )
-                } else if let imageName = npcImageName, UIImage(named: imageName) != nil {
+                } else if let imageName = portraitName, UIImage(named: imageName) != nil {
                     // Static NPC asset image
                     Image(imageName)
                         .resizable()
@@ -390,7 +402,7 @@ struct NPCGuideWidget: View {
 /// Floating circular NPC avatar button shown when the guide widget is collapsed.
 /// Supports both static NPC image and dynamic player avatar.
 struct NPCMiniButton: View {
-    /// Static NPC image name (e.g. "shopkeeper")
+    /// Static NPC image name — a round crop, e.g. `NPCSpeaker.merchant.face`
     var npcImageName: String? = nil
     /// Player character avatar — skinKey + class for AvatarImageView
     var avatarSkinKey: String? = nil

@@ -416,7 +416,7 @@ struct ShopDetailView: View {
                         }
                         merchantDismissed = true
                     },
-                    npcImageName: "shopkeeper",
+                    npcImageName: NPCSpeaker.merchant.portrait,
                     attributedMessage: tipProvider.currentTip.attributedText,
                     onTapCard: { tipProvider.nextTip() },
                     messageId: AnyHashable(tipProvider.currentTip)
@@ -431,7 +431,7 @@ struct ShopDetailView: View {
             VStack {
                 Spacer()
                 HStack {
-                    NPCMiniButton(npcImageName: "shopkeeper", onTap: {
+                    NPCMiniButton(npcImageName: NPCSpeaker.merchant.face, onTap: {
                         withAnimation(.easeOut(duration: 0.3)) {
                             showMerchantMini = false
                             showMerchant = true

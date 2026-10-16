@@ -55,7 +55,7 @@ struct TutorialView: View {
                 NPCSpeechBubble(
                     npcName: "Tavern Keeper Grothmund",
                     message: displayedObjective.npcDialog,
-                    npcImageName: "shopkeeper",
+                    npcImageName: NPCSpeaker.tavern.face,
                     messageId: displayedObjective.id
                 )
                 .padding(.horizontal, LayoutConstants.screenPadding)

@@ -28,7 +28,7 @@ struct TutorialQuestBanner: View {
                 Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }) {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         // NPC avatar
-                        Image("shopkeeper")
+                        Image(NPCSpeaker.tavern.face)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 32, height: 32)

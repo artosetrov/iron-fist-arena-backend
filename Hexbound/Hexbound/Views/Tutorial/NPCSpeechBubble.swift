@@ -8,7 +8,8 @@ import SwiftUI
 struct NPCSpeechBubble: View {
     let npcName: String
     let message: String
-    var npcImageName: String? = "shopkeeper"
+    /// Round avatar; a voiced line uses its speaker's face instead.
+    var npcImageName: String? = NPCSpeaker.tavern.face
     var npcFallbackIcon: String = "person.crop.circle.fill"
     var messageId: AnyHashable? = nil
     var typewriterEnabled: Bool = true
@@ -16,6 +17,15 @@ struct NPCSpeechBubble: View {
 
     @State private var typewriterText: String = ""
     @State private var typewriterTask: Task<Void, Never>?
+
+    /// One face per voice — the speaker of a recorded line wins.
+    private var avatarName: String? {
+        if let speaker = NPCVoice.shared.speaker(for: message),
+           UIImage(named: speaker.face) != nil {
+            return speaker.face
+        }
+        return npcImageName
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
@@ -109,7 +119,7 @@ struct NPCSpeechBubble: View {
             Circle()
                 .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 2)
 
-            if let imageName = npcImageName, UIImage(named: imageName) != nil {
+            if let imageName = avatarName, UIImage(named: imageName) != nil {
                 Image(imageName)
                     .resizable()
                     .scaledToFill()

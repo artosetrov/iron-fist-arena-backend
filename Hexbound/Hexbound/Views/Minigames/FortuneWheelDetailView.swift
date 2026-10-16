@@ -264,7 +264,7 @@ struct FortuneWheelDetailView: View {
         NPCGuideWidget(
             npcTitle: "LADY FORTUNA",
             onDismiss: { /* no dismiss on fortune wheel */ },
-            npcImageName: "lady-fortuna",
+            npcImageName: NPCSpeaker.fortuna.portrait,
             plainMessage: vm.npcSpeech,
             wheelContent: AnyView(wheelWagerSection(vm)),
             overlapCardPx: 8
@@ -720,7 +720,7 @@ struct FortuneWheelView: View {
         NPCGuideWidget(
             npcTitle: "LADY FORTUNA",
             onDismiss: {},
-            npcImageName: "lady-fortuna",
+            npcImageName: NPCSpeaker.fortuna.portrait,
             plainMessage: nil,
             wheelContent: AnyView(
                 VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {

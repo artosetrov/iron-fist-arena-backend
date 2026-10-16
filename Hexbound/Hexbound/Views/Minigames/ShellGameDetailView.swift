@@ -291,7 +291,7 @@ struct ShellGameDetailView: View {
         NPCGuideWidget(
             npcTitle: "FINCH",
             onDismiss: { /* no dismiss on shell game */ },
-            npcImageName: "npc-shell-master",
+            npcImageName: NPCSpeaker.finch.portrait,
             plainMessage: vm.npcSpeech,
             wheelContent: AnyView(shellWagerSection(vm)),
             overlapCardPx: 8

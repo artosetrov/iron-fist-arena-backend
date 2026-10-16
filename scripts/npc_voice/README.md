@@ -16,6 +16,8 @@ changes its key, so **re-voice any NPC line you edit** (or it goes silent — no
 4. Save the mp3s as `<id>.mp3` in a folder, then `python3 scripts/npc_voice/process_audio.py <folder>`.
 
 ## Cast (Higgsfield preset voices)
+Each speaker also has a face: `Assets.xcassets/NPC/npc-<speaker>` (waist-up, 256 pt) and `npc-<speaker>-face` (round avatars). `NPCVoice.speaker(for:)` reads the speaker from the recording name, so any recorded line shows the portrait of whoever voices it — a new speaker needs both a voice and a portrait (`docs/08_prompts/NPC_PORTRAITS_PROMPTS.md`).
+
 | speaker | NPC | voice |
 |---|---|---|
 | tavern | Tavern Keeper Grothmund, tutorial guide | Bram |

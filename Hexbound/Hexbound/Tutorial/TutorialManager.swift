@@ -187,10 +187,10 @@ enum TutorialStep: String, CaseIterable {
     /// NPC image asset for storytelling portrait
     var npcImageAsset: String {
         switch self {
-        case .shopGems:         return "shopkeeper"
-        case .arenaOpponent, .arenaStance: return "npc-arena-master"
-        case .dungeonEntry:     return "npc-dungeon-keeper"
-        default:                return "shopkeeper"
+        case .shopGems:         return NPCSpeaker.merchant.portrait
+        case .arenaOpponent, .arenaStance: return NPCSpeaker.arena.portrait
+        case .dungeonEntry:     return NPCSpeaker.dungeon.portrait
+        default:                return NPCSpeaker.tavern.portrait
         }
     }
 

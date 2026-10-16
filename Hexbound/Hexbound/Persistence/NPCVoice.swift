@@ -68,6 +68,15 @@ final class NPCVoice {
         manifest[Self.normalize(text)] != nil
     }
 
+    /// Who voices `text` — read from the recording name (`npc_<speaker>_<hash>`),
+    /// so the face on screen always matches the voice. nil for silent lines.
+    func speaker(for text: String) -> NPCSpeaker? {
+        guard let file = manifest[Self.normalize(text)] else { return nil }
+        let parts = file.split(separator: "_")
+        guard parts.count >= 3, parts[0] == "npc" else { return nil }
+        return NPCSpeaker(rawValue: String(parts[1]))
+    }
+
     // MARK: - Internals
 
     nonisolated static func normalize(_ text: String) -> String {
@@ -94,5 +103,41 @@ final class NPCVoice {
             return [:]
         }
         return map
+    }
+}
+
+// MARK: - Cast
+
+/// One NPC per voice. `rawValue` is the speaker slug used by the voice catalog
+/// (`scripts/npc_voice/catalog.json`) and by recording names; each speaker has
+/// a waist-up portrait and a head crop in `Assets.xcassets/NPC/`
+/// (prompts: `docs/08_prompts/NPC_PORTRAITS_PROMPTS.md`).
+enum NPCSpeaker: String, CaseIterable {
+    case tavern, arena, merchant, sage, healer, medic, smith
+    case dungeon, mine, herald, chronicler, finch, fortuna
+
+    /// Waist-up portrait — the big avatar that peeks over the speech card.
+    var portrait: String { "npc-\(rawValue)" }
+    /// Head-and-shoulders crop for round avatars (mini button, hint bar, banner).
+    var face: String { "npc-\(rawValue)-face" }
+
+    /// Mirrors `SPEAKER` in `scripts/npc_voice/build_catalog.py`.
+    init?(npcName: String) {
+        switch npcName {
+        case "Tavern Keeper", "Tavern Keeper Grothmund", "Guide": self = .tavern
+        case "Arena Master": self = .arena
+        case "Merchant": self = .merchant
+        case "Sage": self = .sage
+        case "Healer": self = .healer
+        case "Field Medic": self = .medic
+        case "Blacksmith": self = .smith
+        case "Dungeon Guide", "Dungeon Keeper": self = .dungeon
+        case "Mine Foreman": self = .mine
+        case "Herald": self = .herald
+        case "Chronicler": self = .chronicler
+        case "Trickster", "Finch": self = .finch
+        case "Lady Fortuna": self = .fortuna
+        default: return nil
+        }
     }
 }

@@ -350,13 +350,13 @@ struct HubView: View {
         .overlay {
             // Onboarding NPCGuideWidget overlay (first-time visit)
             // NPCGuideOverlay handles full-screen dim + tap-block + bottom placement.
-            if shouldShowOnboarding, let char = appState.currentCharacter {
+            if shouldShowOnboarding, appState.currentCharacter != nil {
                 NPCGuideOverlay(onBackdropTap: { dismissOnboarding() }) {
+                    // Grothmund voices the hub tour, so he is the one on screen.
                     NPCGuideWidget(
                         npcTitle: onboardingSteps[currentOnboardingStep].title,
                         onDismiss: { dismissOnboarding() },
-                        avatarSkinKey: char.avatar,
-                        avatarClass: char.characterClass,
+                        npcImageName: NPCSpeaker.tavern.portrait,
                         plainMessage: onboardingSteps[currentOnboardingStep].message,
                         onContinue: { advanceOnboarding() },
                         messageId: currentOnboardingStep  // Animate message transitions

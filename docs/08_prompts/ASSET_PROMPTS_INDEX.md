@@ -30,6 +30,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Dice & Runes | Combat dice faces (attack/guard), zone emblems, 3/4 dice showcase, rune sockets, 36 class runes (lesser / path / great) | `docs/08_prompts/DICE_RUNES_PROMPTS.md` | Active | 45 |
 | Currency Icons | `icon-gold`, `icon-gems`, `icon-xp`, `icon-stamina` (+ `reward-gold`, `reward-xp`) — pen-and-ink replacements of the cartoon set | `docs/08_prompts/CURRENCY_ICONS_PROMPTS.md` | Active | 4 |
 | Empty-State Illustrations | `empty-allies`, `empty-scrolls`, `empty-duels`, `empty-shop`, `empty-revenge` — pen-and-ink spot art for empty screens (replaces SF Symbols) | `docs/08_prompts/EMPTY_STATE_ICONS_PROMPTS.md` | Active | 5 |
+| NPC Portraits | `npc-<speaker>` + `npc-<speaker>-face` for all 13 voiced NPCs (tavern, arena, merchant, sage, healer, medic, smith, dungeon, mine, herald, chronicler, finch, fortuna) — one face per voice, ink + watercolour NPC family | `docs/08_prompts/NPC_PORTRAITS_PROMPTS.md` | Active | 13 portraits + 13 head crops |
 
 ---
 

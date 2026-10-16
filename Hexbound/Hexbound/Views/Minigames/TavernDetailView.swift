@@ -17,7 +17,7 @@ private struct TavernGame: Identifiable {
             title: "SHELL GAME",
             subtitle: "Bet gold, find the ball.\nDouble or nothing.",
             hostName: "The Trickster",
-            hostImage: "npc-shell-master",
+            hostImage: NPCSpeaker.finch.portrait,
             accentColor: DarkFantasyTheme.gold,
             route: .shellGame
         ),
@@ -26,7 +26,7 @@ private struct TavernGame: Identifiable {
             title: "FORTUNE WHEEL",
             subtitle: "Spin the wheel.\nUp to x5 your wager!",
             hostName: "Lady Fortuna",
-            hostImage: "lady-fortuna",
+            hostImage: NPCSpeaker.fortuna.portrait,
             accentColor: DarkFantasyTheme.purple,
             route: .fortuneWheel
         ),

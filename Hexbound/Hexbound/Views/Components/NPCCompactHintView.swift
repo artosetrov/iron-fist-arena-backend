@@ -17,7 +17,7 @@ struct NPCCompactHintView: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // NPC avatar (small)
-            Image(hint.npcImage)
+            Image(hint.speaker.face)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 32, height: 32)

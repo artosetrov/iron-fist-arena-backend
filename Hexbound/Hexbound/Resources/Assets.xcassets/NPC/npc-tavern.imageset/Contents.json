@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "npc-tavern.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "npc-tavern@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "npc-tavern@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -131,7 +131,7 @@ struct ArenaDetailView: View {
                                     }
                                     arenaGuideDismissed = true
                                 },
-                                npcImageName: "rush-ui-combat-skull",
+                                npcImageName: NPCSpeaker.arena.portrait,
                                 plainMessage: "Pick an opponent and fight to climb the ranks."
                             )
                         }
@@ -140,13 +140,13 @@ struct ArenaDetailView: View {
                     }
 
                     // Collapsed NPC mini avatar (hidden when HP is critical)
-                    if showArenaGuideMini, let char = appState.currentCharacter {
+                    if showArenaGuideMini, appState.currentCharacter != nil {
                         VStack {
                             Spacer()
                             HStack {
+                                // Re-opens the Arena Master's guide — his face, not the hero's.
                                 NPCMiniButton(
-                                    avatarSkinKey: char.avatar,
-                                    avatarClass: char.characterClass,
+                                    npcImageName: NPCSpeaker.arena.face,
                                     onTap: {
                                         withAnimation(.easeOut(duration: 0.3)) {
                                             showArenaGuideMini = false
