@@ -58,6 +58,13 @@ System and admin broadcast mail lands in each player's inbox; some carry attache
 
 - `GameDataCache.inbox` — list + unread count (invalidated on read/claim/delete)
 
+### Screen states & icons (2026-10-16)
+
+- **Empty tabs** use `EmptyStateScene` with pen-and-ink art from `Assets.xcassets/EmptyStates` — ALL `empty-inbox`, BATTLES `empty-battles`, SCROLLS `empty-scrolls`, SYSTEM `empty-system` (prompts: `docs/08_prompts/EMPTY_STATE_ICONS_PROMPTS.md`). Each one has a single next step: Arena (ALL / BATTLES, and SCROLLS below level 8), leaderboard "Find a Warrior" (SCROLLS once `ranks` is unlocked), Daily Quests (SYSTEM). Empty tabs are pull-to-refresh too.
+- **Tab badges** — `TabSwitcher(badgeStyle: .count)` shows unread per tab from `InboxViewModel.unreadCount(for:)`; ALL has none (the title already says "N unread").
+- **Row crests are painted assets, not SF Symbols** — battle report: opponent portrait (class crest if none) + `icon-wins` / `icon-losses`; duel challenge `icon-fights`; letter with unclaimed rewards `hud-gift`; Game Master news `hud-quests`; other letters `hud-inbox`. Rating swing `reward-rating-up/down`, rewards `icon-gold` / `icon-gems` / `icon-xp` / `reward-loot`, expand arrow `ui-arrow-down`.
+- **Delete** is a quiet text button under the actions, so it is never hit instead of Claim.
+
 ### Reward surface
 
 - Mail attachment claim now presents the reward through the shared `ClaimRewardModalView` ceremony, not a success toast.

@@ -9,8 +9,16 @@ struct TabSwitcher: View {
     /// Using per-tab positioning (vs a single `.trailing` overlay on the whole switcher)
     /// keeps badges correctly anchored when tabs are added or reordered.
     var badges: [Int?]? = nil
+    /// How `badges` read. `.points` — "+N" unspent points, gently pulsing (Hero).
+    /// `.count` — plain "N" unread items, no pulse (Messages).
+    var badgeStyle: BadgeStyle = .points
     @Namespace private var tabNamespace
     @State private var badgePulse = false
+
+    enum BadgeStyle {
+        case points
+        case count
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -49,7 +57,7 @@ struct TabSwitcher: View {
                         }
                 }
                 .buttonStyle(.scalePress)
-                .accessibilityLabel(tabs[index])
+                .accessibilityLabel(tabAccessibilityLabel(index))
             }
         }
         .background(
@@ -77,7 +85,7 @@ struct TabSwitcher: View {
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .overlay(alignment: .top) { badgeOverlay }
         .onAppear {
-            guard hasAnyBadge else { return }
+            guard hasAnyBadge, badgeStyle == .points else { return }
             withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 badgePulse = true
             }
@@ -114,6 +122,19 @@ struct TabSwitcher: View {
         return badges.contains(where: { ($0 ?? 0) > 0 })
     }
 
+    private func badgeCount(at index: Int) -> Int {
+        guard let badges, badges.count == tabs.count else { return 0 }
+        return badges[index] ?? 0
+    }
+
+    /// Unread counts are part of the tab's own label ("BATTLES, 2 unread");
+    /// points keep their separate badge element, as before.
+    private func tabAccessibilityLabel(_ index: Int) -> String {
+        let count = badgeCount(at: index)
+        guard badgeStyle == .count, count > 0 else { return tabs[index] }
+        return "\(tabs[index]), \(count) unread"
+    }
+
     @ViewBuilder
     private var badgeOverlay: some View {
         if let badges, badges.count == tabs.count, hasAnyBadge {
@@ -129,6 +150,7 @@ struct TabSwitcher: View {
                                 y: -LayoutConstants.space2XS
                             )
                             .accessibilityLabel("\(count) \(tabs[index].lowercased()) points available")
+                            .accessibilityHidden(badgeStyle == .count)
                     }
                 }
             }
@@ -137,7 +159,7 @@ struct TabSwitcher: View {
     }
 
     private func pointsBadge(_ count: Int) -> some View {
-        Text("+\(count)")
+        Text(badgeStyle == .points ? "+\(count)" : (count > 99 ? "99+" : "\(count)"))
             .font(DarkFantasyTheme.body.weight(.semibold))
             .foregroundStyle(DarkFantasyTheme.textOnGold)
             .padding(.horizontal, LayoutConstants.spaceXS)

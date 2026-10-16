@@ -21,16 +21,18 @@ struct InboxDetailView: View {
                     .padding(.top, LayoutConstants.spaceXS)
                     .padding(.bottom, LayoutConstants.spaceXS)
 
-                // Tab switcher — matches Guild Hall style
+                // Tab switcher — matches Guild Hall style; unread count per tab
                 TabSwitcher(
                     tabs: InboxFilter.allCases.map(\.rawValue),
                     selectedIndex: Binding(
                         get: { InboxFilter.allCases.firstIndex(of: viewModel.selectedFilter) ?? 0 },
                         set: { viewModel.selectedFilter = InboxFilter.allCases[$0] }
-                    )
+                    ),
+                    badges: InboxFilter.allCases.map { filter -> Int? in viewModel.unreadCount(for: filter) },
+                    badgeStyle: .count
                 )
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
 
                 // Unified content
                 unifiedContent
@@ -63,8 +65,17 @@ struct InboxDetailView: View {
             if viewModel.isLoading && viewModel.isLoadingScrolls && viewModel.unifiedItems.isEmpty {
                 loadingState
             } else if viewModel.filteredItems.isEmpty {
-                emptyState
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Scrollable so pull-to-refresh works on an empty tab too,
+                // and the scene never clips at large text sizes.
+                GeometryReader { geo in
+                    ScrollView {
+                        emptyState
+                            .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                    }
+                    .refreshable {
+                        await viewModel.fetchAll(characterId: characterId)
+                    }
+                }
             } else {
                 ScrollView {
                     LazyVStack(spacing: LayoutConstants.spaceSM) {
@@ -90,6 +101,9 @@ struct InboxDetailView: View {
                                             )
                                         )
                                     }
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityAddTraits(.isButton)
+                                    .accessibilityHint("Opens the conversation")
                             }
                         }
                     }
@@ -104,68 +118,72 @@ struct InboxDetailView: View {
         }
     }
 
+    // MARK: - Empty States
+    //
+    // Illustrated scenes (Assets.xcassets/EmptyStates, prompts in
+    // docs/08_prompts/EMPTY_STATE_ICONS_PROMPTS.md). Each one says what lands
+    // in this tab, then gives one way to make something land there.
+    // Facts: backend/src/lib/game/battle-mail.ts — every PvP fight (arena,
+    // revenge, duel) mails a report to both fighters; a duel challenge mails
+    // the defender. Game Master mail comes from admin/src/actions/mail.ts.
+
+    @ViewBuilder
     private var emptyState: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                DarkFantasyTheme.bgTertiary,
-                                DarkFantasyTheme.bgSecondary,
-                            ]),
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 40
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-
-                Image(systemName: emptyStateIcon)
-                    .font(DarkFantasyTheme.title.weight(.light))
-                    .foregroundStyle(DarkFantasyTheme.goldDim)
+        switch viewModel.selectedFilter {
+        case .all:
+            EmptyStateScene(
+                art: "empty-inbox",
+                title: "No mail yet",
+                message: "Battle reports, letters from other warriors and gifts from the Game Master all arrive here.",
+                actionLabel: "Fight in the Arena",
+                action: openArena
+            )
+        case .battles:
+            EmptyStateScene(
+                art: "empty-battles",
+                title: "No battle reports yet",
+                message: "Every Arena fight and duel sends you a report: the result, rating change, gold and XP. Duel challenges land here too.",
+                actionLabel: "Fight in the Arena",
+                action: openArena
+            )
+        case .messages:
+            if canBrowseWarriors {
+                EmptyStateScene(
+                    art: "empty-scrolls",
+                    title: "No scrolls yet",
+                    message: "Scrolls are private letters between warriors. Open anyone's profile and tap Message — they don't have to be your ally.",
+                    actionLabel: "Find a Warrior",
+                    action: { appState.mainPath.append(AppRoute.leaderboard) }
+                )
+            } else {
+                // Leaderboard opens at level 8 — until then, opponents are the
+                // warriors you meet, and every battle report has a Message button.
+                EmptyStateScene(
+                    art: "empty-scrolls",
+                    title: "No scrolls yet",
+                    message: "Scrolls are private letters between warriors. Write to any opponent straight from their battle report.",
+                    actionLabel: "Fight in the Arena",
+                    action: openArena
+                )
             }
-
-            VStack(spacing: LayoutConstants.spaceSM) {
-                Text(emptyStateTitle)
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-                Text(emptyStateSubtitle)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, LayoutConstants.spaceLG)
-            }
-        }
-        .padding(.vertical, LayoutConstants.space2XL)
-    }
-
-    private var emptyStateIcon: String {
-        switch viewModel.selectedFilter {
-        case .all: return "tray"
-        case .battles: return "shield.slash"
-        case .messages: return "scroll"
-        case .system: return "bell.slash"
+        case .system:
+            EmptyStateScene(
+                art: "empty-system",
+                title: "No news yet",
+                message: "Gifts and announcements from the Game Master arrive here. Rewards wait inside the letter until you claim them.",
+                actionLabel: "See Daily Quests",
+                action: { appState.mainPath.append(AppRoute.dailyQuests) }
+            )
         }
     }
 
-    private var emptyStateTitle: String {
-        switch viewModel.selectedFilter {
-        case .all: return "NO MESSAGES"
-        case .battles: return "NO BATTLES"
-        case .messages: return "NO SCROLLS"
-        case .system: return "NO SYSTEM MAIL"
-        }
+    /// The leaderboard ("ranks" building) is the place to browse warriors.
+    private var canBrowseWarriors: Bool {
+        BuildingUnlockConfig.isUnlocked("ranks", characterLevel: appState.currentCharacter?.level ?? 1)
     }
 
-    private var emptyStateSubtitle: String {
-        switch viewModel.selectedFilter {
-        case .all: return "Your inbox is empty.\nCheck back later for rewards and messages."
-        case .battles: return "No battle reports yet.\nFight in the Arena to receive them."
-        case .messages: return "No player messages yet.\nVisit the Guild Hall to find allies."
-        case .system: return "No system notifications.\nCheck back later."
-        }
+    private func openArena() {
+        appState.mainPath.append(AppRoute.arena)
     }
 
     // MARK: - Helpers
@@ -176,15 +194,15 @@ struct InboxDetailView: View {
     }
 
     private var loadingState: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            // Skeleton cards
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Skeleton cards — same rhythm as the real list
             ForEach(0..<4, id: \.self) { _ in
                 SkeletonMailRow()
             }
             Spacer()
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.top, LayoutConstants.spaceMD)
+        .padding(.top, LayoutConstants.spaceSM)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
@@ -215,7 +233,7 @@ private struct InboxConversationRow: View {
     }
 
     var body: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             // Avatar — real hero portrait via AvatarImageView
             avatarView
 
@@ -229,7 +247,7 @@ private struct InboxConversationRow: View {
                         )
                         .lineLimit(1)
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: LayoutConstants.spaceXS)
 
                     Text(formatDate(conversation.lastMessage.createdAt))
                         .font(DarkFantasyTheme.body)
@@ -246,7 +264,7 @@ private struct InboxConversationRow: View {
                         )
                         .lineLimit(1)
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: LayoutConstants.spaceXS)
 
                     // Badge: unread (gold) or total count (subtle)
                     if let count = badgeCount {
@@ -267,6 +285,7 @@ private struct InboxConversationRow: View {
                                     )
                             )
                             .shadow(color: hasUnread ? DarkFantasyTheme.gold.opacity(0.4) : .clear, radius: 4)
+                            .accessibilityLabel(hasUnread ? "\(count) unread" : "\(count) letters")
                     }
                 }
             }
@@ -319,28 +338,23 @@ private struct InboxConversationRow: View {
                         )
                 )
             } else {
-                ZStack {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(
-                            LinearGradient(
-                                colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                // No portrait yet — the warrior's class crest, not a letter.
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgTertiary)
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                        Image(conversation.otherCharacter.classEnum.iconAsset)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(LayoutConstants.spaceXS)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(
+                                hasUnread ? DarkFantasyTheme.goldDim.opacity(0.5) : DarkFantasyTheme.borderSubtle,
+                                lineWidth: 1.5
                             )
-                        )
-                        .frame(width: 44, height: 44)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(
-                                    hasUnread ? DarkFantasyTheme.goldDim.opacity(0.5) : DarkFantasyTheme.borderSubtle,
-                                    lineWidth: 1.5
-                                )
-                        )
-
-                    Text(String(conversation.otherCharacter.characterName.prefix(1)).uppercased())
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
+                    )
             }
 
             // Unread dot
@@ -357,6 +371,7 @@ private struct InboxConversationRow: View {
             }
         }
         .frame(width: 44, height: 44)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Date Formatting
@@ -392,11 +407,11 @@ private struct SkeletonMailRow: View {
     @State private var shimmer = false
 
     var body: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             // Icon placeholder
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgTertiary)
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
@@ -432,108 +447,7 @@ private struct SkeletonMailRow: View {
         .onDisappear {
             shimmer = false
         }
-    }
-}
-
-// MARK: - Empty State (Mail)
-
-private struct EmptyMailState: View {
-    var body: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            // Envelope icon with ornamental frame
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                DarkFantasyTheme.bgTertiary,
-                                DarkFantasyTheme.bgSecondary,
-                            ]),
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 40
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-
-                Image(systemName: "envelope.open")
-                    .font(DarkFantasyTheme.title.weight(.light))
-                    .foregroundStyle(DarkFantasyTheme.goldDim)
-            }
-
-            VStack(spacing: LayoutConstants.spaceSM) {
-                Text("NO MAIL")
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-                Text("Your mailbox is empty.\nCheck back later for rewards and messages.")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, LayoutConstants.spaceLG)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Empty State (Scrolls)
-
-private struct EmptyScrollsState: View {
-    var body: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                DarkFantasyTheme.bgTertiary,
-                                DarkFantasyTheme.bgSecondary,
-                            ]),
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 40
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-
-                Image(systemName: "scroll")
-                    .font(DarkFantasyTheme.title.weight(.light))
-                    .foregroundStyle(DarkFantasyTheme.goldDim)
-            }
-
-            VStack(spacing: LayoutConstants.spaceSM) {
-                Text("NO SCROLLS")
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-                Text("No player messages yet.\nVisit the Guild Hall to find allies.")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, LayoutConstants.spaceLG)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Unread Badge
-
-private struct UnreadBadge: View {
-    let count: Int
-
-    var body: some View {
-        Text("\(count)")
-            .font(DarkFantasyTheme.body.weight(.semibold))
-            .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.space2XS)
-            .background(
-                Capsule()
-                    .fill(DarkFantasyTheme.gold)
-            )
-            .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 4)
+        .accessibilityHidden(true)
     }
 }
 
@@ -548,6 +462,7 @@ private struct ErrorBanner: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
+                .accessibilityHidden(true)
 
             Text(message)
                 .font(DarkFantasyTheme.body)
@@ -561,6 +476,7 @@ private struct ErrorBanner: View {
                     .buttonStyle(.plain)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.gold)
+                    .frame(minHeight: LayoutConstants.touchMin)
             }
         }
         .padding(LayoutConstants.spaceMD)
