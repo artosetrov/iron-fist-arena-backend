@@ -57,8 +57,18 @@
 	-->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!--
+	  Launch screen: plain bgPrimary ink (#0D0D12, asset color
+	  "launch-background"), the first frame of the title screen's launch
+	  intro. An empty dict here meant systemBackground — a white flash for
+	  anyone in light mode. iOS caches launch screens: delete the app (or
+	  restart the device) to see a change.
+	-->
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>launch-background</string>
+	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

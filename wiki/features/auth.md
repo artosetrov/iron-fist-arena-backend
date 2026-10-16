@@ -14,7 +14,12 @@ Players launch as guest; upgrade to a persisted account via Email / Google / App
 ## Entry points
 
 - **iOS screens:**
-  - `Hexbound/Hexbound/Views/Auth/WelcomeView.swift` — first splash, guest CTA
+  - `Hexbound/Hexbound/Views/Auth/WelcomeView.swift` — title screen, guest CTA, and the cold launch itself
+    (2026-10-16: `SplashView` is gone. The system launch screen is plain `launch-background` ink — Info.plist
+    `UILaunchScreen.UIColorName` — and the title screen plays the intro: art up from the dark, crest forms, one
+    storm-light sheen, a `TitleBootLoader` where the actions will be. `HexboundApp` drives it with the `bootStage`
+    environment value — `.openingGate` → `.summoningHero` (session restored, loading the world) → `.ready` — then
+    either the actions rise into the loader's place or the screen cross-fades into the game. Minimum 2 s.)
   - `Hexbound/Hexbound/Views/Auth/AuthView.swift` — unified auth host
   - `Hexbound/Hexbound/Views/Auth/LoginView.swift` — email+password login
   - `Hexbound/Hexbound/Views/Auth/RegisterDetailView.swift` — email+password registration
