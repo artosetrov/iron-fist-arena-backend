@@ -64,6 +64,8 @@ PEAK_CEILING_DB = -1.0
 SHORT_CLIP_S = 0.5
 BAND_DB = 10.0          # distance from the category median that counts as drift
 BAND_EXEMPT = {"Ambient"}
+MIN_AMBIENT_LOOP_S = 8.0   # AmbientManager loops every layer forever:
+                           # a short file reads as a metronome, not a room
 
 _I = re.compile(r"^\s*I:\s*(-?[\d.]+|-inf) LUFS", re.M)
 _PEAK = re.compile(r"^\s*Peak:\s*(-?[\d.]+|-inf) dBFS", re.M)
@@ -194,6 +196,19 @@ def violations(rows: list[dict]) -> list[str]:
                         f"level {r['level']:.1f} {scale} is {delta:+.1f} dB from the "
                         f"{cat} median ({median:.1f}) — {r['path']}"
                     )
+
+    # 4 — ambient layers loop forever, so they must not be one-shots.
+    # amb_anvil_ambient was a 0.45 s hammer strike: on the hero screen it hit
+    # twice a second until the player left. Fix with scripts/make_sparse_ambient.py.
+    for r in rows:
+        if r["category"] != "Ambient" or r["dur"] is None:
+            continue
+        if r["dur"] < MIN_AMBIENT_LOOP_S:
+            out.append(
+                f"loop {r['dur']:.2f}s in {r['path']} is under {MIN_AMBIENT_LOOP_S:.0f}s "
+                f"— looped forever it ticks like a metronome"
+            )
+
     return out
 
 
