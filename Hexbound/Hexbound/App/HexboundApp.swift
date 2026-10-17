@@ -8,37 +8,42 @@ struct HexboundApp: App {
     @State private var appState = AppState()
     @State private var cache = GameDataCache()
     @State private var pushService = PushNotificationService()
-    @State private var isCheckingAuth = true
-    @State private var showSplash = true
+    /// Cold-launch progress. The title screen (WelcomeView) plays the launch
+    /// intro and shows it in place of its sign-in actions; `nil` once the
+    /// launch has handed over. There is no separate splash screen.
+    @State private var bootStage: BootStage? = .openingGate
     @Environment(\.scenePhase) private var scenePhase
+
+    /// The title intro — art up from the dark, crest forms, one sheen —
+    /// takes about this long; the launch never hands over before it has played.
+    private static let minimumBootDuration: Duration = .seconds(2)
 
     var body: some Scene {
         WindowGroup {
             ZStack {
-                if showSplash {
-                    SplashView(isVisible: showSplash)
-                } else {
-                    switch appState.currentScreen {
-                    case .auth:
-                        AuthRouterView()
-                    case .characterSelect:
-                        CharacterSelectionView()
-                    case .cinematicOpen(let heroName):
-                        CombatColdOpenView(heroName: heroName)
-                    case .scriptedTutorial(let heroName):
-                        TutorialFightView(heroName: heroName)
-                    case .tutorialVictory(let heroName):
-                        VictoryOverlayView(heroName: heroName)
-                    case .loreIntro(let heroName):
-                        OnboardingCinematicView(heroName: heroName)
-                    case .game:
-                        MainRouterView()
-                    }
+                // `currentScreen` starts at `.auth`, so a cold start opens on
+                // the title screen in its launch state.
+                switch appState.currentScreen {
+                case .auth:
+                    AuthRouterView()
+                case .characterSelect:
+                    CharacterSelectionView()
+                case .cinematicOpen(let heroName):
+                    CombatColdOpenView(heroName: heroName)
+                case .scriptedTutorial(let heroName):
+                    TutorialFightView(heroName: heroName)
+                case .tutorialVictory(let heroName):
+                    VictoryOverlayView(heroName: heroName)
+                case .loreIntro(let heroName):
+                    OnboardingCinematicView(heroName: heroName)
+                case .game:
+                    MainRouterView()
                 }
             }
             .environment(appState)
             .environment(cache)
             .environment(pushService)
+            .environment(\.bootStage, bootStage)
             // ── Root overlay stack ───────────────────────────────────────
             // Each `.overlay` is its own stacking context, so a `.zIndex`
             // written inside one is compared against nothing. The order
@@ -131,7 +136,6 @@ struct HexboundApp: App {
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
             .animation(.easeInOut(duration: 0.3), value: appState.isForgingHero)
             .animation(.easeInOut(duration: 0.3), value: appState.isBossRevealing)
-            .animation(.easeInOut(duration: 0.5), value: showSplash)
             .task {
                 // Crash reporting first, so anything that fails below is
                 // actually reported. No-op when no DSN is configured.
@@ -149,21 +153,20 @@ struct HexboundApp: App {
                     appState.handlePushRoute(route)
                 }
 
-                // Auth check with minimum 2s splash display
-                let splashStart = ContinuousClock.now
-                await checkAutoLogin()
+                // Restore the session while the title screen plays its intro.
+                let bootStart = ContinuousClock.now
+                let result = await checkAutoLogin()
 
-                // Wait for remaining time so splash shows at least 2 seconds
-                let elapsed = ContinuousClock.now - splashStart
-                let remaining = Duration.seconds(2) - elapsed
+                // Let the intro finish before handing over.
+                let remaining = Self.minimumBootDuration - (ContinuousClock.now - bootStart)
                 if remaining > .zero {
                     try? await Task.sleep(for: remaining)
                 }
 
-                // Dismiss splash with fade-out
-                withAnimation(.easeOut(duration: 0.5)) {
-                    showSplash = false
-                }
+                // Fill the loader's rail, then hand over.
+                bootStage = .ready
+                try? await Task.sleep(for: .seconds(MotionConstants.fast))
+                finishBoot(with: result)
 
                 // Background asset sync — downloads new/updated assets from Supabase
                 // Non-blocking: app works fine with bundle + existing cache while this runs
@@ -215,14 +218,15 @@ struct HexboundApp: App {
         }
     }
 
-    private func checkAutoLogin() async {
+    private func checkAutoLogin() async -> AutoLoginResult {
         // Race: auto-login vs 10s timeout — first to finish wins
-        let result = await withTaskGroup(of: AutoLoginResult?.self, returning: AutoLoginResult.self) { group in
+        await withTaskGroup(of: AutoLoginResult?.self, returning: AutoLoginResult.self) { group in
             group.addTask { @MainActor in
                 let authService = AuthService(appState: appState, cache: cache)
                 let loginResult = await authService.tryAutoLogin()
                 // If exactly one character, auto-select and load game data
                 if loginResult == .hasCharacter {
+                    bootStage = .summoningHero
                     let initService = GameInitService(appState: appState, cache: cache)
                     await initService.loadGameData()
                 }
@@ -238,53 +242,34 @@ struct HexboundApp: App {
             // If timeout fired first (nil), treat as failure
             return first ?? .noTokens
         }
-
-        await MainActor.run {
-            isCheckingAuth = false
-            switch result {
-            case .hasCharacter:
-                // Single hero — auto-selected, go straight to game
-                appState.currentScreen = .game
-            case .multipleCharacters:
-                // 2+ heroes — show character selection screen
-                appState.currentScreen = .characterSelect
-            case .noCharacter:
-                // Authenticated but no character — show character selection (empty state with create CTA)
-                appState.currentScreen = .characterSelect
-            case .noTokens:
-                // Show login screen
-                appState.currentScreen = .auth
-            }
-        }
     }
-}
 
-// MARK: - Splash
-
-struct SplashView: View {
-    let isVisible: Bool
-    @State private var contentOpacity: Double = 0
-
-    var body: some View {
-        ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-
-            VStack(spacing: LayoutConstants.spaceMD) {
-                Image("hexbound-logo")
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-
-                ProgressView()
-                    .tint(DarkFantasyTheme.gold)
-                    .scaleEffect(1.2)
-            }
-            .opacity(contentOpacity)
+    /// Leave the title screen for wherever the restored session belongs.
+    private func finishBoot(with result: AutoLoginResult) {
+        switch result {
+        case .hasCharacter:
+            // Single hero — auto-selected, go straight to game
+            appState.currentScreen = .game
+        case .multipleCharacters, .noCharacter:
+            // 2+ heroes, or none yet (empty state with a create CTA)
+            appState.currentScreen = .characterSelect
+        case .noTokens:
+            // Already on the title screen — only the launch state changes.
+            break
         }
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.4)) {
-                contentOpacity = 1
+
+        if result == .noTokens {
+            // The sign-in actions rise into the loader's place.
+            withAnimation(.easeOut(duration: MotionConstants.fast)) {
+                bootStage = nil
+            }
+        } else {
+            // The title screen cross-fades out (0.3 s, see `.animation` on
+            // `currentScreen`); clear the launch state only once it has gone,
+            // so its sign-in actions never flash in on the way out.
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(MotionConstants.normal))
+                bootStage = nil
             }
         }
     }

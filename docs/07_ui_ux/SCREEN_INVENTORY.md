@@ -17,7 +17,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
-| Welcome | `WelcomeView.swift` | default, loading | Entry point: login/register/guest |
+| Welcome | `WelcomeView.swift` | launch (intro + loader), default, loading | Entry point: login/register/guest. Also the cold-launch screen — there is no separate splash (`BootStage`, 2026-10-16) |
 | Login | `LoginView.swift` | default, loading, error | Email/password authentication |
 | Register | `RegisterDetailView.swift` | default, loading, error | Account creation |
 | Character Creation | `OnboardingDetailView.swift` | name, class, origin, gender, appearance | New character setup (multi-step: NameStepView → ClassSelectionStepView → AppearanceStepView) |

@@ -329,6 +329,7 @@
 		9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */; };
 		347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F770E2C97B6C494DAE513 /* GameModal.swift */; };
 		9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */; };
+		DEF32729036E1D9DB9980014 /* HexboundCrest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D06C9521DBE04E00DDFC09 /* HexboundCrest.swift */; };
 		9B07E5487D407789565B29C8 /* crowd_roar_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = FC15BB8FDFD7CC2BEE0A2F98 /* crowd_roar_2.wav */; };
 		9B1CDAC700082752E567A6F4 /* CharacterOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F8E9FA1781D491C725FEF /* CharacterOrigin.swift */; };
 		9B1E3F5A7B8C9D0E1F2A3B4C /* GuildHallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1E3F5A7B8C9D0E1F2A3B4D /* GuildHallViewModel.swift */; };
@@ -705,6 +706,7 @@
 		3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		922F770E2C97B6C494DAE513 /* GameModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModal.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		F0D06C9521DBE04E00DDFC09 /* HexboundCrest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexboundCrest.swift; sourceTree = "<group>"; };
 		3EB0DEC5060BB337B5F4E96E /* hit_poison_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_poison_2.wav; sourceTree = "<group>"; };
 		3F0687CEF0F7469DB974B7DB /* coin_drop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coin_drop.wav; sourceTree = "<group>"; };
 		3F151B07D471FA1F0C9F129F /* wheel_spin.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = wheel_spin.wav; sourceTree = "<group>"; };
@@ -1542,6 +1544,7 @@
 				3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */,
 				922F770E2C97B6C494DAE513 /* GameModal.swift */,
 				3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */,
+				F0D06C9521DBE04E00DDFC09 /* HexboundCrest.swift */,
 				B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */,
 				BF81E118A6812E0F4273F368 /* ScreenLayout.swift */,
 				8A9B0C1D2E3F4A5B6C7D8E9F /* SessionExpiredModalView.swift */,
@@ -2657,6 +2660,7 @@
 				9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */,
 				347B85B2A73DC626E06694B0 /* GameModal.swift in Sources */,
 				9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */,
+				DEF32729036E1D9DB9980014 /* HexboundCrest.swift in Sources */,
 				50BDBEB825D56CF4C576F162 /* LoginView.swift in Sources */,
 				CD54FB28E7F0F028713D0554 /* AuthView.swift in Sources */,
 				50BDBEB825D56CF4C576F163 /* WelcomeView.swift in Sources */,
