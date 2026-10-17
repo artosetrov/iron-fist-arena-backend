@@ -2,7 +2,17 @@
 
 Scope: combat formulas (both engines), gear/passives/dice, PvE scaling, XP and gold curves, gems, PvP ladder. Sources: `backend/src/lib/game/*`, `prisma/seed-*`, `docs/06_game_systems/*`, `tests/`. Numbers below were produced by running the repo's own code (`runCombat`, `dice.ts`, `sim:economy`, `find-tutorial-seed`) — not estimated from docs.
 
-**Fixed in `bcf6048`** (7 defects, see §8). Everything else is a proposal with the exact constant and value.
+**Fixed in `bcf6048`** (7 defects, see §8).
+
+**Applied 2026-10-17** (six commits, all tests green — 617 passed):
+- `b92f5a3` PvE: `calcBossHp` 120 → 70, multiplier cap 1.5, hard = HP ×1.2 / stats ×1.4, `levelReq` 55/60/65 → 42/46/50, hardcoded + iOS tables on the same curve. **Prod migration `20261017_boss_hp_curve` NOT applied yet** (80 bosses by name) — apply before deploying.
+- `834b65c` Gems: daily bonus 10 → 3, large potion 500 → 2,000 and cap 4 → 2/day, gem packs 500 / 3,000 / 7,500. Catalog migration `20261017_gem_economy_prices` (display only; the shop charges from code).
+- `cbbb33f` Dice: `diceHitProfile` is now the expected classic strike — crit (LUK/AGI + passives), dodge, CHA miss all count in live PvP; tank class reduction + passive DR share one cap (`DICE_DAMAGE_REDUCTION_CAP` 35); rogue Cunning → +3%/rank life steal. Migration `20261017_rogue_cunning_lifesteal`.
+- `341415c` Runes: 13 parameters retuned and re-measured on the live engine; greats +5–10 pp, paths +3–9, lessers +2–5. Text in `runes.ts` and `DICE_RUNES_DESIGN.md §10` updated.
+- `f40e68a` Items: validator and generator share `generatorBaseValue`; brackets 1.2·L .. 2.8·L.
+- `2fbe5ba` Docs: PROGRESSION / ECONOMY_RULES / SKILL_TREE_V2 say what the code does; BALANCE_CONSTANTS_AUTO regenerated.
+
+Still open (decisions): `item-sets.ts` wire-or-delete; defender-share daily cap and per-account daily faucets (routes); `cooldownReduction` has no dice analogue; Evasion rune wants a mechanic, not a number; 49 vs 59 SP; sink-ratio test floors + simulator coverage.
 
 ---
 
