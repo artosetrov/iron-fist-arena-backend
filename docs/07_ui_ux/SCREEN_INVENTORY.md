@@ -106,7 +106,7 @@ This page is a coded screen map of the iOS app. Use it together with `wiki/`, `A
 |--------|-----------|--------|---------|
 | Gold Mine | `GoldMineDetailView.swift` | idle, mining, ready, collecting | Passive gold generation |
 | Shell Game | `ShellGameDetailView.swift` | betting, playing, result | 3-cup guessing game |
-| Dungeon Rush | `DungeonRushDetailView.swift` | fighting, shopping, result | Wave-based boss rush |
+| Dungeon Rush — The Descent | `DescentDetailView.swift` | intro, depth card, fork, combat, spoils, chest, event, camp, merchant, relic, depth cleared, result; map + bag sheets | Fork-and-choice descent, 3 depths (v2, 2026-10-17; v1 `DungeonRushDetailView` unrouted) |
 | Tavern | `TavernDetailView.swift` | default | Tavern activity hub |
 | Fortune Wheel | `FortuneWheelDetailView.swift` | betting, spinning, result | Fortune wheel minigame |
 

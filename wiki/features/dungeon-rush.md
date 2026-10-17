@@ -2,6 +2,28 @@
 
 > Single-file map of every file that touches Dungeon Rush — roguelite 12-room endless-attack minigame, distinct from classic Dungeons.
 
+
+## v2 — "The Descent" (live since 2026-10-17)
+
+The building's route (`AppRoute.dungeonRush`) now opens **The Descent**: three depths of forking passages
+(Ossuary → Shadow Warrens → Molten Heart), each ending in a guardian. The bag is at risk — dying or
+abandoning loses **half** of it; campfire stashes and escapes keep everything. The v1 files below stay
+in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { not: 'descent' }`).
+
+- **Design:** project doc `DUNGEON_RUSH_V2_DESIGN_2026-10-16`, prototype artifact "Dungeon Rush Descent" (v5),
+  door-light directions canvas "Подсветка двери — варианты" (shipped: B "eyes in the dark").
+- **Backend:** `backend/src/lib/game/descent/{content,engine,view,server}.ts`;
+  routes `POST /api/dungeon-rush/v2/start`, `GET /api/dungeon-rush/v2/state`, `POST /api/dungeon-rush/v2/act`
+  (one action per request, checked against the run's `seq`, run row locked, effects in the same transaction).
+  State lives in `DungeonRun.state` (`v: 2`, `difficulty 'rush'`, `dungeonId 'descent'`). Tests: `backend/tests/lib/descent-engine.test.ts`.
+- **iOS:** `Models/DescentModels.swift`, `Services/DescentService.swift`, `Views/Minigames/Descent*.swift`
+  (`DescentDetailView` root → HUD, scene, action panel; `DescentForkScene` door light; `DescentRoomScenes`;
+  `DescentRunPanel`; `DescentSheets` map + bag; `DescentViewModel`).
+- **Art:** `Assets.xcassets/Descent/rush2-*` (81 imagesets, @1x/@2x/@3x). Door arch boxes in
+  `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
+- **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop
+  time on the global rarity table (R14.1); 30 stamina per descent.
+
 ## One-liner
 
 12-room fixed-layout roguelite run: combat, elite, miniboss, treasure, event, shop rooms — player pushes through a seeded sequence for escalating loot until death.

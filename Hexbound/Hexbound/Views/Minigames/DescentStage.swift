@@ -273,26 +273,46 @@ struct DescentCoinRain: View {
         }
     }
 
-    @ViewBuilder
-    private func coin(_ i: Int, t: Double, size: CGSize) -> some View {
+    private struct Coin {
+        let asset: String
+        let side: CGFloat
+        let position: CGPoint
+        let angle: Double
+        let opacity: Double
+    }
+
+    /// Where coin `i` of this burst is at time `t` (nil before it drops or once it has landed).
+    private func coinState(_ i: Int, t: Double, size: CGSize) -> Coin? {
         var rnd = DescentRandom(seed: token &* 977 &+ i)
         let x = (0.08 + rnd.next() * 0.84) * size.width
         let delay = Double(rnd.next()) * 0.35
         let fall = 0.85 + Double(rnd.next()) * 0.45
         let side = 20 + rnd.next() * 12
-        let spin = (rnd.next() - 0.5) * 900
+        let spin = Double(rnd.next() - 0.5) * 900
         let pick = rnd.next()
-        let p = max(0, min(1, (t - delay) / fall))
-        let y = -40 + (size.height + 80) * CGFloat(p * p)
+        guard t >= delay else { return nil }
+        let p = min(1, (t - delay) / fall)
+        guard p < 1 else { return nil }
         let asset = pick < 0.1 ? "rush2-fx-ruby" : pick < 0.4 ? "rush2-fx-coin-tilt" : "rush2-fx-coin"
-        if t >= delay && p < 1 {
-            Image(asset)
+        return Coin(
+            asset: asset,
+            side: side,
+            position: CGPoint(x: x, y: -40 + (size.height + 80) * CGFloat(p * p)),
+            angle: spin * t,
+            opacity: p > 0.85 ? (1 - p) / 0.15 : 1
+        )
+    }
+
+    @ViewBuilder
+    private func coin(_ i: Int, t: Double, size: CGSize) -> some View {
+        if let c = coinState(i, t: t, size: size) {
+            Image(c.asset)
                 .resizable()
                 .scaledToFit()
-                .frame(width: side, height: side)
-                .rotationEffect(.degrees(Double(spin) * t))
-                .position(x: x, y: y)
-                .opacity(p > 0.85 ? (1 - p) / 0.15 : 1)
+                .frame(width: c.side, height: c.side)
+                .rotationEffect(.degrees(c.angle))
+                .position(c.position)
+                .opacity(c.opacity)
         }
     }
 }
