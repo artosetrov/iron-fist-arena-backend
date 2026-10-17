@@ -268,6 +268,15 @@ enum DarkFantasyTheme {
     static let bmCounterEdge = Color(hex: 0x6E2A3E)
     static let bmChain = Color(hex: 0x4A3A40)
     static let bmBubble = Color(hex: 0x140C12)
+    /// Gold Mine (2026-10-17): weathered pit-prop board, iron chains, timber beam counter.
+    static let mineSignTop = Color(hex: 0x4A4036)
+    static let mineSignBottom = Color(hex: 0x2A231C)
+    static let mineSignEdge = Color(hex: 0x120E0A)
+    static let mineSignTagline = Color(hex: 0xD9C08A)
+    static let mineChain = Color(hex: 0x5E5850)
+    static let mineCounterTop = Color(hex: 0x3B3127)
+    static let mineCounterBottom = Color(hex: 0x211B15)
+    static let mineCounterEdge = Color(hex: 0x8B6914)
 
     // MARK: - VFX Glow Colors
 

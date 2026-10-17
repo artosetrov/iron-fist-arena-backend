@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Signboard + keeper header for the two trading screens (2026-10-16,
-/// design canvas "Shop vs Black Market headers", concept A).
+/// Signboard + keeper header for the keeper screens (2026-10-16, design
+/// canvas "Shop vs Black Market headers", concept A): Shop, Black Market and
+/// the Gold Mine (foreman, 2026-10-17).
 ///
 /// The title hangs on a signboard on the left, the keeper stands on the right
 /// and says one line in a speech bubble. The currency bar directly below is
@@ -13,6 +14,7 @@ struct ShopkeeperHeader: View {
     enum Style {
         case shop
         case blackMarket
+        case goldMine
     }
 
     let style: Style
@@ -21,6 +23,9 @@ struct ShopkeeperHeader: View {
     let keeperName: String
     let keeperImage: String
     let lines: [String]
+    /// First line to show; nil = a random one (the shops). The mine passes 0
+    /// because its first line is about what is happening right now.
+    var startIndex: Int? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var lineIndex = 0
@@ -52,7 +57,7 @@ struct ShopkeeperHeader: View {
         }
         .frame(height: Self.height)
         .onAppear {
-            lineIndex = lines.isEmpty ? 0 : Int.random(in: 0..<lines.count)
+            lineIndex = lines.isEmpty ? 0 : (startIndex.map { min(max($0, 0), lines.count - 1) } ?? Int.random(in: 0..<lines.count))
             if !reduceMotion { lanternLit = true }
             // Greets once per launch; tapping the keeper always speaks.
             if lines.indices.contains(lineIndex) { NPCVoice.shared.speakOnce(lines[lineIndex]) }
@@ -79,7 +84,7 @@ struct ShopkeeperHeader: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text(tagline.uppercased())
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .font(style == .goldMine ? DarkFantasyTheme.body.weight(.semibold) : DarkFantasyTheme.caption.weight(.semibold))
                     .tracking(2)
                     .foregroundStyle(taglineColor)
                     .lineLimit(1)
@@ -173,7 +178,7 @@ struct ShopkeeperHeader: View {
                 topTrailingRadius: LayoutConstants.radiusLG
             )
             Text("“\(lines[lineIndex])”")
-                .font(style == .blackMarket ? DarkFantasyTheme.uiLabel.italic() : DarkFantasyTheme.uiLabel)
+                .font(bubbleFont)
                 .foregroundStyle(style == .blackMarket ? DarkFantasyTheme.contrabandInk : DarkFantasyTheme.textPrimary)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -189,21 +194,54 @@ struct ShopkeeperHeader: View {
 
     // MARK: - Palette
 
-    private var titleColor: Color { style == .shop ? DarkFantasyTheme.goldBright : DarkFantasyTheme.contrabandBright }
-    private var titleGlow: Color { DarkFantasyTheme.contrabandAccent.opacity(0.7) }
-    private var taglineColor: Color { style == .shop ? DarkFantasyTheme.shopSignTagline : DarkFantasyTheme.contrabandMuted }
-    private var signColors: [Color] {
-        style == .shop
-            ? [DarkFantasyTheme.shopSignTop, DarkFantasyTheme.shopSignBottom]
-            : [DarkFantasyTheme.bmSignTop, DarkFantasyTheme.bmSignBottom]
+    private var titleColor: Color {
+        switch style {
+        case .shop, .goldMine: return DarkFantasyTheme.goldBright
+        case .blackMarket: return DarkFantasyTheme.contrabandBright
+        }
     }
-    private var signEdge: Color { style == .shop ? DarkFantasyTheme.shopSignEdge : DarkFantasyTheme.bmSignEdge }
-    private var chainColor: Color { style == .shop ? DarkFantasyTheme.shopChain : DarkFantasyTheme.bmChain }
+    private var titleGlow: Color { DarkFantasyTheme.contrabandAccent.opacity(0.7) }
+    private var taglineColor: Color {
+        switch style {
+        case .shop: return DarkFantasyTheme.shopSignTagline
+        case .blackMarket: return DarkFantasyTheme.contrabandMuted
+        case .goldMine: return DarkFantasyTheme.mineSignTagline
+        }
+    }
+    private var signColors: [Color] {
+        switch style {
+        case .shop: return [DarkFantasyTheme.shopSignTop, DarkFantasyTheme.shopSignBottom]
+        case .blackMarket: return [DarkFantasyTheme.bmSignTop, DarkFantasyTheme.bmSignBottom]
+        case .goldMine: return [DarkFantasyTheme.mineSignTop, DarkFantasyTheme.mineSignBottom]
+        }
+    }
+    private var signEdge: Color {
+        switch style {
+        case .shop: return DarkFantasyTheme.shopSignEdge
+        case .blackMarket: return DarkFantasyTheme.bmSignEdge
+        case .goldMine: return DarkFantasyTheme.mineSignEdge
+        }
+    }
+    private var chainColor: Color {
+        switch style {
+        case .shop: return DarkFantasyTheme.shopChain
+        case .blackMarket: return DarkFantasyTheme.bmChain
+        case .goldMine: return DarkFantasyTheme.mineChain
+        }
+    }
     private var bubbleFill: Color {
-        style == .shop ? DarkFantasyTheme.bgSecondary.opacity(0.92) : DarkFantasyTheme.bmBubble.opacity(0.94)
+        style == .blackMarket ? DarkFantasyTheme.bmBubble.opacity(0.94) : DarkFantasyTheme.bgSecondary.opacity(0.92)
     }
     private var bubbleBorder: Color {
-        style == .shop ? DarkFantasyTheme.gold.opacity(0.45) : DarkFantasyTheme.contrabandAccent.opacity(0.55)
+        style == .blackMarket ? DarkFantasyTheme.contrabandAccent.opacity(0.55) : DarkFantasyTheme.gold.opacity(0.45)
+    }
+    /// The mine keeps the 16 pt minimum; the shops keep their original look.
+    private var bubbleFont: Font {
+        switch style {
+        case .shop: return DarkFantasyTheme.uiLabel
+        case .blackMarket: return DarkFantasyTheme.uiLabel.italic()
+        case .goldMine: return DarkFantasyTheme.body
+        }
     }
 }
 
@@ -236,24 +274,42 @@ struct ShopCounterBackground: View {
     let style: ShopkeeperHeader.Style
 
     var body: some View {
-        LinearGradient(
-            colors: style == .shop
-                ? [DarkFantasyTheme.shopCounterTop, DarkFantasyTheme.shopCounterBottom]
-                : [DarkFantasyTheme.bmCounterTop, DarkFantasyTheme.bmCounterBottom],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(style == .shop ? DarkFantasyTheme.shopCounterEdge : DarkFantasyTheme.bmCounterEdge)
+                .fill(topEdge)
                 .frame(height: 2)
         }
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(style == .shop ? DarkFantasyTheme.shopSignEdge : DarkFantasyTheme.bmSignEdge)
+                .fill(bottomEdge)
                 .frame(height: 1)
         }
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 8, y: -4)
+    }
+
+    private var colors: [Color] {
+        switch style {
+        case .shop: return [DarkFantasyTheme.shopCounterTop, DarkFantasyTheme.shopCounterBottom]
+        case .blackMarket: return [DarkFantasyTheme.bmCounterTop, DarkFantasyTheme.bmCounterBottom]
+        case .goldMine: return [DarkFantasyTheme.mineCounterTop, DarkFantasyTheme.mineCounterBottom]
+        }
+    }
+
+    private var topEdge: Color {
+        switch style {
+        case .shop: return DarkFantasyTheme.shopCounterEdge
+        case .blackMarket: return DarkFantasyTheme.bmCounterEdge
+        case .goldMine: return DarkFantasyTheme.mineCounterEdge
+        }
+    }
+
+    private var bottomEdge: Color {
+        switch style {
+        case .shop: return DarkFantasyTheme.shopSignEdge
+        case .blackMarket: return DarkFantasyTheme.bmSignEdge
+        case .goldMine: return DarkFantasyTheme.mineSignEdge
+        }
     }
 }
 
