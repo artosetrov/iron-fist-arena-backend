@@ -3,6 +3,7 @@
 // All formulas read from GameConfig with hardcoded fallbacks for safety.
 // =============================================================================
 
+import { STAT_ROLL_MAX } from './item-stats'
 import { getGameConfig, getGameConfigs } from './config'
 import { getUpgradeChancesConfig } from './live-config'
 import { GEM_COSTS } from './balance'
@@ -106,13 +107,16 @@ const DEFAULT_RARITY_MULTIPLIERS: Record<string, number> = {
   common: 1.0, uncommon: 1.3, rare: 1.6, epic: 2.0, legendary: 2.5,
 }
 
-const DEFAULT_STAT_RANGES: StatRange[] = [
-  { minLevel: 1, maxLevel: 5, minStat: 1, maxStat: 8 },
-  { minLevel: 6, maxLevel: 10, minStat: 5, maxStat: 16 },
-  { minLevel: 11, maxLevel: 20, minStat: 10, maxStat: 30 },
-  { minLevel: 21, maxLevel: 35, minStat: 18, maxStat: 50 },
-  { minLevel: 36, maxLevel: 50, minStat: 28, maxStat: 75 },
-]
+// Per-level brackets on the generator's own scale (2·L for a common item):
+// min = 1.2·L (a weak type-weight slot), max = 2.8·L (legendary ×2.5 at a
+// full weight before the roll). The old five flat brackets topped out at 75
+// for L36–50 while the generator wrote 250 for an L50 legendary.
+const DEFAULT_STAT_RANGES: StatRange[] = Array.from({ length: 50 }, (_, i) => ({
+  minLevel: i + 1,
+  maxLevel: i + 1,
+  minStat: Math.max(1, Math.round((i + 1) * 1.2)),
+  maxStat: Math.round((i + 1) * 2.8),
+}))
 
 const DEFAULT_SELL_PRICE_BY_RARITY: Record<string, number> = {
   common: 10, uncommon: 25, rare: 60, epic: 150, legendary: 400,
@@ -266,12 +270,10 @@ export async function getStatRangeForLevel(itemLevel: number): Promise<StatRange
  * Used by validation to detect OP or weak items.
  */
 export async function getExpectedPower(itemLevel: number, rarity: Rarity, itemType?: ItemType): Promise<number> {
-  const range = await getStatRangeForLevel(itemLevel)
-  const rarityMults = await getGameConfig<Record<string, number>>('item_balance.rarity_multipliers', DEFAULT_RARITY_MULTIPLIERS)
-  const rarityMult = rarityMults[rarity] ?? 1.0
-
-  // Expected average stat = midpoint of range * rarityMult
-  const avgStat = ((range.minStat + range.maxStat) / 2) * rarityMult
+  // Same number the generator writes, plus the midpoint of the drop roll
+  // (0–STAT_ROLL_MAX, uniform) that `rollItemStats` adds on top of it.
+  const rollMid = (STAT_ROLL_MAX[rarity] ?? STAT_ROLL_MAX.common) / 2
+  const avgStat = (await generatorBaseValue(itemLevel, rarity)) * (1 + rollMid)
 
   // Get item type weights to estimate number of stats — use module-level cache
   let weights: Record<string, number> = { str: 1.0 }
@@ -299,34 +301,40 @@ export async function getExpectedPower(itemLevel: number, rarity: Rarity, itemTy
  * Generate base stats for a new item, reading all config from DB.
  * Replaces the hardcoded generateBaseStats in loot.ts.
  */
-export async function generateBalancedBaseStats(
-  itemType: ItemType,
-  rarity: Rarity,
-  itemLevel: number,
-): Promise<Record<string, number>> {
+/**
+ * The primary stat value the generator hands an item of this level and
+ * rarity before type weights and the drop roll. ONE formula, read by both
+ * `generateBalancedBaseStats` and `getExpectedPower`: until 2026-10-16 the
+ * validator measured items against bracket midpoints (L36–50 = 51.5) while
+ * the generator wrote 2·L·rarity (L50 legendary = 250), so the generator's
+ * own output was flagged "overpowered" from L46 and Tier-6 items had no
+ * growth in the validator's eyes (balance audit §3).
+ */
+export async function generatorBaseValue(itemLevel: number, rarity: Rarity): Promise<number> {
   const [rarityMults, formula, scalingBase, exponent] = await Promise.all([
     getGameConfig<Record<string, number>>('item_balance.rarity_multipliers', DEFAULT_RARITY_MULTIPLIERS),
     getGameConfig<string>('item_balance.level_scaling_formula', 'linear'),
     getGameConfig<number>('item_balance.level_scaling_base', 2),
     getGameConfig<number>('item_balance.level_scaling_exponent', 1.0),
   ])
-
   const mult = rarityMults[rarity] ?? 1.0
-
-  // Calculate base value from level scaling formula
-  let baseValue: number
   switch (formula) {
     case 'exponential':
-      baseValue = Math.max(1, Math.round(Math.pow(itemLevel, exponent) * scalingBase * mult))
-      break
+      return Math.max(1, Math.round(Math.pow(itemLevel, exponent) * scalingBase * mult))
     case 'logarithmic':
-      baseValue = Math.max(1, Math.round(Math.log2(itemLevel + 1) * scalingBase * mult * 3))
-      break
+      return Math.max(1, Math.round(Math.log2(itemLevel + 1) * scalingBase * mult * 3))
     case 'linear':
     default:
-      baseValue = Math.max(1, Math.round(itemLevel * scalingBase * mult))
-      break
+      return Math.max(1, Math.round(itemLevel * scalingBase * mult))
   }
+}
+
+export async function generateBalancedBaseStats(
+  itemType: ItemType,
+  rarity: Rarity,
+  itemLevel: number,
+): Promise<Record<string, number>> {
+  const baseValue = await generatorBaseValue(itemLevel, rarity)
 
   // Get item type stat weights from ItemBalanceProfile
   const profile = await getItemBalanceProfile(itemType)
