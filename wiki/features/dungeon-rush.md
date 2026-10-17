@@ -10,8 +10,10 @@ The building's route (`AppRoute.dungeonRush`) now opens **The Descent**: three d
 abandoning loses **half** of it; campfire stashes and escapes keep everything. The v1 files below stay
 in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { not: 'descent' }`).
 
-- **Design:** project doc `DUNGEON_RUSH_V2_DESIGN_2026-10-16`, prototype artifact "Dungeon Rush Descent" (v5),
-  door-light directions canvas "Подсветка двери — варианты" (shipped: B "eyes in the dark").
+- **Design:** project doc `DUNGEON_RUSH_V2_DESIGN_2026-10-16`, prototype artifact "Dungeon Rush Descent" (v6),
+  door-light directions canvas "Подсветка двери — варианты". All four ship, one per kind of room
+  (`DescentDoorLight`): B eyes in the dark → monster/elite/guardian, D shaft of light → treasure,
+  C rune thread → mystery, A aura from within → camp/merchant/unlit passage.
 - **Backend:** `backend/src/lib/game/descent/{content,engine,view,server}.ts`;
   routes `POST /api/dungeon-rush/v2/start`, `GET /api/dungeon-rush/v2/state`, `POST /api/dungeon-rush/v2/act`
   (one action per request, checked against the run's `seq`, run row locked, effects in the same transaction).

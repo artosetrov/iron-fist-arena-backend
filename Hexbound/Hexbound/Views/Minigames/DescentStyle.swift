@@ -160,6 +160,41 @@ struct DescentArchOutline: Shape {
     }
 }
 
+/// One side of the arch, from the floor up to the keystone — the rune thread's comets run along it.
+/// `side` is -1 (left) or 1 (right).
+struct DescentArchHalf: Shape {
+    var side: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let r = rect.width / 2
+        let x = side < 0 ? rect.minX : rect.maxX
+        p.move(to: CGPoint(x: x, y: rect.maxY))
+        p.addLine(to: CGPoint(x: x, y: rect.minY + r))
+        p.addRelativeArc(
+            center: CGPoint(x: rect.midX, y: rect.minY + r), radius: r,
+            startAngle: .degrees(side < 0 ? 180 : 0), delta: .degrees(side < 0 ? 90 : -90)
+        )
+        return p
+    }
+}
+
+/// A ray of light: narrow where it enters at the top, wide where it lands.
+struct DescentShaftShape: Shape {
+    var topHalf: CGFloat
+    var bottomHalf: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX - topHalf, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.midX + topHalf, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.midX + bottomHalf, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.midX - bottomHalf, y: rect.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
 /// Everything except the doorway: masks auras so they light the stone, never the void.
 struct DescentOutsideArch: Shape {
     let arch: CGRect
