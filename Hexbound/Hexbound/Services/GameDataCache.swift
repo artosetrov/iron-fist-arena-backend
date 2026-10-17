@@ -401,6 +401,12 @@ final class GameDataCache {
         dungeonProgressFetchedAt = nil
     }
 
+    /// Patch one dungeon's defeated count (a win just landed) without marking
+    /// the whole map fresh, so the next scheduled refetch still runs.
+    func updateDungeonProgress(_ dungeonId: String, defeated: Int) {
+        dungeonProgress[dungeonId] = defeated
+    }
+
     // MARK: - Dungeon List Cache
 
     private let dungeonListTTL: TimeInterval = 300 // 5 minutes

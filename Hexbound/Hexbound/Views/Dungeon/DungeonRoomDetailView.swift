@@ -13,6 +13,9 @@ struct DungeonRoomDetailView: View {
     /// The boss the pre-fight intro is playing for; nil when no intro is up.
     @State private var introBoss: BossInfo?
 
+    /// Navigation depth this screen sits at, to tell a pop from a push.
+    @State private var stackDepth: Int?
+
     // Modal states
     @State private var showDungeonInfo = false
     @State private var selectedBossForDetail: BossInfo? = nil
@@ -157,11 +160,18 @@ struct DungeonRoomDetailView: View {
             }
         }
         .onAppear {
+            if stackDepth == nil { stackDepth = appState.mainPath.count }
             vm?.applyPendingResult()
             AmbientManager.shared.setZone(.dungeon)
         }
         .onDisappear {
-            AmbientManager.shared.setZone(.hub)
+            // Popped back onto the dungeon trail map: it keeps the dungeon
+            // ambience. Anything else (hub, battle push) as before.
+            let count = appState.mainPath.count
+            let backOnTrail = count < (stackDepth ?? 0) && count == appState.dungeonTrailDepth
+            if !backOnTrail {
+                AmbientManager.shared.setZone(.hub)
+            }
         }
         // Safety net: if onAppear doesn't fire reliably when combat view is popped,
         // detect the pop via path count change and apply pending result

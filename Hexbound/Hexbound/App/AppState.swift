@@ -125,6 +125,15 @@ final class AppState {
     // MARK: - Dungeon
     var selectedDungeonId: String?
 
+    /// Boss the dungeon trail map asked the room to open on (index into the
+    /// dungeon's bosses). Consumed once by `DungeonRoomViewModel.loadState()`.
+    var requestedDungeonBossIndex: Int?
+
+    /// Navigation depth of `DungeonTrailView` while it is on the stack, so
+    /// the room popped back onto it keeps the dungeon ambience instead of
+    /// switching to the hub's.
+    var dungeonTrailDepth: Int?
+
     /// Set by entry points outside the Hub (daily quests, contextual hints,
     /// etc.) that want the player to land on the dungeon map *with* the full
     /// hub HUD (hero card, floating icons, ADVENTURES/CASTLE button) rather

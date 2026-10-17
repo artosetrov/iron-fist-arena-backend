@@ -57,6 +57,7 @@ enum AppRoute: Hashable, Codable {
     case dungeonMap
     case dungeonMapEditor
     case dungeonSelect
+    case dungeonTrail
     case dungeonRoom
 
     // Social
@@ -211,6 +212,7 @@ struct MainRouterView: View {
         // Dungeon
         case .dungeonMap: DungeonMapView()
         case .dungeonSelect: DungeonSelectDetailView()
+        case .dungeonTrail: DungeonTrailView()
         case .dungeonRoom: DungeonRoomDetailView()
         
         // Social

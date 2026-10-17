@@ -152,12 +152,15 @@ struct DungeonMapView: View {
     }
 
     private func navigateToDungeon(_ building: DungeonMapBuilding) {
-        // Set the selected dungeon context, then navigate directly to dungeon room (boss list)
+        // Set the selected dungeon context, then open its trail map (the
+        // bosses on the road); dungeons without trail art go straight to
+        // the room.
         appState.selectedDungeonId = building.id
+        let route: AppRoute = DungeonTrailConfig.config(for: building.id) != nil ? .dungeonTrail : .dungeonRoom
         if let onNavigate {
-            onNavigate(.dungeonRoom)
+            onNavigate(route)
         } else {
-            appState.mainPath.append(AppRoute.dungeonRoom)
+            appState.mainPath.append(route)
         }
     }
 }

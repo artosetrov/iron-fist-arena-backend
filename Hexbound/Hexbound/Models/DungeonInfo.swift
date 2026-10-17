@@ -495,3 +495,24 @@ struct DungeonInfo: Identifiable {
         rewardIcons: ["coloncurrencysign.circle.fill", "sword", "shield.fill", "diamond.fill"]
     )
 }
+
+// MARK: - Server list merge
+
+extension DungeonInfo {
+    /// The server's dungeon list merged with the hand-written ones: known
+    /// dungeons keep their richer client data (loot, portraits), and the
+    /// three starters (levels 1–29, code-only on the backend) are always
+    /// present — replacing the list wholesale made a fresh DB show zero
+    /// low-level dungeons (AUDIT-2026-10-13 H11).
+    static func merged(withServer serverList: [DungeonInfo]) -> [DungeonInfo] {
+        var merged = serverList.map { serverDungeon in
+            fallback.first { $0.id == serverDungeon.id } ?? serverDungeon
+        }
+        let serverIds = Set(serverList.map(\.id))
+        let starters = fallback.filter { !serverIds.contains($0.id) }
+        if !starters.isEmpty {
+            merged = (starters + merged).sorted { $0.minLevel < $1.minLevel }
+        }
+        return merged
+    }
+}

@@ -119,17 +119,43 @@ final class DungeonRoomViewModel {
     func loadState() async {
         errorMessage = nil
 
+        // The trail map can open the room on a specific boss; take the
+        // request once so a later reload snaps back to the current boss.
+        let requestedIndex = appState.requestedDungeonBossIndex
+        appState.requestedDungeonBossIndex = nil
+
         // ── Cache-first: resolve dungeon immediately from local data ──
         // The dungeon list is already in GameDataCache / fallback. No need to wait for network.
         let selectedId = appState.selectedDungeonId
-        if let selectedId {
+        if let selectedId, dungeon?.id != selectedId {
             dungeon = allDungeons.first { $0.id == selectedId }
+            // Past the three starters, dungeons live only on the server. When
+            // the list isn't warm yet, fetch it rather than fall back to
+            // Training Camp (that put the wrong bosses on screen).
+            if dungeon == nil {
+                isLoading = true
+                if let serverList = await service.listDungeons(), !serverList.isEmpty {
+                    let merged = DungeonInfo.merged(withServer: serverList)
+                    cache.cacheDungeonList(merged)
+                    dungeon = merged.first { $0.id == selectedId }
+                }
+                isLoading = false
+                guard dungeon != nil else {
+                    errorMessage = "Couldn't load this dungeon. Check your connection and try again."
+                    return
+                }
+            }
         }
         // Show default dungeon instantly if nothing selected yet
         if dungeon == nil {
             dungeon = DungeonInfo.trainingCamp
         }
-        selectedBossIndex = currentBossIndex // snap to current boss immediately
+        // Cache-first progress too: wins are written to the shared map, so
+        // the right boss is up before the server answers.
+        if let id = dungeon?.id, let cached = cache.dungeonProgress[id], cached > defeatedCount {
+            defeatedCount = cached
+        }
+        snapSelection(requested: requestedIndex) // snap immediately
 
         // ── Background refresh: fetch active run + saved progress from server ──
         // Only show spinner if we truly have zero dungeon data (first-ever open)
@@ -184,8 +210,33 @@ final class DungeonRoomViewModel {
             defeatedCount = 0
         }
 
-        // Re-snap to current boss after fresh data arrives
-        selectedBossIndex = currentBossIndex
+        // Re-snap after fresh data arrives
+        snapSelection(requested: requestedIndex)
+        if let serverProgress = snapshot?.progress {
+            storeProgress(serverProgress)
+        }
+    }
+
+    /// Put the requested boss on the stage when it is open to the player,
+    /// otherwise the current one.
+    private func snapSelection(requested: Int?) {
+        if let requested, let dungeon, dungeon.bosses.indices.contains(requested),
+           requested <= currentBossIndex {
+            selectedBossIndex = requested
+        } else {
+            selectedBossIndex = currentBossIndex
+        }
+    }
+
+    /// After a fresh fetch: share the server's progress map, with this
+    /// dungeon's count (which may include an open run) folded in, so the
+    /// trail map and the overland map show it without another fetch.
+    private func storeProgress(_ serverProgress: [String: Int]) {
+        var progress = serverProgress
+        if let id = dungeon?.id {
+            progress[id] = max(progress[id] ?? 0, defeatedCount)
+        }
+        cache.cacheDungeonProgress(progress)
     }
 
     // MARK: - Fight
@@ -433,6 +484,10 @@ final class DungeonRoomViewModel {
             defeatedCount = serverFloorCleared
         } else {
             defeatedCount += 1
+        }
+        // The trail map shows the win the moment the player walks back.
+        if let id = dungeon?.id {
+            cache.updateDungeonProgress(id, defeated: defeatedCount)
         }
         showVictory = true
 

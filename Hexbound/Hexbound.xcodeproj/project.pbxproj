@@ -415,6 +415,8 @@
 		B68B5E43109FCCF9BCEB258D /* TavernDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B837363250403614BE1A4F /* TavernDetailView.swift */; };
 		B68B74F158D762184A676AAB /* merchant_greet.wav in Resources */ = {isa = PBXBuildFile; fileRef = D269D22916F1CEDA9ED0476F /* merchant_greet.wav */; };
 		B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */; };
+		09CF41A0A4D2AB4DC8CCDFF0 /* DungeonTrailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D24752064BCC860F6A68472 /* DungeonTrailView.swift */; };
+		A04A468503C8B2EA04C642F9 /* DungeonTrailConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE73AAC5D37A35F42EA180C /* DungeonTrailConfig.swift */; };
 		B7C8D9E0F1A2B3C4D5E6F7A8 /* ScrollBounceDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6F7E8D9C0B1A2 /* ScrollBounceDisabler.swift */; };
 		BA5CFA1B83EA38F2EDB81532 /* amb_bone_rattle.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FDD453A18C4C94AB5159BEAA /* amb_bone_rattle.mp3 */; };
 		BAEDA442A41F63D12DF42973 /* war_drums.wav in Resources */ = {isa = PBXBuildFile; fileRef = A9A1090A17C031D04345FBF9 /* war_drums.wav */; };
@@ -646,6 +648,8 @@
 		1B9EE2BC2C07F4AA579C05CB /* epic_horn_fanfare.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = epic_horn_fanfare.wav; sourceTree = "<group>"; };
 		1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryViewModel.swift; sourceTree = "<group>"; };
 		1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomViewModel.swift; sourceTree = "<group>"; };
+		8D24752064BCC860F6A68472 /* DungeonTrailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonTrailView.swift; sourceTree = "<group>"; };
+		EDE73AAC5D37A35F42EA180C /* DungeonTrailConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonTrailConfig.swift; sourceTree = "<group>"; };
 		1F8FA34A0C0EE75D22B6C2B9 /* ContextualHintBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualHintBar.swift; sourceTree = "<group>"; };
 		1FDAFF5386A93B9CED4EB503 /* hit_magical_6.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical_6.wav; sourceTree = "<group>"; };
 		200396381DBAD59E7A4E025A /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
@@ -1991,6 +1995,8 @@
 				42A1B2C3D4E5F60DM3MP001 /* DungeonMapView.swift */,
 				5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */,
 				1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */,
+				8D24752064BCC860F6A68472 /* DungeonTrailView.swift */,
+				EDE73AAC5D37A35F42EA180C /* DungeonTrailConfig.swift */,
 				3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */,
 				A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */,
 				7C8D9E0F1A2B3C4D5E6F7A8B /* DungeonDefeatView.swift */,
@@ -2542,6 +2548,8 @@
 				A1B2C3D4E5F60001AABB0003 /* LootPreviewSheet.swift in Sources */,
 				A4C8E2F6B1D3A5C7E9F1B3D5 /* LowHPPotionBanner.swift in Sources */,
 				B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */,
+				09CF41A0A4D2AB4DC8CCDFF0 /* DungeonTrailView.swift in Sources */,
+				A04A468503C8B2EA04C642F9 /* DungeonTrailConfig.swift in Sources */,
 				F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */,
 				F425A4E619F59E4D30700CDF /* DungeonRushGameOver.swift in Sources */,
 				F425A4E619F59E4D30700CE0 /* DungeonRushRoomView.swift in Sources */,
