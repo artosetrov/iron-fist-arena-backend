@@ -55,6 +55,19 @@
 		16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 776542cff60cc81ecdff074b /* StatPurchase.swift */; };
 		1704A1D3A63363F209977154 /* ui_transition.wav in Resources */ = {isa = PBXBuildFile; fileRef = F92586043C4AA4BD1A4F294F /* ui_transition.wav */; };
 		177944E1D094938DD266E070 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E9F432E444EE871124DC12E /* Assets.xcassets */; };
+		D35CE70B0000000000000001 /* DescentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000001 /* DescentModels.swift */; };
+		D35CE70B0000000000000002 /* DescentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000002 /* DescentService.swift */; };
+		D35CE70B0000000000000003 /* DescentDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000003 /* DescentDetailView.swift */; };
+		D35CE70B0000000000000004 /* DescentForkScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000004 /* DescentForkScene.swift */; };
+		D35CE70B0000000000000005 /* DescentHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000005 /* DescentHUD.swift */; };
+		D35CE70B0000000000000006 /* DescentPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000006 /* DescentPanels.swift */; };
+		D35CE70B0000000000000007 /* DescentRoomScenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000007 /* DescentRoomScenes.swift */; };
+		D35CE70B0000000000000008 /* DescentRunPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000008 /* DescentRunPanel.swift */; };
+		D35CE70B0000000000000009 /* DescentSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000009 /* DescentSheets.swift */; };
+		D35CE70B000000000000000A /* DescentStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000A /* DescentStage.swift */; };
+		D35CE70B000000000000000B /* DescentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000B /* DescentStyle.swift */; };
+		D35CE70B000000000000000C /* DescentText.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000C /* DescentText.swift */; };
+		D35CE70B000000000000000D /* DescentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000D /* DescentViewModel.swift */; };
 		PRIV00001000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */; };
 		1817B4DE4C0F78F617740616 /* hit_critical_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA710DEA74DE34B17C932FE7 /* hit_critical_3.wav */; };
 		1824E994A72F9124AF03E6C0 /* combat_miss.wav in Resources */ = {isa = PBXBuildFile; fileRef = A8DE9B9F60FF0416FC335685 /* combat_miss.wav */; };
@@ -582,6 +595,19 @@
 		0119FF7351B52985539E24A3 /* ui_sell.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_sell.wav; sourceTree = "<group>"; };
 		029AA9A175D862EBED174221 /* shell_shuffle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shell_shuffle.wav; sourceTree = "<group>"; };
 		02E5682DDDCFDA8038B5CE1C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D35CE70A0000000000000001 /* DescentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentModels.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000002 /* DescentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentService.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000003 /* DescentDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentDetailView.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000004 /* DescentForkScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentForkScene.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000005 /* DescentHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentHUD.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000006 /* DescentPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentPanels.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000007 /* DescentRoomScenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentRoomScenes.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000008 /* DescentRunPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentRunPanel.swift; sourceTree = "<group>"; };
+		D35CE70A0000000000000009 /* DescentSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentSheets.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000000A /* DescentStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStage.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000000B /* DescentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStyle.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000000C /* DescentText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentText.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000000D /* DescentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentViewModel.swift; sourceTree = "<group>"; };
 		PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		02F525698FF57035C2C32D1B /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		03211693FA838BABF0DDF071 /* battle-combat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "battle-combat.mp3"; path = "Hexbound/Resources/Audio/BGM/battle-combat.mp3"; sourceTree = SOURCE_ROOT; };
@@ -1641,6 +1667,7 @@
 				3890414A062272EB010CBAE9 /* CombatEngine.swift */,
 				E7B9B469AFD9966B84710379 /* DailyLoginService.swift */,
 				4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */,
+				D35CE70A0000000000000002 /* DescentService.swift */,
 				C4E3C795887491564EEEA91D /* GameDataCache.swift */,
 				EF17A62986FA6638EFB96553 /* GameInitService.swift */,
 				GSIG00001REF00001 /* GoogleSignInHelper.swift */,
@@ -1774,6 +1801,17 @@
 				7F47C02A1E8000971C47A7C3 /* DungeonRushRoomView.swift */,
 				7F47C02A1E8000971C47A7C4 /* DungeonRushStartView.swift */,
 				A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */,
+				D35CE70A0000000000000003 /* DescentDetailView.swift */,
+				D35CE70A0000000000000004 /* DescentForkScene.swift */,
+				D35CE70A0000000000000005 /* DescentHUD.swift */,
+				D35CE70A0000000000000006 /* DescentPanels.swift */,
+				D35CE70A0000000000000007 /* DescentRoomScenes.swift */,
+				D35CE70A0000000000000008 /* DescentRunPanel.swift */,
+				D35CE70A0000000000000009 /* DescentSheets.swift */,
+				D35CE70A000000000000000A /* DescentStage.swift */,
+				D35CE70A000000000000000B /* DescentStyle.swift */,
+				D35CE70A000000000000000C /* DescentText.swift */,
+				D35CE70A000000000000000D /* DescentViewModel.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
 				9D3616ED882512BF3531BF8A /* GoldMineCards.swift */,
@@ -1886,6 +1924,7 @@
 				69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */,
 				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
+				D35CE70A0000000000000001 /* DescentModels.swift */,
 				00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */,
 				791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */,
 				00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */,
@@ -2508,6 +2547,19 @@
 				F425A4E619F59E4D30700CE0 /* DungeonRushRoomView.swift in Sources */,
 				F425A4E619F59E4D30700CE1 /* DungeonRushStartView.swift in Sources */,
 				1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */,
+				D35CE70B0000000000000001 /* DescentModels.swift in Sources */,
+				D35CE70B0000000000000002 /* DescentService.swift in Sources */,
+				D35CE70B0000000000000003 /* DescentDetailView.swift in Sources */,
+				D35CE70B0000000000000004 /* DescentForkScene.swift in Sources */,
+				D35CE70B0000000000000005 /* DescentHUD.swift in Sources */,
+				D35CE70B0000000000000006 /* DescentPanels.swift in Sources */,
+				D35CE70B0000000000000007 /* DescentRoomScenes.swift in Sources */,
+				D35CE70B0000000000000008 /* DescentRunPanel.swift in Sources */,
+				D35CE70B0000000000000009 /* DescentSheets.swift in Sources */,
+				D35CE70B000000000000000A /* DescentStage.swift in Sources */,
+				D35CE70B000000000000000B /* DescentStyle.swift in Sources */,
+				D35CE70B000000000000000C /* DescentText.swift in Sources */,
+				D35CE70B000000000000000D /* DescentViewModel.swift in Sources */,
 				A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */,
 				3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */,
 				3F2D8E7A9C0B1A2F3E4D5C6B /* FortuneWheelViewModel.swift in Sources */,

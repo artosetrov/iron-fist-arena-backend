@@ -105,6 +105,11 @@ enum APIEndpoints {
     static let dungeonRushResolve = "/api/dungeon-rush/resolve"
     static let dungeonRushShopBuy = "/api/dungeon-rush/shop-buy"
 
+    // MARK: - Dungeon Rush v2 "The Descent"
+    static let descentStart = "/api/dungeon-rush/v2/start"
+    static let descentState = "/api/dungeon-rush/v2/state"
+    static let descentAct = "/api/dungeon-rush/v2/act"
+
     // MARK: - Shell Game
     static let shellGameStart = "/api/minigames/shell-game/start"
     static let shellGameGuess = "/api/minigames/shell-game/guess"

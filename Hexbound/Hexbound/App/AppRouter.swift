@@ -226,7 +226,8 @@ struct MainRouterView: View {
         case .shellGame: ShellGameDetailView()
         case .fortuneWheel: FortuneWheelDetailView()
         case .goldMine: GoldMineDetailView()
-        case .dungeonRush: DungeonRushDetailView()
+        // 2026-10-17: Dungeon Rush v2 "The Descent" replaces the 12-room rush (v1 views stay for reference).
+        case .dungeonRush: DescentDetailView()
         
         // Inbox
         case .inbox: InboxDetailView()

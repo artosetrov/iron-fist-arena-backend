@@ -7,31 +7,12 @@
   "$doNotEdit": "Regenerate with scripts/wiki/generate-ios-screens.mjs",
   "counts": {
     "routes": 48,
-    "tabs": 3,
-    "screens": 281,
-    "viewFiles": 242,
+    "tabs": 0,
+    "screens": 388,
+    "viewFiles": 269,
     "routesWithDestination": 48
   },
-  "tabs": [
-    {
-      "name": "hub",
-      "rawValue": 0,
-      "label": "HUB",
-      "icon": "house.fill"
-    },
-    {
-      "name": "arena",
-      "rawValue": 1,
-      "label": "ARENA",
-      "icon": "shield.fill"
-    },
-    {
-      "name": "hero",
-      "rawValue": 2,
-      "label": "HERO",
-      "icon": "person.fill"
-    }
-  ],
+  "tabs": [],
   "routes": [
     {
       "case": "login",
@@ -57,14 +38,6 @@
       "destinationRaw": "OnboardingDetailView()",
       "viewFile": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
       "router": "auth"
-    },
-    {
-      "case": "characterSelection",
-      "associatedValues": [],
-      "destinationView": "PlaceholderView",
-      "destinationRaw": "PlaceholderView() }",
-      "viewFile": null,
-      "router": "main"
     },
     {
       "case": "hub",
@@ -126,25 +99,8 @@
     },
     {
       "case": "interactiveBattle",
-      "associatedValues": [
-        {
-          "label": "characterId",
-          "type": "String"
-        },
-        {
-          "label": "opponentId",
-          "type": "String"
-        },
-        {
-          "label": "attackerMaxHp",
-          "type": "Int"
-        },
-        {
-          "label": "defenderMaxHp",
-          "type": "Int"
-        }
-      ],
-      "doc": "/ Interactive Combat v1 — new match-lifecycle fight screen. / Routed here when `GameConfig.interactiveCombatEnabled == true` (driven / by server env flag `INTERACTIVE_COMBAT_V1`). Classic flow uses `.combat`.",
+      "associatedValues": [],
+      "doc": "/ Interactive Combat v1 — match-lifecycle fight screen. / `opponentType` lets the same UI drive PvP, bot, and dungeon boss fights — / the server forks its logic in /pvp/match/start by reading this field. / `.pvp` — real opponent, ELO + revenge queue. / `.bot` — NPC bot (npc_* ids), client-side AI picks server-side zones, / no ELO swing, no revenge queue. / `.dungeonBoss` — boss from an active DungeonRun. `dungeonRunId` must be / set. Server advances the run's floor counter on win.",
       "destinationView": "InteractiveBattleRouteView",
       "destinationRaw": "InteractiveBattleRouteView(",
       "viewFile": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
@@ -166,6 +122,14 @@
       "destinationView": "ShopDetailView",
       "destinationRaw": "ShopDetailView()",
       "viewFile": "Hexbound/Hexbound/Views/Shop/ShopDetailView.swift",
+      "router": "main"
+    },
+    {
+      "case": "blackMarket",
+      "associatedValues": [],
+      "destinationView": "BlackMarketDetailView",
+      "destinationRaw": "BlackMarketDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Shop/BlackMarketDetailView.swift",
       "router": "main"
     },
     {
@@ -317,9 +281,9 @@
     {
       "case": "dungeonRush",
       "associatedValues": [],
-      "destinationView": "DungeonRushDetailView",
-      "destinationRaw": "DungeonRushDetailView()",
-      "viewFile": "Hexbound/Hexbound/Views/Minigames/DungeonRushDetailView.swift",
+      "destinationView": "DescentDetailView",
+      "destinationRaw": "DescentDetailView()",
+      "viewFile": "Hexbound/Hexbound/Views/Minigames/DescentDetailView.swift",
       "router": "main"
     },
     {
@@ -426,7 +390,7 @@
     {
       "case": "screenCatalog",
       "associatedValues": [],
-      "doc": "Dev (routed to PlaceholderView in Release builds)",
+      "doc": "Dev (routed to UnavailableRouteView in Release builds)",
       "destinationView": "ScreenCatalogView",
       "destinationRaw": "ScreenCatalogView()",
       "viewFile": "Hexbound/Hexbound/Views/Dev/ScreenCatalogView.swift",
@@ -542,12 +506,6 @@
       "category": "Arena",
       "routes": []
     },
-    "AppearanceStepView": {
-      "name": "AppearanceStepView",
-      "path": "Hexbound/Hexbound/Views/Auth/AppearanceStepView.swift",
-      "category": "Auth",
-      "routes": []
-    },
     "AuthBackground": {
       "name": "AuthBackground",
       "path": "Hexbound/Hexbound/Views/Auth/AuthBackground.swift",
@@ -575,20 +533,56 @@
       "category": "Auth",
       "routes": []
     },
-    "ClassSelectionStepView": {
-      "name": "ClassSelectionStepView",
-      "path": "Hexbound/Hexbound/Views/Auth/ClassSelectionStepView.swift",
-      "category": "Auth",
-      "routes": []
-    },
     "EmailConfirmationView": {
       "name": "EmailConfirmationView",
       "path": "Hexbound/Hexbound/Views/Auth/EmailConfirmationView.swift",
       "category": "Auth",
       "routes": []
     },
+    "ForgeClassPanel": {
+      "name": "ForgeClassPanel",
+      "path": "Hexbound/Hexbound/Views/Auth/ForgeClassPanel.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeNamePanel": {
+      "name": "ForgeNamePanel",
+      "path": "Hexbound/Hexbound/Views/Auth/ForgeNamePanel.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeOriginPanel": {
+      "name": "ForgeOriginPanel",
+      "path": "Hexbound/Hexbound/Views/Auth/ForgeOriginPanel.swift",
+      "category": "Auth",
+      "routes": []
+    },
     "HeroForgeOverlayView": {
       "name": "HeroForgeOverlayView",
+      "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeCeremonyView": {
+      "name": "ForgeCeremonyView",
+      "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgingView": {
+      "name": "ForgingView",
+      "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeSparks": {
+      "name": "ForgeSparks",
+      "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeRevealView": {
+      "name": "ForgeRevealView",
       "path": "Hexbound/Hexbound/Views/Auth/HeroForgeOverlayView.swift",
       "category": "Auth",
       "routes": []
@@ -611,18 +605,6 @@
       "category": "Auth",
       "routes": []
     },
-    "NameStepView": {
-      "name": "NameStepView",
-      "path": "Hexbound/Hexbound/Views/Auth/NameStepView.swift",
-      "category": "Auth",
-      "routes": []
-    },
-    "EmberParticlesView": {
-      "name": "EmberParticlesView",
-      "path": "Hexbound/Hexbound/Views/Auth/NameStepView.swift",
-      "category": "Auth",
-      "routes": []
-    },
     "OnboardingCinematicView": {
       "name": "OnboardingCinematicView",
       "path": "Hexbound/Hexbound/Views/Auth/OnboardingCinematicView.swift",
@@ -636,6 +618,24 @@
       "routes": [
         "onboarding"
       ]
+    },
+    "ForgePortrait": {
+      "name": "ForgePortrait",
+      "path": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeBonusChip": {
+      "name": "ForgeBonusChip",
+      "path": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
+      "category": "Auth",
+      "routes": []
+    },
+    "ForgeChoiceTile": {
+      "name": "ForgeChoiceTile",
+      "path": "Hexbound/Hexbound/Views/Auth/OnboardingDetailView.swift",
+      "category": "Auth",
+      "routes": []
     },
     "RegisterDetailView": {
       "name": "RegisterDetailView",
@@ -713,6 +713,24 @@
       "category": "Combat",
       "routes": []
     },
+    "CollapsibleRoundBlock": {
+      "name": "CollapsibleRoundBlock",
+      "path": "Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "VerdictHeadline": {
+      "name": "VerdictHeadline",
+      "path": "Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "BattleStatsHeader": {
+      "name": "BattleStatsHeader",
+      "path": "Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift",
+      "category": "Combat",
+      "routes": []
+    },
     "CombatDetailView": {
       "name": "CombatDetailView",
       "path": "Hexbound/Hexbound/Views/Combat/CombatDetailView.swift",
@@ -741,6 +759,60 @@
         "combatResult"
       ]
     },
+    "DiceBattleView": {
+      "name": "DiceBattleView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceTableView": {
+      "name": "DiceTableView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceChipView": {
+      "name": "DiceChipView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "FocusPipsView": {
+      "name": "FocusPipsView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceFightButton": {
+      "name": "DiceFightButton",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceBannerView": {
+      "name": "DiceBannerView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceActionSheet": {
+      "name": "DiceActionSheet",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "BossKillOverlay": {
+      "name": "BossKillOverlay",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "DiceDieView": {
+      "name": "DiceDieView",
+      "path": "Hexbound/Hexbound/Views/Combat/Dice/DiceDieView.swift",
+      "category": "Combat",
+      "routes": []
+    },
     "InteractiveBattleView": {
       "name": "InteractiveBattleView",
       "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
@@ -759,6 +831,18 @@
       "category": "Combat",
       "routes": []
     },
+    "SkipButtonWithTooltip": {
+      "name": "SkipButtonWithTooltip",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ZoneTileButton": {
+      "name": "ZoneTileButton",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
     "InteractiveBattleRouteView": {
       "name": "InteractiveBattleRouteView",
       "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
@@ -766,6 +850,42 @@
       "routes": [
         "interactiveBattle"
       ]
+    },
+    "ConnectingPillStrip": {
+      "name": "ConnectingPillStrip",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "AvatarSkeletonFill": {
+      "name": "AvatarSkeletonFill",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "SideLabelRibbon": {
+      "name": "SideLabelRibbon",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "BodySilhouetteView": {
+      "name": "BodySilhouetteView",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "InteractiveMicroLogView": {
+      "name": "InteractiveMicroLogView",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "MicroLogRow": {
+      "name": "MicroLogRow",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveBattleView.swift",
+      "category": "Combat",
+      "routes": []
     },
     "StanceOverlay": {
       "name": "StanceOverlay",
@@ -797,6 +917,12 @@
       "category": "Combat",
       "routes": []
     },
+    "CombatInfoTooltipContent": {
+      "name": "CombatInfoTooltipContent",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
+      "category": "Combat",
+      "routes": []
+    },
     "StanceBonusChipStack": {
       "name": "StanceBonusChipStack",
       "path": "Hexbound/Hexbound/Views/Combat/InteractiveCombatComponents.swift",
@@ -805,6 +931,24 @@
     },
     "InteractiveRoundLogCard": {
       "name": "InteractiveRoundLogCard",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "RoundVerdictHeader": {
+      "name": "RoundVerdictHeader",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ClashStripRow": {
+      "name": "ClashStripRow",
+      "path": "Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "ZoneChip": {
+      "name": "ZoneChip",
       "path": "Hexbound/Hexbound/Views/Combat/InteractiveRoundLogCard.swift",
       "category": "Combat",
       "routes": []
@@ -835,9 +979,21 @@
       "category": "Combat",
       "routes": []
     },
+    "CombatCalloutText": {
+      "name": "CombatCalloutText",
+      "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatFXImageOverlay.swift",
+      "category": "Combat",
+      "routes": []
+    },
     "CombatVFXOverlay": {
       "name": "CombatVFXOverlay",
       "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatVFXOverlay.swift",
+      "category": "Combat",
+      "routes": []
+    },
+    "CombatVerdictFlash": {
+      "name": "CombatVerdictFlash",
+      "path": "Hexbound/Hexbound/Views/Combat/VFX/CombatVerdictFlash.swift",
       "category": "Combat",
       "routes": []
     },
@@ -850,6 +1006,18 @@
     "ActiveQuestBanner": {
       "name": "ActiveQuestBanner",
       "path": "Hexbound/Hexbound/Views/Components/ActiveQuestBanner.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "ActiveSlotTile": {
+      "name": "ActiveSlotTile",
+      "path": "Hexbound/Hexbound/Views/Components/ActiveSlotTile.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "AmbientStormView": {
+      "name": "AmbientStormView",
+      "path": "Hexbound/Hexbound/Views/Components/AmbientStormView.swift",
       "category": "Components",
       "routes": []
     },
@@ -874,6 +1042,18 @@
     "SpinningRaysView": {
       "name": "SpinningRaysView",
       "path": "Hexbound/Hexbound/Views/Components/BattleResultModels.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "BossRevealOverlayView": {
+      "name": "BossRevealOverlayView",
+      "path": "Hexbound/Hexbound/Views/Components/BossRevealOverlayView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "LetterDropText": {
+      "name": "LetterDropText",
+      "path": "Hexbound/Hexbound/Views/Components/BossRevealOverlayView.swift",
       "category": "Components",
       "routes": []
     },
@@ -973,6 +1153,30 @@
       "category": "Components",
       "routes": []
     },
+    "EmptyStateArt": {
+      "name": "EmptyStateArt",
+      "path": "Hexbound/Hexbound/Views/Components/EmptyStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EmptyStateScene": {
+      "name": "EmptyStateScene",
+      "path": "Hexbound/Hexbound/Views/Components/EmptyStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EmptyStateHeader": {
+      "name": "EmptyStateHeader",
+      "path": "Hexbound/Hexbound/Views/Components/EmptyStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
+    "EmptyStateSteps": {
+      "name": "EmptyStateSteps",
+      "path": "Hexbound/Hexbound/Views/Components/EmptyStateView.swift",
+      "category": "Components",
+      "routes": []
+    },
     "EquippedBadge": {
       "name": "EquippedBadge",
       "path": "Hexbound/Hexbound/Views/Components/EquippedBadge.swift",
@@ -991,6 +1195,12 @@
       "category": "Components",
       "routes": []
     },
+    "GameModal": {
+      "name": "GameModal",
+      "path": "Hexbound/Hexbound/Views/Components/GameModal.swift",
+      "category": "Components",
+      "routes": []
+    },
     "GlassStatPill": {
       "name": "GlassStatPill",
       "path": "Hexbound/Hexbound/Views/Components/GlassStatPill.swift",
@@ -1000,12 +1210,6 @@
     "GuestGateCTA": {
       "name": "GuestGateCTA",
       "path": "Hexbound/Hexbound/Views/Components/GuestGateCTA.swift",
-      "category": "Components",
-      "routes": []
-    },
-    "GuestGateView": {
-      "name": "GuestGateView",
-      "path": "Hexbound/Hexbound/Views/Components/GuestGateView.swift",
       "category": "Components",
       "routes": []
     },
@@ -1433,20 +1637,26 @@
       "category": "Dungeon",
       "routes": []
     },
-    "DiamondLoadingDot": {
-      "name": "DiamondLoadingDot",
-      "path": "Hexbound/Hexbound/Views/Dungeon/BossDetailSheet.swift",
-      "category": "Dungeon",
-      "routes": []
-    },
-    "DungeonBossCard": {
-      "name": "DungeonBossCard",
+    "BossArtImage": {
+      "name": "BossArtImage",
       "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
       "category": "Dungeon",
       "routes": []
     },
-    "StageBadge": {
-      "name": "StageBadge",
+    "BossStageArt": {
+      "name": "BossStageArt",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "BossMedallion": {
+      "name": "BossMedallion",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
+    "BossPathRow": {
+      "name": "BossPathRow",
       "path": "Hexbound/Hexbound/Views/Dungeon/DungeonBossCard.swift",
       "category": "Dungeon",
       "routes": []
@@ -1499,6 +1709,12 @@
         "dungeonRoom"
       ]
     },
+    "BossIntroOverlay": {
+      "name": "BossIntroOverlay",
+      "path": "Hexbound/Hexbound/Views/Dungeon/DungeonRoomDetailView.swift",
+      "category": "Dungeon",
+      "routes": []
+    },
     "DungeonSelectDetailView": {
       "name": "DungeonSelectDetailView",
       "path": "Hexbound/Hexbound/Views/Dungeon/DungeonSelectDetailView.swift",
@@ -1527,6 +1743,24 @@
         "buyStatPoints"
       ]
     },
+    "DiceSummaryButton": {
+      "name": "DiceSummaryButton",
+      "path": "Hexbound/Hexbound/Views/Hero/Dice/DiceSummaryButton.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "DiceTabView": {
+      "name": "DiceTabView",
+      "path": "Hexbound/Hexbound/Views/Hero/Dice/DiceTabView.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "RunePickerOverlay": {
+      "name": "RunePickerOverlay",
+      "path": "Hexbound/Hexbound/Views/Hero/Dice/DiceTabView.swift",
+      "category": "Hero",
+      "routes": []
+    },
     "HeroDetailView": {
       "name": "HeroDetailView",
       "path": "Hexbound/Hexbound/Views/Hero/HeroDetailView.swift",
@@ -1547,12 +1781,6 @@
       "category": "Hero",
       "routes": []
     },
-    "ActiveSlotsBar": {
-      "name": "ActiveSlotsBar",
-      "path": "Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift",
-      "category": "Hero",
-      "routes": []
-    },
     "TalentDetailSheet": {
       "name": "TalentDetailSheet",
       "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift",
@@ -1568,6 +1796,18 @@
     "TalentTreeCanvas": {
       "name": "TalentTreeCanvas",
       "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentTreeCanvas.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "GridLinesOverlay": {
+      "name": "GridLinesOverlay",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentTreeCanvas.swift",
+      "category": "Hero",
+      "routes": []
+    },
+    "TalentsSummaryCard": {
+      "name": "TalentsSummaryCard",
+      "path": "Hexbound/Hexbound/Views/Hero/Talents/TalentsSummaryCard.swift",
       "category": "Hero",
       "routes": []
     },
@@ -1887,25 +2127,283 @@
         "leaderboard"
       ]
     },
-    "LeaderboardPlayerDetailSheet": {
-      "name": "LeaderboardPlayerDetailSheet",
-      "path": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardPlayerDetailSheet.swift",
-      "category": "Leaderboard",
-      "routes": []
-    },
     "LeaderboardRowView": {
       "name": "LeaderboardRowView",
       "path": "Hexbound/Hexbound/Views/Leaderboard/LeaderboardRowView.swift",
       "category": "Leaderboard",
       "routes": []
     },
-    "DungeonRushDetailView": {
-      "name": "DungeonRushDetailView",
-      "path": "Hexbound/Hexbound/Views/Minigames/DungeonRushDetailView.swift",
+    "DescentDetailView": {
+      "name": "DescentDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentDetailView.swift",
       "category": "Minigames",
       "routes": [
         "dungeonRush"
       ]
+    },
+    "DescentPlainHeader": {
+      "name": "DescentPlainHeader",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentDetailView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentIntroView": {
+      "name": "DescentIntroView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentDetailView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentRunView": {
+      "name": "DescentRunView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentDetailView.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentForkScene": {
+      "name": "DescentForkScene",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentForkScene.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentDoorFX": {
+      "name": "DescentDoorFX",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentForkScene.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentHUD": {
+      "name": "DescentHUD",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentHUD.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentHeroHPBar": {
+      "name": "DescentHeroHPBar",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentHUD.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentProgressDots": {
+      "name": "DescentProgressDots",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentHUD.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentPanel": {
+      "name": "DescentPanel",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentChoiceRow": {
+      "name": "DescentChoiceRow",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentRowIcon": {
+      "name": "DescentRowIcon",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentDarkGlyph": {
+      "name": "DescentDarkGlyph",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentLootRow": {
+      "name": "DescentLootRow",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentItemIcon": {
+      "name": "DescentItemIcon",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentDiceTray": {
+      "name": "DescentDiceTray",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentVerdict": {
+      "name": "DescentVerdict",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentItemsList": {
+      "name": "DescentItemsList",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentSummaryBox": {
+      "name": "DescentSummaryBox",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentValueLine": {
+      "name": "DescentValueLine",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentPanels.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentCombatStage": {
+      "name": "DescentCombatStage",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentEnemyHPBar": {
+      "name": "DescentEnemyHPBar",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentTraitChips": {
+      "name": "DescentTraitChips",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentTitleCard": {
+      "name": "DescentTitleCard",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentChestStage": {
+      "name": "DescentChestStage",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentChestRays": {
+      "name": "DescentChestRays",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentEventStage": {
+      "name": "DescentEventStage",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentCampStage": {
+      "name": "DescentCampStage",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentMerchantStage": {
+      "name": "DescentMerchantStage",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRoomScenes.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentRunPanel": {
+      "name": "DescentRunPanel",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentRunPanel.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentMapSheet": {
+      "name": "DescentMapSheet",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentSheets.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentMapRoutes": {
+      "name": "DescentMapRoutes",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentSheets.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentMapToken": {
+      "name": "DescentMapToken",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentSheets.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentBagSheet": {
+      "name": "DescentBagSheet",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentSheets.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentBackdrop": {
+      "name": "DescentBackdrop",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentVignette": {
+      "name": "DescentVignette",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentTorchGlow": {
+      "name": "DescentTorchGlow",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentParticleLayer": {
+      "name": "DescentParticleLayer",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentFloaterView": {
+      "name": "DescentFloaterView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentFloatersLayer": {
+      "name": "DescentFloatersLayer",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentCoinRain": {
+      "name": "DescentCoinRain",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentBanner": {
+      "name": "DescentBanner",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentFlashLayer": {
+      "name": "DescentFlashLayer",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentStage.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DescentTale": {
+      "name": "DescentTale",
+      "path": "Hexbound/Hexbound/Views/Minigames/DescentText.swift",
+      "category": "Minigames",
+      "routes": []
+    },
+    "DungeonRushDetailView": {
+      "name": "DungeonRushDetailView",
+      "path": "Hexbound/Hexbound/Views/Minigames/DungeonRushDetailView.swift",
+      "category": "Minigames",
+      "routes": []
     },
     "FortuneWheelDetailView": {
       "name": "FortuneWheelDetailView",
@@ -2037,6 +2535,12 @@
       "category": "Minigames",
       "routes": []
     },
+    "MinigameResultModal": {
+      "name": "MinigameResultModal",
+      "path": "Hexbound/Hexbound/Views/Minigames/MinigameResultModal.swift",
+      "category": "Minigames",
+      "routes": []
+    },
     "ShellGameDetailView": {
       "name": "ShellGameDetailView",
       "path": "Hexbound/Hexbound/Views/Minigames/ShellGameDetailView.swift",
@@ -2060,12 +2564,6 @@
       "routes": [
         "tavern"
       ]
-    },
-    "TavernGameCard": {
-      "name": "TavernGameCard",
-      "path": "Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift",
-      "category": "Minigames",
-      "routes": []
     },
     "TreasureRewardOverlay": {
       "name": "TreasureRewardOverlay",
@@ -2135,21 +2633,131 @@
         "settings"
       ]
     },
+    "BlackMarketDetailView": {
+      "name": "BlackMarketDetailView",
+      "path": "Hexbound/Hexbound/Views/Shop/BlackMarketDetailView.swift",
+      "category": "Shop",
+      "routes": [
+        "blackMarket"
+      ]
+    },
     "ContrabandWidget": {
       "name": "ContrabandWidget",
       "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
       "category": "Shop",
       "routes": []
     },
-    "CooldownCard": {
-      "name": "CooldownCard",
+    "CrateCard": {
+      "name": "CrateCard",
       "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
       "category": "Shop",
       "routes": []
     },
-    "AvailableCard": {
-      "name": "AvailableCard",
+    "CrateTitle": {
+      "name": "CrateTitle",
       "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "CrateSlot": {
+      "name": "CrateSlot",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "SealedSlot": {
+      "name": "SealedSlot",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "CooldownCrate": {
+      "name": "CooldownCrate",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "AvailableCrate": {
+      "name": "AvailableCrate",
+      "path": "Hexbound/Hexbound/Views/Shop/ContrabandWidget.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "StarterBundleCard": {
+      "name": "StarterBundleCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "BundleOfferCard": {
+      "name": "BundleOfferCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "GemPackTile": {
+      "name": "GemPackTile",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "GemPackWideCard": {
+      "name": "GemPackWideCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "GemAmountLabel": {
+      "name": "GemAmountLabel",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "MonthlyGemCardOffer": {
+      "name": "MonthlyGemCardOffer",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PremiumUnlockCard": {
+      "name": "PremiumUnlockCard",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "OfferRibbon": {
+      "name": "OfferRibbon",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "BonusPill": {
+      "name": "BonusPill",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PriceButtonLabel": {
+      "name": "PriceButtonLabel",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "PackageRewardRow": {
+      "name": "PackageRewardRow",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "RewardIcon": {
+      "name": "RewardIcon",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "OfferFeatureRow": {
+      "name": "OfferFeatureRow",
+      "path": "Hexbound/Hexbound/Views/Shop/CurrencyOfferCards.swift",
       "category": "Shop",
       "routes": []
     },
@@ -2160,30 +2768,6 @@
       "routes": [
         "currencyPurchase"
       ]
-    },
-    "CurrencyPackageCard": {
-      "name": "CurrencyPackageCard",
-      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
-      "category": "Shop",
-      "routes": []
-    },
-    "MonthlyGemCardOffer": {
-      "name": "MonthlyGemCardOffer",
-      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
-      "category": "Shop",
-      "routes": []
-    },
-    "PremiumUnlockCard": {
-      "name": "PremiumUnlockCard",
-      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
-      "category": "Shop",
-      "routes": []
-    },
-    "PremiumBenefitChip": {
-      "name": "PremiumBenefitChip",
-      "path": "Hexbound/Hexbound/Views/Shop/CurrencyPurchaseView.swift",
-      "category": "Shop",
-      "routes": []
     },
     "MerchantStripView": {
       "name": "MerchantStripView",
@@ -2217,6 +2801,12 @@
       "category": "Shop",
       "routes": []
     },
+    "PurchaseRewardRevealView": {
+      "name": "PurchaseRewardRevealView",
+      "path": "Hexbound/Hexbound/Views/Shop/PurchaseRewardRevealView.swift",
+      "category": "Shop",
+      "routes": []
+    },
     "ShopDetailView": {
       "name": "ShopDetailView",
       "path": "Hexbound/Hexbound/Views/Shop/ShopDetailView.swift",
@@ -2234,6 +2824,24 @@
     "OfferCard": {
       "name": "OfferCard",
       "path": "Hexbound/Hexbound/Views/Shop/ShopOfferBannerView.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "ShopkeeperHeader": {
+      "name": "ShopkeeperHeader",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopkeeperHeader.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "ShopCounterBackground": {
+      "name": "ShopCounterBackground",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopkeeperHeader.swift",
+      "category": "Shop",
+      "routes": []
+    },
+    "ShopRoomScrim": {
+      "name": "ShopRoomScrim",
+      "path": "Hexbound/Hexbound/Views/Shop/ShopkeeperHeader.swift",
       "category": "Shop",
       "routes": []
     },
