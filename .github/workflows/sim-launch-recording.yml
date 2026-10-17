@@ -72,15 +72,24 @@ jobs:
           wait $REC || true
           ls -la sim-recording
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sim-launch-recording
-          path: sim-recording
+      - name: Shrink for git (frames as 900px JPEG, video as 720px MP4)
+        run: |
+          cd sim-recording
+          for f in *.png; do
+            sips -Z 900 -s format jpeg -s formatOptions 80 "$f" --out "${f%.png}.jpg" >/dev/null
+          done
+          rm -f *.png
+          if HOMEBREW_NO_AUTO_UPDATE=1 timeout 300 brew install ffmpeg >/dev/null 2>&1; then
+            ffmpeg -y -loglevel error -i launch.mov -vf "scale=720:-2,fps=30" -c:v libx264 -crf 24 -movflags +faststart launch.mp4 || true
+          fi
+          rm -f launch.mov
+          ls -la
 
-      - name: Commit the recording back to this branch
+      - name: Commit the recording to claude/sim-record-out
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add sim-recording
+          git checkout -b sim-out
+          git add -f sim-recording
           git commit -m "chore: simulator launch recording [skip ci]"
-          git push origin HEAD:claude/sim-record
+          git push --force origin HEAD:refs/heads/claude/sim-record-out
