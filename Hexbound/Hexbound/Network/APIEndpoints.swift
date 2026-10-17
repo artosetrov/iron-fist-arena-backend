@@ -124,7 +124,6 @@ enum APIEndpoints {
     static let goldMineStart = "/api/minigames/gold-mine/start"
     static let goldMineCollect = "/api/minigames/gold-mine/collect"
     static let goldMineCollectAll = "/api/minigames/gold-mine/collect-all"
-    static let goldMineMinigameBonus = "/api/minigames/gold-mine/minigame-bonus"
     static let goldMineSlotMinigameStart = "/api/minigames/gold-mine/slot-minigame/start"
     static let goldMineSlotMinigameSubmit = "/api/minigames/gold-mine/slot-minigame/submit"
     static let goldMineBoost = "/api/minigames/gold-mine/boost"

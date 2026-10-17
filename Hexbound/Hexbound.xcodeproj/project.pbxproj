@@ -218,7 +218,7 @@
 		5ADC7B9218A59B43FA02BDD6 /* DungeonVictoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA2027B3B20C90225EFF37A /* DungeonVictoryView.swift */; };
 		5AEE25CDB3EB663E6C1B6E25 /* combat_heal.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8870F2B4BB738AA326CE4191 /* combat_heal.wav */; };
 		5B12A3B11591C9CFD306F677 /* amb_wind_heavy.wav in Resources */ = {isa = PBXBuildFile; fileRef = DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */; };
-		5B34EB72B2B1DF29098C8BE5 /* MineResourceHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC572483AAC29065E209C11 /* MineResourceHeader.swift */; };
+		5B34EB72B2B1DF29098C8BE5 /* MineSurfaceHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC572483AAC29065E209C11 /* MineSurfaceHeader.swift */; };
 		5BC928C81D0340FC41D672B6 /* combat_poison.wav in Resources */ = {isa = PBXBuildFile; fileRef = 617D20AE2BD67288A78E6428 /* combat_poison.wav */; };
 		5C07895F3A98E7280ED2A2C1 /* OnboardingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C413E383C1949E4D72157CC2 /* OnboardingDetailView.swift */; };
 		5CDB7F228B18CA5E9E96354C /* hit_physical_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = FB76268FE3EAE8F2A5BA7103 /* hit_physical_5.wav */; };
@@ -235,7 +235,7 @@
 		6091E937E7F1F33537B64CE7 /* epic_horn_fanfare.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1B9EE2BC2C07F4AA579C05CB /* epic_horn_fanfare.wav */; };
 		60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB9FFFE4B66FE8540FBEA77 /* ItemImageView.swift */; };
 		60F93B00C28E9DCE86E107CB /* combat_special.wav in Resources */ = {isa = PBXBuildFile; fileRef = 624D779A60B9B2C24937481E /* combat_special.wav */; };
-		619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */; };
+		619857d0b35ae05c7bb458d4 /* GoldMineTunnelSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7fef1d006041a00fbf98fdc7 /* GoldMineTunnelSheet.swift */; };
 		62CDBA6CE116AF4D039246CF /* ui_level_up.wav in Resources */ = {isa = PBXBuildFile; fileRef = 74EFBF2CDF5C93D5C559BBCC /* ui_level_up.wav */; };
 		62FEA27AAF660B5EE5FB2270 /* combat_shield_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 72EA4C895475B605C383CFF6 /* combat_shield_4.wav */; };
 		64A83FB5F17CB1C62574F4D2 /* combat_poison_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 749DEEB03F6692260E1D3C34 /* combat_poison_3.wav */; };
@@ -813,7 +813,7 @@
 		7F47C02A1E8000971C47A7C2 /* DungeonRushGameOver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushGameOver.swift; sourceTree = "<group>"; };
 		7F47C02A1E8000971C47A7C3 /* DungeonRushRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushRoomView.swift; sourceTree = "<group>"; };
 		7F47C02A1E8000971C47A7C4 /* DungeonRushStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushStartView.swift; sourceTree = "<group>"; };
-		7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineShaftPicker.swift; sourceTree = "<group>"; };
+		7fef1d006041a00fbf98fdc7 /* GoldMineTunnelSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineTunnelSheet.swift; sourceTree = "<group>"; };
 		80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_2.wav; sourceTree = "<group>"; };
 		80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsDetailView.swift; sourceTree = "<group>"; };
 		81E2A337A1B2C3D4E5F6A7B8 /* HubBannerCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubBannerCards.swift; sourceTree = "<group>"; };
@@ -838,7 +838,7 @@
 		8A9B0C1D2E3F4A5B6C7D8E9F /* SessionExpiredModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExpiredModalView.swift; sourceTree = "<group>"; };
 		8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerModifier.swift; sourceTree = "<group>"; };
 		8C776DC088952BD8D62F5E7F /* hit_magical_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical_3.wav; sourceTree = "<group>"; };
-		8CC572483AAC29065E209C11 /* MineResourceHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineResourceHeader.swift; sourceTree = "<group>"; };
+		8CC572483AAC29065E209C11 /* MineSurfaceHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineSurfaceHeader.swift; sourceTree = "<group>"; };
 		8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashDetailView.swift; sourceTree = "<group>"; };
 		02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameResultModal.swift; sourceTree = "<group>"; };
 		8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue_2.wav; sourceTree = "<group>"; };
@@ -1819,9 +1819,9 @@
 				aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */,
 				D43759730CC2C390E6A007B5 /* MinigameCatchEffect.swift */,
 				E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */,
-				7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */,
+				7fef1d006041a00fbf98fdc7 /* GoldMineTunnelSheet.swift */,
 				A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */,
-				8CC572483AAC29065E209C11 /* MineResourceHeader.swift */,
+				8CC572483AAC29065E209C11 /* MineSurfaceHeader.swift */,
 				8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */,
 				C8812C4317B938859A4087AC /* ShellGameViewModel.swift */,
 				8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */,
@@ -2584,10 +2584,10 @@
 				eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */,
 				79EA9F1ECA2690A1911B93D9 /* MinigameCatchEffect.swift in Sources */,
 				3E60956EDA12F1B8ED3966F6 /* MineClaimRewardView.swift in Sources */,
-				619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */,
+				619857d0b35ae05c7bb458d4 /* GoldMineTunnelSheet.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
 				db9eec8a3007055fe1a5d459 /* MinigameSession.swift in Sources */,
-				5B34EB72B2B1DF29098C8BE5 /* MineResourceHeader.swift in Sources */,
+				5B34EB72B2B1DF29098C8BE5 /* MineSurfaceHeader.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C50 /* GuildHallAlliesTab.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C52 /* GuildHallDuelsTab.swift in Sources */,

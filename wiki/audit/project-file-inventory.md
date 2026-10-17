@@ -3758,10 +3758,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift
 - Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift
 - Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift
-- Hexbound/Hexbound/Views/Minigames/GoldMineShaftPicker.swift
+- Hexbound/Hexbound/Views/Minigames/GoldMineTunnelSheet.swift
 - Hexbound/Hexbound/Views/Minigames/GoldMineViewModel.swift
 - Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift
-- Hexbound/Hexbound/Views/Minigames/MineResourceHeader.swift
+- Hexbound/Hexbound/Views/Minigames/MineSurfaceHeader.swift
 - Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift
 - Hexbound/Hexbound/Views/Minigames/ShellGameDetailView.swift
 - Hexbound/Hexbound/Views/Minigames/ShellGameViewModel.swift

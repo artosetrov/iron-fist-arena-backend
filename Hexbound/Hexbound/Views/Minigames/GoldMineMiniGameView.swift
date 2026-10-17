@@ -370,7 +370,7 @@ struct GoldMineMiniGameView: View {
             }
             Button("Keep playing", role: .cancel) {}
         } message: {
-            Text("Your passive gold is already credited. You'll lose only the bonus.")
+            Text("The bonus run is optional — your cart's gold stays safe. You only give up the bonus.")
         }
     }
 

@@ -9,7 +9,8 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 ## Status
 
 - **Phase:** In production
-- **Last major change:** 2026-04-11 — Gold Mine schema migration incident (fields added without migration file → prod 500s; fixed via Supabase MCP)
+- **Last major change:** 2026-10-16 — screen rework (surface + foreman, expedition chest track, tunnel levels with a cart on rails, tunnel sheet); bonus round optional; expedition chest (5 carts); no shaft picker; `economy` block on `/status`
+- **Earlier:** 2026-04-11 — Gold Mine schema migration incident (fields added without migration file → prod 500s; fixed via Supabase MCP)
 - **Owner / last hands:** Artem
 
 ## Entry points
@@ -34,7 +35,8 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 ### Business logic
 
 - `backend/src/lib/game/gold-mine.ts` — shaft accrual, slot cost/yield, minigame reward calc
-- `backend/src/lib/game/shaft-catalog.ts` — shaft tiers, prices, rates
+- `backend/src/lib/game/gold-mine-expedition.ts` — expedition track: one haul per collected cart, chest at 5 (`EXPEDITION_CHEST_GOLD/GEMS`), next expedition auto-starts
+- `backend/src/lib/game/shaft-catalog.ts` — shaft tiers (bonus-round backdrops), bonus-round cap/gem terms
 - `backend/src/lib/game/balance.ts` — GOLD_MINE_* constants (rates, caps, cooldowns)
 
 ### Prisma models touched
@@ -53,24 +55,27 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ### Views
 
-- `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift` — main screen, slot grid, collect buttons, embeds `MineSlotCard` / `LockedMineCard` / `miningOutputCard`
-- `Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift` — tap minigame overlay
-- `Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift` — reward ceremony modal for collect-all and slot-bonus payouts
-- `Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift` — card components for the detail screen
-- `Hexbound/Hexbound/Views/Minigames/MineResourceHeader.swift` — top-of-screen gold/gems bar
+- `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift` — main screen: surface, ground beam, expedition track, shaft of tunnel levels, sticky Collect All bar
+- `Hexbound/Hexbound/Views/Minigames/MineSurfaceHeader.swift` — gold/gems, head-frame art, Mine Foreman (`npc-mine`) with a live status line; tap him for economy tips
+- `Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift` — `MineTunnelLevel` (art + state pill + cart on code-drawn rails), `MineSealedLevel`, `MineExpeditionTrack`, ladder, badges, chips
+- `Hexbound/Hexbound/Views/Minigames/GoldMineTunnelSheet.swift` — tap a tunnel: haul range, optional bonus run, double haul, send / collect
+- `Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift` — tap minigame overlay (optional bonus run)
+- `Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift` — reward ceremony for Collect All, bonus run and the expedition chest (tap to open)
+- Assets: `Assets.xcassets/GoldMine/` (carts, chests, hourglass, bonus/boost/lock icons) — prompts in `docs/08_prompts/GOLD_MINE_ASSETS_PROMPTS.md`
 - `Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift` — particle burst on successful tap
 - `Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift` — sibling screen (Tavern uses same minigame chassis)
 
 ### ViewModels
 
-- `Hexbound/Hexbound/Views/Minigames/GoldMineViewModel.swift` — `@Observable` state: slots, accumulated gold, cooldown, minigame status
+- `Hexbound/Hexbound/Views/Minigames/GoldMineViewModel.swift` — `@Observable` state: slots, expedition, server `economy`, optimistic send/collect/boost/buy, foreman lines, payout refresh when a timer ends
 
 ### Reward surface
 
 - **Gold / gem payouts use the mine reward modal, not a toast.**
   - `collect-all` deltas and slot-minigame bonus payouts both flow through `GoldMineViewModel.claimReward`
   - `GoldMineDetailView` presents `MineClaimRewardView`
-  - structural toasts remain only for non-currency events like shaft prompts, boost failures, or slot unlock messaging
+  - a single-cart collect shows "+N" over its tunnel instead; the modal opens for it only when the cart fills the expedition chest
+  - structural toasts remain only for failures (send, collect, boost, tunnel purchase)
 
 ### Services
 
@@ -86,7 +91,7 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ### Cache
 
-- `GameDataCache.goldMineStatus` — last known mine state (used for instant UI on hub entry)
+- `GameDataCache.goldMineSlots` / `goldMineEconomy` / `goldMineExpedition` — last known mine state, prices and chest track (instant UI on entry)
 
 ## Admin
 

@@ -560,7 +560,7 @@ struct HubView: View {
     }
 
     /// Extract (ready, idle) slot counts from the cached gold-mine payload.
-    /// Matches the client-side logic in `GoldMineViewModel.slotStatus`:
+    /// Matches `GoldMineSlotResponse.resolvedStatus()` (the mine screen):
     /// a slot is "ready" if `status == ready` OR it's "mining" with an
     /// elapsed `ends_at` timestamp.
     private static func mineSlotCounts(

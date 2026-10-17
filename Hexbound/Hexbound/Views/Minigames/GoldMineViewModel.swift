@@ -1,11 +1,11 @@
 import SwiftUI
 
-private struct GoldMineCollectAllErrorPayload: Decodable {
-    let code: String
-    let slots: [GoldMineSlotResponse]?
-    let unplayedReadySlotIndices: [Int]?
-}
-
+/// Gold Mine screen state (2026-10-16 rework).
+///
+/// Server-authoritative: payouts, prices and expedition progress come from
+/// /status and the collect routes. On a tap the client only applies what it
+/// already knows (a full cart's revealed haul) and takes it back if the
+/// server refuses.
 @MainActor @Observable
 final class GoldMineViewModel {
     private let appState: AppState
@@ -14,547 +14,590 @@ final class GoldMineViewModel {
     var slots: [GoldMineSlotResponse] = []
     var maxSlots = 3
     var isLoading = false
-    var actionSlotId: String?
     var isBuyingSlot = false
-    private var activeActionSlots: Set<Int> = []  // prevents double-tap per slot
+    /// Tunnels with a send / collect / boost request in flight (Collect All
+    /// marks every cart it drains).
+    private(set) var busySlots: Set<Int> = []
 
-    // MARK: - Mini-game / Shaft state (Variant D)
+    /// The running expedition: every cart collected is one haul, the last
+    /// haul opens the chest. Always sent by current backends.
+    var expedition: ActiveShaft?
+    /// Prices, payout ranges and bonus-round terms from /status.
+    var economy: GoldMineEconomy?
 
-    /// Active expedition shaft, if any. Nil when the player must pick one.
-    var activeShaft: ActiveShaft?
-    /// Pending mini-game session. Variant D Phase 2: opened per slot via
-    /// `startSlotMinigame(slotIndex:)`. When non-nil the view presents
-    /// `GoldMineMiniGameView` as a fullScreenCover.
+    // MARK: Bonus round (optional coin rush)
+
+    /// Non-nil while the bonus round is on screen (fullScreenCover).
     var pendingMinigameSession: MinigameSessionInfo?
-    /// True while a /slot-minigame/start call is in flight — blocks the UI
-    /// from double-opening the bonus cover.
-    var isStartingSlotMinigame: Bool = false
-    /// Unlocked shaft keys, exposed so the picker sheet can filter rows.
-    var unlockedShafts: [ShaftKey] = []
-    /// True when the backend responded with `needs_shaft_pick` and the view
-    /// should present the picker sheet.
-    var showShaftPicker: Bool = false
-    /// Tracks which flow triggered the shaft picker so `pickShaft` can route
-    /// back to the correct function. When `nil`, defaults to collectAll.
-    private var shaftPickerSlotIndex: Int?
-    /// Set after /minigame-bonus responds with `shaft_completed: true`.
-    /// The view renders `ShaftClearedOverlay` while this is non-nil.
-    var clearedShaftKey: ShaftKey?
-    /// Prevents concurrent /collect-all calls.
-    var isCollectingAll: Bool = false
+    var isStartingSlotMinigame = false
 
-    // MARK: - Claim Reward Modal
-    /// When non-nil, the view presents the shared Gold Mine reward
-    /// celebration modal for collect and bonus-round payouts.
-    var claimReward: ClaimRewardData? {
-        didSet {
-            // A shaft cleared by the same collect waits for the reward modal
-            // to close instead of stacking under it.
-            if claimReward == nil, let key = pendingClearedShaftKey {
-                pendingClearedShaftKey = nil
-                clearedShaftKey = key
-            }
-        }
-    }
-    private var pendingClearedShaftKey: ShaftKey?
+    var isCollectingAll = false
 
-    /// When the last collect-all started. A /status answer requested before
-    /// that moment may predate the collect and is dropped.
-    private var lastCollectStartedAt: Date?
+    // MARK: Rewards
 
-    /// Whether collect-all would ask for a shaft pick: from /status (newer
-    /// backends) or the last collect. nil = unknown → collect pessimistically.
-    private var shaftPickNeeded: Bool?
+    /// Reward celebration: Collect All, an expedition chest or a bonus round.
+    var claimReward: ClaimRewardData?
+    /// Last single-cart payout — that tunnel shows "+86" for a moment.
+    var recentHaul: RecentHaul?
 
-    struct ClaimRewardData {
+    struct ClaimRewardData: Equatable {
+        enum Kind { case haul, bonus }
+        let kind: Kind
         let goldEarned: Int
         let gemsEarned: Int
+        let chest: GoldMineExpeditionChest?
     }
 
-    /// Current gold-mine slot level — proxied from `maxSlots` (the number of
-    /// slots the player has unlocked). Used by the picker sheet to label
-    /// locked rows. Server remains authoritative on actual shaft gating.
-    var goldMineSlots: Int { maxSlots }
-
-    /// Number of slots whose server-side status is "ready" (timer elapsed +
-    /// backend confirmed). Used to decide whether to show the Collect All CTA.
-    var readySlotsCount: Int {
-        slots.filter { slotStatus($0) == "ready" }.count
+    struct RecentHaul: Equatable {
+        let id = UUID()
+        let slotIndex: Int
+        let gold: Int
+        let gems: Int
     }
+
+    enum TunnelPhase { case idle, mining, ready }
+
+    /// Bumped when a mutating request starts and again when it ends. A
+    /// /status asked for under an older value may predate that change and is
+    /// dropped instead of reverting it.
+    private var mutationEpoch = 0
+    /// `ends_at` → when its finished timer last asked /status for the payout.
+    private var payoutRefreshes: [String: Date] = [:]
 
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
     }
 
-    // MARK: - Per-Slot Statistics (aggregated from backend)
-
-    /// Parsed stats per slot index. Populated on /status response.
-    struct SlotStats {
-        let totalGoldMined: Int
-        let sessionsCompleted: Int
-        let bestHaul: Int
-        let currentStreak: Int
-    }
-
-    /// Returns parsed stats for the given slot, or nil if not available.
-    func slotStats(at index: Int) -> SlotStats? {
-        guard index < slots.count else { return nil }
-        guard let stats = slots[index].stats else { return nil }
-        return SlotStats(
-            totalGoldMined: stats.totalGoldMined,
-            sessionsCompleted: stats.sessionsCompleted,
-            bestHaul: stats.bestHaul,
-            currentStreak: stats.currentStreak
-        )
-    }
-
-    // MARK: - Mine Names (canonical — docs/08_prompts/mine-card-prompts.md)
-
-    /// Thematic mine names per slot index. Used instead of "SLOT N" labels.
-    static let mineNames: [String] = [
-        "Amethyst Cavern",   // 0 — purple
-        "Emerald Vein",      // 1 — green
-        "Molten Forge",      // 2 — orange
-        "Frozen Depths",     // 3 — cyan/ice
-        "Blood Quarry",      // 4 — crimson
-        "King's Treasury"    // 5 — gold
-    ]
-
-    static func mineName(for index: Int) -> String {
-        guard index >= 0 && index < mineNames.count else { return "Mine \(index + 1)" }
-        return mineNames[index]
-    }
-
-    // MARK: - Mining Economics (mirrors backend/src/lib/game/gold-mine.ts)
-
-    /// Average gold reward per 4h session per slot (backend: 40–100, avg ~70).
-    static let averageGoldPerSession: Double = 70
-    /// Session duration in seconds (4 hours).
-    static let sessionDurationSec: Double = 4 * 3600
-    /// Average gold per second per actively mining slot (~0.00486).
-    static var goldPerSecondPerSlot: Double {
-        averageGoldPerSession / sessionDurationSec
-    }
-    /// Gem drop: 10% chance, 1–3 gems → average ~0.2 gems per session (~4h).
-    static var gemsPerSecondPerSlot: Double {
-        0.2 / sessionDurationSec
-    }
-
-    // MARK: - Live counters (visual-only, server remains authoritative)
-
-    /// Visual gold value for tick-up counter. Re-synced to server on every response.
-    var visualGold: Int = 0
-    /// Visual gems value for tick-up counter.
-    var visualGems: Int = 0
-    /// Fractional accumulator so slow rates (1 gold / 200s) can still tick integer coins.
-    private var goldAccumulator: Double = 0
-    private var gemAccumulator: Double = 0
+    // MARK: - Derived
 
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
 
-    /// Number of slots currently in "mining" status (not ready, not idle).
-    var miningSlotCount: Int {
-        slots.filter { slotStatus($0) == "mining" }.count
+    /// Slot by index, or an empty tunnel when the server has not listed it yet.
+    func slot(_ index: Int) -> GoldMineSlotResponse {
+        slots.first { $0.slotIndex == index } ?? .idle(index)
     }
 
-    /// Current gold per hour from active mining slots (for the rate label).
-    var currentGoldPerHour: Int {
-        Int(Double(miningSlotCount) * Self.goldPerSecondPerSlot * 3600)
-    }
-
-    /// Current gems per hour (fractional, so display as 0.0 precision).
-    var currentGemsPerHour: Double {
-        Double(miningSlotCount) * Self.gemsPerSecondPerSlot * 3600
-    }
-
-    /// Sync visual counters to server-authoritative values. Call after any API update.
-    func syncVisualCounters() {
-        visualGold = gold
-        visualGems = gems
-        goldAccumulator = 0
-        gemAccumulator = 0
-    }
-
-    /// Advance visual counters by one tick (called from a Timer in the view).
-    /// Returns a `LiveTickDelta` describing how many coins/gems "arrived" this tick
-    /// so the view can schedule fly-particles from each active slot.
-    func advanceLiveTick(elapsedSec: Double) -> LiveTickDelta {
-        let activeCount = miningSlotCount
-        guard activeCount > 0 else { return LiveTickDelta(coinsPerSlot: 0, gems: 0) }
-
-        let goldPerSec = Double(activeCount) * Self.goldPerSecondPerSlot
-        goldAccumulator += goldPerSec * elapsedSec
-
-        let gemPerSec = Double(activeCount) * Self.gemsPerSecondPerSlot
-        gemAccumulator += gemPerSec * elapsedSec
-
-        // Cap visual counter against server ceiling (never show more than real).
-        let maxVisualGold = gold
-        let maxVisualGems = gems
-
-        var coinsEmittedPerSlot = 0
-        if goldAccumulator >= 1.0 {
-            let coinsTotal = Int(goldAccumulator.rounded(.down))
-            goldAccumulator -= Double(coinsTotal)
-            // Split across slots (coin flies from each active mine).
-            coinsEmittedPerSlot = max(1, coinsTotal / max(1, activeCount))
-            visualGold = min(maxVisualGold, visualGold + coinsTotal)
+    func phase(_ index: Int, now: Date = Date()) -> TunnelPhase {
+        switch slot(index).resolvedStatus(now: now) {
+        case .idle: return .idle
+        case .mining: return .mining
+        case .ready: return .ready
         }
-
-        var gemsEmitted = 0
-        if gemAccumulator >= 1.0 {
-            gemsEmitted = Int(gemAccumulator.rounded(.down))
-            gemAccumulator -= Double(gemsEmitted)
-            visualGems = min(maxVisualGems, visualGems + gemsEmitted)
-        }
-
-        return LiveTickDelta(coinsPerSlot: coinsEmittedPerSlot, gems: gemsEmitted)
     }
 
-    struct LiveTickDelta {
-        let coinsPerSlot: Int
-        let gems: Int
+    func isBusy(_ index: Int) -> Bool { busySlots.contains(index) }
+
+    var readyIndices: [Int] { (0..<maxSlots).filter { phase($0) == .ready } }
+    var readyCount: Int { readyIndices.count }
+    /// Gold in the full carts the server has already revealed.
+    var readyGold: Int { readyIndices.reduce(0) { $0 + (slot($1).reward ?? 0) } }
+    var readyGems: Int { readyIndices.reduce(0) { $0 + (slot($1).gemReward ?? 0) } }
+
+    /// Gem price of a double haul; nil until the server has told us.
+    var boostCost: Int? { economy?.boostCostGems ?? cache.gameConfig?.goldMineBoostGems }
+    /// How many times a boosted cart pays; nil until the server has told us.
+    var boostMultiplier: Int? { economy?.boostMultiplier }
+    /// Gem price of the next tunnel; nil until the server has told us.
+    var slotCost: Int? { economy?.slotCostGems ?? cache.gameConfig?.goldMineSlotCostGems }
+    /// Most tunnels a mine can have (server cap). Unknown → no sealed tunnel shown.
+    var slotLimit: Int { economy?.slotLimit ?? maxSlots }
+    var canOpenTunnel: Bool { maxSlots < slotLimit }
+
+    static let mineNames: [String] = [
+        "Amethyst Cavern", "Emerald Vein", "Molten Forge",
+        "Frozen Depths", "Blood Quarry", "King's Treasury"
+    ]
+
+    static func mineName(for index: Int) -> String {
+        index >= 0 && index < mineNames.count ? mineNames[index] : "Tunnel \(index + 1)"
+    }
+
+    // MARK: - Time
+
+    func timeLeft(_ index: Int, now: Date = Date()) -> TimeInterval? {
+        guard let end = slot(index).endDate else { return nil }
+        return max(0, end.timeIntervalSince(now))
+    }
+
+    /// 0 = cart just left, 1 = cart is up.
+    func progress(_ index: Int, now: Date = Date()) -> Double {
+        let s = slot(index)
+        guard let start = s.startDate, let end = s.endDate else { return 0 }
+        let total = end.timeIntervalSince(start)
+        guard total > 0 else { return 1 }
+        return min(max(now.timeIntervalSince(start) / total, 0), 1)
+    }
+
+    /// "3h 05m", "12m", "45s".
+    static func clock(_ seconds: TimeInterval) -> String {
+        let s = Int(seconds.rounded(.up))
+        if s >= 3600 {
+            let minutes = (s % 3600) / 60
+            return "\(s / 3600)h \(minutes < 10 ? "0" : "")\(minutes)m"
+        }
+        if s >= 60 { return "\(Int((Double(s) / 60).rounded(.up)))m" }
+        return "\(max(s, 0))s"
+    }
+
+    /// "4 hours" from the server's run length.
+    var runLengthLabel: String? {
+        guard let hours = economy?.runHours else { return nil }
+        let value = hours.formatted(.number.precision(.fractionLength(0...1)))
+        return hours == 1 ? "\(value) hour" : "\(value) hours"
+    }
+
+    /// Called every second by the screen. When a cart's timer runs out the
+    /// server already knows its haul, so ask /status for it (again at most
+    /// every 15 s if the server still says "mining").
+    func tick(now: Date) {
+        for s in slots where s.status == .mining {
+            guard let raw = s.endsAt, let end = s.endDate, end <= now else { continue }
+            if let last = payoutRefreshes[raw], now.timeIntervalSince(last) < 15 { continue }
+            payoutRefreshes[raw] = now
+            Task { await loadStatus() }
+            return
+        }
+    }
+
+    // MARK: - Foreman
+
+    /// What the foreman says: the first line is about right now, the rest
+    /// explain the mine (tap the foreman to hear the next one).
+    func foremanLines(now: Date = Date()) -> [String] {
+        var lines = [statusLine(now: now)]
+        if let economy, let run = runLengthLabel {
+            lines.append("A cart takes \(run) and brings \(economy.rewardMin)–\(economy.rewardMax) gold. Sometimes gems too.")
+        }
+        if let economy, let total = expedition?.total {
+            lines.append("Every \(total) carts fill the expedition chest: \(economy.chestGold) gold and \(economy.chestGems) gems.")
+        }
+        if let cap = economy?.bonusCapPercent {
+            lines.append("The bonus run is optional. Play it and a cart brings up to \(cap)% more gold.")
+        }
+        if let cost = boostCost, let times = boostMultiplier {
+            lines.append("Short on gold? \(cost) gems make any cart bring \(times == 2 ? "twice" : "\(times)×") its haul.")
+        }
+        return lines
+    }
+
+    private func statusLine(now: Date) -> String {
+        let ready = (0..<maxSlots).filter { phase($0, now: now) == .ready }
+        if ready.count > 1 { return "\(ready.count) carts are full, boss. Haul them up!" }
+        if let index = ready.first { return "The \(Self.mineName(for: index)) cart is full, boss. Haul it up!" }
+        if let idle = (0..<maxSlots).first(where: { phase($0, now: now) == .idle }) {
+            return "\(Self.mineName(for: idle)) stands empty. Send a cart down!"
+        }
+        if let shaft = expedition, shaft.total - shaft.progress == 1 {
+            return "One more cart and the expedition chest is ours."
+        }
+        let next = (0..<maxSlots).compactMap { timeLeft($0, now: now) }.min()
+        if let next { return "All carts are down. The next one is up in \(Self.clock(next))." }
+        return "Pick a tunnel and send a cart down."
     }
 
     // MARK: - Load
 
     func loadStatus() async {
-        // Serve cached data instantly
-        if let cached = cache.staleGoldMine() {
+        if slots.isEmpty, let cached = cache.staleGoldMine() {
             slots = cached.slots
             maxSlots = cached.maxSlots
-        } else {
-            isLoading = true
         }
+        if economy == nil { economy = cache.goldMineEconomy }
+        if expedition == nil { expedition = cache.goldMineExpedition }
+        if slots.isEmpty { isLoading = true }
 
         guard let charId = appState.currentCharacter?.id else {
             isLoading = false
             return
         }
 
-        let requestedAt = Date()
+        let epoch = mutationEpoch
         do {
             let data: GoldMineStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.goldMineStatus,
                 params: ["character_id": charId]
             )
-            if let collectStart = lastCollectStartedAt, collectStart > requestedAt {
-                // Stale: a collect started after this status was requested.
-                isLoading = false
-                return
-            }
-            // A collect in flight owns the slots (its optimistic state, then
-            // its own server snapshot); a status fetched before it landed
-            // would flip collected slots back to READY.
-            guard !isCollectingAll else {
-                isLoading = false
-                return
-            }
-            slots = data.slots
-            maxSlots = data.maxSlots
-            cache.cacheGoldMine(status: data)
-            if let needsPick = data.needsShaftPick {
-                shaftPickNeeded = needsPick
-                activeShaft = data.activeShaft
-            }
-            syncVisualCounters()
             isLoading = false
+            if let economy = data.economy { self.economy = economy }
+            // A change made since this was asked for (or still in flight)
+            // owns the tunnels; this answer could undo it.
+            guard epoch == mutationEpoch, busySlots.isEmpty, !isCollectingAll,
+                  !isBuyingSlot, !isStartingSlotMinigame else { return }
+            slots = merged(data.slots)
+            maxSlots = data.maxSlots
+            if let shaft = data.activeShaft { expedition = shaft }
+            cache.cacheGoldMine(status: data)
         } catch {
             isLoading = false
         }
     }
 
-    // MARK: - Start Mining
+    // MARK: - Send a cart
 
     func startMining(slotIndex: Int) async {
-        guard !activeActionSlots.contains(slotIndex) else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-        activeActionSlots.insert(slotIndex)
-
-        // Optimistic UI — update slot to "mining" instantly
-        let savedSlots = slots
-        let now = ISO8601DateFormatter().string(from: Date())
-        let endsAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(4 * 3600))
-
-        withAnimation(MotionConstants.smooth) {
-            if slotIndex < slots.count {
-                slots[slotIndex].status = .mining
-                slots[slotIndex].startedAt = now
-                slots[slotIndex].endsAt = endsAt
-            }
-            actionSlotId = nil
+        guard phase(slotIndex) == .idle, !busySlots.contains(slotIndex),
+              let charId = appState.currentCharacter?.id else { return }
+        busySlots.insert(slotIndex)
+        mutationEpoch &+= 1
+        defer {
+            busySlots.remove(slotIndex)
+            mutationEpoch &+= 1
         }
-        HapticManager.medium()
-        appState.showToast("Mining started!", type: .info)
 
-        // Background API call — update with real server values
+        // Optimistic: the cart leaves on the tap (when we know the run length).
+        let saved = slot(slotIndex)
+        if let hours = economy?.runHours {
+            let now = Date()
+            var next = GoldMineSlotResponse.idle(slotIndex)
+            next.status = .mining
+            next.startedAt = Self.iso(now)
+            next.endsAt = Self.iso(now.addingTimeInterval(hours * 3600))
+            next.stats = saved.stats
+            replace(next)
+        }
+        SFXManager.shared.play(.goldMine)
+
         do {
             let data: GoldMineStartResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineStart,
                 body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
             )
-            withAnimation(MotionConstants.smooth) {
-                slots = data.slots
-            }
+            apply(data.slots, only: [slotIndex])
+            cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
         } catch {
-            // Revert on failure
-            withAnimation {
-                slots = savedSlots
-            }
-            appState.showToast("Failed to start mining", subtitle: "Check connection and try again", type: .error)
+            replace(saved)
+            appState.showToast("Couldn't send the cart", subtitle: Self.reason(error), type: .error)
+            reloadIfOutOfSync(error)
         }
-        activeActionSlots.remove(slotIndex)
     }
 
-    // MARK: - Collect
+    // MARK: - Collect one cart
 
     func collect(slotIndex: Int) async {
-        guard !activeActionSlots.contains(slotIndex) else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-        activeActionSlots.insert(slotIndex)
-
-        // Optimistic: update UI immediately
-        let savedSlots = slots
-        let savedGold = appState.currentCharacter?.gold
-        // Estimate collected gold from slot data
-        let estimatedGold: Int = {
-            guard let slot = slots[safe: slotIndex] else { return 0 }
-            return slot.reward ?? 50
-        }()
-
-        withAnimation(MotionConstants.smooth) {
-            // Mark slot idle until server confirms and returns fresh session data.
-            // Previously we set status = "mining" but kept old started_at/ends_at,
-            // which made the progress bar render stuck at 100%.
-            if slotIndex < slots.count {
-                slots[slotIndex].status = .idle
-                slots[slotIndex].startedAt = nil
-                slots[slotIndex].endsAt = nil
-                slots[slotIndex].reward = nil
-                slots[slotIndex].gemReward = nil
-            }
-            appState.currentCharacter?.gold = (savedGold ?? 0) + estimatedGold
-            actionSlotId = nil
+        guard phase(slotIndex) == .ready, !busySlots.contains(slotIndex), !isCollectingAll,
+              let charId = appState.currentCharacter?.id else { return }
+        busySlots.insert(slotIndex)
+        mutationEpoch &+= 1
+        defer {
+            busySlots.remove(slotIndex)
+            mutationEpoch &+= 1
         }
-        syncVisualCounters()
-        HapticManager.success()
 
-        // Background: actual API call
+        // Optimistic: the cart empties and its revealed haul lands now.
+        let saved = slot(slotIndex)
+        let savedExpedition = expedition
+        let knownGold = saved.reward ?? 0
+        let knownGems = saved.gemReward ?? 0
+        markCollected([slotIndex])
+        let credit = appState.creditRewardOptimistically(gold: knownGold, gems: knownGems, xp: 0)
+        advanceExpeditionLocally(by: 1)
+        if knownGold > 0 || knownGems > 0 {
+            recentHaul = RecentHaul(slotIndex: slotIndex, gold: knownGold, gems: knownGems)
+        }
+        SFXManager.shared.play(.coinDrop)
+
         do {
             let data: GoldMineCollectResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineCollect,
                 body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
             )
-            // Update with real server values
-            withAnimation(MotionConstants.smooth) {
-                slots = data.slots
-                appState.currentCharacter?.gold = data.gold
-                appState.currentCharacter?.gems = data.gems
+            apply(data.slots, only: [slotIndex])
+            applyBalances(gold: data.gold, gems: data.gems)
+            if let shaft = data.activeShaft { expedition = shaft }
+            cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+            cache.cacheGoldMineExpedition(expedition)
+            if knownGold == 0, knownGems == 0, data.goldCollected > 0 || data.gemsCollected > 0 {
+                recentHaul = RecentHaul(slotIndex: slotIndex, gold: data.goldCollected, gems: data.gemsCollected)
             }
-            syncVisualCounters()
-            appState.invalidateCache("quests")
+            if let chest = data.expeditionChest {
+                claimReward = ClaimRewardData(
+                    kind: .haul,
+                    goldEarned: data.goldCollected,
+                    gemsEarned: data.gemsCollected,
+                    chest: chest
+                )
+            }
+            refreshQuestsInBackground()
         } catch {
-            // Revert on failure
-            withAnimation {
-                slots = savedSlots
-                appState.currentCharacter?.gold = savedGold ?? 0
-            }
-            appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
+            replace(saved)
+            expedition = savedExpedition
+            appState.revertRewardCredit(credit)
+            recentHaul = nil
+            appState.showToast("Couldn't collect the cart", subtitle: Self.reason(error), type: .error)
+            reloadIfOutOfSync(error)
         }
-        activeActionSlots.remove(slotIndex)
     }
 
-    // MARK: - Collect All (Variant D Phase 2 — played slots only)
+    // MARK: - Collect all
 
-    /// Drain all ready AND played slots in one call. Unplayed ready slots
-    /// are left behind — the player must open their per-slot bonus minigame
-    /// via `startSlotMinigame(slotIndex:)` first.
-    ///
-    /// Branches:
-    ///   - `needs_shaft_pick` → sets `showShaftPicker = true`
-    ///   - 409 `NO_PLAYABLE_SLOTS` → toast + auto-open minigame on the
-    ///     first unplayed ready slot, so the player flows straight into it
-    ///   - success → update slots, gold, gems, active shaft
-    func collectAll(pickedShaftKey: ShaftKey? = nil) async {
-        guard !isCollectingAll else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
+    /// Drains every full cart in one call. The bonus round is optional, so
+    /// nothing here waits on it; every cart counts as one haul.
+    func collectAll() async {
+        guard !isCollectingAll, busySlots.isEmpty,
+              let charId = appState.currentCharacter?.id else { return }
+        let ready = readyIndices
+        guard !ready.isEmpty else { return }
         isCollectingAll = true
-        lastCollectStartedAt = Date()
-        defer { isCollectingAll = false }
+        busySlots.formUnion(ready)
+        mutationEpoch &+= 1
+        defer {
+            isCollectingAll = false
+            busySlots.subtract(ready)
+            mutationEpoch &+= 1
+        }
 
-        // Capture pre-collect totals for reward delta
-        let goldBefore = appState.currentCharacter?.gold ?? 0
-        let gemsBefore = appState.currentCharacter?.gems ?? 0
+        let saved = ready.map { slot($0) }
+        let savedExpedition = expedition
+        let knownGold = readyGold
+        let knownGems = readyGems
+        // When this collect likely fills the expedition, the celebration
+        // waits for the server's chest instead of showing twice.
+        let chestLikely = expedition.map { $0.progress + ready.count >= $0.total } ?? false
 
-        // ── Optimistic payout (latency pass 2026-10-15) ──
-        // The server pays exactly Σ reward / gemReward over ready slots whose
-        // bonus round was played (collect-all/route.ts). When no shaft pick
-        // is pending we know that up front: slots go idle, gold/gems are
-        // credited and the reward modal opens on the tap. Anything the
-        // server answers differently rolls this back first.
-        let savedSlots = slots
-        let playedReady = slots.indices.filter {
-            slots[$0].resolvedStatus() == .ready && slots[$0].hasPlayedMinigame
+        markCollected(ready)
+        let credit = appState.creditRewardOptimistically(gold: knownGold, gems: knownGems, xp: 0)
+        advanceExpeditionLocally(by: ready.count)
+        var showedOptimistic = false
+        if !chestLikely, knownGold > 0 || knownGems > 0 {
+            claimReward = ClaimRewardData(kind: .haul, goldEarned: knownGold, gemsEarned: knownGems, chest: nil)
+            showedOptimistic = true
         }
-        let optimistic = pickedShaftKey == nil && shaftPickNeeded == false && !playedReady.isEmpty
-        var credit = AppState.RewardCredit.none
-        var optimisticGold = 0
-        var optimisticGems = 0
-        if optimistic {
-            optimisticGold = playedReady.reduce(0) { $0 + (slots[$1].reward ?? 0) }
-            optimisticGems = playedReady.reduce(0) { $0 + (slots[$1].gemReward ?? 0) }
-            withAnimation(MotionConstants.smooth) {
-                for index in playedReady {
-                    slots[index].status = .idle
-                    slots[index].startedAt = nil
-                    slots[index].endsAt = nil
-                    slots[index].reward = nil
-                    slots[index].gemReward = nil
-                    slots[index].minigamePlayed = nil
-                    slots[index].minigameSessionId = nil
-                }
-            }
-            credit = appState.creditRewardOptimistically(gold: optimisticGold, gems: optimisticGems, xp: 0)
-            syncVisualCounters()
-            if optimisticGold > 0 || optimisticGems > 0 {
-                claimReward = ClaimRewardData(goldEarned: optimisticGold, gemsEarned: optimisticGems)
-            }
-            HapticManager.success()
-        }
-        func rollBackOptimistic() {
-            guard optimistic else { return }
-            // Only the slots this collect touched — a mine started on another
-            // slot meanwhile keeps its own state.
-            withAnimation(MotionConstants.smooth) {
-                for index in playedReady where index < slots.count && index < savedSlots.count {
-                    slots[index] = savedSlots[index]
-                }
-            }
-            appState.revertRewardCredit(credit)
-            syncVisualCounters()
-            claimReward = nil
-        }
+        SFXManager.shared.play(.coinDrop)
 
         do {
             let data: GoldMineCollectAllResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineCollectAll,
-                body: GoldMineCollectAllRequest(
-                    characterId: charId,
-                    pickedShaftKey: pickedShaftKey
-                )
+                body: GoldMineCharacterRequest(characterId: charId)
             )
+            apply(data.slots, only: Set(ready))
+            applyBalances(gold: data.gold, gems: data.gems)
+            if let shaft = data.activeShaft { expedition = shaft }
+            cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+            cache.cacheGoldMineExpedition(expedition)
 
-            // Branch 1: server wants us to show the picker.
-            if data.needsShaftPick == true {
-                rollBackOptimistic()
-                shaftPickNeeded = true
-                unlockedShafts = data.unlockedShafts ?? []
-                shaftPickerSlotIndex = nil  // collectAll context
-                showShaftPicker = true
-                return
+            let reward = ClaimRewardData(
+                kind: .haul,
+                goldEarned: data.goldCollected,
+                gemsEarned: data.gemsCollected,
+                chest: data.expeditionChest
+            )
+            let hasReward = reward.goldEarned > 0 || reward.gemsEarned > 0 || reward.chest != nil
+            if showedOptimistic {
+                // Correct the open celebration; reopen it only for a chest.
+                if claimReward != nil || reward.chest != nil, claimReward != reward, hasReward {
+                    claimReward = reward
+                }
+            } else if hasReward {
+                claimReward = reward
             }
-
-            // Branch 2: success — update slots, gold, active shaft.
-            withAnimation(MotionConstants.smooth) { slots = data.slots }
-            let newGold = data.gold ?? goldBefore
-            let newGems = data.gems ?? gemsBefore
-            appState.currentCharacter?.gold = newGold
-            appState.currentCharacter?.gems = newGems
-            appState.noteAuthoritativeCurrencyWrite()
-            syncVisualCounters()
-            // Keep the cache current so re-entering the mine doesn't flash
-            // the pre-collect "ready" slots.
-            cache.cacheGoldMine(slots: data.slots, maxSlots: maxSlots)
-            // Quest progress (gold_mine_collect) — revalidate in the
-            // background instead of nil-ing the cache, which made the quest
-            // banner on this screen refetch and jump.
             refreshQuestsInBackground()
-
-            // Show claim reward celebration modal with earned amounts —
-            // unless the optimistic one is already up with the same numbers.
-            let goldDelta = max(0, newGold - goldBefore)
-            let gemsDelta = max(0, newGems - gemsBefore)
-            let alreadyShown = optimistic && goldDelta == optimisticGold && gemsDelta == optimisticGems
-            if !alreadyShown, goldDelta > 0 || gemsDelta > 0 {
-                claimReward = ClaimRewardData(goldEarned: goldDelta, gemsEarned: gemsDelta)
-            }
-
-            // Active shaft — may be nil if this cycle cleared the shaft.
-            if let nextShaft = data.activeShaft {
-                let previousKey = activeShaft?.key
-                activeShaft = nextShaft
-                shaftPickNeeded = false
-                // If the shaft key flipped under us mid-cycle, treat as
-                // completion celebration for the previous shaft.
-                if let previousKey, previousKey != nextShaft.key {
-                    presentClearedShaft(previousKey)
-                }
-            } else {
-                // Shaft cleared this cycle — remember it for the overlay,
-                // reset active so the picker opens on next call.
-                if let previousKey = activeShaft?.key {
-                    presentClearedShaft(previousKey)
-                }
-                activeShaft = nil
-                shaftPickNeeded = true
-            }
-
-            if !optimistic { HapticManager.success() }
-        } catch let apiError as APIError {
-            rollBackOptimistic()
-            // NO_PLAYABLE_SLOTS → server returns 409 with payload telling us
-            // which slots are ready-but-unplayed. Auto-route the player into
-            // the first one's bonus minigame so the flow stays one-tap.
-            if apiError.statusCode == 409,
-               let payload = apiError.decodedResponseBody(GoldMineCollectAllErrorPayload.self),
-               payload.code == "NO_PLAYABLE_SLOTS" {
-                // Keep the slots snapshot the server sent so the board
-                // reflects reality.
-                let updatedSlots = payload.slots ?? []
-                if !updatedSlots.isEmpty {
-                    withAnimation(MotionConstants.smooth) { slots = updatedSlots }
-                }
-                let unplayed = payload.unplayedReadySlotIndices ?? []
-                if let firstUnplayed = unplayed.first {
-                    appState.showToast(
-                        "Finish the bonus round",
-                        subtitle: "Play the bonus on a ready slot before collecting.",
-                        type: .info
-                    )
-                    await startSlotMinigame(slotIndex: firstUnplayed)
-                } else {
-                    appState.showToast(
-                        "No playable slots",
-                        subtitle: "Play a slot's bonus round to enable collect.",
-                        type: .info
-                    )
-                }
-                return
-            }
-            appState.showToast(
-                "Failed to collect",
-                subtitle: "Check connection and try again",
-                type: .error
-            )
         } catch {
-            rollBackOptimistic()
-            appState.showToast(
-                "Failed to collect",
-                subtitle: "Check connection and try again",
-                type: .error
-            )
+            for previous in saved { replace(previous) }
+            expedition = savedExpedition
+            appState.revertRewardCredit(credit)
+            claimReward = nil
+            if (error as? APIError)?.statusCode != 400 {
+                appState.showToast("Couldn't collect", subtitle: Self.reason(error), type: .error)
+            }
+            // 400 NO_READY_SLOTS: our clock ran ahead of the server's.
+            reloadIfOutOfSync(error)
         }
     }
 
-    /// Show the shaft-cleared overlay now, or after the reward modal closes.
-    private func presentClearedShaft(_ key: ShaftKey) {
-        if claimReward != nil {
-            pendingClearedShaftKey = key
-        } else {
-            clearedShaftKey = key
+    // MARK: - Bonus round
+
+    /// Opens the optional coin rush for a cart. Idempotent server-side: a
+    /// round already in flight comes back as-is.
+    func startSlotMinigame(slotIndex: Int) async {
+        guard !isStartingSlotMinigame, let charId = appState.currentCharacter?.id else { return }
+        isStartingSlotMinigame = true
+        mutationEpoch &+= 1
+        defer {
+            isStartingSlotMinigame = false
+            mutationEpoch &+= 1
         }
+
+        do {
+            let data: GoldMineSlotMinigameStartResponse = try await APIClient.shared.post(
+                APIEndpoints.goldMineSlotMinigameStart,
+                body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
+            )
+            apply(data.slots, only: [slotIndex])
+            if let shaft = data.activeShaft { expedition = shaft }
+            if let session = data.minigameSession {
+                pendingMinigameSession = session
+                HapticManager.medium()
+            }
+        } catch {
+            appState.showToast("Couldn't start the bonus run", subtitle: Self.reason(error), type: .error)
+        }
+    }
+
+    /// Applies /slot-minigame/submit (via the round's `onFinish`).
+    func applySlotMinigameResult(_ data: GoldMineSlotMinigameSubmitResponse) {
+        mutationEpoch &+= 1
+        applyBalances(gold: data.gold, gems: data.gems)
+        if let index = pendingMinigameSession?.slotIndex {
+            apply(data.slots, only: [index])
+        } else {
+            slots = merged(data.slots)
+        }
+        pendingMinigameSession = nil
+        if data.bonusGold > 0 || data.bonusGems > 0 {
+            claimReward = ClaimRewardData(kind: .bonus, goldEarned: data.bonusGold, gemsEarned: data.bonusGems, chest: nil)
+        }
+    }
+
+    func cancelMinigameSession() {
+        pendingMinigameSession = nil
+    }
+
+    // MARK: - Double haul
+
+    func boost(slotIndex: Int) async {
+        let current = slot(slotIndex)
+        guard let cost = boostCost, phase(slotIndex) != .idle, !current.isBoosted,
+              !busySlots.contains(slotIndex), !isCollectingAll,
+              let charId = appState.currentCharacter?.id else { return }
+        guard gems >= cost else {
+            appState.showToast("Not enough gems", subtitle: "A double haul costs \(cost) gems.", type: .info)
+            return
+        }
+        busySlots.insert(slotIndex)
+        mutationEpoch &+= 1
+        defer {
+            busySlots.remove(slotIndex)
+            mutationEpoch &+= 1
+        }
+
+        let credit = appState.applyOptimisticCurrencyDelta(gold: 0, gems: -cost)
+        var boosted = current
+        boosted.boosted = true
+        if let times = boostMultiplier {
+            boosted.reward = current.reward.map { $0 * times }
+            boosted.gemReward = current.gemReward.map { $0 * times }
+        }
+        replace(boosted)
+        SFXManager.shared.play(.coinsJingle)
+
+        do {
+            let data: GoldMineBoostResponse = try await APIClient.shared.post(
+                APIEndpoints.goldMineBoost,
+                body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
+            )
+            apply(data.slots, only: [slotIndex])
+            appState.currentCharacter?.gems = data.gems
+            appState.noteAuthoritativeCurrencyWrite(gold: false, gems: true, xp: false)
+        } catch {
+            replace(current)
+            appState.revertRewardCredit(credit)
+            appState.showToast("Couldn't double the haul", subtitle: Self.reason(error), type: .error)
+            reloadIfOutOfSync(error)
+        }
+    }
+
+    // MARK: - Open a tunnel
+
+    func buySlot() async {
+        guard !isBuyingSlot, canOpenTunnel, let cost = slotCost,
+              let charId = appState.currentCharacter?.id else { return }
+        guard gems >= cost else {
+            appState.showToast("Not enough gems", subtitle: "A new tunnel costs \(cost) gems.", type: .info)
+            return
+        }
+        isBuyingSlot = true
+        mutationEpoch &+= 1
+        defer {
+            isBuyingSlot = false
+            mutationEpoch &+= 1
+        }
+
+        let credit = appState.applyOptimisticCurrencyDelta(gold: 0, gems: -cost)
+        let prevMax = maxSlots
+        maxSlots += 1
+        replace(.idle(prevMax))
+        SFXManager.shared.play(.chestOpen)
+
+        do {
+            let data: GoldMineBuySlotResponse = try await APIClient.shared.post(
+                APIEndpoints.goldMineBuySlot,
+                body: GoldMineCharacterRequest(characterId: charId)
+            )
+            maxSlots = data.maxSlots
+            // Only the new tunnels — the others may have moved on meanwhile.
+            apply(data.slots, only: Set(prevMax..<max(prevMax, data.maxSlots)))
+            appState.currentCharacter?.gems = data.gems
+            appState.noteAuthoritativeCurrencyWrite(gold: false, gems: true, xp: false)
+            cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+        } catch {
+            maxSlots = prevMax
+            slots.removeAll { $0.slotIndex >= prevMax }
+            appState.revertRewardCredit(credit)
+            appState.showToast("Couldn't open the tunnel", subtitle: Self.reason(error), type: .error)
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Start / boost / bonus responses list slots without `stats`; keep the
+    /// history we already have instead of blanking it.
+    private func merged(_ incoming: [GoldMineSlotResponse]) -> [GoldMineSlotResponse] {
+        incoming.map(keepingStats)
+    }
+
+    private func keepingStats(_ next: GoldMineSlotResponse) -> GoldMineSlotResponse {
+        guard next.stats == nil,
+              let old = slots.first(where: { $0.slotIndex == next.slotIndex }) else { return next }
+        var copy = next
+        copy.stats = old.stats
+        return copy
+    }
+
+    /// Takes only the acted-on tunnels from a response: requests can overlap,
+    /// and an older answer must not roll another tunnel back.
+    private func apply(_ incoming: [GoldMineSlotResponse], only indices: Set<Int>) {
+        for next in incoming where indices.contains(next.slotIndex) {
+            replace(keepingStats(next))
+        }
+    }
+
+    /// Puts a slot in place by its `slotIndex` (appends, keeping order, if new).
+    private func replace(_ next: GoldMineSlotResponse) {
+        if let position = slots.firstIndex(where: { $0.slotIndex == next.slotIndex }) {
+            slots[position] = next
+        } else {
+            slots.append(next)
+            slots.sort { $0.slotIndex < $1.slotIndex }
+        }
+    }
+
+    private func markCollected(_ indices: [Int]) {
+        for index in indices {
+            var next = GoldMineSlotResponse.idle(index)
+            next.stats = slot(index).stats
+            replace(next)
+        }
+    }
+
+    private func advanceExpeditionLocally(by hauls: Int) {
+        guard let shaft = expedition else { return }
+        expedition = ActiveShaft(key: shaft.key, progress: min(shaft.total, shaft.progress + hauls), total: shaft.total)
+    }
+
+    private func applyBalances(gold: Int?, gems: Int?) {
+        if let gold { appState.currentCharacter?.gold = gold }
+        if let gems { appState.currentCharacter?.gems = gems }
+        appState.noteAuthoritativeCurrencyWrite(gold: gold != nil, gems: gems != nil, xp: false)
+    }
+
+    /// A 400/404/409 means our picture of the mine is stale (collected on
+    /// another device, clock drift…): fetch the truth once the request that
+    /// failed has released its locks.
+    private func reloadIfOutOfSync(_ error: Error) {
+        guard let code = (error as? APIError)?.statusCode, [400, 404, 409].contains(code) else { return }
+        Task { await loadStatus() }
     }
 
     private func refreshQuestsInBackground() {
@@ -562,262 +605,11 @@ final class GoldMineViewModel {
         Task { _ = try? await service.loadQuests() }
     }
 
-    // MARK: - Per-Slot Bonus Minigame (Variant D Phase 2)
-
-    /// Opens a per-slot bonus minigame session. Idempotent on the server
-    /// side — if a session is already in flight it comes back as-is.
-    /// Sets `pendingMinigameSession` on success so the view presents the
-    /// fullScreenCover.
-    func startSlotMinigame(slotIndex: Int, pickedShaftKey: ShaftKey? = nil) async {
-        guard !isStartingSlotMinigame else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-        isStartingSlotMinigame = true
-        defer { isStartingSlotMinigame = false }
-
-        do {
-            let data: GoldMineSlotMinigameStartResponse = try await APIClient.shared.post(
-                APIEndpoints.goldMineSlotMinigameStart,
-                body: GoldMineSlotMinigameStartRequest(
-                    characterId: charId,
-                    slotIndex: slotIndex,
-                    pickedShaftKey: pickedShaftKey
-                )
-            )
-
-            // Shaft picker branch — remember which slot triggered it so
-            // pickShaft routes back to startSlotMinigame (not collectAll).
-            if data.needsShaftPick == true {
-                unlockedShafts = data.unlockedShafts ?? []
-                shaftPickerSlotIndex = slotIndex
-                showShaftPicker = true
-                return
-            }
-
-            withAnimation(MotionConstants.smooth) { slots = data.slots }
-            activeShaft = data.activeShaft
-
-            if let session = data.minigameSession {
-                pendingMinigameSession = session
-                HapticManager.medium()
-            }
-        } catch {
-            appState.showToast(
-                "Failed to open bonus round",
-                subtitle: "Check connection and try again",
-                type: .error
-            )
-        }
+    private static func iso(_ date: Date) -> String {
+        ISO8601DateFormatter().string(from: date)
     }
 
-    /// Applies the typed response from /slot-minigame/submit. The view
-    /// calls this via its `onFinish` callback once the 15s round ends or
-    /// the player skips. No shaft update happens here — shaft progress is
-    /// owned by /collect-all and /collect.
-    func applySlotMinigameResult(_ data: GoldMineSlotMinigameSubmitResponse) {
-        let bonusGold = data.bonusGold
-        let bonusGems = data.bonusGems
-
-        withAnimation(MotionConstants.smooth) {
-            appState.currentCharacter?.gold = data.gold
-            appState.currentCharacter?.gems = data.gems
-            slots = data.slots
-            pendingMinigameSession = nil
-        }
-        syncVisualCounters()
-
-        if bonusGold > 0 || bonusGems > 0 {
-            claimReward = ClaimRewardData(goldEarned: bonusGold, gemsEarned: bonusGems)
-        }
-    }
-
-    /// Slot dict accessor — true once the per-slot bonus minigame has been
-    /// completed (server-side `minigame_played_at != null`).
-    func isSlotMinigamePlayed(_ slot: GoldMineSlotResponse) -> Bool {
-        slot.hasPlayedMinigame
-    }
-
-    /// Slot dict accessor — true when a minigame session is currently in
-    /// flight for this slot (player backgrounded mid-round).
-    func hasInFlightMinigameSession(_ slot: GoldMineSlotResponse) -> Bool {
-        slot.hasInFlightMinigameSession
-    }
-
-    /// Called by `ShaftPickerSheet` when the player confirms a shaft. Dismisses
-    /// the sheet and routes back to whichever flow triggered the picker:
-    /// - `shaftPickerSlotIndex != nil` → re-enter `startSlotMinigame` so the
-    ///   bonus round opens directly after shaft selection.
-    /// - `shaftPickerSlotIndex == nil` → re-enter `collectAll` (Collect All flow).
-    func pickShaft(_ key: ShaftKey) {
-        let slotIndex = shaftPickerSlotIndex
-        shaftPickerSlotIndex = nil
-        showShaftPicker = false
-        Task {
-            if let slotIndex {
-                await startSlotMinigame(slotIndex: slotIndex, pickedShaftKey: key)
-            } else {
-                await collectAll(pickedShaftKey: key)
-            }
-        }
-    }
-
-    /// Called when the player taps Skip + confirms, or the server rejects the
-    /// bonus call. Cleans up local state without applying any reward.
-    func cancelMinigameSession() {
-        withAnimation(MotionConstants.smooth) {
-            pendingMinigameSession = nil
-        }
-    }
-
-    /// Dismisses the shaft-cleared celebration overlay.
-    func dismissClearedOverlay() {
-        clearedShaftKey = nil
-    }
-
-    // MARK: - Boost
-
-    func boost(slotIndex: Int) {
-        guard !activeActionSlots.contains(slotIndex) else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-        activeActionSlots.insert(slotIndex)
-        actionSlotId = "\(slotIndex)"
-
-        // Optimistic: deduct gems + show boosted
-        let prevGems = appState.currentCharacter?.gems ?? 0
-        let boostCost = cache.gameConfig?.goldMineBoostGems ?? 3
-        appState.currentCharacter?.gems = max(0, prevGems - boostCost)
-        HapticManager.success()
-        appState.showToast("Slot boosted!", type: .info)
-
-        // Fire API in background
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let data: GoldMineBoostResponse = try await APIClient.shared.post(
-                    APIEndpoints.goldMineBoost,
-                    body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
-                )
-                slots = data.slots
-                appState.currentCharacter?.gems = data.gems
-                syncVisualCounters()
-            } catch {
-                // Revert gems on failure
-                appState.currentCharacter?.gems = prevGems
-                // Surface the actual server reason instead of blaming gems for every failure.
-                // Common real reasons: ALREADY_BOOSTED, NO_SESSION, rate-limit.
-                let reason = (error as? APIError)?.userMessage ?? "Please try again"
-                appState.showToast("Failed to boost", subtitle: reason, type: .error)
-            }
-            actionSlotId = nil
-            activeActionSlots.remove(slotIndex)
-        }
-    }
-
-    // MARK: - Buy Slot
-
-    func buySlot() {
-        guard !isBuyingSlot else { return }
-        guard let charId = appState.currentCharacter?.id else { return }
-        isBuyingSlot = true
-
-        // Optimistic: deduct gems + increase slot count instantly
-        let prevGems = appState.currentCharacter?.gems ?? 0
-        let prevMaxSlots = maxSlots
-        let prevSlots = slots
-        let slotCost = cache.gameConfig?.goldMineSlotCostGems ?? 50
-        appState.currentCharacter?.gems = max(0, prevGems - slotCost)
-        maxSlots += 1
-        // Add an idle slot placeholder so UI shows the new slot immediately
-        slots.append(
-            GoldMineSlotResponse(
-                slotIndex: maxSlots - 1,
-                status: .idle,
-                sessionId: nil,
-                startedAt: nil,
-                endsAt: nil,
-                reward: nil,
-                gemReward: nil,
-                boosted: nil,
-                minigamePlayed: nil,
-                minigameSessionId: nil,
-                stats: nil
-            )
-        )
-        HapticManager.success()
-        appState.showToast("New mining slot unlocked!", type: .reward)
-
-        // Fire API in background — server response overwrites with authoritative values
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let data: GoldMineBuySlotResponse = try await APIClient.shared.post(
-                    APIEndpoints.goldMineBuySlot,
-                    body: GoldMineCharacterRequest(characterId: charId)
-                )
-                maxSlots = data.maxSlots
-                slots = data.slots
-                appState.currentCharacter?.gems = data.gems
-            } catch {
-                // Revert on failure
-                appState.currentCharacter?.gems = prevGems
-                maxSlots = prevMaxSlots
-                slots = prevSlots
-                appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
-            }
-            isBuyingSlot = false
-        }
-    }
-
-    // MARK: - Helpers
-
-    func slotStatus(_ slot: GoldMineSlotResponse) -> String {
-        slot.resolvedStatus().rawValue
-    }
-
-    /// Gem cost for boosting a mining slot (server config with fallback).
-    var boostCost: Int {
-        cache.gameConfig?.goldMineBoostGems ?? 3
-    }
-
-    func timeRemaining(_ slot: GoldMineSlotResponse) -> String {
-        guard let endStr = slot.endsAt,
-              let endDate = slotDate(from: endStr) else { return "" }
-        let remaining = endDate.timeIntervalSinceNow
-        if remaining <= 0 { return "Ready!" }
-        let mins = Int(remaining) / 60
-        let hrs = mins / 60
-        if hrs > 0 { return "\(hrs)h \(mins % 60)m remaining" }
-        return "\(mins)m remaining"
-    }
-
-    /// Returns mining progress as 0.0–1.0 (0 = just started, 1 = done)
-    func miningProgress(_ slot: GoldMineSlotResponse) -> Double {
-        guard let endStr = slot.endsAt,
-              let startStr = slot.startedAt,
-              let endDate = slotDate(from: endStr),
-              let startDate = slotDate(from: startStr) else { return 0 }
-        let total = endDate.timeIntervalSince(startDate)
-        guard total > 0 else { return 1 }
-        let elapsed = Date().timeIntervalSince(startDate)
-        return min(max(elapsed / total, 0), 1)
-    }
-
-    /// Number of currently active (mining or ready) slots
-    var activeSlotCount: Int {
-        slots.filter { slot in
-            let status = slot.resolvedStatus()
-            return status == .mining || status == .ready
-        }.count
-    }
-
-    private func slotDate(from raw: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = fractional.date(from: raw) {
-            return date
-        }
-
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
-        return plain.date(from: raw)
+    private static func reason(_ error: Error) -> String {
+        (error as? APIError)?.userMessage ?? "Check your connection and try again."
     }
 }

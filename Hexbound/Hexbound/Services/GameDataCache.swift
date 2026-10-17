@@ -54,6 +54,10 @@ final class GameDataCache {
     private(set) var goldMineSlots: [GoldMineSlotResponse] = []
     var goldMineMaxSlots: Int = 3
     private var goldMineFetchedAt: Date?
+    /// Last /status economy + expedition, so a warm mine screen prints real
+    /// prices and the chest track on its first frame.
+    private(set) var goldMineEconomy: GoldMineEconomy?
+    private(set) var goldMineExpedition: ActiveShaft?
 
     private(set) var revengeList: [RevengeEntry] = []
     private var revengeFetchedAt: Date?
@@ -433,6 +437,12 @@ final class GameDataCache {
 
     func cacheGoldMine(status: GoldMineStatusResponse) {
         cacheGoldMine(slots: status.slots, maxSlots: status.maxSlots)
+        if let economy = status.economy { goldMineEconomy = economy }
+        if let shaft = status.activeShaft { goldMineExpedition = shaft }
+    }
+
+    func cacheGoldMineExpedition(_ shaft: ActiveShaft?) {
+        if let shaft { goldMineExpedition = shaft }
     }
 
     func invalidateGoldMine() {
@@ -592,6 +602,8 @@ final class GameDataCache {
         dungeonProgressFetchedAt = nil
         goldMineSlots = []
         goldMineFetchedAt = nil
+        goldMineEconomy = nil
+        goldMineExpedition = nil
         dailyQuests = []
         dailyBonusClaimed = false
         dailyQuestsFetchedAt = nil
@@ -628,6 +640,8 @@ final class GameDataCache {
         dungeonListFetchedAt = nil
         goldMineSlots = []
         goldMineFetchedAt = nil
+        goldMineEconomy = nil
+        goldMineExpedition = nil
         dailyQuests = []
         dailyBonusClaimed = false
         dailyQuestsFetchedAt = nil

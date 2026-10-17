@@ -46,12 +46,13 @@ enum ShaftKey: String, Codable, CaseIterable, Identifiable {
     static var allKeys: [ShaftKey] { ShaftKey.allCases }
 }
 
-/// Summary of the player's currently active expedition shaft.
-/// Nil when the player has no shaft selected — the client shows the picker.
+/// The running expedition: every collected cart is one haul, `total` hauls
+/// open the expedition chest and the next expedition starts on its own
+/// (2026-10-16). The shaft key only picks the bonus-round backdrop.
 struct ActiveShaft: Codable, Equatable {
     let key: ShaftKey
-    let progress: Int   // completed extractions (0..total)
-    let total: Int      // total extractions required (Phase 1: 5)
+    let progress: Int   // carts hauled this expedition (0..<total)
+    let total: Int      // carts per expedition (5)
 
     /// Progress fraction 0.0–1.0 for the banner progress bar.
     var fraction: Double {
@@ -150,6 +151,27 @@ struct GoldMineSlotResponse: Codable, Equatable {
         boosted ?? false
     }
 
+    /// An empty tunnel — stands in for a slot the server has not listed yet
+    /// (e.g. right after buying one).
+    static func idle(_ slotIndex: Int) -> GoldMineSlotResponse {
+        GoldMineSlotResponse(
+            slotIndex: slotIndex,
+            status: .idle,
+            sessionId: nil,
+            startedAt: nil,
+            endsAt: nil,
+            reward: nil,
+            gemReward: nil,
+            boosted: nil,
+            minigamePlayed: nil,
+            minigameSessionId: nil,
+            stats: nil
+        )
+    }
+
+    var startDate: Date? { startedAt.flatMap(parseGoldMineISODate) }
+    var endDate: Date? { endsAt.flatMap(parseGoldMineISODate) }
+
     func resolvedStatus(now: Date = Date()) -> GoldMineSlotStatus {
         guard status == .mining, let endsAt else { return status }
         guard let endDate = parseGoldMineISODate(endsAt) else { return status }
@@ -160,11 +182,51 @@ struct GoldMineSlotResponse: Codable, Equatable {
 struct GoldMineStatusResponse: Codable {
     let slots: [GoldMineSlotResponse]
     let maxSlots: Int
-    /// Added 2026-10-15 (optional — older backends omit both). Lets the
-    /// client know, before collecting, whether collect-all will ask for a
-    /// shaft pick, so it can collect optimistically when it won't.
+    /// The running expedition — always sent since 2026-10-16.
     let activeShaft: ActiveShaft?
-    let needsShaftPick: Bool?
+    /// Prices, payout ranges and bonus terms (2026-10-16). Decoded leniently:
+    /// a malformed block drops to nil instead of failing the whole status.
+    let economy: GoldMineEconomy?
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        slots = try c.decode([GoldMineSlotResponse].self, forKey: .slots)
+        maxSlots = try c.decode(Int.self, forKey: .maxSlots)
+        activeShaft = try? c.decodeIfPresent(ActiveShaft.self, forKey: .activeShaft)
+        economy = try? c.decodeIfPresent(GoldMineEconomy.self, forKey: .economy)
+    }
+}
+
+/// Everything the mine screen prints about payouts and prices, sent by
+/// /status so the client keeps no copy of balance numbers. Mirrors the
+/// `economy` block in `backend/.../gold-mine/status/route.ts`.
+struct GoldMineEconomy: Codable, Equatable {
+    let slotLimit: Int
+    let slotCostGems: Int
+    let boostCostGems: Int
+    /// A boosted ("double haul") cart pays this many times its haul.
+    let boostMultiplier: Int?
+    let runHours: Double
+    let rewardMin: Int
+    let rewardMax: Int
+    /// 0…1 chance that a cart also carries gems.
+    let gemChance: Double
+    let gemMin: Int
+    let gemMax: Int
+    let chestGold: Int
+    let chestGems: Int
+    // Bonus round (optional coin rush) — newer than the rest, so optional.
+    let bonusSeconds: Int?
+    let bonusCapPercent: Int?
+    let bonusGemCap: Int?
+    let bonusGemCatchPercent: Int?
+}
+
+/// Paid when an expedition fills (`expedition_chest` on collect responses).
+struct GoldMineExpeditionChest: Codable, Equatable {
+    let gold: Int
+    let gems: Int
+    let shaftKey: String?
 }
 
 protocol GoldMineSlotsBridge {
@@ -174,16 +236,21 @@ protocol GoldMineSlotsBridge {
 extension GoldMineSlotsBridge {
 }
 
-private func parseGoldMineISODate(_ raw: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = fractional.date(from: raw) {
-            return date
-        }
+private let goldMineFractionalISO: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
 
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
-        return plain.date(from: raw)
+private let goldMinePlainISO: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+}()
+
+/// Parsed every second per tunnel on the mine screen — formatters are shared.
+private func parseGoldMineISODate(_ raw: String) -> Date? {
+    goldMineFractionalISO.date(from: raw) ?? goldMinePlainISO.date(from: raw)
 }
 
 struct GoldMineSlotActionRequest: Encodable {
@@ -193,17 +260,6 @@ struct GoldMineSlotActionRequest: Encodable {
 
 struct GoldMineCharacterRequest: Encodable {
     let characterId: String
-}
-
-struct GoldMineCollectAllRequest: Encodable {
-    let characterId: String
-    let pickedShaftKey: ShaftKey?
-}
-
-struct GoldMineSlotMinigameStartRequest: Encodable {
-    let characterId: String
-    let slotIndex: Int
-    let pickedShaftKey: ShaftKey?
 }
 
 struct GoldMineSlotMinigameSubmitRequest: Encodable {
@@ -228,6 +284,7 @@ struct GoldMineCollectResponse: Codable, GoldMineSlotsBridge {
     let gold: Int
     let gems: Int
     let activeShaft: ActiveShaft?
+    let expeditionChest: GoldMineExpeditionChest?
 }
 
 struct GoldMineCollectAllResponse: Codable, GoldMineSlotsBridge {
@@ -236,15 +293,11 @@ struct GoldMineCollectAllResponse: Codable, GoldMineSlotsBridge {
     let gemsCollected: Int
     let gold: Int?
     let gems: Int?
-    let needsShaftPick: Bool?
-    let unlockedShafts: [ShaftKey]?
     let activeShaft: ActiveShaft?
-    let unplayedReadySlotIndices: [Int]?
+    let expeditionChest: GoldMineExpeditionChest?
 }
 
 struct GoldMineSlotMinigameStartResponse: Codable, GoldMineSlotsBridge {
-    let needsShaftPick: Bool?
-    let unlockedShafts: [ShaftKey]?
     let slots: [GoldMineSlotResponse]
     let activeShaft: ActiveShaft?
     let minigameSession: MinigameSessionInfo?
@@ -338,17 +391,6 @@ struct ShellGameGuessResponse: Codable {
     let winningCup: Int
     let winAmount: Int
     let gold: Int
-}
-
-/// Outcome of a /collect-all call. Two branches: needs picker or success.
-enum CollectAllOutcome {
-    case needsShaftPick(unlocked: [ShaftKey])
-    case success(
-        goldCollected: Int,
-        gemsCollected: Int,
-        activeShaft: ActiveShaft,
-        minigameSession: MinigameSessionInfo
-    )
 }
 
 // MARK: - Mini-game drop values (client visual only)
