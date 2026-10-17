@@ -485,6 +485,9 @@ enum DarkFantasyTheme {
     static let buttonLabel = Font.custom("Oswald-Regular", size: 18)
     static let buttonLabelCompact = Font.custom("Oswald-Regular", size: 16) // Compact/small buttons
 
+    // Storybook narration (Dungeon Rush "The Descent" tale lines) — system serif italic
+    static let tale = Font.system(size: 17, design: .serif).italic()
+
     // Inter — body text, UI labels, captions
     static let body = Font.custom("Inter-Regular", size: 16)
     static let uiLabel = Font.custom("Inter-Regular", size: 14)

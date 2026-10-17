@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "rush2-node-guardian.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "rush2-node-guardian@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "rush2-node-guardian@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
