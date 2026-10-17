@@ -48,7 +48,9 @@ export const STAMINA_REFILL_DR = {
 // keeps stamina an actual throttle instead of a formality.
 export const STAMINA_POTION_DR = {
   /** Maximum stamina potions of any size a character may drink per day. */
-  DAILY_CAP: 4,
+  // 2 (was 4): four large potions were four free gem refills a day
+  // (2026-10-16 balance audit §6).
+  DAILY_CAP: 2,
 } as const;
 
 // --- Training / Dungeon XP Diminishing Returns (W3.D4) ---

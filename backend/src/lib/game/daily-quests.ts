@@ -12,7 +12,11 @@ import type { PrismaClient, QuestType } from '@prisma/client'
 export const DAILY_BONUS_REWARD = {
   gold: 500,
   xp: 300,
-  gems: 10,
+  // 10/day was 300 gems a month from dailies alone — on its own above the
+  // whole F2P gem budget (ECONOMY_RULES R9.2: 250–320/month, all sources).
+  // 3/day keeps the ritual, 90/month, and leaves room for the mine, login
+  // and milestones (2026-10-16 balance audit §6).
+  gems: 3,
 } as const
 
 /**

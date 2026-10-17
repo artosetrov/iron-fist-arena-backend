@@ -29,19 +29,20 @@ export const GEM_PACKS: Record<GemPackCatalogId, GemPackDef> = {
     goldPrice: 500,
     requiredLevel: 1,
   },
+  // Ladder 50 → 60 → 75 gold per gem (2026-10-16 balance audit §6). At
+  // 24–30 gold/gem a pack bought a 50-gem refill worth ~4,800 gold of fights
+  // for 1,200 gold — a ×4 gold loop, 100 gems/day on top of the 2,000+/month
+  // F2P gems already flowing. A gem now costs more gold than it earns back.
   gem_pack_medium: {
     catalogId: 'gem_pack_medium',
     gemsAmount: 50,
-    // 1,750 → 35 gold/gem. Was 1,200 (24/gem): cheaper per gem than the
-    // large pack (30/gem), so the ladder rewarded the middle rung and the
-    // large pack was never the right buy. Small 50 → medium 35 → large 30.
-    goldPrice: 1750,
+    goldPrice: 3000,
     requiredLevel: 5,
   },
   gem_pack_large: {
     catalogId: 'gem_pack_large',
     gemsAmount: 100,
-    goldPrice: 3000,
+    goldPrice: 7500,
     requiredLevel: 10,
   },
 }

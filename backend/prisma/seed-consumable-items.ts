@@ -42,15 +42,15 @@ const CONSUMABLE_DEFS: ConsumableDef[] = [
   // Stamina potions
   { catalogId: 'stamina_potion_small',  itemName: 'Small Stamina Potion',  rarity: 'common',   buyPrice: 100,  description: 'Restores 30 stamina.' },
   { catalogId: 'stamina_potion_medium', itemName: 'Medium Stamina Potion', rarity: 'uncommon', buyPrice: 250,  description: 'Restores 60 stamina.' },
-  { catalogId: 'stamina_potion_large',  itemName: 'Large Stamina Potion',  rarity: 'rare',     buyPrice: 500,  description: 'Fully restores stamina.' },
+  { catalogId: 'stamina_potion_large',  itemName: 'Large Stamina Potion',  rarity: 'rare',     buyPrice: 2000, description: 'Fully restores stamina.' },
   // Health potions
   { catalogId: 'health_potion_small',   itemName: 'Small Health Potion',   rarity: 'common',   buyPrice: 150,  description: 'Restores 25% of max HP.' },
   { catalogId: 'health_potion_medium',  itemName: 'Medium Health Potion',  rarity: 'uncommon', buyPrice: 350,  description: 'Restores 50% of max HP.' },
   { catalogId: 'health_potion_large',   itemName: 'Large Health Potion',   rarity: 'rare',     buyPrice: 700,  description: 'Fully restores HP.' },
   // Gem packs
-  { catalogId: 'gem_pack_small',        itemName: 'Small Gem Pouch',       rarity: 'uncommon', buyPrice: 150,  description: 'Contains 10 gems.' },
-  { catalogId: 'gem_pack_medium',       itemName: 'Medium Gem Pouch',      rarity: 'rare',     buyPrice: 750,  description: 'Contains 50 gems.' },
-  { catalogId: 'gem_pack_large',        itemName: 'Large Gem Pouch',       rarity: 'epic',     buyPrice: 1500, description: 'Contains 100 gems.' },
+  { catalogId: 'gem_pack_small',        itemName: 'Small Gem Pouch',       rarity: 'uncommon', buyPrice: 500,  description: 'Contains 10 gems.' },
+  { catalogId: 'gem_pack_medium',       itemName: 'Medium Gem Pouch',      rarity: 'rare',     buyPrice: 3000, description: 'Contains 50 gems.' },
+  { catalogId: 'gem_pack_large',        itemName: 'Large Gem Pouch',       rarity: 'epic',     buyPrice: 7500, description: 'Contains 100 gems.' },
 ]
 
 async function main() {

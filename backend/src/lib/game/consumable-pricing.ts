@@ -20,7 +20,11 @@ const DIRECT_PURCHASE_CONSUMABLE_SET = new Set<ConsumableType>(DIRECT_PURCHASE_C
 const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
   stamina_potion_small: 100,
   stamina_potion_medium: 250,
-  stamina_potion_large: 500,
+  // 2,000 (was 500). A full bar is ~18 PvP fights ≈ 4,800 gold at L40, so
+  // 500 bought gold at 1:10 and undercut the 50–240 gem refill for the
+  // same stamina. 2,000 still pays for itself, just not ×10
+  // (2026-10-16 balance audit §6).
+  stamina_potion_large: 2000,
   health_potion_small: 150,
   health_potion_medium: 350,
   health_potion_large: 700,
