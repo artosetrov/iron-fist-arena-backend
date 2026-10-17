@@ -316,7 +316,12 @@ Known mappings (add to this list when new ones are found):
 - `cart.fill`, `bag.fill` → `Image("icon-shop")`
 - `trophy.fill` → `Image("icon-pvp-rating")` or `Image("icon-leaderboard")` (pick by context)
 - `flag.fill`, `scroll.fill` → `Image("hud-quests")` / `Image("hud-daily-quests")`
-- `person.fill`, `person.2.fill` → use class icon (`icon-mage`/`icon-rogue`/`icon-tank`/`icon-warrior`) or race icon (`race-icon-*`)
+- `person.fill`, `person.2.fill` → use the class crest `CharacterClass.iconAsset` (`icon-mage`/`icon-rogue`/`icon-tank`; warrior → `icon-fights`, there is no `icon-warrior`) or race icon (`race-icon-*`)
+- `sparkles`, `star.fill` (XP) → `Image("icon-xp")`
+- `chart.line.uptrend.xyaxis` (rating) → `Image("icon-pvp-rating")`; rating up/down → `reward-rating-up` / `reward-rating-down`
+- victory → `Image("icon-wins")`; `xmark.shield.fill` (defeat) → `Image("icon-losses")`
+- `megaphone.fill` (announcement) → `Image("hud-quests")`
+- Empty-state glyphs (`tray`, `shield.slash`, `bell.slash`, …) → an illustration from `Assets.xcassets/EmptyStates` via `EmptyStateScene`
 
 **When it's OK to keep SF Symbols:**
 - Standard chrome no player notices: `xmark` (close buttons — `.closeButton` style), `eye` / `eye.slash` (password visibility toggle), row disclosure `chevron.right`, `checkmark`

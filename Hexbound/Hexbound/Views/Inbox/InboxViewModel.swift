@@ -31,6 +31,21 @@ final class InboxViewModel {
         mailUnreadCount + scrollsUnreadCount
     }
 
+    /// Unread items behind one tab, for the tab badge. ALL has none —
+    /// the screen title already says "N unread".
+    func unreadCount(for filter: InboxFilter) -> Int {
+        switch filter {
+        case .all:
+            return 0
+        case .messages:
+            return scrollsUnreadCount
+        case .battles, .system:
+            return unifiedItems.reduce(0) { count, item in
+                item.category == filter && item.isUnread ? count + 1 : count
+            }
+        }
+    }
+
     /// Filtered items based on selected filter pill
     var filteredItems: [UnifiedInboxItem] {
         switch selectedFilter {
