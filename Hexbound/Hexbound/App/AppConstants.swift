@@ -106,10 +106,18 @@ enum AppConstants {
     // Fallback for cache.gameConfig.staminaRegenMinutes — mirrors STAMINA.REGEN_INTERVAL_MINUTES
     static let staminaRegenMinutes = 8
 
-    // MARK: - Public links (shown in Settings → Legal). Must be live before
-    // App Store review: privacy, terms, and a support/contact page.
+    // MARK: - Public links (Settings → Legal, Premium Pass screen). Must be
+    // live before App Store review: privacy, terms, and a support/contact page.
     static let privacyURL = "https://hexboundapp.com/privacy"
-    static let termsURL = "https://hexboundapp.com/terms"
+    /// Our Terms of Service (conduct, virtual currency). The site only serves
+    /// it as terms.html — /terms answered 404 on 2026-10-16.
+    static let termsURL = "https://hexboundapp.com/terms.html"
+    /// Terms of Use (EULA) for the Premium Pass purchase screen: Apple's
+    /// Standard EULA, the license agreement the app uses in App Store Connect
+    /// and the one the App Store description links. Guideline 3.1.2 wants a
+    /// working EULA link at the point of sale. A custom EULA would replace
+    /// both this link and the ASC agreement.
+    static let eulaURL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
     static let supportURL = "https://hexboundapp.com/support"
 
     // MARK: - Observability

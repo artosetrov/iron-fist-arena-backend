@@ -313,19 +313,23 @@ struct PremiumPurchaseView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: LayoutConstants.spaceLG) {
-                    Link(destination: URL(string: "https://hexboundapp.com/terms")!) {
-                        Text("Terms of Use")
-                            .font(DarkFantasyTheme.body)
-                            .underline()
-                            .frame(minHeight: LayoutConstants.touchMin)
-                            .contentShape(Rectangle())
+                    if let eulaURL = URL(string: AppConstants.eulaURL) {
+                        Link(destination: eulaURL) {
+                            Text("Terms of Use")
+                                .font(DarkFantasyTheme.body)
+                                .underline()
+                                .frame(minHeight: LayoutConstants.touchMin)
+                                .contentShape(Rectangle())
+                        }
                     }
-                    Link(destination: URL(string: "https://hexboundapp.com/privacy")!) {
-                        Text("Privacy Policy")
-                            .font(DarkFantasyTheme.body)
-                            .underline()
-                            .frame(minHeight: LayoutConstants.touchMin)
-                            .contentShape(Rectangle())
+                    if let privacyURL = URL(string: AppConstants.privacyURL) {
+                        Link(destination: privacyURL) {
+                            Text("Privacy Policy")
+                                .font(DarkFantasyTheme.body)
+                                .underline()
+                                .frame(minHeight: LayoutConstants.touchMin)
+                                .contentShape(Rectangle())
+                        }
                     }
                 }
                 .tint(DarkFantasyTheme.goldBright)

@@ -1,27 +1,27 @@
-Hexbound is a dark fantasy RPG built around one thing: the duel.
+Hexbound is a grimdark fantasy RPG built around one thing: the duel.
 
-Pick a Warrior, Rogue, Mage or Tank. Choose an origin — Human, Orc, Skeleton, Demon or Dogfolk — and forge a hero that is yours. Then step into the Arena.
+Create your hero: a Warrior, Assassin, Mage or Guardian. Pick an origin: Human, Orc, Skeleton, Demon or Dogfolk. Then step into the Arena.
 
-TACTICAL PVP
-Every fight is a battle of reads. Choose where you strike and where you guard, round by round. Predict your opponent and your blow lands clean; guess wrong and you eat the counter. No auto-battle, no pay-to-win stats — just you, your build and your nerve.
+DICE DUELS
+Every round, both fighters roll an attack die and a guard die. Each face is a target: head, chest or legs. Head hits strike hardest and always crit; leg hits break the guard. Spend Focus to reroll a die or set it to the face you need, and watch for the Omen when all four dice match. Socket class runes onto your die faces to bend the odds your way.
 
-RANKED LADDER
-Climb from Bronze to Grandmaster. Revenge matches let you settle the score with anyone who beat you. Seasons reset the board and reward the climb.
+ARENA
+Fight champions built by real players: their gear, their stats, their runes, played by the AI while they are away. Win to climb from Bronze to Diamond, then Master, Grandmaster and Challenger, the top 100. Lost a fight? Take your revenge.
 
 DUNGEONS & BOSSES
-Eight hand-crafted dungeons, each with ten bosses and their own mechanics. Clear floors for gear, shards and gold. Dungeon Rush throws endless waves at you for the leaderboard.
+Push through story dungeons on Easy, Normal or Hard. Every boss shows its next attack, so read it and answer it. Dungeon Rush throws twelve rooms at you in a row.
 
 BUILD YOUR HERO
-Allocate stats, unlock a passive talent tree, equip active skills, and upgrade gear from common to legendary. Prestige at max level for a permanent edge.
+Spend stat points, unlock talents and runes, and upgrade gear from Common to Legendary, all the way to +10. Reach level 50 and Prestige for a permanent bonus. Change your look in the wardrobe.
 
-TOWN LIFE
-Run the Gold Mine while you are away, try your luck at the Fortune Wheel, trade with the Scavenger, take on daily quests and a seasonal Battle Pass.
+LIFE IN TOWN
+Daily quests, achievements and a seasonal Battle Pass. Collect from the Gold Mine, trade at the Black Market, and try your luck in the Tavern at the Fortune Wheel and the Shell Game, played with in-game gold only.
 
 GUILD HALL
-Add allies, send challenges, exchange scrolls. Message any player, report anyone who steps out of line.
+Add allies, send scrolls and challenge friends to duels. Any player or message can be reported.
 
-Hexbound is free to play. Optional purchases (gems, bundles, the Premium Pass subscription) speed things up but never change the odds of a duel.
+Hexbound is free to play and needs an internet connection. Optional purchases: gem packs, bundles, the Monthly Gem Card and Premium Pass. Premium Pass is a monthly auto-renewing subscription with bonus PvP XP, bonus gold, extra free fights and gems, never stats. Payment is charged to your Apple Account. The subscription renews automatically unless you cancel it at least 24 hours before the end of the current period; manage or cancel it in your Apple Account settings.
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://hexboundapp.com/privacy
 Support: https://hexboundapp.com/support
-Privacy: https://hexboundapp.com/privacy
-Terms: https://hexboundapp.com/terms

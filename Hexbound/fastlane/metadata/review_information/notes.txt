@@ -1,9 +1,22 @@
-No account is required: tap PLAY on the welcome screen to start as a guest. A demo account with a high-level character is provided below for testing PvP, dungeons and purchases.
+Hexbound is an online RPG and needs an internet connection.
 
-User-generated content: character names and direct messages are filtered server-side; every player profile and message has a Report action (Guild Hall → Scrolls → long-press a message; Leaderboard → player → Report player). Reports are reviewed in our admin console. Players can block others from the Allies tab.
+SIGN-IN
+No account is needed: tap PLAY on the welcome screen to play as a guest. Email, Sign in with Apple and Google sign-in are also offered. Demo account: see Sign-In Information above.
 
-Fortune Wheel wagers in-game gold only (gold cannot be purchased directly); outcome odds are displayed on the wheel screen. Loot sources (dungeons, Scavenger) show their contents or drop chances before purchase.
+WHERE THINGS ARE (starting from the Hub)
+- PvP: Arena > pick an opponent. Opponents are other players' characters (their gear, stats and runes) played by the AI, so PvP is asynchronous.
+- Combat: each side rolls an attack die and a guard die every round; Focus pays for a reroll (2) or for setting a face (4).
+- Dungeons: the ADVENTURES button at the bottom of the Hub.
+- Purchases: Shop > GET MORE. Bundles tab: Starter Bundle and Adventurer's Bundles I-III. Gems tab: five gem packs. Special tab: Monthly Gem Card and Premium Pass. RESTORE PURCHASES is on this screen and on the Premium Pass screen.
 
-In-app purchases: gem packs (consumable), bundles (non-consumable), Premium Pass (auto-renewable subscription, 30 days). Restore Purchases is on the gem shop and Premium Pass screens.
+IN-APP PURCHASES
+Every one-off purchase is a consumable. The Starter Bundle can be bought once per account: the server enforces it and the offer disappears after purchase. The Monthly Gem Card gives 150 gems at once and 50 gems a day for 30 days (credited when the game is opened each day); buying it again while it is active adds 30 days. Premium Pass is a monthly auto-renewable subscription; its screen shows the price, the period, the renewal terms and links to the Terms of Use and the Privacy Policy.
 
-Account deletion: Settings → Account → Delete Account.
+SIMULATED GAMBLING
+The Tavern's Fortune Wheel and Shell Game are played with in-game gold only. Nothing can be cashed out and there are no real-money prizes. Gold is earned in play; some bundles also include gold. The Fortune Wheel shows its odds. The Shell Game is a fair 1-in-3 pick (the server picks the winning shell before the player chooses) and a win pays twice the wager. The app is rated 18+.
+
+USER-GENERATED CONTENT
+Character names and messages are filtered on the server. Report a player from any player's profile (Report player); report a message in Guild Hall > Scrolls by long-pressing it (Report message). Allies can be blocked from the Allies tab. Reports are reviewed in our admin console.
+
+ACCOUNT DELETION
+Settings > Account > Delete Account.

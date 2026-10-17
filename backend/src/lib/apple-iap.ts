@@ -11,8 +11,12 @@
  *   APPLE_IAP_PRIVATE_KEY_PATH — local path to a .p8 private key file (preferred for local dev)
  *   APPLE_BUNDLE_ID        — Your app bundle ID (com.hexbound.app)
  *
- * In sandbox/development, set:
- *   APPLE_IAP_ENVIRONMENT=sandbox
+ * APPLE_IAP_ENVIRONMENT (production | sandbox, default production) only picks
+ * which App Store environment is asked FIRST. A transaction it does not know
+ * (404) is looked up in the other one: App Review and TestFlight buy in the
+ * sandbox with production-signed builds, so a production server that only
+ * asks production fails every reviewer purchase (Guideline 2.1) — and a
+ * sandbox-only one fails every real purchase after launch.
  */
 
 import * as crypto from 'crypto'
@@ -228,6 +232,13 @@ function decodeJWSPayload<T>(jws: string): T {
 // Main verification function
 // ──────────────────────────────────────────────
 
+type StoreKitEnvironment = 'production' | 'sandbox'
+
+const STOREKIT_API_HOSTS: Record<StoreKitEnvironment, string> = {
+  production: 'https://api.storekit.itunes.apple.com',
+  sandbox: 'https://api.storekit-sandbox.itunes.apple.com',
+}
+
 /**
  * Verify an Apple IAP transaction using the App Store Server API v2.
  *
@@ -272,19 +283,33 @@ export async function verifyAppleTransaction(transactionId: string): Promise<App
       config.bundleId
     )
 
-    const baseUrl = config.environment === 'sandbox'
-      ? 'https://api.storekit-sandbox.itunes.apple.com'
-      : 'https://api.storekit.itunes.apple.com'
+    // The configured environment first, then the other one on a 404 — see the
+    // header comment. Any other failure is final: a 401 or a 5xx says nothing
+    // about which environment owns the transaction.
+    const order: StoreKitEnvironment[] = config.environment === 'sandbox'
+      ? ['sandbox', 'production']
+      : ['production', 'sandbox']
 
-    const response = await fetch(
-      `${baseUrl}/inApps/v1/transactions/${transactionId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    let response: Response | undefined
+    for (const [i, env] of order.entries()) {
+      response = await fetch(
+        `${STOREKIT_API_HOSTS[env]}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      // The last 404 falls through with its body unread, for the error below.
+      if (response.status !== 404 || i === order.length - 1) break
+      await response.text().catch(() => '') // drain before the next request
+      console.warn(`[Apple IAP] Transaction ${transactionId} not found in ${env}, asking ${order[i + 1]}`)
+    }
+
+    if (!response) {
+      return { valid: false, error: 'Failed to verify with Apple' }
+    }
 
     if (!response.ok) {
       const errorBody = await response.text()
@@ -311,6 +336,12 @@ export async function verifyAppleTransaction(transactionId: string): Promise<App
         valid: false,
         error: `Bundle ID mismatch: expected ${config.bundleId}, got ${txInfo.bundleId}`,
       }
+    }
+
+    // Sandbox money is not real money: keep these greppable in production
+    // logs (App Review, TestFlight testers, sandbox accounts).
+    if (txInfo.environment === 'Sandbox' && isProductionDeploy()) {
+      console.warn(`[Apple IAP] Sandbox transaction ${transactionId} (${txInfo.productId}) accepted in production`)
     }
 
     return { valid: true, transactionInfo: txInfo }

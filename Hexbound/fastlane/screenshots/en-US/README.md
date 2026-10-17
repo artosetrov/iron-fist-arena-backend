@@ -4,4 +4,4 @@ Drop App Store screenshots here before `fastlane deliver`:
 - 6.5" (iPhone 11 Pro Max / XS Max): 1242 × 2688 — required for older device listing
 - Name them `1_arena.png`, `2_duel.png`, `3_dungeon.png`, `4_hero.png`, `5_shop.png`; deliver sorts by filename.
 
-Suggested order: Arena (ladder) → Duel (stance pick) → Dungeon map → Hero build → Town / Gold Mine.
+Suggested order: Duel (dice roll) → Arena (ladder) → Dungeon boss → Hero build / runes → Shop or Town.
