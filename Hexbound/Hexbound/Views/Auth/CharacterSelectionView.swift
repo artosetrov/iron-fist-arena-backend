@@ -529,125 +529,148 @@ struct GateHeroCard: View {
     var isEntering: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var floating = false
     @State private var shine: CGFloat = -0.6
 
-    // Content-sized card: art + stat row + status line, no dead space.
-    static let statsHeight: CGFloat = 56
-    static let statusHeight: CGFloat = 28
-    static func artHeight(forWidth w: CGFloat) -> CGFloat { (w * 1.02).rounded() }
-    static func height(forWidth w: CGFloat) -> CGFloat {
-        artHeight(forWidth: w) + LayoutConstants.spaceSM + statsHeight + LayoutConstants.spaceXS + statusHeight + LayoutConstants.spaceSM
-    }
+    /// Card art is 300×402 pt (generated frames, `CardFrames/card-frame-N`).
+    static let aspect: CGFloat = 402.0 / 300.0
+    static func height(forWidth w: CGFloat) -> CGFloat { (w * aspect).rounded() }
 
+    private var tier: HeroCardTier { HeroCardTier(level: character.level, prestige: character.prestige ?? 0) }
     private var classColor: Color { DarkFantasyTheme.classColor(for: character.characterClass) }
     private var isNewHero: Bool { character.pvpWins == 0 && character.pvpLosses == 0 }
 
     var body: some View {
         GeometryReader { geo in
-            let w = geo.size.width
-            let artHeight = Self.artHeight(forWidth: w)
+            let w = geo.size.width, h = geo.size.height
+            let g = tier.geometry
+            let win = CGRect(x: g.windowL * w, y: g.windowT * h,
+                             width: (g.windowR - g.windowL) * w, height: (g.windowB - g.windowT) * h)
+            // Bottom block (stats + status) has a fixed height, the art takes the rest.
+            let bottomBlock: CGFloat = 76
+            let artRect = CGRect(x: win.minX, y: win.minY, width: win.width, height: win.height - bottomBlock)
 
-            VStack(spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                // 1. Card body under the frame (a little larger than the window so no seam shows).
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .fill(DarkFantasyTheme.bgSecondary)
+                    .frame(width: win.width + w * 0.04, height: win.height + w * 0.04)
+                    .offset(x: win.minX - w * 0.02, y: win.minY - w * 0.02)
+
+                // 2. Art + name, clipped to the art area.
                 ZStack(alignment: .bottom) {
-                    AvatarImageView(skinKey: character.avatar, characterClass: character.characterClass, size: w)
-                        .frame(width: w, height: artHeight)
+                    AvatarImageView(skinKey: character.avatar, characterClass: character.characterClass, size: artRect.width)
+                        .frame(width: artRect.width, height: artRect.height)
                         .clipped()
                         .background(
                             RadialGradient(colors: [classColor.opacity(0.45), DarkFantasyTheme.bgAbyss],
-                                           center: .center, startRadius: 0, endRadius: w)
+                                           center: .center, startRadius: 0, endRadius: artRect.width)
                         )
-
                     LinearGradient(colors: [.clear, DarkFantasyTheme.bgSecondary],
                                    startPoint: .top, endPoint: .bottom)
-                        .frame(height: artHeight * 0.38)
-
-                    VStack(spacing: LayoutConstants.space2XS) {
+                        .frame(height: artRect.height * 0.42)
+                    VStack(spacing: 0) {
                         Text(character.characterName.uppercased())
                             .font(DarkFantasyTheme.title)
-                            .tracking(3)
+                            .tracking(2)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
+                            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4, y: 1)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.6)
+                            .minimumScaleFactor(0.5)
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(character.origin.iconAsset)
                                 .resizable().scaledToFit()
-                                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                             Text("\(character.origin.displayName) \(character.characterClass.displayName)".uppercased())
-                                .font(DarkFantasyTheme.buttonLabelCompact)
-                                .tracking(2)
+                                .font(DarkFantasyTheme.caption.weight(.semibold))
+                                .tracking(1.5)
                                 .foregroundStyle(classColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
-                    .padding(.bottom, LayoutConstants.spaceSM)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.bottom, LayoutConstants.spaceXS)
                 }
-                .frame(height: artHeight)
-                .overlay(alignment: .topLeading) {
-                    CardLevelBadge(level: character.level, accentColor: classColor)
-                        .padding(LayoutConstants.spaceSM)
+                .frame(width: artRect.width, height: artRect.height)
+                .overlay {
+                    if isSelected && !reduceMotion {
+                        LinearGradient(
+                            colors: [.clear, DarkFantasyTheme.goldBright.opacity(0.16), .clear],
+                            startPoint: UnitPoint(x: shine, y: 0.2),
+                            endPoint: UnitPoint(x: shine + 0.4, y: 0.8)
+                        )
+                        .allowsHitTesting(false)
+                    }
                 }
-                .overlay(alignment: .topTrailing) {
-                    Image(character.characterClass.iconAsset)
-                        .resizable().scaledToFit()
-                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                        .padding(LayoutConstants.spaceXS)
-                }
+                .clipped()
+                .offset(x: artRect.minX, y: artRect.minY)
 
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    statTile(isNewHero ? "NEW" : "\(character.pvpRating)", "Rating", DarkFantasyTheme.goldBright)
-                    statTile("\(character.strength ?? 0)", "Attack", DarkFantasyTheme.danger)
-                    statTile("\(character.vitality ?? 0)", "Defense", DarkFantasyTheme.info)
-                }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.top, LayoutConstants.spaceSM)
+                // Class icon, top-right of the art window.
+                Image(character.characterClass.iconAsset)
+                    .resizable().scaledToFit()
+                    .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
+                    .offset(x: win.maxX - LayoutConstants.iconXL - LayoutConstants.spaceXS,
+                            y: win.minY + LayoutConstants.spaceXS)
 
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Circle().fill(status.color).frame(width: 8, height: 8)
-                    Text(status.text)
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(status.color)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                // 3. Stats + status: fixed slots, never move.
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        statTile(isNewHero ? "NEW" : "\(character.pvpRating)", "Rating", DarkFantasyTheme.goldBright)
+                        statTile("\(character.strength ?? 0)", "Attack", DarkFantasyTheme.danger)
+                        statTile("\(character.vitality ?? 0)", "Defense", DarkFantasyTheme.info)
+                    }
+                    .frame(height: 46)
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Circle().fill(status.color).frame(width: 6, height: 6)
+                        Text(status.text)
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(status.color)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    .frame(height: 18)
                 }
-                .frame(height: Self.statusHeight)
-                .padding(.top, LayoutConstants.spaceXS)
-            }
-            .frame(width: w, height: geo.size.height, alignment: .top)
-            .background(DarkFantasyTheme.bgSecondary)
-            .overlay {
-                if isSelected && !reduceMotion {
-                    LinearGradient(
-                        colors: [.clear, DarkFantasyTheme.goldBright.opacity(0.18), .clear],
-                        startPoint: UnitPoint(x: shine, y: 0.2),
-                        endPoint: UnitPoint(x: shine + 0.4, y: 0.8)
-                    )
+                .padding(.horizontal, LayoutConstants.spaceXS)
+                .frame(width: win.width, height: bottomBlock - LayoutConstants.spaceXS, alignment: .top)
+                .offset(x: win.minX, y: artRect.maxY + LayoutConstants.spaceXS)
+
+                // 4. Level socket backing (shows through the open sockets of tiers 3–5).
+                Circle()
+                    .fill(DarkFantasyTheme.bgAbyss)
+                    .frame(width: g.socketR * 2 * w, height: g.socketR * 2 * w)
+                    .offset(x: (g.socketX - g.socketR) * w, y: g.socketY * h - g.socketR * w)
+
+                // 5. The frame itself.
+                Image(tier.asset)
+                    .resizable()
+                    .frame(width: w, height: h)
                     .allowsHitTesting(false)
-                }
+
+                // 6. Level number in the socket.
+                Text("\(character.level)")
+                    .font(DarkFantasyTheme.cardTitle.weight(.bold))
+                    .foregroundStyle(tier.levelColor)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.6)
+                    .frame(width: g.socketR * 2 * w, height: g.socketR * 2 * w)
+                    .offset(x: (g.socketX - g.socketR) * w, y: g.socketY * h - g.socketR * w)
             }
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
-                    .stroke(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderSubtle,
-                            lineWidth: isSelected ? 3 : 1)
-            )
-            .shadow(color: isSelected ? classColor.opacity(0.55) : .clear, radius: 24)
+            .frame(width: w, height: h, alignment: .topLeading)
+            .shadow(color: isSelected ? classColor.opacity(0.55) : .clear, radius: 22)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 12, y: 8)
-            .offset(y: isSelected && floating ? -6 : 0)
             // ENTER: the card flies up into the gate and burns out.
             .scaleEffect(isEntering ? 0.15 : 1)
-            .offset(y: isEntering ? -geo.size.height * 0.55 : 0)
+            .offset(y: isEntering ? -h * 0.55 : 0)
             .opacity(isEntering ? 0 : 1)
             .brightness(isEntering ? 0.6 : 0)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(character.characterName), level \(character.level) \(character.origin.displayName) \(character.characterClass.displayName). \(status.text)"
+            "\(character.characterName), level \(character.level) \(character.origin.displayName) \(character.characterClass.displayName), \(tier.name) card. \(status.text)"
         )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { floating = true }
             withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: false)) { shine = 1.3 }
         }
     }
@@ -658,14 +681,17 @@ struct GateHeroCard: View {
                 .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(color)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Text(label)
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: Self.statsHeight)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgAbyss.opacity(0.6))
         )
     }
@@ -681,6 +707,64 @@ struct GateHeroCard: View {
             return ("Stamina full\(age)", DarkFantasyTheme.success)
         }
         return ("Stamina \(character.currentStamina)/\(character.maxStamina)\(age)", DarkFantasyTheme.textSecondary)
+    }
+}
+
+// MARK: - Card tiers
+
+/// Card frame by hero level (generated art, `CardFrames/card-frame-N`, 2026-10-17):
+/// 1–9 oak & iron · 10–19 bronze · 20–29 runed silver · 30–39 ruby gold · 40+ (or prestige) obsidian mythic.
+enum HeroCardTier: Int {
+    case iron = 1, bronze, silver, gold, mythic
+
+    init(level: Int, prestige: Int = 0) {
+        if prestige > 0 { self = .mythic; return }
+        switch level {
+        case ..<10: self = .iron
+        case 10..<20: self = .bronze
+        case 20..<30: self = .silver
+        case 30..<40: self = .gold
+        default: self = .mythic
+        }
+    }
+
+    var asset: String { "card-frame-\(rawValue)" }
+
+    var name: String {
+        switch self {
+        case .iron: "Iron"
+        case .bronze: "Bronze"
+        case .silver: "Silver"
+        case .gold: "Gold"
+        case .mythic: "Mythic"
+        }
+    }
+
+    var levelColor: Color {
+        switch self {
+        case .iron, .bronze: DarkFantasyTheme.goldBright
+        case .silver: DarkFantasyTheme.textPrimary
+        case .gold: DarkFantasyTheme.goldBright
+        case .mythic: DarkFantasyTheme.premiumPink
+        }
+    }
+
+    /// Measured on the shipped @3x art: the open card window (fractions of
+    /// width / height) and the level socket (centre as fractions, radius as a
+    /// fraction of width).
+    struct Geometry {
+        let windowL: CGFloat, windowR: CGFloat, windowT: CGFloat, windowB: CGFloat
+        let socketX: CGFloat, socketY: CGFloat, socketR: CGFloat
+    }
+
+    var geometry: Geometry {
+        switch self {
+        case .iron:   Geometry(windowL: 0.194, windowR: 0.804, windowT: 0.159, windowB: 0.842, socketX: 0.169, socketY: 0.134, socketR: 0.069)
+        case .bronze: Geometry(windowL: 0.167, windowR: 0.832, windowT: 0.157, windowB: 0.877, socketX: 0.165, socketY: 0.121, socketR: 0.059)
+        case .silver: Geometry(windowL: 0.137, windowR: 0.864, windowT: 0.127, windowB: 0.876, socketX: 0.165, socketY: 0.125, socketR: 0.061)
+        case .gold:   Geometry(windowL: 0.116, windowR: 0.883, windowT: 0.140, windowB: 0.885, socketX: 0.148, socketY: 0.114, socketR: 0.066)
+        case .mythic: Geometry(windowL: 0.163, windowR: 0.836, windowT: 0.190, windowB: 0.833, socketX: 0.171, socketY: 0.166, socketR: 0.053)
+        }
     }
 }
 

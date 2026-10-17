@@ -47,3 +47,17 @@ Defect ledger: 1 false NSFW flag (Field Medic — "army surgeon … stained apro
 Turned slightly toward the LEFT in the source; `ShopkeeperHeader` mirrors every keeper so they face the content. Head crop `npc-scavenger-face` = raw 2048 px crop (620,60)–(1480,920), `--pt 64`.
 
 Background `bg-black-market` (job `40914a8a-5c19-4b26-a975-61f08a7e281e`, 9:16, style anchors merchant + fortuna): the Scavenger's cellar den — vaulted brick, contraband shelves, cages, iron-banded chests, stairs to a barred trapdoor, magenta/crimson lanterns as flat colour, a counter with brass scales, a dagger, a ledger and coins across the lower third; darker empty upper third for the title. Shipped as a 1536×2752 JPEG (q86).
+
+## Hero card frames by level (2026-10-17) — `Assets.xcassets/CardFrames/card-frame-1…5`
+
+Hero select (Gate Deck) cards. nano_banana_2_1, 3:4, 2k, key `#00FF00` (inside the window AND outside), no style anchors. Shared prompt: "A single ornate trading-card frame for a dark fantasy mobile game hero card, seen straight on, perfectly symmetrical, flat … border about 6–7 percent of the card width … decorative corner pieces, an empty round socket in the top-left corner, an ornament centred on the top and bottom edge. MATERIAL: {material}. Hand-drawn pen-and-ink linework with crosshatching, bold black outlines, muted watercolour wash … The ENTIRE inside of the frame is flat #00FF00, and everything outside the frame is the same flat #00FF00. No text …"
+
+| Asset | Levels | Material | Job |
+|---|---|---|---|
+| card-frame-1 | 1–9 | weathered oak planks, rusty iron straps, nails | a315fb61-dac1-4bae-bdf2-9fb0d3847515 |
+| card-frame-2 | 10–19 | dented bronze, engraved lines, rivets, amber stone | 2b3fba11-d426-4dc9-be24-251f42e42cbe |
+| card-frame-3 | 20–29 | worn silver, engraved runes, sapphires | e3518452-503d-4b7b-b865-c603141d9a98 |
+| card-frame-4 | 30–39 | antique gold filigree, rubies, winged crest, laurel | de850af7-806e-4bc2-82a8-3e08aff5a953 |
+| card-frame-5 | 40+ / prestige | obsidian + gold, purple runes, dragon wings, amethyst crest | a5fd5fa4-f98b-4eb9-8f88-3d9d63697049 |
+
+Ingest: keyed with `ingest_generated_sprite.key_out` WITHOUT cropping (all five share one 300×402 pt canvas). Window and socket geometry measured on the @3x art lives in `HeroCardTier.geometry` (CharacterSelectionView.swift) — re-measure if a frame is regenerated.
