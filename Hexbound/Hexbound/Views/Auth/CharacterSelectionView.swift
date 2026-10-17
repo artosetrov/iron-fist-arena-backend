@@ -1,48 +1,33 @@
 import SwiftUI
 
-/// Character selection screen — shown after login when user has 2+ heroes.
-/// Cards use the same arena-style design as `ArenaOpponentCard`:
-/// full-bleed avatar, vignette, level badge, class pill, rating, glass stat pills.
+/// Character selection — "Gate Deck" (2026-10-17 redesign, canvas page
+/// "Hero select", concept G = D "The Gate" + F "Hero Deck").
+///
+/// The runed gate from the title art fills the screen and glows in the
+/// selected hero's class colour. Heroes are a swipeable deck of big cards
+/// (neighbours peek at the sides, the last card forges a new hero), mirrored
+/// by a strip of medallions for quick jumps. ENTER sends the card flying into
+/// the gate, then the hub loads. Rename/delete live behind "…" — no trash can
+/// on the card any more.
 struct CharacterSelectionView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var vm = CharacterSelectionViewModel()
-    @State private var enterPressed = false
-    @State private var enterGlow = false
     @State private var heroToDelete: Character?
+    @State private var deckPosition: String?
+    @State private var entering = false
+    @State private var gatePulse = false
+
+    private static let forgeCardID = "forge-new-hero"
 
     var body: some View {
         @Bindable var state = appState
         NavigationStack(path: $state.authPath) {
             ZStack {
-                // Background — radial glow like hub
-                DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-                RadialGradient(
-                    colors: [
-                        DarkFantasyTheme.bgTertiary.opacity(0.6),
-                        DarkFantasyTheme.bgPrimary,
-                        DarkFantasyTheme.bgAbyss
-                    ],
-                    center: .init(x: 0.5, y: 0.15),
-                    startRadius: 20,
-                    endRadius: 500
-                )
-                .ignoresSafeArea()
+                gateBackdrop
 
                 VStack(spacing: 0) {
-                    headerSection
-                    DiamondDividerMotif()
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.vertical, LayoutConstants.spaceXS)
-
-                    // Currency bar — hidden for guests (no real ownership + removes competing gold accent)
-                    if let selected = vm.selectedCharacter, !appState.isGuest {
-                        currencyBar(for: selected)
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.bottom, LayoutConstants.spaceSM)
-                    }
-
-                    // Single gating point for guests — replaces inline guestBanner
                     if appState.isGuest {
                         GuestGateCTA(
                             variant: .prominent,
@@ -54,28 +39,41 @@ struct CharacterSelectionView: View {
                             }
                         )
                         .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
+                        .padding(.top, LayoutConstants.spaceSM)
                     }
 
                     contentArea
-                    bottomCTA
                 }
 
-                // Enter Game overlay
-                if enterPressed {
-                    enterGameOverlay
+                if entering {
+                    gateFlash
+                        .transition(.opacity)
+                        .zIndex(10)
                 }
             }
             .toolbar {
                 // Back button — only when no heroes (prevents dead-end).
-                // Uses the shared HubLogoButton so the arrow style matches Settings
-                // and every other screen exactly (same asset, same size, same hit area).
                 if !vm.isLoading && vm.characters.isEmpty {
                     ToolbarItem(placement: .navigationBarLeading) {
                         HubLogoButton {
                             HapticManager.light()
                             appState.logout()
                         }
+                    }
+                }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !vm.characters.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("THE GATE AWAITS")
+                                .font(DarkFantasyTheme.buttonLabelCompact)
+                                .tracking(3)
+                                .foregroundStyle(DarkFantasyTheme.gold)
+                            Text("Swipe to choose who walks through")
+                                .font(DarkFantasyTheme.caption)
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isHeader)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -88,6 +86,7 @@ struct CharacterSelectionView: View {
                     .accessibilityLabel("Settings")
                 }
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .onboarding: OnboardingDetailView()
@@ -97,12 +96,37 @@ struct CharacterSelectionView: View {
                 default: UnavailableRouteView()
                 }
             }
+            .alert(
+                "Delete Hero?",
+                isPresented: Binding(
+                    get: { heroToDelete != nil },
+                    set: { if !$0 { heroToDelete = nil } }
+                )
+            ) {
+                Button("Delete Forever", role: .destructive) {
+                    guard let hero = heroToDelete else { return }
+                    heroToDelete = nil
+                    Task {
+                        let success = await vm.deleteCharacter(id: hero.id)
+                        if success {
+                            deckPosition = vm.selectedCharacterId
+                        } else {
+                            appState.showToast("Failed to delete hero", type: .error)
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) { heroToDelete = nil }
+            } message: {
+                if let hero = heroToDelete {
+                    Text("\"\(hero.characterName)\" will be permanently deleted. This cannot be undone.")
+                }
+            }
         }
         .onAppear {
             AudioManager.shared.playBGM("main-theme.mp3")
+            if !reduceMotion { gatePulse = true }
         }
         .task {
-            // Load skins and characters in parallel (no @MainActor on skins task — runs on background thread)
             async let skinsTask: Void = {
                 if await cache.skins.isEmpty {
                     if let response: AppearancesResponse = try? await APIClient.shared.get(APIEndpoints.appearances) {
@@ -112,6 +136,7 @@ struct CharacterSelectionView: View {
             }()
             async let charsTask: Void = vm.loadCharacters(appState: appState)
             _ = await (skinsTask, charsTask)
+            deckPosition = vm.selectedCharacterId
 
             // Guest with no heroes → skip empty state, go straight to hero creation
             if appState.isGuest && vm.characters.isEmpty && appState.authPath.isEmpty {
@@ -121,63 +146,79 @@ struct CharacterSelectionView: View {
         .onChange(of: appState.authPath.count) { oldCount, newCount in
             // Refresh character list when returning from onboarding (new hero created)
             if newCount == 0 && oldCount > 0 {
-                vm.selectedCharacterId = nil  // Reset so auto-select picks the new hero
-                Task { await vm.loadCharacters(appState: appState) }
+                vm.selectedCharacterId = nil
+                Task {
+                    await vm.loadCharacters(appState: appState)
+                    deckPosition = vm.selectedCharacterId
+                }
             }
         }
     }
 
-    // MARK: - Header
+    // MARK: - Derived
 
-    private var headerSection: some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text("CHOOSE YOUR HERO")
-                .font(DarkFantasyTheme.title)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .tracking(2)
+    private var isForgeCardSelected: Bool { deckPosition == Self.forgeCardID }
 
-            Text("Select a hero to enter the world")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
-        .padding(.top, LayoutConstants.spaceMD)
+    private var accent: Color {
+        guard !isForgeCardSelected, let hero = vm.selectedCharacter else { return DarkFantasyTheme.gold }
+        return DarkFantasyTheme.classColor(for: hero.characterClass)
     }
 
-    // MARK: - Currency Bar
+    private var deckIDs: [String] {
+        vm.characters.map(\.id) + (vm.canCreateNewHero ? [Self.forgeCardID] : [])
+    }
 
-    private func currencyBar(for character: Character) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            CurrencyDisplay(
-                gold: character.gold,
-                gems: character.gems,
-                size: .standard,
-                currencyType: .both,
-                animated: false
-            )
+    private func select(_ id: String) {
+        guard !entering else { return }
+        withAnimation(MotionConstants.smooth) { deckPosition = id }
+    }
 
-            Spacer()
+    // MARK: - Backdrop (the gate)
 
-            Button {
-                HapticManager.medium()
-                SFXManager.shared.play(.uiTap)
-                appState.authPath.append(AppRoute.currencyPurchase())
-            } label: {
-                Image(systemName: "plus")
-                    .font(DarkFantasyTheme.buttonLabelCompact)
-                    .frame(width: 32, height: 32)
-            }
-            .buttonStyle(.compactPrimary)
-            .accessibilityLabel("Get currency")
-        }
-        .padding(LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary.opacity(0.6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
+    private var gateBackdrop: some View {
+        GeometryReader { geo in
+            ZStack {
+                Image("bg-title")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                    .clipped()
+
+                // Rune glow inside the arch — takes the selected class colour.
+                RadialGradient(
+                    colors: [accent.opacity(0.55), accent.opacity(0.12), .clear],
+                    center: UnitPoint(x: 0.5, y: 0.22),
+                    startRadius: 0,
+                    endRadius: geo.size.width * 0.55
                 )
-        )
+                .blendMode(.screen)
+                .opacity(gatePulse ? 1 : 0.6)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 2.8).repeatForever(autoreverses: true),
+                    value: gatePulse
+                )
+                .animation(MotionConstants.smooth, value: accent)
+
+                LinearGradient(
+                    stops: [
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.55), location: 0),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.1), location: 0.22),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.35), location: 0.48),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.9), location: 0.74),
+                        .init(color: DarkFantasyTheme.bgAbyss, location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                if !reduceMotion {
+                    GateEmbers(color: accent)
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Content Area
@@ -191,186 +232,205 @@ struct CharacterSelectionView: View {
         } else if vm.characters.isEmpty {
             emptyState
         } else {
-            heroGrid
+            gateDeck
         }
     }
 
-    // MARK: - Hero Grid (arena-style 2-column)
+    // MARK: - Gate deck
 
-    private var heroGrid: some View {
-        ScrollView {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: LayoutConstants.arenaCardGap),
-                    GridItem(.flexible(), spacing: LayoutConstants.arenaCardGap)
-                ],
-                spacing: LayoutConstants.arenaCardGap
-            ) {
-                ForEach(Array(vm.characters.enumerated()), id: \.element.id) { index, character in
-                    let isSelected = character.id == vm.selectedCharacterId
-                    ZStack(alignment: .topTrailing) {
-                        HeroSelectionCard(
-                            character: character,
-                            isSelected: isSelected,
-                            onSelect: {
-                                HapticManager.light()
-                                SFXManager.shared.play(.uiTap)
-                                vm.selectedCharacterId = character.id
-                            }
+    private var gateDeck: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Spacer(minLength: LayoutConstants.spaceSM)
+            deck
+            medallions
+            Spacer(minLength: LayoutConstants.spaceSM)
+            bottomBar
+        }
+    }
+
+    private var deck: some View {
+        GeometryReader { geo in
+            let cardWidth = min(300, geo.size.width * 0.70)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: LayoutConstants.spaceMD) {
+                    ForEach(vm.characters) { hero in
+                        GateHeroCard(
+                            character: hero,
+                            isSelected: deckPosition == hero.id,
+                            isEntering: entering && deckPosition == hero.id
                         )
-                        .staggeredAppear(index: index)
-
-                        // Edit/delete button — appears on active card, outside Button to avoid gesture conflict
-                        if isSelected {
-                            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger, label: "Delete hero") {
-                                HapticManager.light()
-                                SFXManager.shared.play(.uiTap)
-                                heroToDelete = character
-                            }
-                            .padding(LayoutConstants.arenaCardPadding - 4)
-                            .transition(.opacity)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
+                        .frame(width: cardWidth, height: geo.size.height)
+                        .id(hero.id)
+                        .onTapGesture { select(hero.id) }
+                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                            content
+                                .scaleEffect(phase.isIdentity ? 1 : 0.84)
+                                .rotationEffect(.degrees(phase.value * 6))
+                                .opacity(phase.isIdentity ? 1 : 0.5)
                         }
                     }
-                }
-
-                // Create hero placeholder card
-                if vm.canCreateNewHero {
-                    createHeroCard
-                        .staggeredAppear(index: vm.characters.count)
-                }
-            }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.top, LayoutConstants.spaceLG)
-            .padding(.bottom, LayoutConstants.spaceSM)
-        }
-        .alert(
-            "Delete Hero?",
-            isPresented: Binding(
-                get: { heroToDelete != nil },
-                set: { if !$0 { heroToDelete = nil } }
-            )
-        ) {
-            Button("Delete Forever", role: .destructive) {
-                guard let hero = heroToDelete else { return }
-                heroToDelete = nil
-                Task {
-                    let success = await vm.deleteCharacter(id: hero.id)
-                    if !success {
-                        appState.showToast("Failed to delete hero", type: .error)
+                    if vm.canCreateNewHero {
+                        GateForgeCard()
+                            .frame(width: cardWidth, height: geo.size.height)
+                            .id(Self.forgeCardID)
+                            .onTapGesture { select(Self.forgeCardID) }
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content
+                                    .scaleEffect(phase.isIdentity ? 1 : 0.84)
+                                    .rotationEffect(.degrees(phase.value * 6))
+                                    .opacity(phase.isIdentity ? 1 : 0.5)
+                            }
                     }
                 }
+                .scrollTargetLayout()
             }
-            Button("Cancel", role: .cancel) {
-                heroToDelete = nil
+            .contentMargins(.horizontal, (geo.size.width - cardWidth) / 2, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $deckPosition)
+            .scrollDisabled(entering)
+        }
+        .frame(maxHeight: 470)
+        .onChange(of: deckPosition) { _, newValue in
+            guard let newValue else { return }
+            if newValue != Self.forgeCardID {
+                vm.selectedCharacterId = newValue
             }
-        } message: {
-            if let hero = heroToDelete {
-                Text("\"\(hero.characterName)\" will be permanently deleted. This cannot be undone.")
-            }
+            HapticManager.light()
+            SFXManager.shared.play(.uiSlide)
         }
     }
 
-    // MARK: - Create Hero Card
+    private var medallions: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(vm.characters) { hero in
+                let on = deckPosition == hero.id
+                Button { select(hero.id) } label: {
+                    AvatarImageView(skinKey: hero.avatar, characterClass: hero.characterClass, size: on ? 52 : 44)
+                        .frame(width: on ? 52 : 44, height: on ? 52 : 44)
+                        .clipShape(Circle())
+                        .opacity(on ? 1 : 0.6)
+                        .overlay(
+                            Circle().stroke(on ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderSubtle,
+                                            lineWidth: on ? 2 : 1)
+                        )
+                        .shadow(color: on ? DarkFantasyTheme.classColor(for: hero.characterClass).opacity(0.85) : .clear,
+                                radius: 8)
+                        .frame(width: LayoutConstants.touchComfortable, height: LayoutConstants.touchComfortable)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(hero.characterName), level \(hero.level)")
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+            if vm.canCreateNewHero {
+                Button { select(Self.forgeCardID) } label: {
+                    Image(systemName: "plus")
+                        .font(DarkFantasyTheme.iconMedium)
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Circle().strokeBorder(DarkFantasyTheme.goldDim,
+                                                  style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        )
+                        .frame(width: LayoutConstants.touchComfortable, height: LayoutConstants.touchComfortable)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Forge a new hero")
+            }
+        }
+        .animation(MotionConstants.spring, value: deckPosition)
+    }
 
-    private var createHeroCard: some View {
-        Button {
+    private var bottomBar: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if let hero = vm.selectedCharacter, !isForgeCardSelected {
+                Menu {
+                    Button("Delete hero", systemImage: "trash", role: .destructive) {
+                        heroToDelete = hero
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(DarkFantasyTheme.iconMedium)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .frame(width: LayoutConstants.touchComfortable, height: LayoutConstants.touchComfortable)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        )
+                }
+                .accessibilityLabel("Hero options")
+                .disabled(entering)
+            }
+
+            Button(action: primaryAction) {
+                Text(ctaTitle)
+                    .font(DarkFantasyTheme.buttonLabel)
+                    .tracking(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LayoutConstants.touchComfortable)
+            }
+            .buttonStyle(.primary)
+            .disabled(entering || (vm.selectedCharacterId == nil && !isForgeCardSelected))
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.bottom, LayoutConstants.spaceMD)
+    }
+
+    private var ctaTitle: String {
+        if isForgeCardSelected { return "FORGE A HERO" }
+        if let hero = vm.selectedCharacter { return "ENTER AS \(hero.characterName.uppercased())" }
+        return "SELECT A HERO"
+    }
+
+    private func primaryAction() {
+        if isForgeCardSelected {
             HapticManager.medium()
             SFXManager.shared.play(.uiTap)
             appState.authPath.append(AppRoute.onboarding)
-        } label: {
-            GeometryReader { geo in
-                let width = geo.size.width
-                let height = width * 1.4
-
-                VStack(spacing: LayoutConstants.spaceSM) {
-                    ZStack {
-                        Circle()
-                            .fill(DarkFantasyTheme.bgTertiary)
-                            .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                            .overlay(
-                                Circle()
-                                    .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
-                            )
-
-                        Image(systemName: "plus")
-                            .font(DarkFantasyTheme.section.weight(.light))
-                            .foregroundStyle(DarkFantasyTheme.gold)
-                    }
-
-                    VStack(spacing: LayoutConstants.space2XS) {
-                        Text("CREATE HERO")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .tracking(0.8)
-
-                        Text("\(vm.slotsLeft) of 5 slots")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    }
-                }
-                .frame(width: width, height: height)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                        .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
-                        .foregroundStyle(DarkFantasyTheme.borderMedium)
-                )
-            }
-            .aspectRatio(1.0 / 1.4, contentMode: .fit)
+            return
         }
-        .buttonStyle(ArenaCardPressStyle(glowColor: DarkFantasyTheme.gold))
+        guard let charId = vm.selectedCharacterId else { return }
+        HapticManager.heavy()
+        SFXManager.shared.play(.uiConfirm)
+        withAnimation(.easeIn(duration: reduceMotion ? 0.2 : 0.9)) { entering = true }
+        Task {
+            // Let the card reach the gate before the hub replaces this screen.
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 250 : 1100))
+            await vm.selectAndEnter(characterId: charId, appState: appState, cache: cache)
+        }
     }
 
-    // MARK: - Bottom CTA
+    // MARK: - Enter flash
 
-    private var bottomCTA: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Button {
-                guard let charId = vm.selectedCharacterId else { return }
-                HapticManager.heavy()
-                SFXManager.shared.play(.uiConfirm)
-                enterPressed = true
-                Task {
-                    await vm.selectAndEnter(
-                        characterId: charId,
-                        appState: appState,
-                        cache: cache
-                    )
-                }
-            } label: {
-                Group {
-                    if enterPressed {
-                        Text("ENTERING...")
-                    } else if let selected = vm.selectedCharacter {
-                        Text("PLAYING AS \(selected.characterName.uppercased())")
-                    } else {
-                        Text("SELECT A HERO")
-                    }
-                }
-                .font(DarkFantasyTheme.buttonLabel)
-                .tracking(1.5)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-            }
-            .buttonStyle(.primary)
-            .disabled(vm.selectedCharacterId == nil || vm.isLoading)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-        }
-        .padding(.bottom, LayoutConstants.spaceLG)
-        .background(
-            LinearGradient(
-                colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.9), DarkFantasyTheme.bgAbyss],
-                startPoint: .top,
-                endPoint: .bottom
+    private var gateFlash: some View {
+        ZStack {
+            RadialGradient(
+                colors: [accent.opacity(0.85), DarkFantasyTheme.bgAbyss.opacity(0.96)],
+                center: UnitPoint(x: 0.5, y: 0.3),
+                startRadius: 0,
+                endRadius: 420
             )
-            .frame(height: 100)
-            .allowsHitTesting(false),
-            alignment: .top
-        )
+            .ignoresSafeArea()
+
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Text("THE GATE OPENS")
+                    .font(DarkFantasyTheme.cinematicTitle)
+                    .tracking(4)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 14)
+                if let hero = vm.selectedCharacter {
+                    Text("\(hero.characterName) steps into Hexbound…")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Empty State
@@ -379,17 +439,11 @@ struct CharacterSelectionView: View {
         VStack(spacing: LayoutConstants.sectionGap) {
             Spacer()
 
-            Image("icon-switch-char")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                .opacity(0.4)
+            GateForgeCard()
+                .frame(width: 260, height: 340)
+                .onTapGesture { appState.authPath.append(AppRoute.onboarding) }
 
-            Text("No Heroes Yet")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-            Text("Create your first hero and begin\nyour journey in Hexbound")
+            Text("The gate waits for its first hero.")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -399,10 +453,9 @@ struct CharacterSelectionView: View {
                 SFXManager.shared.play(.uiConfirm)
                 appState.authPath.append(AppRoute.onboarding)
             } label: {
-                Text("CREATE HERO")
-                    .font(DarkFantasyTheme.body)
+                Text("FORGE YOUR HERO")
                     .tracking(1)
-                    .frame(maxWidth: 220)
+                    .frame(maxWidth: 260)
                     .frame(height: 52)
             }
             .buttonStyle(.primary)
@@ -431,7 +484,7 @@ struct CharacterSelectionView: View {
             HexPulseLoader(.compact)
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.2)
-            Text("Loading heroes...")
+            Text("Summoning your heroes...")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
@@ -440,10 +493,6 @@ struct CharacterSelectionView: View {
 
     // MARK: - Error State
 
-    /// Uses the shared `ErrorStateView` with a full-width retry so the button
-    /// matches `bottomCTA` (ENTER GAME) in style, weight, and width.
-    /// Back button is hidden here because the toolbar already has a Back
-    /// (shown in the same `vm.characters.isEmpty` state).
     private func errorState(_ message: String) -> some View {
         ErrorStateView(
             assetIcon: "rush-ui-combat-skull",
@@ -451,355 +500,237 @@ struct CharacterSelectionView: View {
             message: message,
             retryLabel: "RETRY",
             retryAction: {
-                Task { await vm.loadCharacters(appState: appState) }
+                Task {
+                    await vm.loadCharacters(appState: appState)
+                    deckPosition = vm.selectedCharacterId
+                }
             },
             retryLayout: .fullWidth,
             showBackButton: false
         )
     }
+}
 
-    // MARK: - Enter Game Overlay
+// MARK: - Hero card
 
-    private var enterGameOverlay: some View {
-        ZStack {
-            DarkFantasyTheme.bgAbyss.opacity(0.85)
-                .ignoresSafeArea()
+/// One hero in the gate deck: full art, level, class, race line and the
+/// numbers that matter — rating, attack, defense — plus one reason to play.
+struct GateHeroCard: View {
+    let character: Character
+    let isSelected: Bool
+    var isEntering: Bool = false
 
-            VStack(spacing: LayoutConstants.spaceMD) {
-                HexPulseLoader(.standard)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var floating = false
+    @State private var shine: CGFloat = -0.6
 
-                Text("Entering the Realm...")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+    private var classColor: Color { DarkFantasyTheme.classColor(for: character.characterClass) }
+    private var isNewHero: Bool { character.pvpWins == 0 && character.pvpLosses == 0 }
 
-                Text("Preparing your adventure...")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let artHeight = geo.size.height * 0.66
+
+            VStack(spacing: 0) {
+                ZStack(alignment: .bottom) {
+                    AvatarImageView(skinKey: character.avatar, characterClass: character.characterClass, size: w)
+                        .frame(width: w, height: artHeight)
+                        .clipped()
+                        .background(
+                            RadialGradient(colors: [classColor.opacity(0.45), DarkFantasyTheme.bgAbyss],
+                                           center: .center, startRadius: 0, endRadius: w)
+                        )
+
+                    LinearGradient(colors: [.clear, DarkFantasyTheme.bgSecondary],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: artHeight * 0.38)
+
+                    VStack(spacing: LayoutConstants.space2XS) {
+                        Text(character.characterName.uppercased())
+                            .font(DarkFantasyTheme.title)
+                            .tracking(3)
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(character.origin.iconAsset)
+                                .resizable().scaledToFit()
+                                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                            Text("\(character.origin.displayName) \(character.characterClass.displayName)".uppercased())
+                                .font(DarkFantasyTheme.buttonLabelCompact)
+                                .tracking(2)
+                                .foregroundStyle(classColor)
+                        }
+                    }
+                    .padding(.bottom, LayoutConstants.spaceSM)
+                }
+                .frame(height: artHeight)
+                .overlay(alignment: .topLeading) {
+                    CardLevelBadge(level: character.level, accentColor: classColor)
+                        .padding(LayoutConstants.spaceSM)
+                }
+                .overlay(alignment: .topTrailing) {
+                    Image(character.characterClass.iconAsset)
+                        .resizable().scaledToFit()
+                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                        .padding(LayoutConstants.spaceXS)
+                }
+
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    statTile(isNewHero ? "NEW" : "\(character.pvpRating)", "Rating", DarkFantasyTheme.goldBright)
+                    statTile("\(character.strength ?? 0)", "Attack", DarkFantasyTheme.danger)
+                    statTile("\(character.vitality ?? 0)", "Defense", DarkFantasyTheme.info)
+                }
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.top, LayoutConstants.spaceSM)
+
+                Spacer(minLength: LayoutConstants.space2XS)
+
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Circle().fill(status.color).frame(width: 8, height: 8)
+                    Text(status.text)
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(status.color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .padding(.bottom, LayoutConstants.spaceSM)
             }
-            .padding(LayoutConstants.spaceLG)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.gold.opacity(0.15),
-                    glowIntensity: 0.5,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
+            .frame(width: w, height: geo.size.height)
+            .background(DarkFantasyTheme.bgSecondary)
+            .overlay {
+                if isSelected && !reduceMotion {
+                    LinearGradient(
+                        colors: [.clear, DarkFantasyTheme.goldBright.opacity(0.18), .clear],
+                        startPoint: UnitPoint(x: shine, y: 0.2),
+                        endPoint: UnitPoint(x: shine + 0.4, y: 0.8)
+                    )
+                    .allowsHitTesting(false)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
+                    .stroke(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderSubtle,
+                            lineWidth: isSelected ? 3 : 1)
             )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+            .shadow(color: isSelected ? classColor.opacity(0.55) : .clear, radius: 24)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 12, y: 8)
+            .offset(y: isSelected && floating ? -6 : 0)
+            // ENTER: the card flies up into the gate and burns out.
+            .scaleEffect(isEntering ? 0.15 : 1)
+            .offset(y: isEntering ? -geo.size.height * 0.55 : 0)
+            .opacity(isEntering ? 0 : 1)
+            .brightness(isEntering ? 0.6 : 0)
         }
-        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(character.characterName), level \(character.level) \(character.origin.displayName) \(character.characterClass.displayName). \(status.text)"
+        )
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                enterGlow = true
-            }
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { floating = true }
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: false)) { shine = 1.3 }
         }
-        .onDisappear {
-            enterGlow = false
+    }
+
+    private func statTile(_ value: String, _ label: String, _ color: Color) -> some View {
+        VStack(spacing: 0) {
+            Text(value)
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(color)
+                .monospacedDigit()
+            Text(label)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.6))
+        )
+    }
+
+    /// One honest reason to pick this hero, from data the list already has.
+    private var status: (text: String, color: Color) {
+        let points = (character.statPoints ?? 0)
+        if points > 0 {
+            return ("\(points) stat point\(points == 1 ? "" : "s") to spend", DarkFantasyTheme.goldBright)
+        }
+        let age = character.ageFormatted.isEmpty ? "" : " · hero for \(character.ageFormatted)"
+        if character.currentStamina >= character.maxStamina {
+            return ("Stamina full\(age)", DarkFantasyTheme.success)
+        }
+        return ("Stamina \(character.currentStamina)/\(character.maxStamina)\(age)", DarkFantasyTheme.textSecondary)
     }
 }
 
-// MARK: - Hero Selection Card (Arena-Style)
+// MARK: - Forge card
 
-/// Individual hero card in the character selection grid.
-/// Mirrors `ArenaOpponentCard` visual design:
-/// full-bleed avatar, vignette, level badge, class tag, rating, glass stat pills.
-struct HeroSelectionCard: View {
-    let character: Character
-    let isSelected: Bool
-    let onSelect: () -> Void
-
-    @State private var glowPhase: CGFloat = 0
-    @State private var shimmerOffset: CGFloat = -1.2
-
-    private var classColor: Color {
-        DarkFantasyTheme.classColor(for: character.characterClass)
+/// The last card of the deck: forge another hero.
+struct GateForgeCard: View {
+    var body: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Image(systemName: "plus")
+                .font(DarkFantasyTheme.iconCinematic)
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(width: 96, height: 96)
+                .overlay(
+                    Circle().strokeBorder(DarkFantasyTheme.goldDim, style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
+                )
+                .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
+            Text("FORGE A NEW HERO")
+                .font(DarkFantasyTheme.section)
+                .tracking(3)
+                .foregroundStyle(DarkFantasyTheme.gold)
+            Text("Another race, another class.\nSame gold, same gems.")
+                .font(DarkFantasyTheme.uiLabel)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.75))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
+                .strokeBorder(DarkFantasyTheme.goldDim, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+        )
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Forge a new hero")
+        .accessibilityAddTraits(.isButton)
     }
+}
 
-    private var glowColor: Color {
-        isSelected ? DarkFantasyTheme.gold : classColor
-    }
+// MARK: - Embers
+
+/// Embers rising from the gate floor, tinted with the selected class colour.
+private struct GateEmbers: View {
+    let color: Color
 
     var body: some View {
-        Button(action: onSelect) {
-            cardContent
-        }
-        .buttonStyle(ArenaCardPressStyle(glowColor: glowColor))
-        .onAppear { startAnimations() }
-    }
-
-    // MARK: - Card Content
-
-    private var cardContent: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
-            let height = width * 1.4
-
-            ZStack {
-                // 1. Full-bleed avatar
-                AvatarImageView(
-                    skinKey: character.avatar,
-                    characterClass: character.characterClass,
-                    size: width
-                )
-                .frame(width: width, height: height)
-                .clipped()
-
-                // 2. Vignette
-                vignetteOverlay(width: width, height: height)
-
-                // 3. Gold tint overlay when selected (subtle warmth)
-                if isSelected {
-                    RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                        .fill(DarkFantasyTheme.gold.opacity(0.05))
-                        .allowsHitTesting(false)
+        TimelineView(.animation) { timeline in
+            Canvas { context, size in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                for i in 0..<16 {
+                    let seed = Double(i) * 0.613
+                    let period = 3.2 + (seed * 1.7).truncatingRemainder(dividingBy: 1.4)
+                    let phase = ((t / period) + seed).truncatingRemainder(dividingBy: 1)
+                    let x = size.width * ((seed * 5.3).truncatingRemainder(dividingBy: 1))
+                        + sin(t * 1.5 + seed * 9) * 8
+                    let y = size.height * (0.92 - 0.6 * phase)
+                    let alpha = phase < 0.12 ? phase / 0.12 : (1 - phase)
+                    let r = 1.2 + 1.6 * (1 - phase)
+                    context.opacity = alpha * 0.9
+                    context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
+                                 with: .color(color))
                 }
-
-                // 4. Content overlay (level badge + bottom info)
-                VStack {
-                    topBadges
-                    Spacer()
-                    bottomInfoStack
-                }
-                .padding(LayoutConstants.arenaCardPadding - 4)
-                .frame(width: width, height: height)
-            }
-            .frame(width: width, height: height)
-            .background(DarkFantasyTheme.bgAbyss)
-            .overlay(animatedBorderGlow)
-            .overlay(shimmerOverlay)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
-            // Strong gold glow when selected, subtle when not
-            .shadow(color: glowColor.opacity(isSelected ? 0.55 : 0.15), radius: isSelected ? 22 : LayoutConstants.arenaGlowRadius, y: 3)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
-        }
-        .aspectRatio(1.0 / 1.4, contentMode: .fit)
-    }
-
-    // MARK: - Vignette
-
-    private func vignetteOverlay(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            RadialGradient(
-                gradient: Gradient(colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.5)]),
-                center: .init(x: 0.5, y: 0.35),
-                startRadius: width * 0.25,
-                endRadius: width * 0.85
-            )
-
-            LinearGradient(
-                colors: [
-                    .clear, .clear,
-                    DarkFantasyTheme.bgAbyss.opacity(0.4),
-                    DarkFantasyTheme.bgAbyss.opacity(0.8),
-                    DarkFantasyTheme.bgAbyss.opacity(0.95),
-                    DarkFantasyTheme.bgAbyss
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: height * 0.65)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-        }
-    }
-
-    // MARK: - Top Badges
-
-    private var topBadges: some View {
-        HStack(alignment: .top) {
-            // Level circle — reusable component, always above ACTIVE strip (zIndex in parent)
-            CardLevelBadge(level: character.level, accentColor: classColor)
-
-            Spacer()
-
-            // Top-right is reserved for the delete/edit CardActionButton overlay
-            // added by the grid parent on the selected card. HP + Energy rings
-            // now live horizontally above the stat pills (see bottomInfoStack).
-        }
-    }
-
-    // MARK: - Bottom Info
-
-    private var isNewHero: Bool {
-        character.pvpWins == 0 && character.pvpLosses == 0
-    }
-
-    private var bottomInfoStack: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-            // Name
-            Text(character.characterName)
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
-
-            // Class tag pill
-            ClassTagView(characterClass: character.characterClass)
-
-            // Rating row with icon
-            HStack(spacing: LayoutConstants.spaceXS) {
-                if UIImage(named: "icon-pvp-rating") != nil {
-                    Image("icon-pvp-rating")
-                        .resizable()
-                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-                        .opacity(0.7)
-                } else {
-                    Image(systemName: "star.fill")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
-                }
-
-                if isNewHero {
-                    Text("NEW")
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                        .tracking(2)
-                        .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
-                } else {
-                    Text("\(character.pvpRating)")
-                        .font(DarkFantasyTheme.title)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .shadow(color: glowColor.opacity(0.4), radius: 12)
-                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
-                }
-            }
-
-            // Character age
-            if !character.ageFormatted.isEmpty {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "clock")
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                    Text(character.ageFormatted)
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                }
-            }
-
-            // HP + Energy rings, sitting just above the stat pills as part of
-            // the "health / energy / attributes" cluster. Right-aligned so the
-            // row reads: (space) → rings.
-            HStack {
-                Spacer()
-                PortraitStatRings(
-                    hpPercentage: character.hpPercentage,
-                    staminaPercentage: character.staminaPercentage,
-                    orientation: .horizontal,
-                    ringSize: 30
-                )
-            }
-
-            // Glass stat pills
-            HStack(spacing: LayoutConstants.spaceXS) {
-                GlassStatPill(value: "\(character.strength ?? 0)", label: "Attack", color: DarkFantasyTheme.danger)
-                GlassStatPill(value: "\(character.vitality ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Glass Stat Pill (uses shared GlassStatPill component)
-
-    // MARK: - Animated Border
-
-    private var animatedBorderGlow: some View {
-        Group {
-            if isSelected {
-                // Solid bright gold border — clearly communicates selection state
-                RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                DarkFantasyTheme.goldBright,
-                                DarkFantasyTheme.gold,
-                                DarkFantasyTheme.goldBright,
-                                DarkFantasyTheme.gold
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 2.5
-                    )
-                    .overlay(
-                        CornerBracketOverlay(
-                            color: DarkFantasyTheme.gold.opacity(0.9),
-                            length: 16,
-                            thickness: 2.0
-                        )
-                    )
-                    .overlay(
-                        CornerDiamondOverlay(
-                            color: DarkFantasyTheme.goldBright.opacity(0.8),
-                            size: 7
-                        )
-                    )
-            } else {
-                // Animated class-colored gradient border for unselected
-                RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                    .stroke(
-                        AngularGradient(
-                            colors: [
-                                glowColor.opacity(0.3),
-                                glowColor.opacity(0.1),
-                                glowColor.opacity(0.2),
-                                glowColor.opacity(0.05),
-                                glowColor.opacity(0.3)
-                            ],
-                            center: .center,
-                            startAngle: .degrees(glowPhase),
-                            endAngle: .degrees(glowPhase + 360)
-                        ),
-                        lineWidth: 1.5
-                    )
-                    .overlay(
-                        CornerBracketOverlay(
-                            color: classColor.opacity(0.35),
-                            length: 14,
-                            thickness: 1.5
-                        )
-                    )
-                    .overlay(
-                        CornerDiamondOverlay(
-                            color: classColor.opacity(0.3),
-                            size: 5
-                        )
-                    )
-            }
-        }
-    }
-
-    // MARK: - Shimmer (selected only)
-
-    @ViewBuilder
-    private var shimmerOverlay: some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [.clear, DarkFantasyTheme.arenaShimmerColor, .clear],
-                        startPoint: UnitPoint(x: shimmerOffset, y: 0.3),
-                        endPoint: UnitPoint(x: shimmerOffset + 0.4, y: 0.7)
-                    )
-                )
-                .allowsHitTesting(false)
-        }
-    }
-
-    // MARK: - Animations
-
-    private func startAnimations() {
-        withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
-            glowPhase = 360
-        }
-        if isSelected {
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                shimmerOffset = 1.5
             }
         }
     }
