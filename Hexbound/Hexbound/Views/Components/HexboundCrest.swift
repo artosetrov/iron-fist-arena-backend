@@ -309,45 +309,47 @@ struct HexboundCrest: View {
             return
         }
 
-        guard await pause(0.10) else { return }
+        // Cues are anchored to the start, not chained: a slow first frame
+        // (big images decoding) delays one step, never every step after it.
+        let start = ContinuousClock.now
+        func cue(_ seconds: Double) async -> Bool {
+            try? await Task.sleep(until: start.advanced(by: .seconds(seconds)), clock: .continuous)
+            return !Task.isCancelled
+        }
+
+        guard await cue(0.10) else { return }
         withAnimation(.easeOut(duration: MotionConstants.normal)) { plateIn = true }
 
-        guard await pause(0.20) else { return }
+        guard await cue(0.30) else { return }
         withAnimation(MotionConstants.springBouncy) { chainsIn = true }
 
-        guard await pause(0.10) else { return }
+        guard await cue(0.40) else { return }
         withAnimation(.easeOut(duration: MotionConstants.normal)) { clawsIn = true }
 
-        guard await pause(0.15) else { return }
+        guard await cue(0.55) else { return }
         withAnimation(.easeOut(duration: MotionConstants.fast)) {
             gemIn = true
             gemLight = 1
         }
 
-        guard await pause(0.15) else { return }
+        guard await cue(0.70) else { return }
         withAnimation(.easeInOut(duration: MotionConstants.reward)) { wordReveal = 1 }
         withAnimation(.easeOut(duration: MotionConstants.normal)) { wordGlow = 1 }
 
-        guard await pause(0.15) else { return }
+        guard await cue(0.85) else { return }
         withAnimation(.easeInOut(duration: MotionConstants.reward)) { gemLight = Self.restingGemLight }
 
-        guard await pause(0.20) else { return }
+        guard await cue(1.05) else { return }
         withAnimation(.easeOut(duration: MotionConstants.normal)) { bannerIn = true }
 
-        guard await pause(0.10) else { return }
+        guard await cue(1.15) else { return }
         withAnimation(.easeInOut(duration: MotionConstants.reward)) { wordGlow = Self.restingWordGlow }
 
-        guard await pause(0.10) else { return }
+        guard await cue(1.25) else { return }
         withAnimation(.easeOut(duration: MotionConstants.normal)) { taglineIn = true }
 
-        guard await pause(0.05) else { return }
+        guard await cue(1.30) else { return }
         withAnimation(.easeInOut(duration: MotionConstants.epic)) { sheenPhase = 1 }
-    }
-
-    /// Sleeps, then reports whether the intro should carry on.
-    private func pause(_ seconds: Double) async -> Bool {
-        try? await Task.sleep(for: .seconds(seconds))
-        return !Task.isCancelled
     }
 }
 
