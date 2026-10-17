@@ -61,21 +61,6 @@ struct CharacterSelectionView: View {
                         }
                     }
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if !vm.characters.isEmpty {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("THE GATE AWAITS")
-                                .font(DarkFantasyTheme.buttonLabelCompact)
-                                .tracking(3)
-                                .foregroundStyle(DarkFantasyTheme.gold)
-                            Text("Swipe to choose who walks through")
-                                .font(DarkFantasyTheme.caption)
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityAddTraits(.isHeader)
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { appState.authPath.append(AppRoute.settings) } label: {
                         Image("icon-settings")
@@ -239,18 +224,38 @@ struct CharacterSelectionView: View {
     // MARK: - Gate deck
 
     private var gateDeck: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Spacer(minLength: LayoutConstants.spaceSM)
-            deck
-            medallions
-            Spacer(minLength: LayoutConstants.spaceSM)
-            bottomBar
+        GeometryReader { geo in
+            let cardWidth = min(300, geo.size.width * 0.72)
+            let cardHeight = GateHeroCard.height(forWidth: cardWidth)
+            VStack(spacing: LayoutConstants.spaceMD) {
+                deckHeader
+                Spacer(minLength: 0)
+                deck(cardWidth: cardWidth, cardHeight: cardHeight, screenWidth: geo.size.width)
+                medallions
+                Spacer(minLength: 0)
+                bottomBar
+            }
         }
     }
 
-    private var deck: some View {
-        GeometryReader { geo in
-            let cardWidth = min(300, geo.size.width * 0.70)
+    private var deckHeader: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text("THE GATE AWAITS")
+                .font(DarkFantasyTheme.title)
+                .tracking(4)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 8, y: 2)
+            Text("Swipe to choose who walks through")
+                .font(DarkFantasyTheme.uiLabel)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func deck(cardWidth: CGFloat, cardHeight: CGFloat, screenWidth: CGFloat) -> some View {
+        Group {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: LayoutConstants.spaceMD) {
                     ForEach(vm.characters) { hero in
@@ -259,7 +264,7 @@ struct CharacterSelectionView: View {
                             isSelected: deckPosition == hero.id,
                             isEntering: entering && deckPosition == hero.id
                         )
-                        .frame(width: cardWidth, height: geo.size.height)
+                        .frame(width: cardWidth, height: cardHeight)
                         .id(hero.id)
                         .onTapGesture { select(hero.id) }
                         .scrollTransition(.interactive, axis: .horizontal) { content, phase in
@@ -271,7 +276,7 @@ struct CharacterSelectionView: View {
                     }
                     if vm.canCreateNewHero {
                         GateForgeCard()
-                            .frame(width: cardWidth, height: geo.size.height)
+                            .frame(width: cardWidth, height: cardHeight)
                             .id(Self.forgeCardID)
                             .onTapGesture { select(Self.forgeCardID) }
                             .scrollTransition(.interactive, axis: .horizontal) { content, phase in
@@ -283,13 +288,16 @@ struct CharacterSelectionView: View {
                     }
                 }
                 .scrollTargetLayout()
+                // Room for the selected card's float, border and glow.
+                .padding(.vertical, LayoutConstants.spaceLG)
             }
-            .contentMargins(.horizontal, (geo.size.width - cardWidth) / 2, for: .scrollContent)
+            .contentMargins(.horizontal, (screenWidth - cardWidth) / 2, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $deckPosition)
+            .scrollClipDisabled()
             .scrollDisabled(entering)
         }
-        .frame(maxHeight: 470)
+        .frame(height: cardHeight + LayoutConstants.spaceLG * 2)
         .onChange(of: deckPosition) { _, newValue in
             guard let newValue else { return }
             if newValue != Self.forgeCardID {
@@ -524,13 +532,21 @@ struct GateHeroCard: View {
     @State private var floating = false
     @State private var shine: CGFloat = -0.6
 
+    // Content-sized card: art + stat row + status line, no dead space.
+    static let statsHeight: CGFloat = 56
+    static let statusHeight: CGFloat = 28
+    static func artHeight(forWidth w: CGFloat) -> CGFloat { (w * 1.02).rounded() }
+    static func height(forWidth w: CGFloat) -> CGFloat {
+        artHeight(forWidth: w) + LayoutConstants.spaceSM + statsHeight + LayoutConstants.spaceXS + statusHeight + LayoutConstants.spaceSM
+    }
+
     private var classColor: Color { DarkFantasyTheme.classColor(for: character.characterClass) }
     private var isNewHero: Bool { character.pvpWins == 0 && character.pvpLosses == 0 }
 
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
-            let artHeight = geo.size.height * 0.66
+            let artHeight = Self.artHeight(forWidth: w)
 
             VStack(spacing: 0) {
                 ZStack(alignment: .bottom) {
@@ -586,8 +602,6 @@ struct GateHeroCard: View {
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.top, LayoutConstants.spaceSM)
 
-                Spacer(minLength: LayoutConstants.space2XS)
-
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Circle().fill(status.color).frame(width: 8, height: 8)
                     Text(status.text)
@@ -596,9 +610,10 @@ struct GateHeroCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
-                .padding(.bottom, LayoutConstants.spaceSM)
+                .frame(height: Self.statusHeight)
+                .padding(.top, LayoutConstants.spaceXS)
             }
-            .frame(width: w, height: geo.size.height)
+            .frame(width: w, height: geo.size.height, alignment: .top)
             .background(DarkFantasyTheme.bgSecondary)
             .overlay {
                 if isSelected && !reduceMotion {
@@ -648,7 +663,7 @@ struct GateHeroCard: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, LayoutConstants.spaceXS)
+        .frame(height: Self.statsHeight)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .fill(DarkFantasyTheme.bgAbyss.opacity(0.6))
