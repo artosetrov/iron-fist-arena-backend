@@ -1,0 +1,86 @@
+# TEMPORARY — throwaway branch only. Records the cold launch (title intro +
+# layered crest) on a simulator so it can be reviewed without touching a dev
+# Mac. Not for main; delete the branch after review.
+name: Sim launch recording (temporary)
+
+on:
+  push:
+    branches: [claude/sim-record]
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Placeholder runtime config (launches; no real backend)
+        run: |
+          cp Hexbound/Config/Local.secrets.example.xcconfig Hexbound/Config/Local.secrets.xcconfig
+          sed -i '' 's/^HEXBOUND_SENTRY_DSN = .*/HEXBOUND_SENTRY_DSN =/' Hexbound/Config/Local.secrets.xcconfig
+
+      - name: Pick an iPhone Pro Max simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          cands = [(rt, dev) for rt, devs in d.items() if "iOS" in rt for dev in devs if "Pro Max" in dev["name"]]
+          cands.sort(key=lambda c: c[0])
+          print(cands[-1][1]["udid"])')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl list devices | grep "$UDID"
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Hexbound/Hexbound.xcodeproj \
+            -scheme Hexbound \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
+      - name: Record the cold launch
+        run: |
+          mkdir -p sim-recording
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4 || true
+          APP=$(find build/Build/Products -maxdepth 2 -name "Hexbound.app" | head -1)
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          xcrun simctl install "$UDID" "$APP"
+          sleep 3
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force sim-recording/launch.mov &
+          REC=$!
+          sleep 2
+          xcrun simctl launch "$UDID" "$BID"
+          for i in $(seq -w 0 15); do
+            xcrun simctl io "$UDID" screenshot "sim-recording/f_$i.png" >/dev/null 2>&1 || true
+            sleep 0.25
+          done
+          sleep 4
+          xcrun simctl io "$UDID" screenshot sim-recording/final.png
+          kill -INT $REC
+          wait $REC || true
+          ls -la sim-recording
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sim-launch-recording
+          path: sim-recording
+
+      - name: Commit the recording back to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sim-recording
+          git commit -m "chore: simulator launch recording [skip ci]"
+          git push origin HEAD:claude/sim-record
