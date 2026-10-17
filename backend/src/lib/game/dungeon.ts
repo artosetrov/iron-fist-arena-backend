@@ -61,10 +61,20 @@ export interface DungeonFloor {
 
 // --- Configuration ---
 
+// Stat multiplier (damage, defense, speed, level) per difficulty.
 const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
   easy: 0.8,
   normal: 1.0,
   hard: 1.4,
+};
+
+// HP takes a smaller step than the stats: ×1.4 on HP *and* defense pushed
+// every hard-mode boss past the 15-turn cap for a level-appropriate hero
+// (2026-10-16 balance audit §5). Hard now hits harder but dies on time.
+const DIFFICULTY_HP_MULTIPLIERS: Record<string, number> = {
+  easy: 0.8,
+  normal: 1.0,
+  hard: 1.2,
 };
 
 // Boss data per dungeon, matching iOS client definitions exactly.
@@ -77,39 +87,39 @@ const DUNGEON_BOSSES: Record<string, Array<{ name: string; level: number; hp: nu
     // Straw Dummy: passive mannequin. 120 HP lets a fresh Lv.1-2 warrior clear
     // it in 4-8 turns without risk (old 250 HP + active attacks killed Lv.2).
     { name: 'Straw Dummy', level: 1, hp: 120, isPassive: true },
-    { name: 'Rusty Golem', level: 2, hp: 320 },
-    { name: 'Cave Spider', level: 3, hp: 380 },
-    { name: 'Bone Warrior', level: 4, hp: 450 },
-    { name: 'Fire Imp', level: 5, hp: 500 },
-    { name: 'Scarecrow Mage', level: 6, hp: 580 },
-    { name: 'Shadow Stalker', level: 7, hp: 650 },
-    { name: 'Iron Guardian', level: 8, hp: 750 },
-    { name: 'Plague Bearer', level: 9, hp: 850 },
-    { name: 'Arena Warden', level: 10, hp: 1000 },
+    { name: 'Rusty Golem', level: 2, hp: 187 },
+    { name: 'Cave Spider', level: 3, hp: 222 },
+    { name: 'Bone Warrior', level: 4, hp: 262 },
+    { name: 'Fire Imp', level: 5, hp: 292 },
+    { name: 'Scarecrow Mage', level: 6, hp: 338 },
+    { name: 'Shadow Stalker', level: 7, hp: 379 },
+    { name: 'Iron Guardian', level: 8, hp: 438 },
+    { name: 'Plague Bearer', level: 9, hp: 496 },
+    { name: 'Arena Warden', level: 10, hp: 583 },
   ],
   desecrated_catacombs: [
-    { name: 'Tomb Rat King', level: 10, hp: 600 },
-    { name: 'Crypt Walker', level: 11, hp: 700 },
-    { name: 'Ghoul Brute', level: 12, hp: 800 },
-    { name: 'Banshee', level: 13, hp: 880 },
-    { name: 'Skeleton Knight', level: 14, hp: 950 },
-    { name: 'Corpse Weaver', level: 15, hp: 1050 },
-    { name: 'Wraith Assassin', level: 16, hp: 1150 },
-    { name: 'Bone Colossus', level: 17, hp: 1300 },
-    { name: 'Necro Priest', level: 18, hp: 1450 },
-    { name: 'Lich King Verath', level: 20, hp: 1800 },
+    { name: 'Tomb Rat King', level: 10, hp: 350 },
+    { name: 'Crypt Walker', level: 11, hp: 408 },
+    { name: 'Ghoul Brute', level: 12, hp: 467 },
+    { name: 'Banshee', level: 13, hp: 513 },
+    { name: 'Skeleton Knight', level: 14, hp: 554 },
+    { name: 'Corpse Weaver', level: 15, hp: 612 },
+    { name: 'Wraith Assassin', level: 16, hp: 671 },
+    { name: 'Bone Colossus', level: 17, hp: 758 },
+    { name: 'Necro Priest', level: 18, hp: 846 },
+    { name: 'Lich King Verath', level: 20, hp: 1050 },
   ],
   volcanic_forge: [
-    { name: 'Lava Crawler', level: 20, hp: 1000 },
-    { name: 'Ember Sprite', level: 21, hp: 1100 },
-    { name: 'Slag Brute', level: 22, hp: 1250 },
-    { name: 'Flame Hound', level: 23, hp: 1350 },
-    { name: 'Molten Shaman', level: 24, hp: 1500 },
-    { name: 'Obsidian Knight', level: 25, hp: 1650 },
-    { name: 'Furnace Worm', level: 26, hp: 1800 },
-    { name: 'Cinderlord', level: 27, hp: 2000 },
-    { name: 'Magma Titan', level: 28, hp: 2300 },
-    { name: 'Pyrox the Eternal', level: 30, hp: 3000 },
+    { name: 'Lava Crawler', level: 20, hp: 583 },
+    { name: 'Ember Sprite', level: 21, hp: 642 },
+    { name: 'Slag Brute', level: 22, hp: 729 },
+    { name: 'Flame Hound', level: 23, hp: 788 },
+    { name: 'Molten Shaman', level: 24, hp: 875 },
+    { name: 'Obsidian Knight', level: 25, hp: 962 },
+    { name: 'Furnace Worm', level: 26, hp: 1050 },
+    { name: 'Cinderlord', level: 27, hp: 1167 },
+    { name: 'Magma Titan', level: 28, hp: 1342 },
+    { name: 'Pyrox the Eternal', level: 30, hp: 1750 },
   ],
 };
 
@@ -202,6 +212,7 @@ function generateBossForDungeon(
   dungeonId: string,
   bossIndex: number,
   difficultyMult: number,
+  hpMult: number = difficultyMult,
 ): Enemy {
   const bosses = DUNGEON_BOSSES[dungeonId];
 
@@ -217,7 +228,7 @@ function generateBossForDungeon(
       id: generateId(),
       name: boss.name,
       level: boss.level,
-      maxHp: Math.round(boss.hp * difficultyMult),
+      maxHp: Math.round(boss.hp * hpMult),
       str: isPassive ? 0 : Math.round((10 + boss.level * 2.5) * difficultyMult),
       agi: isPassive ? 0 : Math.round((8 + boss.level * 1.8) * difficultyMult),
       armor: Math.round((6 + boss.level * 2) * difficultyMult),
@@ -236,7 +247,7 @@ function generateBossForDungeon(
     id: generateId(),
     name,
     level: Math.round(level * difficultyMult),
-    maxHp: Math.round((200 + level * 50) * difficultyMult),
+    maxHp: Math.round((200 + level * 50) * hpMult),
     str: Math.round((15 + level * 3) * difficultyMult),
     agi: Math.round((10 + level * 2) * difficultyMult),
     armor: Math.round((10 + level * 2.5) * difficultyMult),
@@ -264,6 +275,7 @@ export function generateDungeonFloor(
   dungeonId: string = 'training_camp',
 ): DungeonFloor {
   const diffMult = DIFFICULTY_MULTIPLIERS[difficulty] ?? 1.0;
+  const hpMult = DIFFICULTY_HP_MULTIPLIERS[difficulty] ?? diffMult;
   const bossIndex = Math.max(0, floor - 1);
 
   // Check for variety room (non-combat floors)
@@ -277,7 +289,7 @@ export function generateDungeonFloor(
   }
 
   return {
-    enemies: [generateBossForDungeon(dungeonId, bossIndex, diffMult)],
+    enemies: [generateBossForDungeon(dungeonId, bossIndex, diffMult, hpMult)],
     isBoss: true,
   };
 }
@@ -301,6 +313,7 @@ export async function generateDungeonFloorFromDB(
   dungeonSlug: string,
 ): Promise<DungeonFloor> {
   const diffMult = DIFFICULTY_MULTIPLIERS[difficulty] ?? 1.0;
+  const hpMult = DIFFICULTY_HP_MULTIPLIERS[difficulty] ?? diffMult;
   const bossIndex = Math.max(0, floor - 1);
 
   // Keep DB-backed dungeons behaviorally aligned with the hardcoded generator:
@@ -338,8 +351,8 @@ export async function generateDungeonFloorFromDB(
             name: boss.name,
             level: Math.round(boss.level * diffMult),
             maxHp: isTutorialDummy
-              ? Math.min(Math.round(boss.hp * diffMult), 120)
-              : Math.round(boss.hp * diffMult),
+              ? Math.min(Math.round(boss.hp * hpMult), 120)
+              : Math.round(boss.hp * hpMult),
             str: isTutorialDummy ? 0 : Math.round((boss.damage ?? 15) * diffMult),
             agi: isTutorialDummy ? 0 : Math.round((boss.speed ?? 10) * diffMult),
             armor: Math.round((boss.defense ?? 10) * diffMult),

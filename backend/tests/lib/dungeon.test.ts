@@ -67,7 +67,7 @@ describe('dungeon.ts', () => {
         {
           name: 'Forge Warden',
           level: 17,
-          maxHp: 700,
+          maxHp: 600, // hard: HP ×1.2, stats ×1.4 (2026-10-16 audit)
           str: 28,
           agi: 11,
           armor: 14,

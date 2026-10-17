@@ -223,22 +223,33 @@ interface DungeonDef {
 }
 
 // HP formula: base_hp * statMultiplier * levelScale
-// Using the existing pattern from volcanic_forge (level 20 → 1000 HP, level 30 → 3000 HP)
-// Approx: HP = 120 * level * statMultiplier
-function calcBossHp(level: number, mult: number): number {
-  return Math.round(120 * level * mult);
+// Balance audit 2026-10-16 (docs/06_game_systems/BALANCE_AUDIT_2026-10-16.md §5).
+// At 120·L·mult every boss from levelReq 40 on ran out the 15-turn clock
+// against a level-appropriate hero — the "win" was the HP% tiebreak, never a
+// kill. Measured on the real engine: 70·L·mult ends those fights by a kill in
+// 8–12 rounds, and the multiplier is capped because 1.8–2.1 compounded on HP,
+// damage AND defense at once. Prod rows: migrations/20261017_boss_hp_curve.
+export const BOSS_HP_PER_LEVEL = 70;
+export const BOSS_STAT_MULT_CAP = 1.5;
+
+function cappedMult(mult: number): number {
+  return Math.min(mult, BOSS_STAT_MULT_CAP);
 }
 
-function calcBossDamage(level: number, mult: number): number {
-  return Math.round((10 + level * 2.5) * mult);
+export function calcBossHp(level: number, mult: number): number {
+  return Math.round(BOSS_HP_PER_LEVEL * level * cappedMult(mult));
 }
 
-function calcBossDefense(level: number, mult: number): number {
-  return Math.round((6 + level * 2) * mult);
+export function calcBossDamage(level: number, mult: number): number {
+  return Math.round((10 + level * 2.5) * cappedMult(mult));
 }
 
-function calcBossSpeed(level: number, mult: number): number {
-  return Math.round((8 + level * 1.8) * mult);
+export function calcBossDefense(level: number, mult: number): number {
+  return Math.round((6 + level * 2) * cappedMult(mult));
+}
+
+export function calcBossSpeed(level: number, mult: number): number {
+  return Math.round((8 + level * 1.8) * cappedMult(mult));
 }
 
 const NEW_DUNGEONS: DungeonDef[] = [
@@ -364,7 +375,7 @@ const NEW_DUNGEONS: DungeonDef[] = [
     slug: 'clockwork_citadel',
     name: 'Clockwork Citadel',
     subtitle: 'Gears never stop turning',
-    levelReq: 55,
+    levelReq: 42, // was 55 — above PRESTIGE.MAX_LEVEL 50, unreachable
     energyCost: 24,
     sortOrder: 8,
     bosses: [
@@ -387,7 +398,7 @@ const NEW_DUNGEONS: DungeonDef[] = [
     slug: 'abyssal_depths',
     name: 'Abyssal Depths',
     subtitle: 'Beneath the world, something waits',
-    levelReq: 60,
+    levelReq: 46, // was 60 — above PRESTIGE.MAX_LEVEL 50, unreachable
     energyCost: 26,
     sortOrder: 9,
     bosses: [
@@ -410,7 +421,7 @@ const NEW_DUNGEONS: DungeonDef[] = [
     slug: 'infernal_throne',
     name: 'Infernal Throne',
     subtitle: 'The final descent into madness',
-    levelReq: 65,
+    levelReq: 50, // was 65 — above PRESTIGE.MAX_LEVEL 50, unreachable
     energyCost: 30,
     sortOrder: 10,
     bosses: [
