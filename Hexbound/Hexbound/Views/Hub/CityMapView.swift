@@ -81,12 +81,17 @@ struct CityMapView: View {
                         // Layer 2: Lantern glow effects
                         LanternGlowLayer(terrainSize: terrainSize)
 
-                        // Layer 2.5: Chimney smoke (above terrain, below buildings)
-                        ChimneySmokeLayer(terrainSize: terrainSize)
-
-                        // Layer 3: Building sprites (images only, no labels)
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
+
+                        // Layer 2.5: Chimney smoke (above terrain, below buildings),
+                        // anchored to the painted chimneys of the placed sprites.
+                        ChimneySmokeLayer(
+                            terrainSize: terrainSize,
+                            chimneys: chimneyPoints(for: buildings, terrainSize: terrainSize)
+                        )
+
+                        // Layer 3: Building sprites (images only, no labels)
                         let activeQuestBuilding = questTargetBuildingId
                         // W2.D5 — compute the cap-3 filtered badge set ONCE per
                         // frame so both the sprite layer (ForEach above) and the
@@ -204,6 +209,23 @@ struct CityMapView: View {
         // Level-based unlock from tutorial system
         let characterLevel = appState.currentCharacter?.level ?? 1
         return !BuildingUnlockConfig.isUnlocked(building.id, characterLevel: characterLevel)
+    }
+
+    /// Chimney tops in terrain-relative coordinates: the sprite is drawn
+    /// `relativeSize` of the terrain height tall, centred on its position,
+    /// with its width from the image's aspect ratio (see `CityBuildingView`).
+    private func chimneyPoints(for buildings: [CityBuilding], terrainSize: CGSize) -> [CGPoint] {
+        guard terrainSize.width > 0, terrainSize.height > 0 else { return [] }
+        return buildings.compactMap { building in
+            guard let anchor = building.chimneyAnchor,
+                  let image = UIImage(named: building.imageName),
+                  image.size.height > 0 else { return nil }
+            let height = terrainSize.height * building.relativeSize
+            let width = height * image.size.width / image.size.height
+            let x = terrainSize.width * building.relativeX + (anchor.x - 0.5) * width
+            let y = terrainSize.height * building.relativeY + (anchor.y - 0.5) * height
+            return CGPoint(x: x / terrainSize.width, y: y / terrainSize.height)
+        }
     }
 
     private func applyOverrides(_ overrides: [String: GameDataCache.BuildingOverride]) -> [CityBuilding] {

@@ -383,12 +383,10 @@ struct FallingLeavesLayer: View {
 struct ChimneySmokeLayer: View {
     @Environment(\.hubEffectsActive) private var effectsActive
     let terrainSize: CGSize
-
-    private let chimneys: [(x: CGFloat, y: CGFloat)] = [
-        (0.275, 0.38),   // Tavern
-        (0.645, 0.30),   // Forge / Blacksmith
-        (0.475, 0.33),   // Guild Hall
-    ]
+    /// Chimney tops, relative to the terrain (0…1). Computed by `CityMapView`
+    /// from each building's `chimneyAnchor` and its live position, so the
+    /// smoke follows the building when the hub layout is edited.
+    let chimneys: [CGPoint]
 
     private let particlesPerChimney = 5
 

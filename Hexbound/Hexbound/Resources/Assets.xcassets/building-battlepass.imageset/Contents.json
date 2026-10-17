@@ -1,21 +1,23 @@
 {
-  "images" : [
+  "images": [
     {
-      "filename" : "building-battlepass.png",
-      "idiom" : "universal",
-      "scale" : "1x"
+      "filename": "building-battlepass.png",
+      "idiom": "universal",
+      "scale": "1x"
     },
     {
-      "idiom" : "universal",
-      "scale" : "2x"
+      "filename": "building-battlepass@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
     },
     {
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "building-battlepass@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
     }
   ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
+  "info": {
+    "author": "xcode",
+    "version": 1
   }
 }

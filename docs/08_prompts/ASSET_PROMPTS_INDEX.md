@@ -21,7 +21,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Loading Screens | Full-screen loading screen artwork | `docs/08_prompts/LOADING_SCREENS_PROMPTS.md` | Active | Multiple variations |
 | Preloader Icon | Spinning/animated preloader asset | `docs/08_prompts/PRELOADER_ICON_PROMPT.md` | Active | 1 asset |
 | Hero Characters | Player character full-body art (various classes/races) | `Hexbound/HERO_PROMPTS.md` | Active | Multiple variations |
-| Hub City | Hub/city background and location art | `docs/08_prompts/hexbound_hub_city_prompts.md` | Active | Location variations |
+| Hub City | Hub/city background and the 10 building sprites (all regenerated 2026-10-17, one recipe, one accent each) | `docs/08_prompts/hexbound_hub_city_prompts.md` | Active | 10 buildings + terrain |
 | Logo | Game logo design variations and concepts | `docs/08_prompts/hexbound_logo_prompts.md` | Active | Multiple logo styles |
 | Crest Layers | The logo as animatable layers — `crest-plate`, `crest-wordmark`, `crest-gem`, `crest-banner`, `crest-chain`, `crest-claws` (title-screen `HexboundCrest`) | `docs/08_prompts/CREST_LAYERS_PROMPTS.md` | Active | 6 |
 | Loot & Asset Icons | Gold coins, XP crystals, gems, weapons, potions | `docs/08_prompts/asset-prompts.md` | Active | 20+ assets |

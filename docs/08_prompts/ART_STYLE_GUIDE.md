@@ -260,12 +260,14 @@ painting, oil painting, watercolor, digital painting, concept art, realistic, ph
 
 ## Reference Assets in Project
 
-### Golden anchors — hub buildings (approved 2026-10-13)
+### Golden anchors — hub buildings (approved 2026-10-17)
 
-Attach as style references on every hub-building generation (Nano Banana 2.1 via Higgsfield, 2K, magenta key):
-- `figma-assets/07_Buildings/building-arena.png` — scale and torch treatment
-- `figma-assets/07_Buildings/building-tavern.png` — timber, shingles, warm windows
-- `Assets.xcassets/building-guild-hall` (regenerated, 2048px source in Higgsfield library) — the first asset made under these rules; current best anchor
+All 10 hub buildings were regenerated together on 2026-10-17 (`hexbound_hub_city_prompts.md` §11). Hub projection is **tilted bird's-eye 3/4 with a corner toward the viewer** — not the front-on camera of the terrain art. Attach on every new hub-building generation (Nano Banana 2.1 via Higgsfield, 2K):
+- `Assets.xcassets/building-ranks` — camera anchor (Higgsfield job `c69f916a-8acb-4851-94e6-79ea420c9563`, approved by Artem)
+- `Assets.xcassets/building-tavern` — timber, thatch, warm windows (job `c197bac6-bc87-4025-b9e5-4eb09a72e10b`)
+- `Assets.xcassets/building-arena` — scale and torch treatment (job `a756e62d-25bb-4ac9-85d5-ce5cfe05158a`)
+
+Each building keeps one accent of its own (table in §11); don't reuse another building's accent colour.
 
 ### Golden anchors — bosses (approved 2026-10-13)
 

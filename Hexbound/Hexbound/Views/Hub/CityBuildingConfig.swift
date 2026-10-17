@@ -13,6 +13,10 @@ struct CityBuilding: Identifiable {
     let glowColor: Color         // glow color on tap / idle
     let fallbackIcon: String     // SF Symbol fallback if asset missing
     var labelYOffset: CGFloat = 0 // extra Y offset for label (relative to terrain height)
+    /// Top of the chimney inside the sprite (0…1 of its width / height), so
+    /// `ChimneySmokeLayer` rises from the painted chimney wherever the
+    /// building is placed. nil = no smoke.
+    var chimneyAnchor: CGPoint? = nil
 }
 
 // MARK: - Default Building Configurations (hardcoded fallback)
@@ -71,7 +75,8 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeY: 0.56,
         relativeSize: 0.26,
         glowColor: DarkFantasyTheme.glowFire,
-        fallbackIcon: "mug.fill"
+        fallbackIcon: "mug.fill",
+        chimneyAnchor: CGPoint(x: 0.78, y: 0.035) // 2026-10-17 sprite
     ),
     CityBuilding(
         id: "arena",
