@@ -672,3 +672,199 @@ export async function rollAndPersistLoot(
     };
   });
 }
+
+// =============================================================================
+// Deferred loot (Dungeon Rush v2 "The Descent")
+//
+// In the Descent, finds sit in a bag that can be lost, so the item is chosen
+// when it drops (the player sees what they found) but only becomes an
+// inventory row when the bag is claimed (stash at a campfire, climb out,
+// victory, or the surviving half on death). Same relevance pipeline as
+// rollAndPersistLoot: global rarity table (R14.1) + pity + class/gear filters,
+// shard fallback when nothing relevant exists or the inventory is full.
+// =============================================================================
+
+export type PreviewedLoot =
+  | {
+      kind: 'item';
+      catalogItemId: string;
+      name: string;
+      itemType: string;
+      rarity: string;
+      itemLevel: number;
+      baseStats: Record<string, number>;
+      rolledStats: Record<string, number>;
+      imageKey: string | null;
+      imageUrl: string | null;
+      sellPrice: number;
+    }
+  | { kind: 'shard'; tier: LootShardTier; amount: number; rarity: string };
+
+/**
+ * Choose a drop for the character without writing an inventory row.
+ * Updates trashLootStreak exactly like rollAndPersistLoot would.
+ */
+export async function previewLootDrop(
+  prisma: PrismaLike,
+  characterId: string,
+  playerLevel: number,
+): Promise<PreviewedLoot | null> {
+  const character = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: {
+      id: true,
+      class: true,
+      prestigeLevel: true,
+      trashLootStreak: true,
+      equipment: {
+        where: { isEquipped: true },
+        select: {
+          upgradeLevel: true,
+          item: { select: { itemType: true, rarity: true, baseStats: true } },
+        },
+      },
+    },
+  });
+  if (!character) return null;
+
+  const equippedPowerBySlot: Record<string, number> = {};
+  for (const eq of character.equipment) {
+    const power = await calculateItemPowerScore(
+      (eq.item.baseStats as Record<string, number>) ?? {},
+      eq.item.rarity as Rarity,
+      eq.upgradeLevel,
+      eq.item.itemType as ItemType,
+    );
+    equippedPowerBySlot[eq.item.itemType] = Math.max(equippedPowerBySlot[eq.item.itemType] ?? 0, power);
+  }
+
+  const baseRarity = await rollRarity(playerLevel, 0);
+  const effectiveRarity = bumpRarity(baseRarity, pityBumpForStreak(character.trashLootStreak));
+  const catalogItem = await pickRelevantCatalogItem(
+    prisma,
+    effectiveRarity,
+    rollItemType(),
+    effectiveGearLevel(playerLevel, character.prestigeLevel),
+    character.class,
+    equippedPowerBySlot,
+  );
+
+  if (catalogItem) {
+    const resolvedImage = await resolveImage(prisma, {
+      imageKey: catalogItem.imageKey,
+      imageUrl: catalogItem.imageUrl,
+      itemType: catalogItem.itemType,
+      rarity: catalogItem.rarity,
+    });
+    if (character.trashLootStreak > 0) {
+      await prisma.character.update({ where: { id: characterId }, data: { trashLootStreak: 0 } });
+    }
+    return {
+      kind: 'item',
+      catalogItemId: catalogItem.id,
+      name: catalogItem.itemName,
+      itemType: catalogItem.itemType,
+      rarity: catalogItem.rarity,
+      itemLevel: catalogItem.itemLevel,
+      baseStats: (catalogItem.baseStats as Record<string, number>) ?? {},
+      rolledStats: rollItemStats(catalogItem.baseStats, catalogItem.rarity),
+      imageKey: resolvedImage.imageKey,
+      imageUrl: resolvedImage.imageUrl,
+      sellPrice: catalogItem.sellPrice,
+    };
+  }
+
+  const tier = rarityToShardTier(baseRarity);
+  await prisma.character.update({
+    where: { id: characterId },
+    data: { trashLootStreak: { set: Math.min(STREAK_CAP, character.trashLootStreak + 1) } },
+  });
+  return { kind: 'shard', tier, amount: 1, rarity: baseRarity };
+}
+
+/**
+ * Turn previewed loot into inventory rows / shard ticks. An item that no longer
+ * fits (inventory full) or whose catalog entry vanished becomes a shard.
+ * Must run inside the caller's transaction.
+ */
+export async function claimPreviewedLoot(
+  tx: Prisma.TransactionClient,
+  characterId: string,
+  entries: readonly PreviewedLoot[],
+): Promise<LootResponseItem[]> {
+  if (entries.length === 0) return [];
+  const character = await tx.character.findUnique({
+    where: { id: characterId },
+    select: { inventorySlots: true, level: true },
+  });
+  if (!character) return [];
+  let inventoryCount = await tx.equipmentInventory.count({ where: { characterId } });
+
+  const granted: LootResponseItem[] = [];
+  const shardTicks: Record<string, number> = {};
+  const addShard = (tier: LootShardTier, amount: number) => {
+    const col = shardColumnForTier(tier);
+    shardTicks[col] = (shardTicks[col] ?? 0) + amount;
+    granted.push({
+      id: `shard-${tier}-${Date.now()}-${granted.length}`,
+      name: `${tier.charAt(0).toUpperCase() + tier.slice(1)} Shard`,
+      type: 'shard',
+      item_type: 'shard',
+      rarity: tier,
+      item_level: character.level,
+      upgrade_level: 0,
+      base_stats: {},
+      rolled_stats: {},
+      image_key: null,
+      image_url: null,
+      sell_price: 0,
+      shard: { tier, amount },
+    });
+  };
+
+  for (const entry of entries) {
+    if (entry.kind === 'shard') {
+      addShard(entry.tier, entry.amount);
+      continue;
+    }
+    const exists = await tx.item.findUnique({ where: { id: entry.catalogItemId }, select: { id: true } });
+    if (!exists || inventoryCount >= character.inventorySlots) {
+      addShard(rarityToShardTier(entry.rarity as Rarity), 1);
+      continue;
+    }
+    const row = await tx.equipmentInventory.create({
+      data: {
+        characterId,
+        itemId: entry.catalogItemId,
+        upgradeLevel: 0,
+        durability: 100,
+        maxDurability: 100,
+        isEquipped: false,
+        rolledStats: Object.keys(entry.rolledStats).length > 0 ? entry.rolledStats : Prisma.JsonNull,
+      },
+    });
+    inventoryCount++;
+    granted.push({
+      id: row.id,
+      name: entry.name,
+      type: entry.itemType,
+      item_type: entry.itemType,
+      rarity: entry.rarity,
+      item_level: entry.itemLevel,
+      upgrade_level: 0,
+      base_stats: entry.baseStats,
+      rolled_stats: entry.rolledStats,
+      image_key: entry.imageKey,
+      image_url: entry.imageUrl,
+      sell_price: entry.sellPrice,
+      shard: null,
+    });
+  }
+
+  const shardData: Record<string, { increment: number }> = {};
+  for (const [col, n] of Object.entries(shardTicks)) shardData[col] = { increment: n };
+  if (Object.keys(shardData).length > 0) {
+    await tx.character.update({ where: { id: characterId }, data: shardData as Prisma.CharacterUpdateInput });
+  }
+  return granted;
+}

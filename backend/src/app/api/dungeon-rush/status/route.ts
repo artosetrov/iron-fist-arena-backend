@@ -1,3 +1,4 @@
+import { DESCENT_DUNGEON_ID } from '@/lib/game/descent/content'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
         where: {
           characterId,
           difficulty: 'rush',
+          dungeonId: { not: DESCENT_DUNGEON_ID },
         },
         orderBy: { createdAt: 'desc' },
       }),

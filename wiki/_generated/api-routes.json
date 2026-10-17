@@ -3,11 +3,11 @@
   "$generatedFrom": "backend/src/app/api/**/route.ts",
   "$doNotEdit": "Regenerate with scripts/wiki/generate-api-routes.mjs",
   "counts": {
-    "total": 198,
-    "withAuth": 141,
+    "total": 202,
+    "withAuth": 143,
     "admin": 34,
-    "rateLimited": 91,
-    "transactional": 80,
+    "rateLimited": 95,
+    "transactional": 81,
     "namespaces": 41
   },
   "routes": {
@@ -836,6 +836,18 @@
         "hasTransaction": false
       },
       {
+        "url": "/api/characters/creation-options",
+        "file": "backend/src/app/api/characters/creation-options/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": false,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
         "url": "/api/characters",
         "file": "backend/src/app/api/characters/route.ts",
         "methods": [
@@ -1120,6 +1132,42 @@
       {
         "url": "/api/dungeon-rush/status",
         "file": "backend/src/app/api/dungeon-rush/status/route.ts",
+        "methods": [
+          "GET"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": false
+      },
+      {
+        "url": "/api/dungeon-rush/v2/act",
+        "file": "backend/src/app/api/dungeon-rush/v2/act/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/v2/start",
+        "file": "backend/src/app/api/dungeon-rush/v2/start/route.ts",
+        "methods": [
+          "POST"
+        ],
+        "requiresAuth": true,
+        "adminOnly": false,
+        "rateLimited": true,
+        "idempotencyKey": false,
+        "hasTransaction": true
+      },
+      {
+        "url": "/api/dungeon-rush/v2/state",
+        "file": "backend/src/app/api/dungeon-rush/v2/state/route.ts",
         "methods": [
           "GET"
         ],
@@ -1614,11 +1662,11 @@
         "methods": [
           "POST"
         ],
-        "requiresAuth": true,
+        "requiresAuth": false,
         "adminOnly": false,
         "rateLimited": false,
         "idempotencyKey": false,
-        "hasTransaction": true
+        "hasTransaction": false
       },
       {
         "url": "/api/minigames/gold-mine/slot-minigame/start",

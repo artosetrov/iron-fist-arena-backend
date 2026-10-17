@@ -1,3 +1,4 @@
+import { DESCENT_DUNGEON_ID } from '@/lib/game/descent/content'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
       const lockedRun = await lockDungeonRunForUpdate(tx, run_id)
       if (!lockedRun) throw new Error('RUN_NOT_FOUND')
-      if (lockedRun.characterId !== character_id || lockedRun.difficulty !== 'rush') {
+      if (lockedRun.characterId !== character_id || lockedRun.difficulty !== 'rush' || lockedRun.dungeonId === DESCENT_DUNGEON_ID) {
         throw new Error('RUN_NOT_FOUND')
       }
 

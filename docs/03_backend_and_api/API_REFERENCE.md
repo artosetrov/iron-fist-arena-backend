@@ -139,6 +139,22 @@ Finalizes an `in_progress` match. Reads `interactive_choices`, computes rewards,
 | POST | /dungeon-rush/shop-buy | Yes | Buy during run |
 | GET | /dungeon-rush/status | Yes | Run state |
 
+### Dungeon Rush v2 — The Descent (`lib/game/descent/*`)
+
+Runs live in `dungeon_runs` with `difficulty = rush`, `dungeon_id = 'descent'`, `state.v = 2`. The v1 routes above ignore these rows. The server owns the map, every die roll and all rewards; the client renders `view` and sends one action at a time.
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| POST | /dungeon-rush/v2/start | Yes | Start a run (30 stamina) or resume the active one → `{ resumed, view }` |
+| GET | /dungeon-rush/v2/state?character_id= | Yes | Active run → `{ active, view }` |
+| POST | /dungeon-rush/v2/act | Yes | One action `{ character_id, run_id, seq, action, node_id?, i?, k? }` → `{ view, ended, granted, character }` |
+
+Actions: `begin_depth`, `torch{node_id}`, `move{node_id}`, `strike`, `brace`, `potion`, `flee`, `drink`, `take_loot`, `inspect`, `open_chest`, `leave`, `choose{i}`, `continue`, `fight_now`, `camp{k: rest|sharpen|stash}`, `buy{i}`, `take_relic{k}`, `descend`, `escape`, `abandon`.
+
+- `seq` must equal `view.seq`; a mismatch returns **409** `{ code: 'STALE', view }` with the current state.
+- Hidden information never leaves the server: dark passages carry no `type`, mimics and rune traps are not in the view, closed chests show no loot.
+- XP is granted at each kill. Bag gold and items are granted on stash (campfire), escape, victory, or — on death/abandon — the surviving half. Items are real catalog drops (global rarity table + pity), chosen when they drop and persisted on claim; a full inventory turns them into shards.
+
 ## Inventory
 
 | Method | Path | Auth | Purpose |

@@ -1,3 +1,4 @@
+import { DESCENT_DUNGEON_ID } from '@/lib/game/descent/content'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { freePvpPerDay, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
@@ -202,7 +203,7 @@ export async function POST(req: NextRequest) {
     const rushRun =
       opponentType === 'dungeon_rush'
         ? await prisma.dungeonRun.findFirst({
-            where: { id: dungeon_run_id as string, characterId: attacker.id, difficulty: 'rush' },
+            where: { id: dungeon_run_id as string, characterId: attacker.id, difficulty: 'rush', dungeonId: { not: DESCENT_DUNGEON_ID } },
           })
         : null
     const rushState = rushRun ? (rushRun.state as unknown as RushState | null) : null
