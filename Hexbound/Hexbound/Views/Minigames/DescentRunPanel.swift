@@ -12,7 +12,7 @@ struct DescentRunPanel: View {
         case .depthCard:
             tale(s)
             Button(s.depth == 0 ? "Light your torch" : "Descend") { vm.perform(.beginDepth) }
-                .buttonStyle(.primary)
+                .buttonStyle(.descentGold)
                 .disabled(vm.isBusy)
         case .fork:
             forkPanel(s)
@@ -22,7 +22,7 @@ struct DescentRunPanel: View {
             tale(s)
             lootList(s.spoils?.loot ?? [])
             Button("Take it all") { vm.perform(.takeLoot) }
-                .buttonStyle(.primary)
+                .buttonStyle(.descentGold)
                 .disabled(vm.isBusy)
         case .chest:
             chestPanel(s)
@@ -37,16 +37,16 @@ struct DescentRunPanel: View {
         case .depthClear:
             tale(s)
             Button("Descend to depth \(DescentText.roman(s.depth + 2))") { vm.perform(.descend) }
-                .buttonStyle(.primary)
+                .buttonStyle(.descentGold)
                 .disabled(vm.isBusy)
             Button("Return to the surface · keep everything") { vm.perform(.escape) }
-                .buttonStyle(.secondary)
+                .buttonStyle(.descentOutline)
                 .disabled(vm.isBusy)
         case .result:
             resultPanel(s)
         case .unknown:
             Button("Refresh") { Task { await vm.load() } }
-                .buttonStyle(.secondary)
+                .buttonStyle(.descentOutline)
         }
     }
 
@@ -76,9 +76,12 @@ struct DescentRunPanel: View {
             ForEach(fork.options) { option in
                 HStack(spacing: LayoutConstants.spaceSM) {
                     DescentChoiceRow(
-                        title: "\(option.side) · \(option.known ? (option.typeName ?? "Passage") : "Darkness")",
+                        title: option.known ? (option.typeName ?? "Passage") : "Darkness",
                         subtitle: option.cue,
+                        suffix: option.side,
                         selected: vm.selectedNodeId == option.id,
+                        accent: option.known ? DescentStyle.glow(option.roomType) : DarkFantasyTheme.vfxStormFog,
+                        direction: DescentDirection(side: option.side),
                         action: { vm.select(option) }
                     ) {
                         if option.known, let type = option.roomType {
@@ -93,7 +96,7 @@ struct DescentRunPanel: View {
                 }
             }
             Button(enterTitle) { vm.enterSelected() }
-                .buttonStyle(.primary)
+                .buttonStyle(.descentGold)
                 .disabled(vm.selectedOption == nil || vm.isBusy)
         }
     }
@@ -112,20 +115,23 @@ struct DescentRunPanel: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 22, height: 24)
+                    .shadow(color: torches > 0 ? DarkFantasyTheme.glowEmber.opacity(0.6) : .clear, radius: 6)
                 Text("LIGHT")
                     .font(DarkFantasyTheme.buttonLabelCompact)
-                    .tracking(1)
-                    .foregroundStyle(torches > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
+                    .tracking(1.5)
+                    .foregroundStyle(torches > 0 ? DarkFantasyTheme.rankChallenger : DarkFantasyTheme.textDisabled)
             }
-            .frame(width: LayoutConstants.touchComfortable + 8, height: LayoutConstants.touchComfortable + 8)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(torches > 0 ? DarkFantasyTheme.goldDim : DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
+            .frame(width: LayoutConstants.touchComfortable + 8, height: 76)
+            .background {
+                let shape = DescentChamferShape(chamfer: 9)
+                ZStack {
+                    shape.fill(LinearGradient(colors: [DarkFantasyTheme.bgCardGradientEnd, DarkFantasyTheme.bgDungeonDeep], startPoint: .top, endPoint: .bottom))
+                    shape.inset(by: 5).stroke(DarkFantasyTheme.glowEmber.opacity(torches > 0 ? 0.25 : 0.08), lineWidth: 1)
+                    shape.strokeBorder(torches > 0 ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
+                }
+                .compositingGroup()
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
+            }
             .opacity(torches > 0 ? 1 : 0.55)
         }
         .buttonStyle(DescentRowPressStyle())
@@ -146,17 +152,17 @@ struct DescentRunPanel: View {
             )
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button("Strike") { vm.perform(.strike) }
-                    .buttonStyle(.primary)
+                    .buttonStyle(.descentGold)
                     .disabled(vm.isBusy || vm.autoFight)
                 Button("Brace") { vm.perform(.brace) }
-                    .buttonStyle(.neutral)
+                    .buttonStyle(.descentIron)
                     .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .stroke(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
+                        DescentChamferShape(chamfer: 9)
+                            .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
                     )
                     .disabled(vm.isBusy || vm.autoFight)
                 Button("Potion \(s.hero.potions)") { vm.perform(.potion) }
-                    .buttonStyle(.neutral)
+                    .buttonStyle(.descentIron)
                     .disabled(vm.isBusy || vm.autoFight || s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp)
             }
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -202,13 +208,14 @@ struct DescentRunPanel: View {
             if chest.opened {
                 lootList(chest.loot)
                 Button("Take it all") { vm.perform(.takeLoot) }
-                    .buttonStyle(.primary)
+                    .buttonStyle(.descentGold)
                     .disabled(vm.isBusy)
             } else {
                 DescentChoiceRow(
                     title: "Open the chest",
                     subtitle: chest.inspected ? "{+It is a real chest.+}" : "What could go wrong?",
                     disabled: vm.isBusy,
+                    accent: DarkFantasyTheme.glowTreasure,
                     action: { vm.perform(.openChest) }
                 ) {
                     DescentRowIcon(asset: "rush2-chest-\(chest.tier)-closed")
@@ -218,13 +225,14 @@ struct DescentRunPanel: View {
                         title: "Inspect it · 1 torch",
                         subtitle: s.hero.torches > 0 ? "Hold the light close and look for teeth." : "{-You have no torches.-}",
                         disabled: vm.isBusy || s.hero.torches == 0,
+                        accent: DarkFantasyTheme.glowWarm,
                         action: { vm.perform(.inspect) }
                     ) {
                         DescentRowIcon(asset: "rush2-icon-torch")
                     }
                 }
                 Button("Leave it be") { vm.perform(.leave) }
-                    .buttonStyle(.secondary)
+                    .buttonStyle(.descentOutline)
                     .disabled(vm.isBusy)
             }
         }
@@ -243,15 +251,15 @@ struct DescentRunPanel: View {
                 switch event.then ?? "continue" {
                 case "take_loot":
                     Button("Take it") { vm.perform(.takeLoot) }
-                        .buttonStyle(.primary)
+                        .buttonStyle(.descentGold)
                         .disabled(vm.isBusy)
                 case "fight_now":
                     Button("Fight!") { vm.perform(.fightNow) }
-                        .buttonStyle(.primary)
+                        .buttonStyle(.descentGold)
                         .disabled(vm.isBusy)
                 default:
                     Button("Continue") { vm.perform(.proceed) }
-                        .buttonStyle(.primary)
+                        .buttonStyle(.descentGold)
                         .disabled(vm.isBusy)
                 }
             } else {
@@ -260,6 +268,7 @@ struct DescentRunPanel: View {
                         title: choice.label,
                         subtitle: choice.disabledReason.map { "{-\($0)-}" } ?? choice.hint,
                         disabled: vm.isBusy || choice.disabledReason != nil,
+                        accent: DarkFantasyTheme.rankMaster,
                         action: { vm.perform(.choose(choice.i)) }
                     ) {
                         DescentRowIcon(asset: choice.icon)
@@ -277,16 +286,17 @@ struct DescentRunPanel: View {
             tale(s)
             if camp.done {
                 Button("Push on") { vm.perform(.proceed) }
-                    .buttonStyle(.primary)
+                    .buttonStyle(.descentGold)
                     .disabled(vm.isBusy)
                 Button("Climb out with your loot") { vm.perform(.escape) }
-                    .buttonStyle(.secondary)
+                    .buttonStyle(.descentOutline)
                     .disabled(vm.isBusy)
             } else {
                 DescentChoiceRow(
                     title: "Rest",
                     subtitle: "{++30% HP.+} Sleep by the fire.",
                     disabled: vm.isBusy,
+                    accent: DarkFantasyTheme.glowEmber,
                     action: { vm.perform(.camp("rest")) }
                 ) {
                     DescentRowIcon(asset: "rush2-node-camp")
@@ -295,6 +305,7 @@ struct DescentRunPanel: View {
                     title: "Sharpen your blade",
                     subtitle: "{++12% damage+} for the rest of the run.",
                     disabled: vm.isBusy,
+                    accent: DarkFantasyTheme.glowEmber,
                     action: { vm.perform(.camp("sharpen")) }
                 ) {
                     DescentRowIcon(asset: "rush2-relic-shadowblade")
@@ -303,6 +314,7 @@ struct DescentRunPanel: View {
                     title: "Stash your loot",
                     subtitle: stashText(camp),
                     disabled: vm.isBusy || !camp.canStash,
+                    accent: DarkFantasyTheme.glowEmber,
                     action: { vm.perform(.camp("stash")) }
                 ) {
                     DescentRowIcon(asset: "rush2-chest-wood-closed")
@@ -332,13 +344,14 @@ struct DescentRunPanel: View {
                 subtitle: ware.desc,
                 trailing: ware.sold ? "Sold" : "\(ware.price)",
                 disabled: vm.isBusy || !ware.available,
+                accent: DarkFantasyTheme.rankPlatinum,
                 action: { vm.perform(.buy(ware.i)) }
             ) {
                 DescentRowIcon(asset: ware.icon)
             }
         }
         Button("Move on") { vm.perform(.proceed) }
-            .buttonStyle(.secondary)
+            .buttonStyle(.descentOutline)
             .disabled(vm.isBusy)
     }
 
@@ -351,7 +364,7 @@ struct DescentRunPanel: View {
             lootList(pick.loot)
             if pick.choices.isEmpty {
                 Button("Take the spoils") { vm.perform(.takeRelic(nil)) }
-                    .buttonStyle(.primary)
+                    .buttonStyle(.descentGold)
                     .disabled(vm.isBusy)
             } else {
                 Text("CHOOSE ONE RELIC")
@@ -364,7 +377,7 @@ struct DescentRunPanel: View {
                         title: relic.name,
                         subtitle: relic.desc,
                         disabled: vm.isBusy,
-                        tone: DarkFantasyTheme.rarityEpic,
+                        accent: DarkFantasyTheme.rarityEpic,
                         action: { vm.perform(.takeRelic(relic.key)) }
                     ) {
                         DescentRowIcon(asset: relic.icon, size: 36)
@@ -407,11 +420,11 @@ struct DescentRunPanel: View {
                     Text("\(vm.staminaCost)")
                 }
             }
-            .buttonStyle(.primary)
+            .buttonStyle(.descentGold)
             .disabled(vm.isStarting)
             .accessibilityLabel("Descend again, costs \(vm.staminaCost) stamina")
             Button("Return to town", action: onLeave)
-                .buttonStyle(.secondary)
+                .buttonStyle(.descentOutline)
         }
     }
 }
