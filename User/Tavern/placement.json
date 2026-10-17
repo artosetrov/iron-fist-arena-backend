@@ -1,0 +1,187 @@
+{
+  "background": "bg-tavern-empty.png",
+  "size": [
+    1536,
+    2752
+  ],
+  "units": "background pixels; box = [x, y, w, h]; draw everything in ascending z. Props are cut from the background pixels, so they align exactly; tapping a prop opens its host section. Keeper chest and Warden cellar stay in the background as rectangle hotspots (prop_hotspot).",
+  "npcs": [
+    {
+      "id": "keeper",
+      "section": "shared-chest",
+      "file": "npc-tavern-keeper.png",
+      "box": [
+        548,
+        672,
+        389,
+        346
+      ],
+      "box_pct": [
+        35.677,
+        24.419,
+        25.326,
+        12.573
+      ],
+      "feet": null,
+      "prop_hotspot": [
+        1010,
+        750,
+        330,
+        310
+      ],
+      "plate": [
+        760,
+        1112
+      ],
+      "z": 1
+    },
+    {
+      "id": "trickster",
+      "section": "shell-game",
+      "file": "npc-trickster-full.png",
+      "box": [
+        168,
+        905,
+        434,
+        825
+      ],
+      "box_pct": [
+        10.938,
+        32.885,
+        28.255,
+        29.978
+      ],
+      "feet": [
+        395,
+        1730
+      ],
+      "plate": [
+        395,
+        1560
+      ],
+      "z": 2
+    },
+    {
+      "id": "fortuna",
+      "section": "fortune-wheel",
+      "file": "npc-fortuna-full.png",
+      "box": [
+        992,
+        1070,
+        521,
+        790
+      ],
+      "box_pct": [
+        64.583,
+        38.881,
+        33.919,
+        28.706
+      ],
+      "feet": [
+        1230,
+        1860
+      ],
+      "plate": [
+        1150,
+        1690
+      ],
+      "z": 4
+    },
+    {
+      "id": "warden",
+      "section": "dungeon-rush",
+      "file": "npc-warden-full.png",
+      "box": [
+        295,
+        1780,
+        498,
+        895
+      ],
+      "box_pct": [
+        19.206,
+        64.68,
+        32.422,
+        32.522
+      ],
+      "feet": [
+        530,
+        2675
+      ],
+      "prop_hotspot": [
+        20,
+        1620,
+        310,
+        720
+      ],
+      "plate": [
+        530,
+        2440
+      ],
+      "z": 6
+    },
+    {
+      "id": "foreman",
+      "section": "gold-mine",
+      "file": "npc-foreman-full.png",
+      "box": [
+        833,
+        1719,
+        530,
+        936
+      ],
+      "box_pct": [
+        54.232,
+        62.464,
+        34.505,
+        34.012
+      ],
+      "feet": [
+        1120,
+        2655
+      ],
+      "plate": [
+        1110,
+        2420
+      ],
+      "z": 7
+    }
+  ],
+  "props": [
+    {
+      "id": "table",
+      "host": "trickster",
+      "file": "props/prop-table.png",
+      "box": [
+        380,
+        1300,
+        440,
+        530
+      ],
+      "z": 3
+    },
+    {
+      "id": "wheel",
+      "host": "fortuna",
+      "file": "props/prop-wheel.png",
+      "box": [
+        840,
+        1230,
+        320,
+        660
+      ],
+      "z": 5
+    },
+    {
+      "id": "cart",
+      "host": "foreman",
+      "file": "props/prop-cart.png",
+      "box": [
+        1160,
+        2040,
+        376,
+        712
+      ],
+      "z": 8
+    }
+  ]
+}
