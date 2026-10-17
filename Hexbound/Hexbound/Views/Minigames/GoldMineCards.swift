@@ -3,9 +3,15 @@ import SwiftUI
 // Gold Mine — the shaft (2026-10-16 rework, hybrid "tunnels + cross-section").
 //
 // Each mine slot is a tunnel level down a ladder. Its state reads from the
-// art, not from labels: an empty cart parked = send one, a cart riding the
-// rails = on its way up, a full cart at the end = collect. Tap a tunnel for
-// the optional bonus run and the double haul (`MineTunnelSheet`).
+// art, not from labels: an empty cart parked at the start of the rails =
+// send one, a full cart riding them = on its way up, a full cart at the end
+// = collect. Tap a tunnel for the optional bonus run and the double haul
+// (`MineTunnelSheet`).
+//
+// Art pass 2 (2026-10-17): side-view carts standing on a tiled iron track
+// (`mine-rail-tile`), a tiled timber ladder (`mine-ladder-tile`) and round
+// level plates (`mine-level-plate`) — all assets; only the plate's number
+// is code (text never goes into a PNG).
 
 // MARK: - Tunnel level
 
@@ -14,7 +20,7 @@ struct MineTunnelLevel: View {
     @Bindable var vm: GoldMineViewModel
     let onOpen: () -> Void
 
-    private static let height: CGFloat = 164
+    static let height: CGFloat = 180
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -55,17 +61,32 @@ struct MineTunnelLevel: View {
                 }
 
                 // One view per phase, cross-faded (opacity only — nothing slides).
-                ZStack(alignment: .bottomLeading) {
+                ZStack(alignment: .leading) {
                     switch phase {
                     case .idle: idleBody
-                    case .mining: miningBody(now: now)
+                    case .mining: miningBody
                     case .ready: readyBody
                     }
                 }
                 .id(phase)
                 .transition(.opacity)
+
+                Spacer(minLength: 0)
             }
-            .padding(LayoutConstants.spaceMS)
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.top, LayoutConstants.spaceMS)
+            .animation(MotionConstants.smooth, value: phase)
+
+            // The track runs the full width of the tunnel floor; the cart
+            // stands on it. Its position follows the clock (never slides),
+            // and only the empty ↔ full swap cross-fades.
+            MineRails(
+                progress: railProgress(phase: phase, now: now),
+                cart: phase == .idle ? MineRails.emptyCart : MineRails.fullCart
+            )
+            .id(phase)
+            .transition(.opacity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .animation(MotionConstants.smooth, value: phase)
 
             if let haul = vm.recentHaul, haul.slotIndex == index {
@@ -94,120 +115,112 @@ struct MineTunnelLevel: View {
         .accessibilityAction(named: "Tunnel details", onOpen)
     }
 
-    // MARK: Idle — empty cart parked, send it down
+    private func railProgress(phase: GoldMineViewModel.TunnelPhase, now: Date) -> Double {
+        switch phase {
+        case .idle: return 0
+        case .mining: return vm.progress(index, now: now)
+        case .ready: return 1
+        }
+    }
+
+    // MARK: Idle — empty cart parked at the start, send it down
 
     private var idleBody: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer(minLength: 0)
-            HStack(alignment: .bottom, spacing: LayoutConstants.spaceSM) {
-                Image("mine-cart-empty")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 56, height: 48)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    if let run = vm.runLengthLabel {
-                        Text(run)
+        HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                if let run = vm.runLengthLabel {
+                    Text(run)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                }
+                if let economy = vm.economy {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        MineIcon(name: "icon-gold", size: 18)
+                        Text("\(economy.rewardMin)–\(economy.rewardMax)")
                             .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(1)
                     }
-                    if let economy = vm.economy {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            MineIcon(name: "icon-gold", size: 18)
-                            Text("\(economy.rewardMin)–\(economy.rewardMax)")
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                .lineLimit(1)
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(economy.rewardMin) to \(economy.rewardMax) gold per cart")
-                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(economy.rewardMin) to \(economy.rewardMax) gold per cart")
                 }
-                Spacer(minLength: 0)
-                Button {
-                    Task { await vm.startMining(slotIndex: index) }
-                } label: {
-                    Text("SEND CART")
-                }
-                .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
-                .disabled(vm.isBusy(index))
-            }
-        }
-    }
-
-    // MARK: Mining — the cart rides up the rails
-
-    private func miningBody(now: Date) -> some View {
-        let slot = vm.slot(index)
-        return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                MineChip(
-                    icon: "icon-mine-bonus",
-                    text: slot.hasPlayedMinigame ? "Bonus played" : "Bonus run",
-                    color: slot.hasPlayedMinigame ? DarkFantasyTheme.success : DarkFantasyTheme.goldBright,
-                    action: onOpen
-                )
-                MineChip(
-                    icon: "icon-mine-boost",
-                    text: boostChipText(boosted: slot.isBoosted),
-                    price: slot.isBoosted ? nil : vm.boostCost,
-                    color: DarkFantasyTheme.cyan,
-                    action: onOpen
-                )
             }
             Spacer(minLength: 0)
-            MineRails(progress: vm.progress(index, now: now), cart: "mine-cart-full")
+            Button {
+                Task { await vm.startMining(slotIndex: index) }
+            } label: {
+                Text("SEND CART")
+            }
+            .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+            .disabled(vm.isBusy(index))
         }
     }
 
-    // MARK: Ready — full cart at the top, collect it
+    // MARK: Mining — the cart rides up the rails (drawn below)
+
+    private var miningBody: some View {
+        let slot = vm.slot(index)
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            MineChip(
+                icon: "icon-mine-bonus",
+                text: slot.hasPlayedMinigame ? "Bonus played" : "Bonus run",
+                color: slot.hasPlayedMinigame ? DarkFantasyTheme.success : DarkFantasyTheme.goldBright,
+                action: onOpen
+            )
+            MineChip(
+                icon: "icon-mine-boost",
+                text: boostChipText(boosted: slot.isBoosted),
+                price: slot.isBoosted ? nil : vm.boostCost,
+                color: DarkFantasyTheme.cyan,
+                action: onOpen
+            )
+        }
+    }
+
+    // MARK: Ready — full cart at the end of the rails, collect it
 
     private var readyBody: some View {
         let slot = vm.slot(index)
-        return VStack(alignment: .leading, spacing: 0) {
-            Spacer(minLength: 0)
-            HStack(alignment: .bottom, spacing: LayoutConstants.spaceSM) {
-                Image("mine-cart-full")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 56)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 0) {
-                    if let reward = slot.reward {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            MineIcon(name: "icon-gold", size: 24)
-                            Text("\(reward)")
-                                .font(DarkFantasyTheme.title)
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
-                                .monospacedDigit()
-                        }
-                    } else {
-                        Text("Full!")
-                            .font(DarkFantasyTheme.title)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                    }
-                    if let gems = slot.gemReward, gems > 0 {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Text("+\(gems)")
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.cyan)
-                            MineIcon(name: "icon-gems", size: 18)
-                            Text("found")
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        }
-                    }
+        return HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                if let reward = slot.reward {
+                    MineIcon(name: "icon-gold", size: 24)
+                    Text("\(reward)")
+                        .font(DarkFantasyTheme.title)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .monospacedDigit()
+                } else {
+                    Text("Full!")
+                        .font(DarkFantasyTheme.title)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
-                Spacer(minLength: 0)
-                Button {
-                    Task { await vm.collect(slotIndex: index) }
-                } label: {
-                    Text("COLLECT")
+                if let gems = slot.gemReward, gems > 0 {
+                    Text("+\(gems)")
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                        .padding(.leading, LayoutConstants.spaceXS)
+                    MineIcon(name: "icon-gems", size: 20)
                 }
-                .buttonStyle(.compactPrimary)
-                .disabled(vm.isBusy(index) || vm.isCollectingAll)
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(readyAmountLabel(slot))
+            Spacer(minLength: 0)
+            Button {
+                Task { await vm.collect(slotIndex: index) }
+            } label: {
+                Text("COLLECT")
+            }
+            .buttonStyle(.compactPrimary)
+            .disabled(vm.isBusy(index) || vm.isCollectingAll)
         }
+    }
+
+    private func readyAmountLabel(_ slot: GoldMineSlotResponse) -> String {
+        var text = slot.reward.map { "\($0) gold" } ?? "A full cart"
+        if let gems = slot.gemReward, gems > 0 { text += " and \(gems) gems" }
+        return text
     }
 
     private func boostChipText(boosted: Bool) -> String {
@@ -253,96 +266,110 @@ struct MineTunnelArt: View {
 
 // MARK: - Rails + cart
 
-/// Code-drawn track with the cart at `progress` (0 = bottom of the tunnel,
-/// 1 = arrived). Gold marks the stretch already travelled.
+/// Tiled iron track (`mine-rail-tile`) with the side-view cart standing on
+/// it at `progress` (0 = start of the tunnel, 1 = arrived). The wheels rest
+/// on the rail top; a thin gold line marks the stretch already travelled.
 struct MineRails: View {
     let progress: Double
     let cart: String
-    var cartWidth: CGFloat = 52
+    var cartWidth: CGFloat = 68
+    /// Keeps the cart off the card's rounded corners at either end.
+    var cartInset: CGFloat = LayoutConstants.spaceSM
+
+    static let emptyCart = "mine-cart-side-empty"
+    static let fullCart = "mine-cart-side-full"
+
+    /// `mine-rail-tile` is 24 × 14 pt; its top row is the rail top.
+    static let trackHeight: CGFloat = 14
+    /// Height ÷ width of the taller cart (`mine-cart-side-full`, 360 × 325 px
+    /// @3x: ore heaped over the rim). Both carts share the width, wheels at
+    /// the bottom edge, so either one stands on the same line.
+    private static let cartAspect: CGFloat = 325.0 / 360.0
+    /// The wheels overlap the rail top by this much, so they rest on it.
+    private static let wheelSink: CGFloat = 1
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let p = CGFloat(min(max(progress, 0), 1))
-            ZStack(alignment: .bottomLeading) {
-                Canvas { context, size in
-                    let top = size.height - 12
-                    // Sleepers
-                    var x: CGFloat = 3
-                    while x < size.width {
-                        context.fill(
-                            Path(CGRect(x: x, y: top - 1, width: 4, height: 12)),
-                            with: .color(DarkFantasyTheme.borderSubtle)
-                        )
-                        x += 14
-                    }
-                    // Rails, gold where the cart has been
-                    for y in [top, top + 8] {
-                        context.fill(
-                            Path(CGRect(x: 0, y: y, width: size.width, height: 2)),
-                            with: .color(DarkFantasyTheme.borderMedium)
-                        )
-                        context.fill(
-                            Path(CGRect(x: 0, y: y, width: size.width * p, height: 2)),
-                            with: .color(DarkFantasyTheme.gold)
-                        )
-                    }
-                }
+            let travel = max(width - cartWidth - cartInset * 2, 0)
+            VStack(alignment: .leading, spacing: -Self.wheelSink) {
                 Image(cart)
                     .resizable()
+                    .interpolation(.high)
                     .scaledToFit()
-                    .frame(width: cartWidth, height: cartWidth * 0.86)
-                    .offset(x: (width - cartWidth) * p, y: -8)
+                    .frame(width: cartWidth)
+                    .offset(x: cartInset + travel * p)
+                    .zIndex(1)
+                track(width: width, travelled: cartInset + travel * p + cartWidth / 2)
             }
+            .frame(width: width, height: geo.size.height, alignment: .bottomLeading)
         }
-        .frame(height: cartWidth * 0.86 + 8)
+        .frame(height: cartWidth * Self.cartAspect + Self.trackHeight - Self.wheelSink)
         // The cart's position follows the clock; never animate it (no sliding).
         .transaction { $0.animation = nil }
         .accessibilityHidden(true)
+    }
+
+    private func track(width: CGFloat, travelled: CGFloat) -> some View {
+        Image("mine-rail-tile")
+            .resizable(resizingMode: .tile)
+            .frame(width: width, height: Self.trackHeight)
+            .overlay(alignment: .topLeading) {
+                Rectangle()
+                    .fill(DarkFantasyTheme.gold.opacity(0.85))
+                    .frame(width: max(travelled, 0), height: 2)
+            }
     }
 }
 
 // MARK: - Pieces
 
-/// Numbered stop on the shaft ladder; a padlock for the sealed tunnel.
+/// Numbered plate on the shaft ladder (`mine-level-plate`, iron-rimmed
+/// wood hanging from a ring); a padlock for the sealed tunnel. The number is
+/// cut into the wood in code — text never goes into a PNG.
 struct MineLevelBadge: View {
     let number: Int
     /// nil = sealed tunnel.
     let phase: GoldMineViewModel.TunnelPhase?
 
+    static let width: CGFloat = 44
+    /// The plate art is 136 × 144 px @3x.
+    private static let height: CGFloat = width * 144 / 136
+    /// The ring on top pushes the wooden disc's centre 2.8 % below the
+    /// image's centre.
+    private static let discOffset: CGFloat = height * 0.028
+
     var body: some View {
         ZStack {
-            Circle().fill(fill)
-            Circle().stroke(stroke, lineWidth: 2)
-            if phase == nil {
-                MineIcon(name: "icon-mine-lock", size: 18)
-            } else {
-                Text("\(number)")
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(textColor)
+            Image("mine-level-plate")
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .opacity(phase == nil ? 0.7 : 1)
+            Group {
+                if phase == nil {
+                    MineIcon(name: "icon-mine-lock", size: 20)
+                } else {
+                    Text("\(number)")
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(digitColor)
+                        .monospacedDigit()
+                        // Engraved: a hard dark edge under the figure.
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 0, y: 1.5)
+                }
             }
+            .offset(y: Self.discOffset)
         }
-        .frame(width: 32, height: 32)
+        .frame(width: Self.width, height: Self.height)
         .accessibilityHidden(true)
     }
 
-    private var fill: Color {
-        phase == .ready ? DarkFantasyTheme.gold : DarkFantasyTheme.bgSecondary
-    }
-
-    private var stroke: Color {
+    private var digitColor: Color {
         switch phase {
         case .ready: return DarkFantasyTheme.goldBright
         case .mining: return DarkFantasyTheme.success
-        default: return DarkFantasyTheme.borderMedium
-        }
-    }
-
-    private var textColor: Color {
-        switch phase {
-        case .ready: return DarkFantasyTheme.textOnGold
-        case .mining: return DarkFantasyTheme.success
-        default: return DarkFantasyTheme.textSecondary
+        default: return DarkFantasyTheme.textPrimary
         }
     }
 }
@@ -528,21 +555,17 @@ struct MineSealedLevel: View {
 
 // MARK: - Shaft ladder
 
-/// Timber ladder running down behind the level badges.
+/// Timber ladder running down behind the level plates, tiled from one rung
+/// (`mine-ladder-tile`, 30 × 12 pt) so it is as long as the shaft.
 struct MineShaftLadder: View {
+    static let width: CGFloat = 30
+
     var body: some View {
-        Canvas { context, size in
-            let wood = DarkFantasyTheme.goldDim
-            context.fill(Path(CGRect(x: 0, y: 0, width: 3, height: size.height)), with: .color(wood.opacity(0.55)))
-            context.fill(Path(CGRect(x: size.width - 3, y: 0, width: 3, height: size.height)), with: .color(wood.opacity(0.55)))
-            var y: CGFloat = 10
-            while y < size.height {
-                context.fill(Path(CGRect(x: 3, y: y, width: size.width - 6, height: 3)), with: .color(wood.opacity(0.32)))
-                y += 22
-            }
-        }
-        .frame(width: 24)
-        .accessibilityHidden(true)
+        Image("mine-ladder-tile")
+            .resizable(resizingMode: .tile)
+            .frame(width: Self.width)
+            .frame(maxHeight: .infinity)
+            .accessibilityHidden(true)
     }
 }
 
@@ -600,8 +623,9 @@ struct MineExpeditionTrack: View {
         }
         .padding(LayoutConstants.spaceMD)
         .background(
+            // A touch of the mine shows through.
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -623,10 +647,11 @@ struct MineExpeditionTrack: View {
                     done ? DarkFantasyTheme.gold : (next ? DarkFantasyTheme.goldDim : DarkFantasyTheme.borderMedium),
                     lineWidth: 2
                 )
-            Image(done ? "mine-cart-full" : "mine-cart-empty")
+            Image(done ? MineRails.fullCart : MineRails.emptyCart)
                 .resizable()
+                .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 24, height: 22)
+                .frame(width: 26, height: 24)
                 .opacity(done ? 1 : (next ? 0.55 : 0.25))
         }
         .frame(width: 34, height: 34)

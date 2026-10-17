@@ -55,13 +55,14 @@ Idle gold-generation minigame — player owns mining shafts that accumulate gold
 
 ### Views
 
-- `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift` — main screen: surface, ground beam, expedition track, shaft of tunnel levels, sticky Collect All bar
-- `Hexbound/Hexbound/Views/Minigames/MineSurfaceHeader.swift` — gold/gems, head-frame art, Mine Foreman (`npc-mine`) with a live status line; tap him for economy tips
-- `Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift` — `MineTunnelLevel` (art + state pill + cart on code-drawn rails), `MineSealedLevel`, `MineExpeditionTrack`, ladder, badges, chips
+- `Hexbound/Hexbound/Views/Minigames/GoldMineDetailView.swift` — main screen: `bg-gold-mine` backdrop, foreman header (`ShopkeeperHeader(style: .goldMine)` — signboard left, big `npc-mine` right, live status line first; tap him for economy tips), counter bar, expedition track, shaft of tunnel levels, sticky Collect All bar
+- `Hexbound/Hexbound/Views/Minigames/MineBackdrop.swift` — `MineBackdrop` (mine art + light scrim) and `MineCounterBar` (gold/gems + GET MORE on the mine counter)
+- `Hexbound/Hexbound/Views/Shop/ShopkeeperHeader.swift` — shared keeper header; `.goldMine` style uses the `mine*` tokens in `DarkFantasyTheme`
+- `Hexbound/Hexbound/Views/Minigames/GoldMineCards.swift` — `MineTunnelLevel` (art + state pill + side-view cart standing on the tiled `mine-rail-tile` track), `MineSealedLevel`, `MineExpeditionTrack`, tiled `MineShaftLadder`, `MineLevelBadge` (`mine-level-plate` + number in code), chips
 - `Hexbound/Hexbound/Views/Minigames/GoldMineTunnelSheet.swift` — tap a tunnel: haul range, optional bonus run, double haul, send / collect
 - `Hexbound/Hexbound/Views/Minigames/GoldMineMiniGameView.swift` — tap minigame overlay (optional bonus run)
 - `Hexbound/Hexbound/Views/Minigames/MineClaimRewardView.swift` — reward ceremony for Collect All, bonus run and the expedition chest (tap to open)
-- Assets: `Assets.xcassets/GoldMine/` (carts, chests, hourglass, bonus/boost/lock icons) — prompts in `docs/08_prompts/GOLD_MINE_ASSETS_PROMPTS.md`
+- Assets: `Assets.xcassets/GoldMine/` (side-view carts, rail and ladder tiles, level plate, chests, hourglass, bonus/boost/lock icons) + `bg-gold-mine` — prompts in `docs/08_prompts/GOLD_MINE_ASSETS_PROMPTS.md`; tiles rebuilt by `scripts/build_mine_tiles.py`
 - `Hexbound/Hexbound/Views/Minigames/MinigameCatchEffect.swift` — particle burst on successful tap
 - `Hexbound/Hexbound/Views/Minigames/TavernDetailView.swift` — sibling screen (Tavern uses same minigame chassis)
 

@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Gold Mine (2026-10-16 rework): the surface with the foreman, the
-/// expedition chest track, and the shaft — one tunnel level per mine slot,
-/// with the cart riding each tunnel's rails. One big button collects every
-/// full cart at once.
+/// Gold Mine (2026-10-16 rework, art pass 2 on 2026-10-17): the foreman's
+/// signboard header over the mine backdrop, the counter with gold and gems,
+/// then the expedition chest track and the shaft — one tunnel level per mine
+/// slot, with the cart riding each tunnel's rails. One big button collects
+/// every full cart at once.
 struct GoldMineDetailView: View {
     @Environment(AppState.self) var appState
     @Environment(GameDataCache.self) private var cache
@@ -15,18 +16,12 @@ struct GoldMineDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            MineBackdrop()
 
             if let vm {
-                if vm.isLoading && vm.slots.isEmpty {
-                    loadingState
-                } else if vm.slots.isEmpty {
-                    ErrorStateView.loadFailed {
-                        Task { await vm.loadStatus() }
-                    }
-                } else {
-                    mine(vm)
-                }
+                content(vm)
+            } else {
+                HexPulseLoader(.compact)
             }
         }
         .overlay {
@@ -73,13 +68,10 @@ struct GoldMineDetailView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.goldMine, isReady: vm != nil)
         .toolbar {
+            // The title lives on the signboard (like the shop and the black
+            // market) — nothing in the bar's middle to collide with it.
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
-            }
-            ToolbarItem(placement: .principal) {
-                Text("GOLD MINE")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
         .onAppear {
@@ -97,31 +89,59 @@ struct GoldMineDetailView: View {
         }
     }
 
+    // MARK: - Content
+
+    private func content(_ vm: GoldMineViewModel) -> some View {
+        VStack(spacing: 0) {
+            // The foreman's first line is about right now (full carts, an
+            // empty tunnel, the next cart's time) — refreshed every 30 s.
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                ShopkeeperHeader(
+                    style: .goldMine,
+                    title: "GOLD MINE",
+                    tagline: "Dig deep · Haul gold",
+                    keeperName: "Mine Foreman",
+                    keeperImage: NPCSpeaker.mine.portrait,
+                    // Silent until the tunnels are known, so he never
+                    // calls an unloaded tunnel "empty".
+                    lines: vm.slots.isEmpty ? [] : vm.foremanLines(now: context.date),
+                    startIndex: 0
+                )
+            }
+
+            MineCounterBar(gold: vm.gold, gems: vm.gems) {
+                appState.mainPath.append(AppRoute.currencyPurchase())
+            }
+
+            if vm.isLoading && vm.slots.isEmpty {
+                loadingState
+            } else if vm.slots.isEmpty {
+                ErrorStateView.loadFailed {
+                    Task { await vm.loadStatus() }
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                mine(vm)
+            }
+        }
+    }
+
     // MARK: - Mine
 
     private func mine(_ vm: GoldMineViewModel) -> some View {
         ScrollView {
-            VStack(spacing: 0) {
-                MineSurfaceHeader(vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceSM)
-
-                MineGroundBeam()
-
-                VStack(spacing: LayoutConstants.spaceMD) {
-                    if let expedition = vm.expedition {
-                        MineExpeditionTrack(expedition: expedition, economy: vm.economy)
-                    }
-                    ActiveQuestBanner(questTypes: ["gold_mine_collect"])
-                    shaft(vm)
+            VStack(spacing: LayoutConstants.spaceMD) {
+                if let expedition = vm.expedition {
+                    MineExpeditionTrack(expedition: expedition, economy: vm.economy)
                 }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceMD)
-                .padding(.bottom, LayoutConstants.space2XL)
-                .frame(maxWidth: .infinity)
-                .background(DarkFantasyTheme.bgAbyss.opacity(0.6))
+                ActiveQuestBanner(questTypes: ["gold_mine_collect"])
+                shaft(vm)
             }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.top, LayoutConstants.spaceMD)
+            .padding(.bottom, LayoutConstants.space2XL)
         }
+        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom) {
             if vm.readyCount >= 2 {
                 collectAllBar(vm)
@@ -142,9 +162,9 @@ struct GoldMineDetailView: View {
             }
         }
         .background(alignment: .leading) {
-            // Ladder centred under the 32 pt level badges.
+            // Ladder centred under the level plates.
             MineShaftLadder()
-                .padding(.leading, 4)
+                .padding(.leading, (MineLevelBadge.width - MineShaftLadder.width) / 2)
         }
     }
 
@@ -174,19 +194,14 @@ struct GoldMineDetailView: View {
     private var loadingState: some View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
-                HStack(spacing: LayoutConstants.spaceMD) {
-                    SkeletonRect(width: 90, height: 24)
-                    SkeletonRect(width: 60, height: 24)
-                    Spacer()
-                }
-                SkeletonRect(height: 180, cornerRadius: LayoutConstants.cardRadius)
-                SkeletonRect(height: 96, cornerRadius: LayoutConstants.cardRadius)
+                SkeletonRect(height: 132, cornerRadius: LayoutConstants.cardRadius)
                 ForEach(0..<3, id: \.self) { _ in
-                    SkeletonRect(height: 164, cornerRadius: LayoutConstants.cardRadius)
+                    SkeletonRect(height: MineTunnelLevel.height, cornerRadius: LayoutConstants.cardRadius)
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.top, LayoutConstants.spaceSM)
+            .padding(.top, LayoutConstants.spaceMD)
         }
+        .scrollIndicators(.hidden)
     }
 }

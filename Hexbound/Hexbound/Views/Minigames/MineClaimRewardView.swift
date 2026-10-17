@@ -118,7 +118,7 @@ struct MineClaimRewardView: View {
 
     private var haulBlock: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            Image(reward.kind == .bonus ? "icon-mine-bonus" : "mine-cart-full")
+            Image(reward.kind == .bonus ? "icon-mine-bonus" : MineRails.fullCart)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()

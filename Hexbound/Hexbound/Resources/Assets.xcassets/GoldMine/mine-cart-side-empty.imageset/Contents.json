@@ -1,17 +1,17 @@
 {
   "images": [
     {
-      "filename": "mine-cart-empty.png",
+      "filename": "mine-cart-side-empty.png",
       "idiom": "universal",
       "scale": "1x"
     },
     {
-      "filename": "mine-cart-empty@2x.png",
+      "filename": "mine-cart-side-empty@2x.png",
       "idiom": "universal",
       "scale": "2x"
     },
     {
-      "filename": "mine-cart-empty@3x.png",
+      "filename": "mine-cart-side-empty@3x.png",
       "idiom": "universal",
       "scale": "3x"
     }

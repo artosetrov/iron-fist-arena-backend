@@ -10,8 +10,8 @@ Sprites for the reworked Gold Mine screen (2026-10-16): the cart that rides each
 
 | Asset | Subject | pt | Job |
 |---|---|---|---|
-| `mine-cart-empty` | empty wooden mine cart, three-quarter view, iron-banded planks, brass corner brackets, four iron wheels, tow hook | 120 | `84bab48a-220b-447b-aa09-b164d4cc989c` |
-| `mine-cart-full` | the same cart heaped above the rim with gold ore nuggets and coins, a few dark rocks between them (Image 1 = empty cart) | 120 | `5df64c9c-fc0f-4ee3-a525-2a2d772331cb` |
+| ~~`mine-cart-empty`~~ | *removed 2026-10-17 — the three-quarter view never stood on side-on rails; replaced by `mine-cart-side-empty`* | 120 | `84bab48a-220b-447b-aa09-b164d4cc989c` |
+| ~~`mine-cart-full`~~ | *removed 2026-10-17 — replaced by `mine-cart-side-full`* | 120 | `5df64c9c-fc0f-4ee3-a525-2a2d772331cb` |
 | `mine-chest-closed` | domed treasure chest, iron bands, brass corners, skull lock plate | 160 | `d63a83f4-7707-4936-933e-7f57b4f6bb36` |
 | `mine-chest-open` | the same chest, lid swung fully back, packed with gold coins and three cut red/blue gems (Image 1 = closed chest) | 160 | `da85fe0b-0668-4de0-b35e-b94cae3f231b` |
 | `mine-chest-ajar` | middle frame of the opening: lid tilted back ~20°, coins visible in the gap, hasp hanging loose, no light (Images 1–2 = closed and open chest) | 160 | `29afca6d-94ec-4b42-a7a9-e6aeaa50cc02` |
@@ -23,3 +23,21 @@ Sprites for the reworked Gold Mine screen (2026-10-16): the cart that rides each
 The three chest frames (closed / ajar / open) are one animation: ingest them together with `python3 scripts/align_sprite_frames.py --out …/GoldMine --pt 160 --margin 18 closed.png:mine-chest-closed ajar.png:mine-chest-ajar open.png:mine-chest-open`, which registers them on the chest base and crops all three to one canvas so the cross-fade never jumps. The light from the crack, rays and coin fountain are code (`MineClaimRewardView`).
 
 Subjects for the first six jobs are summarised from the results; the exact wording lives in the Higgsfield job history. All eight passed review on the first roll.
+
+## Art pass 2 (2026-10-17) — carts on the rails, ladder, plates, backdrop
+
+Feedback on the first build: the three-quarter cart sat crooked on side-on rails, the code-drawn rails/ladder and the plain number circles looked generic, the foreman was too small, and the screen had no atmosphere. Same family, model and anchor as above unless noted.
+
+| Asset | Subject | Size | Ratio | Job |
+|---|---|---|---|---|
+| `mine-cart-side-empty` | the same wooden mine cart in **pure side view** (orthographic, no perspective), two iron wheels whose bottoms sit on one straight horizontal line, tow hooks at both ends | 120 pt, `--margin 0` | 1:1 | `63274628-7db7-4ab6-9803-b30708be62c1` |
+| `mine-cart-side-full` | the same side-view cart heaped above the rim with gold ore and coins (Image 1 = empty side cart) | 120 pt, `--margin 0` | 1:1 | `6ed58fb0-3856-4610-ba0d-0b779809d546` |
+| `mine-rail-tile` | raw: one long iron rail beam in pure side view over end-on wooden sleeper blocks with iron chairs | tile 24 × 14 pt | 4:1 | `85cad97a-7ee5-4adb-9b89-ae12e424c29e` |
+| `mine-ladder-tile` | raw: one straight vertical timber ladder, front view, two side rails with bolts, evenly spaced rope-lashed rungs | tile 30 × 12 pt | 1:4 | `6f4a9ec9-d167-4a45-8141-8d02c3bf2a43` |
+| `mine-level-plate` | blank round wooden plaque with an iron rim, four rivets and a hanging ring on top — **no number** | 48 pt, `--margin 0` | 1:1 | `ab2121f3-2c4b-4599-b4b4-979fc5063879` |
+| `bg-gold-mine` | full-screen backdrop: timbered mine tunnel in front view, a lantern upper right, rails running into a dark centre, a loaded cart, tools, crates and barrels; centre left dark for UI. Painted-scene family (`bg-shop` = `77da6de2-550f-47cb-909e-ac7bf104ab0a` as style reference), no magenta key | 1536 × 2752 px, JPEG @1x/@2x/@3x | 9:16 | `57f32b96-ed72-442b-901f-ea8778f359a2` |
+
+- Carts: both trimmed with `--margin 0`, so the wheel bottoms are the image's bottom edge and both carts are the same width (360 px @3x) — `MineRails` stands either one on the rail top with a 1 pt overlap.
+- Tiles are not ingested as sprites: `python3 scripts/build_mine_tiles.py --rail <raw> --ladder <raw> --out …/GoldMine` rebuilds them seamless at exact point sizes (the raw's sleepers are unevenly spaced, so the rail tile is reassembled from one rail stretch + two copies of one sleeper; the ladder's rungs are spread to a 12 pt pitch).
+- The plate's number is SwiftUI text (`MineLevelBadge`), per the no-text-in-PNG rule.
+- The foreman header reuses `ShopkeeperHeader(style: .goldMine)` with the existing `npc-mine` portrait — no new NPC art.

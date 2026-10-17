@@ -164,20 +164,21 @@ final class GoldMineViewModel {
     // MARK: - Foreman
 
     /// What the foreman says: the first line is about right now, the rest
-    /// explain the mine (tap the foreman to hear the next one).
+    /// explain the mine (tap the foreman to hear the next one). Each line
+    /// must fit the header bubble's three lines (~55 characters).
     func foremanLines(now: Date = Date()) -> [String] {
         var lines = [statusLine(now: now)]
         if let economy, let run = runLengthLabel {
-            lines.append("A cart takes \(run) and brings \(economy.rewardMin)–\(economy.rewardMax) gold. Sometimes gems too.")
+            lines.append("A cart takes \(run): \(economy.rewardMin)–\(economy.rewardMax) gold, sometimes gems.")
         }
         if let economy, let total = expedition?.total {
-            lines.append("Every \(total) carts fill the expedition chest: \(economy.chestGold) gold and \(economy.chestGems) gems.")
+            lines.append("Every \(total) carts open the chest: \(economy.chestGold) gold, \(economy.chestGems) gems.")
         }
         if let cap = economy?.bonusCapPercent {
-            lines.append("The bonus run is optional. Play it and a cart brings up to \(cap)% more gold.")
+            lines.append("The bonus run is optional — up to \(cap)% more gold.")
         }
         if let cost = boostCost, let times = boostMultiplier {
-            lines.append("Short on gold? \(cost) gems make any cart bring \(times == 2 ? "twice" : "\(times)×") its haul.")
+            lines.append("\(cost) gems make any cart bring \(times == 2 ? "twice" : "\(times)×") its haul.")
         }
         return lines
     }

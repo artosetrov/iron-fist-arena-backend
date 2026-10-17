@@ -116,11 +116,10 @@ struct MineTunnelSheet: View {
 
             MineRails(
                 progress: phase == .idle ? 0 : (phase == .ready ? 1 : vm.progress(index, now: now)),
-                cart: phase == .idle ? "mine-cart-empty" : "mine-cart-full",
-                cartWidth: 64
+                cart: phase == .idle ? MineRails.emptyCart : MineRails.fullCart,
+                cartWidth: 84,
+                cartInset: LayoutConstants.spaceMS
             )
-            .padding(.horizontal, LayoutConstants.spaceMS)
-            .padding(.bottom, LayoutConstants.spaceMS)
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .frame(height: 176)

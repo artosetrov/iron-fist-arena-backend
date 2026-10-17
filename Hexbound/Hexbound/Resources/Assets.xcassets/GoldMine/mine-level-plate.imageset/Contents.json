@@ -1,17 +1,17 @@
 {
   "images": [
     {
-      "filename": "mine-cart-full.png",
+      "filename": "mine-level-plate.png",
       "idiom": "universal",
       "scale": "1x"
     },
     {
-      "filename": "mine-cart-full@2x.png",
+      "filename": "mine-level-plate@2x.png",
       "idiom": "universal",
       "scale": "2x"
     },
     {
-      "filename": "mine-cart-full@3x.png",
+      "filename": "mine-level-plate@3x.png",
       "idiom": "universal",
       "scale": "3x"
     }
