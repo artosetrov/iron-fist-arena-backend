@@ -92,6 +92,17 @@ enum DescentGeometry {
 
     /// The fire in `rush2-bg-campfire`.
     static let campfire = CGPoint(x: 0.69, y: 0.767)
+
+    /// The intro key art (`rush2-bg-descent-key`): the three depths in one cross-section.
+    static let keyArtAspect: CGFloat = 3072.0 / 5504.0
+    /// The hero's torch on the key art, normalised.
+    static let keyArtTorch = CGPoint(x: 391.0 / 900, y: 145.0 / 1612)
+    /// The top of each depth's tier on the key art (normalised height), for its label.
+    static let keyArtTiers: [(roman: String, name: String, y: CGFloat)] = [
+        ("I", "The Ossuary", 0.195),
+        ("II", "Shadow Warrens", 0.44),
+        ("III", "Molten Heart", 0.655),
+    ]
 }
 
 /// Maps normalised painting coordinates into a view that shows the painting
@@ -190,6 +201,87 @@ struct DescentShaftShape: Shape {
         p.addLine(to: CGPoint(x: rect.midX + topHalf, y: rect.minY))
         p.addLine(to: CGPoint(x: rect.midX + bottomHalf, y: rect.maxY))
         p.addLine(to: CGPoint(x: rect.midX - bottomHalf, y: rect.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// A plate with cut corners: the Descent's choice rows and secondary buttons.
+struct DescentChamferShape: InsettableShape {
+    var chamfer: CGFloat = 12
+    var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        // Keep the cut at 45° while shrinking: an inset of d moves a corner cut in by d·(√2 − 1).
+        let c = max(0, min(chamfer - insetAmount * 0.414, min(r.width, r.height) / 2))
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + c, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX - c, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY + c))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - c))
+        p.addLine(to: CGPoint(x: r.maxX - c, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + c, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.maxY - c))
+        p.addLine(to: CGPoint(x: r.minX, y: r.minY + c))
+        p.closeSubpath()
+        return p
+    }
+
+    func inset(by amount: CGFloat) -> DescentChamferShape {
+        var shape = self
+        shape.insetAmount += amount
+        return shape
+    }
+}
+
+/// A plate with pointed ends: the Descent's main call to action.
+struct DescentPointedShape: InsettableShape {
+    var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        let point = max(0, min(18, rect.height * 0.34) - insetAmount * 0.6)
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + point, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX - point, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        p.addLine(to: CGPoint(x: r.maxX - point, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + point, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.midY))
+        p.closeSubpath()
+        return p
+    }
+
+    func inset(by amount: CGFloat) -> DescentPointedShape {
+        var shape = self
+        shape.insetAmount += amount
+        return shape
+    }
+}
+
+/// A banner tag with a pointed right end (depth labels on the key art).
+struct DescentPennantShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let point = min(9, rect.height / 2)
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX - point, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.maxX - point, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// A small solid triangle pointing right; rotate it for other directions.
+struct DescentTriangleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.2, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.2, y: rect.maxY))
         p.closeSubpath()
         return p
     }

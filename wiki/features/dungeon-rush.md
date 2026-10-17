@@ -21,7 +21,12 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
 - **iOS:** `Models/DescentModels.swift`, `Services/DescentService.swift`, `Views/Minigames/Descent*.swift`
   (`DescentDetailView` root → HUD, scene, action panel; `DescentForkScene` door light; `DescentRoomScenes`;
   `DescentRunPanel`; `DescentSheets` map + bag; `DescentViewModel`).
-- **Art:** `Assets.xcassets/Descent/rush2-*` (81 imagesets, @1x/@2x/@3x). Door arch boxes in
+- **Look:** the intro is one key art of all three depths (`rush2-bg-descent-key`, Higgsfield job `c42603d3-cfa4-45fb-ab2d-3c40215f3337`)
+  with I–III tier labels and the title on its dark foot; the rules sit in a sheet that opens by itself once
+  (`@AppStorage("descent.rulesSeen")`). Every option in a run is a `DescentChoiceRow`: a chamfered iron plate
+  (`DescentPlate`) with a bronze medallion (`DescentMedallion`) lit in the room's colour; buttons use
+  `DescentPlateButtonStyle` (`.descentGold` main action, `.descentIron` beside it, `.descentOutline` ways out).
+- **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
   `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop
   time on the global rarity table (R14.1); 30 stamina per descent.

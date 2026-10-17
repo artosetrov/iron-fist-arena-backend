@@ -42,73 +42,281 @@ private struct DescentPanelHeightKey: PreferenceKey {
 
 // MARK: - Rows
 
-/// A tappable option: passage, chest action, event choice, camp pick, ware.
+/// Which way a fork option lies — a small badge on its medallion.
+enum DescentDirection {
+    case left, ahead, right
+
+    init(side: String) {
+        switch side.lowercased() {
+        case "left": self = .left
+        case "right": self = .right
+        default: self = .ahead
+        }
+    }
+
+    var degrees: Double {
+        switch self {
+        case .left: 180
+        case .ahead: -90
+        case .right: 0
+        }
+    }
+}
+
+/// A tappable option: passage, chest action, event choice, camp pick, ware, relic.
+///
+/// A chamfered iron plate with a bronze medallion breaking its left edge; the
+/// room's own colour (`accent`) lights the plate from the medallion. The chosen
+/// row turns gold and glows in its colour.
 struct DescentChoiceRow<Icon: View>: View {
     let title: String
     let subtitle: String?
+    var suffix: String?
     var trailing: String?
     var selected = false
     var disabled = false
-    var tone: Color = DarkFantasyTheme.textPrimary
+    var accent: Color = DarkFantasyTheme.gold
+    var direction: DescentDirection?
     let action: () -> Void
     @ViewBuilder let icon: () -> Icon
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: LayoutConstants.spaceMS) {
-                icon()
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                            .fill(DarkFantasyTheme.bgAbyss)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                    )
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text(title.uppercased())
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .tracking(1.5)
-                        .foregroundStyle(disabled ? DarkFantasyTheme.textTertiaryAA : tone)
-                        .lineLimit(2)
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(DescentText.attributed(subtitle, base: DarkFantasyTheme.textSecondary))
-                            .font(DarkFantasyTheme.tale)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if let trailing {
-                    Text(trailing)
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .foregroundStyle(DarkFantasyTheme.textGold)
-                        .monospacedDigit()
-                }
-            }
-            .padding(.horizontal, LayoutConstants.spaceMS)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .frame(minHeight: LayoutConstants.touchComfortable)
-            .background(
-                RadialGlowBackground(
-                    baseColor: selected ? DarkFantasyTheme.bgElevated : DarkFantasyTheme.bgSecondary,
-                    glowColor: selected ? DarkFantasyTheme.gold.opacity(0.12) : DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.cardRadius
-                )
+            DescentPlateContent(
+                title: title,
+                subtitle: subtitle,
+                suffix: suffix,
+                trailing: trailing,
+                selected: selected,
+                muted: disabled,
+                accent: accent,
+                direction: direction,
+                icon: icon
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(selected ? DarkFantasyTheme.borderGold : DarkFantasyTheme.borderSubtle, lineWidth: selected ? 1.5 : 1)
-            )
-            .compositingGroup()
-            .dualShadow(glowColor: selected ? DarkFantasyTheme.goldGlow : .clear, glowRadius: 8, depth: .panel)
-            .opacity(disabled ? 0.55 : 1)
         }
         .buttonStyle(DescentRowPressStyle())
         .disabled(disabled)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// The same plate, read-only (rules, tips).
+struct DescentInfoPlate<Icon: View>: View {
+    let title: String
+    let text: String
+    var accent: Color = DarkFantasyTheme.gold
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        DescentPlateContent(title: title, subtitle: text, accent: accent, icon: icon)
+            .accessibilityElement(children: .combine)
+    }
+}
+
+/// Medallion, title, story line and the plate behind them.
+struct DescentPlateContent<Icon: View>: View {
+    let title: String
+    let subtitle: String?
+    var suffix: String?
+    var trailing: String?
+    var selected = false
+    var muted = false
+    var accent: Color = DarkFantasyTheme.gold
+    var direction: DescentDirection?
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        HStack(spacing: LayoutConstants.spaceMS) {
+            DescentMedallion(accent: accent, lit: selected, direction: direction, content: icon)
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceSM) {
+                    Text(title.uppercased())
+                        .font(DarkFantasyTheme.cardTitle)
+                        .tracking(2)
+                        .foregroundStyle(titleStyle)
+                        .shadow(color: selected ? accent.opacity(0.7) : .clear, radius: 8)
+                        .lineLimit(2)
+                    if let suffix, !suffix.isEmpty {
+                        Text(suffix.uppercased())
+                            .font(DarkFantasyTheme.buttonLabelCompact)
+                            .tracking(2)
+                            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                            .fixedSize()
+                    }
+                }
+                if let subtitle, !subtitle.isEmpty {
+                    Text(DescentText.attributed(subtitle, base: DarkFantasyTheme.textSecondary))
+                        .font(DarkFantasyTheme.tale)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let trailing {
+                Text(trailing)
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.textGold)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.trailing, selected ? 32 : 18)
+        .padding(.vertical, 11)
+        .frame(minHeight: 76)
+        .background {
+            DescentPlate(accent: accent, selected: selected)
+                .padding(.leading, DescentMedallionMetrics.overhang)
+        }
+        .saturation(muted ? 0.3 : 1)
+        .opacity(muted ? 0.6 : 1)
+        .contentShape(Rectangle())
+    }
+
+    /// Enamel title: cream at the top, the room's colour below.
+    private var titleStyle: AnyShapeStyle {
+        if muted { return AnyShapeStyle(DarkFantasyTheme.textTertiaryAA) }
+        return AnyShapeStyle(LinearGradient(
+            colors: [DarkFantasyTheme.vfxStunGlow, selected ? accent.opacity(0.85) : accent.opacity(0.7)],
+            startPoint: .top, endPoint: .bottom
+        ))
+    }
+}
+
+enum DescentMedallionMetrics {
+    static let size: CGFloat = 60
+    /// How far the medallion breaks out past the plate's left edge.
+    static let overhang: CGFloat = 10
+}
+
+/// A bronze medallion holding an icon, lit from within by the row's colour.
+struct DescentMedallion<Content: View>: View {
+    let accent: Color
+    var lit = false
+    var direction: DescentDirection?
+    @ViewBuilder let content: () -> Content
+
+    private let size = DescentMedallionMetrics.size
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(RadialGradient(
+                    colors: [accent.opacity(lit ? 0.6 : 0.42), DarkFantasyTheme.bgAbyss],
+                    center: UnitPoint(x: 0.5, y: 0.42), startRadius: 0, endRadius: size * 0.36
+                ))
+                .padding(3)
+            content()
+                .frame(width: 42, height: 42)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.85), radius: 2, y: 2)
+            // Recessed rim, then the bronze ring and its four rivets.
+            Circle()
+                .stroke(DarkFantasyTheme.bgAbyss.opacity(0.8), lineWidth: 2)
+                .padding(4)
+            Circle()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.rankChallenger, DarkFantasyTheme.borderOrnament, DarkFantasyTheme.goldDim, DarkFantasyTheme.gold],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 3
+                )
+            ForEach(0..<4, id: \.self) { i in
+                Circle()
+                    .fill(i == 0 ? DarkFantasyTheme.rankChallenger : DarkFantasyTheme.gold)
+                    .frame(width: 3, height: 3)
+                    .offset(y: -(size / 2 - 1.5))
+                    .rotationEffect(.degrees(Double(i) * 90))
+            }
+        }
+        .frame(width: size, height: size)
+        .background(Circle().stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5))
+        .overlay(alignment: .bottomTrailing) {
+            if let direction {
+                ZStack {
+                    Circle().fill(DarkFantasyTheme.bgAbyss)
+                    Circle().strokeBorder(DarkFantasyTheme.borderOrnament, lineWidth: 1.5)
+                    DescentTriangleShape()
+                        .fill(DarkFantasyTheme.goldBright)
+                        .frame(width: 9, height: 10)
+                        .rotationEffect(.degrees(direction.degrees))
+                }
+                .frame(width: 22, height: 22)
+                .offset(x: 6, y: 4)
+                .accessibilityHidden(true)
+            }
+        }
+        .shadow(color: lit ? accent.opacity(0.8) : .clear, radius: 9)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 5, y: 4)
+    }
+}
+
+/// The iron plate behind a row: a gradient body lit by the row's colour, an
+/// engraved inner line, four studs; gold frame and a chevron when chosen.
+struct DescentPlate: View {
+    let accent: Color
+    var selected = false
+    var chamfer: CGFloat = 12
+
+    var body: some View {
+        let shape = DescentChamferShape(chamfer: chamfer)
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                shape.fill(LinearGradient(
+                    colors: selected
+                        ? [DarkFantasyTheme.bgCardGradientEnd, DarkFantasyTheme.bgDarkPanel, DarkFantasyTheme.bgDungeonDeep]
+                        : [DarkFantasyTheme.bgCardGradientStart, DarkFantasyTheme.bgDarkPanel, DarkFantasyTheme.bgDungeonDeep],
+                    startPoint: .top, endPoint: .bottom
+                ))
+                shape.fill(RadialGradient(
+                    colors: [accent.opacity(selected ? 0.36 : 0.15), accent.opacity(selected ? 0.1 : 0.04), accent.opacity(0)],
+                    center: UnitPoint(x: 16 / max(w, 1), y: 0.5),
+                    startRadius: 0, endRadius: max(w * 0.66, 130)
+                ))
+                Path { p in
+                    p.move(to: CGPoint(x: chamfer, y: 2))
+                    p.addLine(to: CGPoint(x: w - chamfer, y: 2))
+                }
+                .stroke(selected ? DarkFantasyTheme.goldBright.opacity(0.3) : Color.white.opacity(0.07), lineWidth: 1)
+                shape.inset(by: 5)
+                    .stroke(selected ? DarkFantasyTheme.goldBright.opacity(0.42) : Color.white.opacity(0.06), lineWidth: 1)
+                shape.strokeBorder(frameStyle, lineWidth: selected ? 2 : 1.5)
+                ForEach(Array(studs(w: w, h: h).enumerated()), id: \.offset) { _, point in
+                    Rectangle()
+                        .fill(selected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderStrong)
+                        .frame(width: 4.6, height: 4.6)
+                        .rotationEffect(.degrees(45))
+                        .position(point)
+                }
+                if selected {
+                    Path { p in
+                        p.move(to: CGPoint(x: w - 20, y: h / 2 - 7))
+                        p.addLine(to: CGPoint(x: w - 13, y: h / 2))
+                        p.addLine(to: CGPoint(x: w - 20, y: h / 2 + 7))
+                    }
+                    .stroke(DarkFantasyTheme.goldBright, style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                }
+            }
+        }
+        .compositingGroup()
+        .shadow(color: selected ? accent.opacity(0.55) : .clear, radius: 10)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 5, y: 3)
+        .accessibilityHidden(true)
+    }
+
+    private var frameStyle: LinearGradient {
+        LinearGradient(
+            colors: selected
+                ? [DarkFantasyTheme.rankChallenger, DarkFantasyTheme.gold, DarkFantasyTheme.goldDim]
+                : [DarkFantasyTheme.borderStrong, DarkFantasyTheme.borderSubtle],
+            startPoint: .top, endPoint: .bottom
+        )
+    }
+
+    /// One stud in the middle of each cut corner.
+    private func studs(w: CGFloat, h: CGFloat) -> [CGPoint] {
+        let k = 1 + chamfer / 2
+        return [CGPoint(x: k, y: k), CGPoint(x: w - k, y: k), CGPoint(x: w - k, y: h - k), CGPoint(x: k, y: h - k)]
     }
 }
 
@@ -123,10 +331,118 @@ struct DescentRowPressStyle: ButtonStyle {
     }
 }
 
+// MARK: - Buttons
+
+/// The Descent's buttons: a gold plate with pointed ends for the main action,
+/// an iron plate for actions beside it, an outlined plate for ways out.
+struct DescentPlateButtonStyle: ButtonStyle {
+    enum Kind { case gold, iron, outline }
+    var kind: Kind = .gold
+
+    func makeBody(configuration: Configuration) -> some View {
+        DescentPlateButtonBody(kind: kind, configuration: configuration)
+    }
+}
+
+extension ButtonStyle where Self == DescentPlateButtonStyle {
+    static var descentGold: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .gold) }
+    static var descentIron: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .iron) }
+    static var descentOutline: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .outline) }
+}
+
+private struct DescentPlateButtonBody: View {
+    let kind: DescentPlateButtonStyle.Kind
+    let configuration: ButtonStyleConfiguration
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        let pressed = configuration.isPressed
+        configuration.label
+            .font(kind == .gold ? DarkFantasyTheme.buttonLabel : DarkFantasyTheme.buttonLabelCompact)
+            .textCase(.uppercase)
+            .tracking(kind == .iron ? 1.5 : 3)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .foregroundStyle(textColor)
+            .padding(.horizontal, kind == .iron ? LayoutConstants.spaceMS : 30)
+            .frame(maxWidth: .infinity)
+            .frame(height: LayoutConstants.buttonHeightLG)
+            .background { plate }
+            .brightness(pressed ? -0.06 : 0)
+            .saturation(isEnabled ? 1 : 0.15)
+            .opacity(isEnabled ? 1 : 0.6)
+            .contentShape(Rectangle())
+            .onChange(of: pressed) { _, isDown in
+                if isDown { SFXManager.shared.play(kind == .gold ? .uiTapHeavy : .uiTap) }
+            }
+    }
+
+    private var textColor: Color {
+        switch kind {
+        case .gold: DarkFantasyTheme.textOnGold
+        case .iron: DarkFantasyTheme.textPrimary
+        case .outline: DarkFantasyTheme.gold
+        }
+    }
+
+    @ViewBuilder
+    private var plate: some View {
+        switch kind {
+        case .gold:
+            let shape = DescentPointedShape()
+            GeometryReader { geo in
+                ZStack {
+                    shape.fill(LinearGradient(colors: [DarkFantasyTheme.goldDim, DarkFantasyTheme.btnOrangeStroke], startPoint: .top, endPoint: .bottom))
+                    shape.inset(by: 2.5).fill(LinearGradient(
+                        stops: [
+                            .init(color: DarkFantasyTheme.rankChallenger, location: 0),
+                            .init(color: DarkFantasyTheme.glowTreasure, location: 0.44),
+                            .init(color: DarkFantasyTheme.gold, location: 0.56),
+                            .init(color: DarkFantasyTheme.goldDim, location: 1),
+                        ],
+                        startPoint: .top, endPoint: .bottom
+                    ))
+                    shape.inset(by: 7).stroke(DarkFantasyTheme.vfxStunGlow.opacity(0.6), lineWidth: 1)
+                    let point = min(18, geo.size.height * 0.34)
+                    ForEach([point + 4, geo.size.width - point - 4], id: \.self) { x in
+                        Rectangle()
+                            .fill(DarkFantasyTheme.btnOrangeStroke)
+                            .overlay(Rectangle().stroke(DarkFantasyTheme.vfxStunGlow.opacity(0.65), lineWidth: 1))
+                            .frame(width: 7, height: 7)
+                            .rotationEffect(.degrees(45))
+                            .position(x: x, y: geo.size.height / 2)
+                    }
+                }
+            }
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.75), radius: 4, y: 3)
+        case .iron:
+            let shape = DescentChamferShape(chamfer: 9)
+            ZStack {
+                shape.fill(LinearGradient(colors: [DarkFantasyTheme.bgCardGradientEnd, DarkFantasyTheme.bgDungeonDeep], startPoint: .top, endPoint: .bottom))
+                shape.inset(by: 5).stroke(Color.white.opacity(0.07), lineWidth: 1)
+                shape.strokeBorder(LinearGradient(colors: [DarkFantasyTheme.borderStrong, DarkFantasyTheme.borderSubtle], startPoint: .top, endPoint: .bottom), lineWidth: 1.5)
+            }
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
+        case .outline:
+            let shape = DescentPointedShape()
+            ZStack {
+                shape.fill(DarkFantasyTheme.bgAbyss.opacity(0.72))
+                shape.inset(by: 6).stroke(DarkFantasyTheme.gold.opacity(0.28), lineWidth: 1)
+                shape.strokeBorder(DarkFantasyTheme.goldDim, lineWidth: 1.5)
+            }
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
+        }
+    }
+}
+
 /// An asset icon for a row, or a muted dot when there is none.
 struct DescentRowIcon: View {
     let asset: String?
-    var size: CGFloat = 32
+    var size: CGFloat = 38
 
     var body: some View {
         if let asset, !asset.isEmpty {

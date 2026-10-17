@@ -99,78 +99,324 @@ struct DescentPlainHeader: View {
 
 // MARK: - Intro (no active run)
 
+/// The doorway to the mode: the whole descent in one painting (three depths and
+/// their guardians, labelled I–III), the title on its dark foot, one call to action.
+/// The rules live in a sheet that opens by itself the first time.
 private struct DescentIntroView: View {
     @Bindable var vm: DescentViewModel
     let isActive: Bool
     let onLeave: () -> Void
 
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("descent.rulesSeen") private var rulesSeen = false
+    @State private var showRules = false
+    @State private var panelHeight: CGFloat = 260
+    @State private var appeared = false
 
     private var stamina: Int { appState.currentCharacter?.currentStamina ?? 0 }
     private var maxStamina: Int { appState.currentCharacter?.maxStamina ?? 0 }
     private var canAfford: Bool { stamina >= vm.staminaCost }
 
     var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                DescentPlainHeader(title: "Dungeon Rush")
-                ZStack {
-                    DescentBackdrop(asset: "rush2-bg-entrance", dim: 0.42, focusY: 0.5)
-                    DescentVignette()
-                    DescentTitleCard(
-                        eyebrow: "Dungeon Rush",
-                        title: "The Descent",
-                        text: "Three depths beneath the city. Every fork a choice. Fill your bag, slay the guardians, and climb out before the dark takes **half of it**."
-                    )
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+        ZStack(alignment: .bottom) {
+            GeometryReader { geo in
+                artLayer(size: geo.size, reserve: panelHeight + geo.safeAreaInsets.bottom)
+            }
+            .ignoresSafeArea()
 
-                DescentPanel(maxHeight: geo.size.height * 0.55) {
-                    rule("rush2-node-mystery", "Choose your path", "Monsters, treasure and stranger things wait behind every fork. Listen before you pick.")
-                    rule("rush2-icon-goldpouch", "Your bag is at risk", "Fall in the dark and you lose {-half your bag-}. Experience is never lost.")
-                    rule("rush2-node-camp", "Bank it or go deeper", "Stash at campfires, or {+climb out+} after a guardian with everything you carry.")
-                    Button {
-                        Task { await vm.start() }
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceSM) {
-                            Text("Descend")
-                            Image("icon-stamina")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 20, height: 20)
-                            Text("\(vm.staminaCost)")
+            VStack(spacing: 0) {
+                HStack {
+                    HubLogoButton()
+                    Spacer()
+                }
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .frame(minHeight: LayoutConstants.touchMin)
+                Spacer(minLength: 0)
+                panel
+                    .background(
+                        GeometryReader { g in
+                            Color.clear.preference(key: DescentIntroPanelKey.self, value: g.size.height)
                         }
-                    }
-                    .buttonStyle(.primary)
-                    .disabled(vm.isStarting)
-                    .accessibilityLabel("Descend, costs \(vm.staminaCost) stamina")
-                    Text("Stamina \(stamina) / \(maxStamina)")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .foregroundStyle(canAfford ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textDanger)
+                    )
+            }
+        }
+        .onPreferenceChange(DescentIntroPanelKey.self) { panelHeight = $0 }
+        .overlay {
+            if showRules {
+                DescentRulesSheet {
+                    rulesSeen = true
+                    showRules = false
                 }
             }
+        }
+        .onAppear { appeared = true }
+        .task {
+            guard !rulesSeen else { return }
+            try? await Task.sleep(for: .milliseconds(900))
+            if !Task.isCancelled { showRules = true }
         }
     }
 
-    private func rule(_ icon: String, _ title: String, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: LayoutConstants.spaceMS) {
-            Image(icon)
+    // MARK: Art
+
+    /// The painting, top-anchored and full width; on short screens it shrinks so the
+    /// guardians stay above the panel (the lava floor may slide under the title).
+    private func artLayer(size: CGSize, reserve: CGFloat) -> some View {
+        let aspect = DescentGeometry.keyArtAspect
+        let room = max(size.height - reserve + 110, 240)
+        let h = min(size.width / aspect, room)
+        let w = h * aspect
+        let x0 = (size.width - w) / 2
+        let edge = min(0.2, 18 / max(w, 1))
+        return ZStack(alignment: .topLeading) {
+            DarkFantasyTheme.bgAbyss
+            if w < size.width - 1 {
+                Image("rush2-bg-descent-key")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size.width, height: size.height)
+                    .blur(radius: 16)
+                    .brightness(-0.55)
+                    .clipped()
+            }
+            Image("rush2-bg-descent-key")
                 .resizable()
-                .scaledToFit()
-                .frame(width: 36, height: 36)
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text(title.uppercased())
+                .frame(width: w, height: h)
+                .mask(LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: edge),
+                        .init(color: .black, location: 1 - edge),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .leading, endPoint: .trailing
+                ))
+                .offset(x: x0)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared || reduceMotion ? 0 : -18)
+                .animation(.easeOut(duration: 1.2), value: appeared)
+                .accessibilityLabel("The three depths of the descent and their guardians")
+            LinearGradient(
+                colors: [DarkFantasyTheme.bgAbyss.opacity(0.55), DarkFantasyTheme.bgAbyss.opacity(0)],
+                startPoint: .top, endPoint: .center
+            )
+            .frame(height: h * 0.28)
+            .allowsHitTesting(false)
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
+                DescentTorchGlow(
+                    center: CGPoint(x: x0 + w * DescentGeometry.keyArtTorch.x, y: h * DescentGeometry.keyArtTorch.y),
+                    radius: w * 0.22,
+                    t: ctx.date.timeIntervalSinceReferenceDate
+                )
+            }
+            .allowsHitTesting(false)
+            ForEach(Array(DescentGeometry.keyArtTiers.enumerated()), id: \.offset) { i, tier in
+                DescentTierLabel(roman: tier.roman, name: tier.name)
+                    .offset(x: x0 + 12, y: h * tier.y - 17)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeOut(duration: 0.8).delay(0.5 + Double(i) * 0.25), value: appeared)
+            }
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    // MARK: Panel
+
+    private var panel: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            VStack(spacing: LayoutConstants.space2XS) {
+                Text("DUNGEON RUSH")
                     .font(DarkFantasyTheme.buttonLabelCompact)
-                    .tracking(1.5)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                Text(DescentText.attributed(text, base: DarkFantasyTheme.textSecondary))
+                    .tracking(6)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                Text("THE DESCENT")
+                    .font(DarkFantasyTheme.bossNameHero)
+                    .tracking(3)
+                    .foregroundStyle(LinearGradient(
+                        colors: [DarkFantasyTheme.rankChallenger, DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
+                        startPoint: .top, endPoint: .bottom
+                    ))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 16)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 3)
+                Text("Three depths. Three guardians. Whatever you carry, you can lose.")
                     .font(DarkFantasyTheme.tale)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+
+            Button {
+                Task { await vm.start() }
+            } label: {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text("Descend")
+                    Image("icon-stamina")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text("\(vm.staminaCost)")
+                }
+            }
+            .buttonStyle(.descentGold)
+            .disabled(vm.isStarting)
+            .accessibilityLabel("Descend, costs \(vm.staminaCost) stamina")
+
+            HStack {
+                Text("STAMINA \(stamina) / \(maxStamina)")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(1.5)
+                    .foregroundStyle(canAfford ? DarkFantasyTheme.textTertiaryAA : DarkFantasyTheme.textDanger)
+                Spacer(minLength: LayoutConstants.spaceSM)
+                Button {
+                    SFXManager.shared.play(.uiOpen)
+                    showRules = true
+                } label: {
+                    Text("How it works")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .tracking(1.5)
+                        .underline()
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .frame(minHeight: LayoutConstants.touchMin)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .accessibilityElement(children: .combine)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, 40)
+        .padding(.bottom, LayoutConstants.spaceXS)
+        .background {
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [DarkFantasyTheme.bgAbyss.opacity(0), DarkFantasyTheme.bgAbyss.opacity(0.82), DarkFantasyTheme.bgAbyss],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 64)
+                DarkFantasyTheme.bgAbyss
+            }
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+}
+
+private struct DescentIntroPanelKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// "I · THE OSSUARY": a numbered medallion with a pennant, pinned to a tier of the key art.
+private struct DescentTierLabel: View {
+    let roman: String
+    let name: String
+
+    var body: some View {
+        HStack(spacing: -9) {
+            Text(roman)
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .frame(width: 34, height: 34)
+                .background(
+                    Circle().fill(RadialGradient(
+                        colors: [DarkFantasyTheme.bgDungeonPurple, DarkFantasyTheme.bgAbyss],
+                        center: .center, startRadius: 0, endRadius: 17
+                    ))
+                )
+                .overlay(
+                    Circle().strokeBorder(
+                        LinearGradient(
+                            colors: [DarkFantasyTheme.rankChallenger, DarkFantasyTheme.goldDim, DarkFantasyTheme.gold],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                )
+                .zIndex(1)
+            Text(name.uppercased())
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.vfxStunGlow)
+                .padding(.leading, 17)
+                .padding(.trailing, 18)
+                .padding(.vertical, LayoutConstants.space2XS + 2)
+                .background(
+                    DescentPennantShape().fill(LinearGradient(
+                        colors: [DarkFantasyTheme.bgAbyss.opacity(0.94), DarkFantasyTheme.bgAbyss.opacity(0.72)],
+                        startPoint: .leading, endPoint: .trailing
+                    ))
+                )
+        }
+        .fixedSize()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.85), radius: 4, y: 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Depth \(roman): \(name)")
+    }
+}
+
+/// The three rules, on the same plates as the choices in a run.
+private struct DescentRulesSheet: View {
+    let onClose: () -> Void
+
+    var body: some View {
+        ZStack {
+            DarkFantasyTheme.bgModal
+                .ignoresSafeArea()
+                .onTapGesture(perform: onClose)
+                .accessibilityHidden(true)
+
+            VStack(spacing: LayoutConstants.spaceMS) {
+                HStack {
+                    Text("HOW THE DESCENT WORKS")
+                        .font(DarkFantasyTheme.section)
+                        .tracking(2)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer(minLength: LayoutConstants.spaceSM)
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                    }
+                    .buttonStyle(.closeButton)
+                    .accessibilityLabel("Close the rules")
+                }
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: LayoutConstants.spaceMS) {
+                        DescentInfoPlate(
+                            title: "Pick your path",
+                            text: "Listen at every fork. Light a torch to see what waits in the dark.",
+                            accent: DarkFantasyTheme.glowWarm
+                        ) {
+                            DescentRowIcon(asset: "rush2-icon-torch", size: 40)
+                        }
+                        DescentInfoPlate(
+                            title: "Potions on your belt",
+                            text: "Tap the flask any time, even mid-fight.",
+                            accent: DarkFantasyTheme.danger
+                        ) {
+                            DescentRowIcon(asset: "rush2-icon-potion", size: 40)
+                        }
+                        DescentInfoPlate(
+                            title: "Your bag is at risk",
+                            text: "Fall, and you lose {-half your bag-}. Stash it at a campfire to keep it all, or {+climb out+} after a guardian.",
+                            accent: DarkFantasyTheme.glowTreasure
+                        ) {
+                            DescentRowIcon(asset: "rush2-icon-goldpouch", size: 40)
+                        }
+                    }
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                }
+                Button("Got it", action: onClose)
+                    .buttonStyle(.descentGold)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.vertical, LayoutConstants.spaceMD)
+        }
     }
 }
 
