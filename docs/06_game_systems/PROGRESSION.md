@@ -8,26 +8,30 @@
 
 ### XP Formula
 
-Experience required to reach each level (cumulative threshold):
+`balance.ts`: the design curve `xpForLevel(N) = (100·N + 20·N²) × XP_CURVE_SCALE`
+with `XP_CURVE_SCALE = 3` (2026-10-14: ×1 put L50 on day 12 of a 90-day
+season). XP resets on every level-up, so the number that matters is the
+per-level requirement:
 
 ```
-XP for Level N = 100 × N + 20 × N²
+xpToNextLevel(L) = xpForLevel(L + 1) − xpForLevel(L) = (120 + 40·L) × 3
 ```
 
-### XP Curve Examples
+### XP Curve (code, 2026-10-17)
 
-| Level | Total XP Required | XP from Previous Level |
-|-------|------------------|----------------------|
-| 1 | 0 | — |
-| 2 | 280 | 280 |
-| 5 | 1200 | 420 |
-| 10 | 3000 | 800 |
-| 20 | 9200 | 2000 |
-| 30 | 19800 | 3800 |
-| 40 | 35200 | 6000 |
-| 50 | 55000 | 8800 |
+| Level | XP to finish this level | Cumulative from L1 |
+|-------|------------------------|--------------------|
+| 1 | 480 | 0 |
+| 5 | 960 | 2,640 |
+| 10 | 1,560 | 8,640 |
+| 20 | 2,760 | 29,640 |
+| 30 | 3,960 | 62,640 |
+| 40 | 5,160 | 107,640 |
+| 49 → 50 | 6,240 | 164,640 |
 
-**Note:** Progression is quadratic; later levels take exponentially more XP.
+**Note:** per-level cost grows linearly (+120 XP per level), so there are no
+dead zones — the max ratio between consecutive levels is 1.25×. iOS mirrors
+both formula and scale in `Character.xpNeeded` / `xpCurveScale`.
 
 ### Level Cap
 
@@ -249,7 +253,7 @@ Examples:
 | Track | Details |
 |-------|---------|
 | **Free** | 50 levels included with game |
-| **Premium** | +100 additional levels (500 gems) |
+| **Premium** | +100 additional levels (700 gems, `GEM_COSTS.BATTLE_PASS_PREMIUM`; 90-day season) |
 | **Total** | 150 levels per season |
 
 **Free Track Rewards:**
@@ -306,15 +310,16 @@ Repeats weekly; streak resets on 2-day gap:
 
 | Day | Reward | Amount | Equivalent Value |
 |-----|--------|--------|------------------|
-| 1 | Gold | 200 | |
-| 2 | Stamina Potion (Small) | 1 | +50 stamina |
-| 3 | Gold | 500 | |
-| 4 | Stamina Potions (Small) | 2 | +100 stamina |
-| 5 | Gold | 1000 | |
-| 6 | Stamina Potion (Large) | 1 | +100 stamina |
-| 7 | Gems | 5 | Premium currency |
+| 1 | Gold | 150 | |
+| 2 | Stamina Potion (Small) | 1 | |
+| 3 | Gold | 300 | |
+| 4 | Stamina Potions (Small) | 2 | |
+| 5 | Gold | 500 | |
+| 6 | Stamina Potion (Large) | 1 | full bar |
+| 7 | Gems | 25 | Premium currency |
 
-**Total per week:** 1700 gold + 250 stamina + 5 gems
+**Total per week:** 950 gold + 3 small + 1 large potion + 25 gems
+(`DAILY_LOGIN_REWARDS`, Economy v2; the claim window is 20 h, `daily-login.ts`)
 
 ### Streak Mechanics
 
@@ -479,10 +484,10 @@ The `checkLevelUp()` function handles bulk XP gains:
 
 ```
 Win rate 60% (typical skilled player):
-- 6 wins (120 XP each) = 720 XP per hour
-- 4 losses (40 XP each) = 160 XP per hour
-- Avg ~880 XP/hour
-- Level 50: 55,000 XP ÷ 880 = 62.5 hours
+- 6 wins (150 XP each at L1, +4%/level) = 900 XP per hour
+- 4 losses (50 XP each) = 200 XP per hour
+- Avg ~1,100 XP/hour at L1, ~2,100 at L25
+- Level 50: 164,640 XP ≈ 741 fights ≈ 33 days on free stamina (3 free + 180/8 min)
 ```
 
 ### Moderate (Training)
@@ -491,8 +496,8 @@ Win rate 60% (typical skilled player):
 Win rate 70%:
 - 7 wins (60 XP each) = 420 XP per hour
 - 3 losses (20 XP each) = 60 XP per hour
-- Avg ~480 XP/hour
-- Level 50: 55,000 XP ÷ 480 = 114 hours
+- Avg ~480 XP/hour, and TRAINING_XP_DR halves it after 6 clears a day
+- Level 50: 164,640 XP ÷ 480 ≈ 343 hours — training is practice, not a path
 ```
 
 ### Battle Pass Speed (Mixed)
@@ -538,7 +543,7 @@ Mix: ~50 BP XP per 30 min active play
 ```
 Level 1
   ↓ (3 XP per level, 3 stat points, 1 passive point)
-Level 50 (55,000 total XP)
+Level 50 (164,640 total XP)
   ↓ (can prestige, resets to level 1)
 Prestige 1 (+5% all stats)
   ↓ (reach level 50 again)

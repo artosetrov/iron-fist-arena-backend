@@ -141,10 +141,15 @@ Repair is a **lumpy sink**, not a per-fight tax. Durability decays over many fig
 
 ### R7.2 — Upgrade cost (gold)
 ```
-upgrade_cost(N) = 150 × 1.4^N    (N is the target level, +1 through +10)
+upgrade_cost(N) = round(150 × N^1.4)    (N is the target level, +1 through +10)
 ```
 
-Exponential cost is intentional — late upgrades are the primary gold sink.
++1..+10 = 150, 396, 698, 1,045, 1,428, 1,843, 2,287, 2,757, 3,251, 3,768 — Σ 17,623
+(`UPGRADE_COSTS`, `upgradeCost()`, same curve as the live route and the admin
+seed). This rule used to say `150 × 1.4^N` (~10.5k total) while the route
+charged the power law; the doc is now the code (2026-10-17).
+
+Steep late cost is intentional — late upgrades are the primary gold sink.
 
 ### R7.3 — Upgrade success and failure
 | Level | Success % | Failure mode |
@@ -167,7 +172,13 @@ Consumable prices live on a **multiple-of-PvP-win** scale, level-scaled:
 - HP Potion Small ≈ **1.3× one PvP win**.
 - HP Potion Large ≈ **2.6× one PvP win**.
 
-If a consumable falls outside ±20% of its target ratio after a balance change, retune. Hardcoded prices are **deprecated** — consumables should level-scale via `levelScaledConsumableCost(baseRatio, level)`.
+If a consumable falls outside ±20% of its target ratio after a balance change, retune.
+
+**Shipped (2026-10-17):** prices are flat, from live-config `consumable.price.*`
+with code defaults in `consumable-pricing.ts` — stamina 100 / 250 / **2,000**
+(large was 500: a full bar is ~4,800 gold of fights at L40), HP 150 / 350 / 700.
+`levelScaledConsumableCost` was never built; the ratio scale above stays the
+target for when it is. Potions are capped at 2 a day (`STAMINA_POTION_DR`).
 
 ---
 
@@ -250,6 +261,11 @@ Pure gem packs at $9.99+ are allowed but should be clearly priced AGAINST bundle
 
 (Effective once `PREMIUM_PASS_MIGRATION.md` is implemented; see that doc for migration sequence.)
 
+**Shipped (2026-10-17 note):** `premium_pass_monthly` is $4.99 / 30 days with
+300 gems per renewal, and `premium.ts` grants +25 gems/day, +10% gold, +20% XP
+and 5 free PvP fights. The $9.99 / annual tiers, 2× quest gold and the
+subscriber shop slot below are spec, not built.
+
 - Price: $9.99/month or $79.99/year (~33% annual discount).
 - Benefits:
   - **+10% gold multiplier** (applied LAST in reward stack — does not compound CHA).
@@ -277,6 +293,11 @@ Pure gem packs at $9.99+ are allowed but should be clearly priced AGAINST bundle
 ---
 
 ## R13 — Gold Mine and passive systems
+
+**Shipped (2026-10-17 note, `gold-mine.ts`):** 3 slots max, no premium 4th slot,
+boost is **15 gems for ×2 haul** (not a skip), yield does not scale with level.
+The bullets below are the spec this was written against; the gold mine is
+mid-rewrite (GOLD_MINE_REDESIGN_2026-10-16), so retarget them there.
 
 - Base session: **4 hours**, **40–100 gold reward** (`Gold Mine Yield`).
 - 10% chance of 1–3 gem drop per session.
@@ -312,6 +333,10 @@ A higher rarity must always feel like an upgrade over a lower one. An unlucky ep
 | Rare | 60 |
 | Epic | 150 |
 | Legendary | 400 |
+
+**Shipped (`item-balance.ts`, 2026-10-17 note):** the table is the per-level
+base — sell = base × itemLevel (an L50 legendary sells for 20,000), shop buy =
+sell × 4. The flat numbers above were the original spec.
 
 These are **trash-removal prices**, not economic value. Players who actually want to monetize a duplicate use the **shard system** (M2 backlog): auto-dismantle below player level → essence shards → reforge / reroll / transmog sinks.
 

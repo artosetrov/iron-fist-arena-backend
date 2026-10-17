@@ -49,6 +49,13 @@ Reference totals:
 | 50 | 5 | 49 | 10 | 25 | **84** |
 | 50 | 10 | 49 | 10 | 50 | **109** |
 
+> **Code vs spec (2026-10-17, balance audit §2):** `progression.ts` grants 1 SP
+> per level only — **49 at L50**. Milestone SP and prestige SP in this table are
+> not implemented, and `PASSIVES.MAX_PASSIVE_POINTS` is 50. Either wire the
+> milestone/prestige grants (and raise the cap to 59+) or treat 49 as the budget
+> the trees are balanced against. Until then, every "59 SP" build below is 10
+> SP over what a player can have.
+
 Budget: 20 nodes × 6 SP = **120 SP max spend**. Players at L50 P10 still can't max everything — build identity persists into endgame.
 
 Respec: `50` gems per reset OR `1` free per ISO week (Mon 00:00 UTC reset).
