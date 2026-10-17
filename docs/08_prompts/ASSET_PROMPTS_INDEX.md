@@ -23,6 +23,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Hero Characters | Player character full-body art (various classes/races) | `Hexbound/HERO_PROMPTS.md` | Active | Multiple variations |
 | Hub City | Hub/city background and location art | `docs/08_prompts/hexbound_hub_city_prompts.md` | Active | Location variations |
 | Logo | Game logo design variations and concepts | `docs/08_prompts/hexbound_logo_prompts.md` | Active | Multiple logo styles |
+| Crest Layers | The logo as animatable layers — `crest-plate`, `crest-wordmark`, `crest-gem`, `crest-banner`, `crest-chain`, `crest-claws` (title-screen `HexboundCrest`) | `docs/08_prompts/CREST_LAYERS_PROMPTS.md` | Active | 6 |
 | Loot & Asset Icons | Gold coins, XP crystals, gems, weapons, potions | `docs/08_prompts/asset-prompts.md` | Active | 20+ assets |
 | Gold Mine Cards | Minigame card illustrations for the mine game | `docs/08_prompts/mine-card-prompts.md` | Active | Multiple card designs |
 | Tavern Interior | Tavern screen background (9:16) + minigame icons (shell game, fortune wheel, dice) + patron busts | `docs/08_prompts/TAVERN_INTERIOR_PROMPTS.md` | Active | 1 bg + 3 icons + 3 patrons |

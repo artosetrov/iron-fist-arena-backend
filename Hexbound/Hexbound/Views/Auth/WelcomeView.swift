@@ -5,8 +5,9 @@ import AuthenticationServices
 //
 // The launch IS the title screen: there is no separate splash. On a cold
 // start the system launch screen is plain `launch-background` ink (Info.plist
-// UILaunchScreen), the title art comes up out of it, the crest forms in the
-// spot it keeps, and a loader stands where the sign-in actions will be.
+// UILaunchScreen), the title art comes up out of it, the layered crest
+// assembles in the spot it keeps (HexboundCrest), and a loader stands where
+// the sign-in actions will be.
 // When the session check is done the actions take the loader's place — or,
 // with a saved session, the whole screen cross-fades into the game.
 
@@ -47,19 +48,16 @@ struct WelcomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var vm = LoginViewModel()
 
-    // Launch intro: the scene comes up out of the dark, then the crest forms
-    // and one pass of light crosses it.
+    // Launch intro: the scene comes up out of the dark while the crest
+    // assembles itself (HexboundCrest, mode .intro).
     @State private var sceneRevealed = false
-    @State private var crestRevealed = false
-    @State private var sheenPhase: CGFloat = 0
 
     private var isBooting: Bool { bootStage != nil }
     /// Held back only until the launch intro has played; any other visit
     /// shows the screen at once.
     private var sceneVisible: Bool { !isBooting || sceneRevealed }
-    private var crestVisible: Bool { !isBooting || crestRevealed }
 
-    private static let crestWidth: CGFloat = 280
+    private static let crestWidth: CGFloat = 300
 
     var body: some View {
         ZStack {
@@ -121,85 +119,18 @@ struct WelcomeView: View {
 
     // MARK: - Crest
 
-    private var crestImage: some View {
-        Image("hexbound-logo")
-            .resizable()
-            .scaledToFit()
-            .frame(width: Self.crestWidth)
-    }
-
+    /// The layered crest: it assembles on a cold launch and is simply there on
+    /// any later visit. Laid out as a square — the bony hands' fade runs into
+    /// the space below without pushing the actions down.
     private var crest: some View {
-        ZStack {
-            // Warm light pooled behind the crest — drawn here, never baked
-            // into the PNG (ART_STYLE_GUIDE: "AI paints, code rules").
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            DarkFantasyTheme.gold.opacity(0.18),
-                            DarkFantasyTheme.goldDim.opacity(0.08),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: Self.crestWidth * 0.68
-                    )
-                )
-                .frame(width: Self.crestWidth * 1.36, height: Self.crestWidth * 1.36)
-
-            crestImage
-                .overlay { sheen }
-        }
-        .frame(width: Self.crestWidth, height: Self.crestWidth)
-        .opacity(crestVisible ? 1 : 0)
-        .blur(radius: crestVisible || reduceMotion ? 0 : 10)
-        .offset(y: crestVisible || reduceMotion ? 0 : MotionConstants.cardSlideDistance)
-        .allowsHitTesting(false)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Hexbound. Forge your fate.")
-        .accessibilityAddTraits(.isHeader)
-    }
-
-    /// One pass of storm light across the crest as it forms (the same cold
-    /// white as the lightning). The band sits off the art at phase 0 and 1,
-    /// and the crest's own alpha masks it.
-    private var sheen: some View {
-        GeometryReader { geo in
-            LinearGradient(
-                colors: [.clear, DarkFantasyTheme.vfxLightningCore.opacity(0.35), .clear],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(width: geo.size.width * 0.2, height: geo.size.height * 1.6)
-            .rotationEffect(.degrees(18))
-            .offset(
-                x: geo.size.width * (-0.8 + 2.2 * sheenPhase),
-                y: -geo.size.height * 0.3
-            )
-        }
-        .mask(crestImage)
-        .blendMode(.plusLighter)
-        .allowsHitTesting(false)
+        HexboundCrest(width: Self.crestWidth, mode: isBooting ? .intro : .still)
+            .frame(height: Self.crestWidth, alignment: .top)
     }
 
     private func playLaunchIntro() {
         guard isBooting, !sceneRevealed else { return }
-        if reduceMotion {
-            // A plain fade: no blur, no drift, no sheen.
-            withAnimation(.easeInOut(duration: MotionConstants.normal)) {
-                sceneRevealed = true
-                crestRevealed = true
-            }
-            return
-        }
-        withAnimation(.easeOut(duration: MotionConstants.epic)) {
+        withAnimation(.easeOut(duration: reduceMotion ? MotionConstants.normal : MotionConstants.epic)) {
             sceneRevealed = true
-        }
-        withAnimation(.easeOut(duration: MotionConstants.reward).delay(MotionConstants.ceremonyPhase1)) {
-            crestRevealed = true
-        }
-        withAnimation(.easeInOut(duration: MotionConstants.epic).delay(MotionConstants.ceremonyPhase3)) {
-            sheenPhase = 1
         }
     }
 
