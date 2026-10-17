@@ -415,11 +415,35 @@ function rollPercent(rng: SeededRng): number {
 
 // --- Dice combat ---
 
+/** No zone bonuses inside the dice snapshot — the dice ARE the zones. */
+const NEUTRAL_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge: 0 };
+
 /**
- * Dice combat (dice.ts) — one plain ×1 strike of `attacker` against
- * `defender`: class auto-attack, passive flat/percent damage, the defender's
- * resists, tank reduction and passive damage reduction. No crit, dodge or
- * variance — the dice decide those. Snapshotted once per match.
+ * Share of a hit that passive damage reduction and the tank's class
+ * reduction may absorb together inside the dice snapshot. Was 50 for the
+ * passives alone with the class ×0.85 stacked on top: a 49-SP tank tree
+ * reached ~×7.3 EHP·damage against ~×3.3 for a rogue (2026-10-16 balance
+ * audit §2). One cap over both keeps the tank the sturdiest class without
+ * making a full tree a wall.
+ */
+export const DICE_DAMAGE_REDUCTION_CAP = 35;
+
+/**
+ * Dice combat (dice.ts) — the EXPECTED value of one plain classic strike of
+ * `attacker` against `defender`, snapshotted once per match. The dice supply
+ * the variance; everything the classic engine would roll per hit is folded
+ * in here as its expectation:
+ *
+ *   - class auto-attack, passive flat/percent damage, the defender's resists
+ *   - crit chance (LUK/AGI stats + passive flat crit) as `1 + p·(CRIT_MULT−1)`
+ *   - the defender's dodge (AGI/LUK + rogue bonus + passive flat dodge) and
+ *     CHA miss as `1 − p`
+ *   - tank class reduction and passive damage reduction under one cap
+ *
+ * Until 2026-10-16 the snapshot read only flat/percent damage, DR and
+ * lifesteal, so LUK, the AGI dodge/crit, CHA and every passive node that
+ * grants crit or dodge did nothing in live PvP — 36 of a rogue's 109 SP.
+ * `cooldownReduction` has no dice analogue and stays out.
  */
 export async function diceHitProfile(
   attacker: CharacterStats,
@@ -431,9 +455,23 @@ export async function diceHitProfile(
   const pd = defender.passiveBonuses ?? emptyPassiveBonuses();
   let raw = baseDamage(attacker) + pa.flatDamage;
   raw *= 1 + pa.percentDamage / 100;
+
+  // Crit as expectation. Same inputs and caps as resolveAttack.
+  const crit = Math.min(critChance(attacker, NEUTRAL_STANCE, config) + pa.flatCritChance, config.MAX_CRIT_CHANCE);
+  raw *= 1 + Math.max(0, crit) / 100 * (config.CRIT_MULTIPLIER - 1);
+
   let dmg = reduceDamageByType(raw, defender, getAutoAttackDamageType(attacker.class), config);
-  dmg = applyClassReduction(dmg, defender.class, config);
-  if (pd.damageReduction > 0) dmg *= 1 - Math.min(pd.damageReduction, 50) / 100;
+
+  // Dodge and CHA miss as expectation — a whiff is a 0, so p whiffs = ×(1−p).
+  const dodge = Math.min(dodgeChance(defender, NEUTRAL_STANCE, config) + pd.flatDodgeChance, config.MAX_DODGE_CHANCE);
+  dmg *= 1 - Math.max(0, dodge) / 100;
+  dmg *= 1 - chaMissChance(defender.cha, config) / 100;
+
+  // Tank class reduction and passive DR share one cap.
+  const classReduction = defender.class === 'tank' ? Math.round((1 - config.TANK_DAMAGE_REDUCTION) * 100) : 0;
+  const reduction = Math.min(classReduction + Math.max(0, pd.damageReduction), DICE_DAMAGE_REDUCTION_CAP);
+  if (reduction > 0) dmg *= 1 - reduction / 100;
+
   return {
     hit: Math.max(config.MIN_DAMAGE, Math.round(dmg)),
     lifesteal: Math.max(0, Math.min(pa.lifesteal, 50)),
