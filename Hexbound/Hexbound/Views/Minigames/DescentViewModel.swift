@@ -38,6 +38,8 @@ final class DescentViewModel {
     var staminaCost = 30
     var isBusy = false
     var isStarting = false
+    /// A fight round (strike, brace, potion) is on its way to the server — the dice tumble meanwhile.
+    private(set) var isRollingRound = false
 
     /// Passage picked at a fork (client-side until "Take this path").
     var selectedNodeId: String?
@@ -176,7 +178,8 @@ final class DescentViewModel {
     func toggleAuto() {
         autoFight.toggle()
         autoNotice = nil
-        SFXManager.shared.play(.uiToggle)
+        // The AUTO button's style already clicks (as on the arena).
+        HapticManager.selection()
         if autoFight { runAuto() } else { stopAuto() }
     }
 
@@ -189,7 +192,11 @@ final class DescentViewModel {
     // MARK: - Network round trip
 
     private func send(_ action: DescentAction) async {
-        defer { isBusy = false }
+        isRollingRound = action == .strike || action == .brace || action == .potion
+        defer {
+            isBusy = false
+            isRollingRound = false
+        }
         guard let snap = snapshot else { return }
         switch await service.act(runId: snap.runId, seq: snap.seq, action: action) {
         case .success(let res):

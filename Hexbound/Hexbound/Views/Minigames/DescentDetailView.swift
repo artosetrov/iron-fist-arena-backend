@@ -262,7 +262,7 @@ private struct DescentIntroView: View {
                     Text("\(vm.staminaCost)")
                 }
             }
-            .buttonStyle(.descentGold)
+            .buttonStyle(.primary)
             .disabled(vm.isStarting)
             .accessibilityLabel("Descend, costs \(vm.staminaCost) stamina")
 
@@ -412,7 +412,7 @@ private struct DescentRulesSheet: View {
                     .padding(.vertical, LayoutConstants.spaceXS)
                 }
                 Button("Got it", action: onClose)
-                    .buttonStyle(.descentGold)
+                    .buttonStyle(.primary)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceMD)

@@ -24,8 +24,14 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
 - **Look:** the intro is one key art of all three depths (`rush2-bg-descent-key`, Higgsfield job `c42603d3-cfa4-45fb-ab2d-3c40215f3337`)
   with I–III tier labels and the title on its dark foot; the rules sit in a sheet that opens by itself once
   (`@AppStorage("descent.rulesSeen")`). Every option in a run is a `DescentChoiceRow`: a chamfered iron plate
-  (`DescentPlate`) with a bronze medallion (`DescentMedallion`) lit in the room's colour; buttons use
-  `DescentPlateButtonStyle` (`.descentGold` main action, `.descentIron` beside it, `.descentOutline` ways out).
+  (`DescentPlate`) with a bronze medallion (`DescentMedallion`) lit in the room's colour. Buttons are the game's
+  own (`.primary` main action, `.secondary` ways out) — the custom plate buttons were dropped on 2026-10-18.
+- **Fights look like the arena:** the dice are the arena's `DiceDieView` tiles on its dice table — two lanes,
+  your strike vs their guard and theirs vs yours, with `DiceChipView` results — and they tumble while a round is
+  in flight (`DescentViewModel.isRollingRound`). Controls: Strike `.primary`, Brace / Potion `.combatControl`,
+  AUTO `.combatToggle`. The room painting is dimmed per asset to one depth (`DescentStyle.combatDim`, luma table
+  `DescentGeometry.backdropLuma` — re-measure if a backdrop is regenerated), so pale Ossuary halls no longer wash
+  the fight out; hits wash the foe red (as the arena boss), crits light only the screen edges in gold.
 - **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
   `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop

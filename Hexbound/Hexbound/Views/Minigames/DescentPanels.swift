@@ -331,114 +331,6 @@ struct DescentRowPressStyle: ButtonStyle {
     }
 }
 
-// MARK: - Buttons
-
-/// The Descent's buttons: a gold plate with pointed ends for the main action,
-/// an iron plate for actions beside it, an outlined plate for ways out.
-struct DescentPlateButtonStyle: ButtonStyle {
-    enum Kind { case gold, iron, outline }
-    var kind: Kind = .gold
-
-    func makeBody(configuration: Configuration) -> some View {
-        DescentPlateButtonBody(kind: kind, configuration: configuration)
-    }
-}
-
-extension ButtonStyle where Self == DescentPlateButtonStyle {
-    static var descentGold: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .gold) }
-    static var descentIron: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .iron) }
-    static var descentOutline: DescentPlateButtonStyle { DescentPlateButtonStyle(kind: .outline) }
-}
-
-private struct DescentPlateButtonBody: View {
-    let kind: DescentPlateButtonStyle.Kind
-    let configuration: ButtonStyleConfiguration
-    @Environment(\.isEnabled) private var isEnabled
-
-    var body: some View {
-        let pressed = configuration.isPressed
-        configuration.label
-            .font(kind == .gold ? DarkFantasyTheme.buttonLabel : DarkFantasyTheme.buttonLabelCompact)
-            .textCase(.uppercase)
-            .tracking(kind == .iron ? 1.5 : 3)
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .foregroundStyle(textColor)
-            .padding(.horizontal, kind == .iron ? LayoutConstants.spaceMS : 30)
-            .frame(maxWidth: .infinity)
-            .frame(height: LayoutConstants.buttonHeightLG)
-            .background { plate }
-            .brightness(pressed ? -0.06 : 0)
-            .saturation(isEnabled ? 1 : 0.15)
-            .opacity(isEnabled ? 1 : 0.6)
-            .contentShape(Rectangle())
-            .onChange(of: pressed) { _, isDown in
-                if isDown { SFXManager.shared.play(kind == .gold ? .uiTapHeavy : .uiTap) }
-            }
-    }
-
-    private var textColor: Color {
-        switch kind {
-        case .gold: DarkFantasyTheme.textOnGold
-        case .iron: DarkFantasyTheme.textPrimary
-        case .outline: DarkFantasyTheme.gold
-        }
-    }
-
-    @ViewBuilder
-    private var plate: some View {
-        switch kind {
-        case .gold:
-            let shape = DescentPointedShape()
-            GeometryReader { geo in
-                ZStack {
-                    shape.fill(LinearGradient(colors: [DarkFantasyTheme.goldDim, DarkFantasyTheme.btnOrangeStroke], startPoint: .top, endPoint: .bottom))
-                    shape.inset(by: 2.5).fill(LinearGradient(
-                        stops: [
-                            .init(color: DarkFantasyTheme.rankChallenger, location: 0),
-                            .init(color: DarkFantasyTheme.glowTreasure, location: 0.44),
-                            .init(color: DarkFantasyTheme.gold, location: 0.56),
-                            .init(color: DarkFantasyTheme.goldDim, location: 1),
-                        ],
-                        startPoint: .top, endPoint: .bottom
-                    ))
-                    shape.inset(by: 7).stroke(DarkFantasyTheme.vfxStunGlow.opacity(0.6), lineWidth: 1)
-                    let point = min(18, geo.size.height * 0.34)
-                    ForEach([point + 4, geo.size.width - point - 4], id: \.self) { x in
-                        Rectangle()
-                            .fill(DarkFantasyTheme.btnOrangeStroke)
-                            .overlay(Rectangle().stroke(DarkFantasyTheme.vfxStunGlow.opacity(0.65), lineWidth: 1))
-                            .frame(width: 7, height: 7)
-                            .rotationEffect(.degrees(45))
-                            .position(x: x, y: geo.size.height / 2)
-                    }
-                }
-            }
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.75), radius: 4, y: 3)
-        case .iron:
-            let shape = DescentChamferShape(chamfer: 9)
-            ZStack {
-                shape.fill(LinearGradient(colors: [DarkFantasyTheme.bgCardGradientEnd, DarkFantasyTheme.bgDungeonDeep], startPoint: .top, endPoint: .bottom))
-                shape.inset(by: 5).stroke(Color.white.opacity(0.07), lineWidth: 1)
-                shape.strokeBorder(LinearGradient(colors: [DarkFantasyTheme.borderStrong, DarkFantasyTheme.borderSubtle], startPoint: .top, endPoint: .bottom), lineWidth: 1.5)
-            }
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
-        case .outline:
-            let shape = DescentPointedShape()
-            ZStack {
-                shape.fill(DarkFantasyTheme.bgAbyss.opacity(0.72))
-                shape.inset(by: 6).stroke(DarkFantasyTheme.gold.opacity(0.28), lineWidth: 1)
-                shape.strokeBorder(DarkFantasyTheme.goldDim, lineWidth: 1.5)
-            }
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
-        }
-    }
-}
-
 /// An asset icon for a row, or a muted dot when there is none.
 struct DescentRowIcon: View {
     let asset: String?
@@ -629,83 +521,133 @@ struct DescentItemIcon: View {
 
 // MARK: - Combat dice
 
+/// The round's dice on the arena's dice table, with the arena's own pieces
+/// (`DiceDieView` tiles, `DiceChipView` results): two lanes, each an attack die
+/// against the guard die that answers it. A strike lands unless the guard die
+/// shows the same spot — then both dice of the lane are ringed blue.
 struct DescentDiceTray: View {
     let round: DescentRound?
+    /// A round is on its way to the server — the dice tumble, the chips wait.
+    var rolling = false
+
+    private typealias Chip = DiceBattleViewModel.Chip
+    private let dieSize: CGFloat = 56
 
     var body: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            Text("YOU")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .tracking(2)
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                .fixedSize()
-            die(round?.pa, label: "STRIKE", state: round?.pHit == true ? .hit : .idle)
-            die(round?.pg, label: "GUARD", state: round?.pBlock == true ? .blocked : .idle)
-            Text("vs")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                .frame(maxWidth: .infinity)
-            die(round?.ea, label: "STRIKE", state: round?.eHit == true ? .hurt : .idle)
-            die(round?.eg, label: "GUARD", state: round?.eBlock == true ? .blocked : .idle)
-            Text("FOE")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .tracking(2)
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                .fixedSize()
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            lane(
+                title: "YOUR STRIKE",
+                attack: round?.pa,
+                guardZone: round?.eg,
+                attackSpent: round.map { $0.action != "strike" } ?? false,
+                blocked: round?.eBlock == true,
+                chip: yourChip
+            )
+            lane(
+                title: "FOE STRIKE",
+                attack: round?.ea,
+                guardZone: round?.pg,
+                attackSpent: false,
+                blocked: round?.pBlock == true,
+                chip: foeChip
+            )
         }
-        .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(LayoutConstants.spaceSM)
+        .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgDarkPanel)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
-        )
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilitySummary)
     }
 
-    private enum DieState { case idle, hit, hurt, blocked }
-
-    private func die(_ zone: String?, label: String, state: DieState) -> some View {
-        let edge: Color = switch state {
-        case .idle: DarkFantasyTheme.borderMedium
-        case .hit: DarkFantasyTheme.success
-        case .hurt: DarkFantasyTheme.danger
-        case .blocked: DarkFantasyTheme.info
-        }
-        return VStack(spacing: LayoutConstants.space2XS) {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(DarkFantasyTheme.shopSignTagline)
-                if let zone {
-                    Image(DescentStyle.zoneAsset(zone))
-                        .resizable()
-                        .scaledToFit()
-                        .padding(7)
-                } else {
-                    Text("?")
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.shopSignBottom.opacity(0.5))
-                }
+    /// `attackSpent`: the hero braced or drank instead of striking — the attack die sits out.
+    private func lane(title: String, attack: String?, guardZone: String?,
+                      attackSpent: Bool, blocked: Bool, chip: Chip) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text(title)
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .tracking(1.5)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                die(.attack, zone: attack, ringed: blocked)
+                    .opacity(attackSpent && !rolling ? 0.4 : 1)
+                Image("ui-arrow-right")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 12, height: 12)
+                    .opacity(0.6)
+                die(.guardDie, zone: guardZone, ringed: blocked)
             }
-            .frame(width: 44, height: 44)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .stroke(edge, lineWidth: state == .idle ? 1 : 2.5)
-            )
-            .shadow(color: state == .idle ? .clear : edge.opacity(0.6), radius: 8)
-            .id("\(label)-\(zone ?? "none")")
-            .transition(.opacity)
+            DiceChipView(chip: rolling ? Chip(text: "…", style: .wait) : chip)
         }
-        .animation(.easeOut(duration: MotionConstants.fast), value: zone)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func die(_ kind: DiceKind, zone: String?, ringed: Bool) -> some View {
+        DiceDieView(
+            kind: kind,
+            face: zone.map(DescentStyle.zoneFace),
+            runeAsset: nil,
+            size: dieSize,
+            tumbling: rolling
+        )
+        .overlay {
+            if ringed && !rolling {
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                    .stroke(DarkFantasyTheme.info, lineWidth: 2)
+                    .padding(-3)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    /// Your strike against their guard.
+    private var yourChip: Chip {
+        guard let r = round else { return Chip(text: "—", style: .wait) }
+        switch r.action {
+        case "brace":
+            return Chip(text: "BRACED", style: .miss, big: true)
+        case "potion":
+            return Chip(text: "POTION", detail: r.healed > 0 ? "+\(r.healed) HP" : nil, style: .miss, big: true)
+        default:
+            if r.pHit {
+                return r.crit
+                    ? Chip(text: "CRIT \(r.dealt)", style: .crit, big: true)
+                    : Chip(text: "HIT \(r.dealt)", style: .hit, big: true)
+            }
+            if r.eBlock { return Chip(text: "BLOCKED", style: .blocked, big: true) }
+            if r.dodged { return Chip(text: "DODGED", style: .miss, big: true) }
+            return Chip(text: "—", style: .wait)
+        }
+    }
+
+    /// Their strike against your guard.
+    private var foeChip: Chip {
+        guard let r = round else { return Chip(text: "—", style: .wait) }
+        let braced = r.action == "brace" ? "BRACED" : nil
+        if r.eHit {
+            return r.crushing
+                ? Chip(text: "CRUSH −\(r.taken)", detail: braced, style: .crit, big: true)
+                : Chip(text: "HIT −\(r.taken)", detail: braced, style: .hit, big: true)
+        }
+        if r.pBlock { return Chip(text: "BLOCKED", style: .blocked, big: true) }
+        return Chip(text: "—", style: .wait)
     }
 
     private var accessibilitySummary: String {
         guard let r = round else { return "No dice rolled yet" }
-        return "You struck \(r.pa) and guarded \(r.pg). The foe struck \(r.ea) and guarded \(r.eg)."
+        return "Your strike, \(r.pa) against their guard \(r.eg): \(yourChip.text). "
+            + "Their strike, \(r.ea) against your guard \(r.pg): \(foeChip.text)."
     }
 }
 

@@ -37,13 +37,26 @@ enum DescentStyle {
         DarkFantasyTheme.rarityColor(for: ItemRarity(rawValue: rarity) ?? .common)
     }
 
-    static func zoneAsset(_ zone: String) -> String {
+    /// The die face that shows `zone` on the arena dice (`DiceDieView`):
+    /// faces 0…5 are head, head, chest, chest, legs, legs on both sides.
+    static func zoneFace(_ zone: String) -> Int {
         switch zone {
-        case "head": "dice-zone-head"
-        case "legs": "dice-zone-legs"
-        default: "dice-zone-body"
+        case "head": 0
+        case "legs": 4
+        default: 2
         }
     }
+
+    /// How far a fight's painting is dimmed. Every room is brought down to about
+    /// the same depth (`combatLuma`), so the foe is the brightest thing on screen —
+    /// as on the arena's dark stage. The pale parchment rooms (the Ossuary, the
+    /// treasure vault) need about twice the dim of the dark Warrens.
+    static func combatDim(_ asset: String) -> Double {
+        guard let luma = DescentGeometry.backdropLuma[asset], luma > 0 else { return 0.55 }
+        return min(0.72, max(0.36, 1 - combatLuma / luma))
+    }
+
+    static let combatLuma = 0.17
 }
 
 // MARK: - Fork geometry
@@ -63,6 +76,21 @@ enum DescentGeometry {
     /// Aspect (width / height) of the scene paintings.
     static let sceneAspect: CGFloat = 1290.0 / 1747.0
     static let runeDoorAspect: CGFloat = 1290.0 / 1669.0
+
+    /// Mean luminance (0…1) of each room a fight can happen in, measured on the
+    /// @3x JPEG. Re-measure when a painting is regenerated.
+    static let backdropLuma: [String: Double] = [
+        "rush2-bg-ossuary-hall": 0.467,
+        "rush2-bg-ossuary-elite": 0.464,
+        "rush2-bg-ossuary-arena": 0.465,
+        "rush2-bg-warrens-hall": 0.258,
+        "rush2-bg-warrens-elite": 0.308,
+        "rush2-bg-warrens-arena": 0.414,
+        "rush2-bg-molten-hall": 0.259,
+        "rush2-bg-molten-elite": 0.325,
+        "rush2-bg-molten-arena": 0.335,
+        "rush2-bg-treasure": 0.5,
+    ]
 
     static let archTable: [String: [DescentArch]] = [
         "ossuary-1": [DescentArch(x0: 0.3822, x1: 0.6167, y0: 0.3208, y1: 0.7039)],
@@ -206,7 +234,7 @@ struct DescentShaftShape: Shape {
     }
 }
 
-/// A plate with cut corners: the Descent's choice rows and secondary buttons.
+/// A plate with cut corners: the Descent's choice rows and the torch button.
 struct DescentChamferShape: InsettableShape {
     var chamfer: CGFloat = 12
     var insetAmount: CGFloat = 0
@@ -229,31 +257,6 @@ struct DescentChamferShape: InsettableShape {
     }
 
     func inset(by amount: CGFloat) -> DescentChamferShape {
-        var shape = self
-        shape.insetAmount += amount
-        return shape
-    }
-}
-
-/// A plate with pointed ends: the Descent's main call to action.
-struct DescentPointedShape: InsettableShape {
-    var insetAmount: CGFloat = 0
-
-    func path(in rect: CGRect) -> Path {
-        let r = rect.insetBy(dx: insetAmount, dy: insetAmount)
-        let point = max(0, min(18, rect.height * 0.34) - insetAmount * 0.6)
-        var p = Path()
-        p.move(to: CGPoint(x: r.minX + point, y: r.minY))
-        p.addLine(to: CGPoint(x: r.maxX - point, y: r.minY))
-        p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
-        p.addLine(to: CGPoint(x: r.maxX - point, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.minX + point, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.minX, y: r.midY))
-        p.closeSubpath()
-        return p
-    }
-
-    func inset(by amount: CGFloat) -> DescentPointedShape {
         var shape = self
         shape.insetAmount += amount
         return shape

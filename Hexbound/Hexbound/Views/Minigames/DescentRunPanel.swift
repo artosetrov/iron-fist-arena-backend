@@ -12,7 +12,7 @@ struct DescentRunPanel: View {
         case .depthCard:
             tale(s)
             Button(s.depth == 0 ? "Light your torch" : "Descend") { vm.perform(.beginDepth) }
-                .buttonStyle(.descentGold)
+                .buttonStyle(.primary)
                 .disabled(vm.isBusy)
         case .fork:
             forkPanel(s)
@@ -22,7 +22,7 @@ struct DescentRunPanel: View {
             tale(s)
             lootList(s.spoils?.loot ?? [])
             Button("Take it all") { vm.perform(.takeLoot) }
-                .buttonStyle(.descentGold)
+                .buttonStyle(.primary)
                 .disabled(vm.isBusy)
         case .chest:
             chestPanel(s)
@@ -37,16 +37,16 @@ struct DescentRunPanel: View {
         case .depthClear:
             tale(s)
             Button("Descend to depth \(DescentText.roman(s.depth + 2))") { vm.perform(.descend) }
-                .buttonStyle(.descentGold)
+                .buttonStyle(.primary)
                 .disabled(vm.isBusy)
-            Button("Return to the surface · keep everything") { vm.perform(.escape) }
-                .buttonStyle(.descentOutline)
+            Button("Climb out · keep it all") { vm.perform(.escape) }
+                .buttonStyle(.secondary)
                 .disabled(vm.isBusy)
         case .result:
             resultPanel(s)
         case .unknown:
             Button("Refresh") { Task { await vm.load() } }
-                .buttonStyle(.descentOutline)
+                .buttonStyle(.secondary)
         }
     }
 
@@ -96,7 +96,7 @@ struct DescentRunPanel: View {
                 }
             }
             Button(enterTitle) { vm.enterSelected() }
-                .buttonStyle(.descentGold)
+                .buttonStyle(.primary)
                 .disabled(vm.selectedOption == nil || vm.isBusy)
         }
     }
@@ -144,37 +144,57 @@ struct DescentRunPanel: View {
     @ViewBuilder
     private func combatPanel(_ s: DescentSnapshot) -> some View {
         if let c = s.combat {
-            DescentDiceTray(round: c.lastRound)
+            DescentDiceTray(round: c.lastRound, rolling: vm.isRollingRound)
             DescentVerdict(
                 lines: c.verdict,
                 hint: s.hero.isLow && s.hero.potions > 0 ? "Low health — drink a potion" : nil,
                 notice: vm.autoNotice
             )
+            // The arena's controls: the gold FIGHT button, neutral combat buttons beside it.
+            // Not greyed out while a round is in flight (`perform` ignores taps then) —
+            // the tumbling dice show the wait instead of a flickering button.
+            let potionOff = s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button("Strike") { vm.perform(.strike) }
-                    .buttonStyle(.descentGold)
-                    .disabled(vm.isBusy || vm.autoFight)
+                    .buttonStyle(.primary)
+                    .disabled(vm.autoFight)
                 Button("Brace") { vm.perform(.brace) }
-                    .buttonStyle(.descentIron)
+                    .buttonStyle(.combatControl)
                     .overlay(
-                        DescentChamferShape(chamfer: 9)
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                             .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
+                            .allowsHitTesting(false)
                     )
-                    .disabled(vm.isBusy || vm.autoFight)
-                Button("Potion \(s.hero.potions)") { vm.perform(.potion) }
-                    .buttonStyle(.descentIron)
-                    .disabled(vm.isBusy || vm.autoFight || s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp)
+                    .frame(width: 100)
+                    .disabled(vm.autoFight)
+                    .opacity(vm.autoFight ? 0.45 : 1)
+                    .accessibilityHint(c.windup ? "A crushing blow is coming" : "")
+                Button {
+                    vm.perform(.potion)
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image("rush2-icon-potion")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 26, height: 26)
+                        Text("\(s.hero.potions)")
+                            .monospacedDigit()
+                    }
+                }
+                .buttonStyle(.combatControl)
+                .frame(width: 80)
+                .disabled(vm.autoFight || potionOff)
+                .opacity(vm.autoFight || potionOff ? 0.45 : 1)
+                .accessibilityLabel("Drink a potion, \(s.hero.potions) left")
             }
             HStack(spacing: LayoutConstants.spaceSM) {
-                Toggle(isOn: Binding(get: { vm.autoFight }, set: { _ in vm.toggleAuto() })) {
-                    Text("AUTO-FIGHT")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .tracking(1.5)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Button { vm.toggleAuto() } label: {
+                    Text("AUTO")
                 }
-                .toggleStyle(.switch)
-                .tint(DarkFantasyTheme.gold)
-                .fixedSize()
+                .buttonStyle(.combatToggle(isActive: vm.autoFight))
+                .frame(width: 100)
+                .accessibilityLabel("Auto-fight")
+                .accessibilityValue(vm.autoFight ? "On" : "Off")
                 Spacer(minLength: LayoutConstants.spaceSM)
                 if c.canFlee {
                     Button {
@@ -208,7 +228,7 @@ struct DescentRunPanel: View {
             if chest.opened {
                 lootList(chest.loot)
                 Button("Take it all") { vm.perform(.takeLoot) }
-                    .buttonStyle(.descentGold)
+                    .buttonStyle(.primary)
                     .disabled(vm.isBusy)
             } else {
                 DescentChoiceRow(
@@ -232,7 +252,7 @@ struct DescentRunPanel: View {
                     }
                 }
                 Button("Leave it be") { vm.perform(.leave) }
-                    .buttonStyle(.descentOutline)
+                    .buttonStyle(.secondary)
                     .disabled(vm.isBusy)
             }
         }
@@ -251,15 +271,15 @@ struct DescentRunPanel: View {
                 switch event.then ?? "continue" {
                 case "take_loot":
                     Button("Take it") { vm.perform(.takeLoot) }
-                        .buttonStyle(.descentGold)
+                        .buttonStyle(.primary)
                         .disabled(vm.isBusy)
                 case "fight_now":
                     Button("Fight!") { vm.perform(.fightNow) }
-                        .buttonStyle(.descentGold)
+                        .buttonStyle(.primary)
                         .disabled(vm.isBusy)
                 default:
                     Button("Continue") { vm.perform(.proceed) }
-                        .buttonStyle(.descentGold)
+                        .buttonStyle(.primary)
                         .disabled(vm.isBusy)
                 }
             } else {
@@ -286,10 +306,10 @@ struct DescentRunPanel: View {
             tale(s)
             if camp.done {
                 Button("Push on") { vm.perform(.proceed) }
-                    .buttonStyle(.descentGold)
+                    .buttonStyle(.primary)
                     .disabled(vm.isBusy)
                 Button("Climb out with your loot") { vm.perform(.escape) }
-                    .buttonStyle(.descentOutline)
+                    .buttonStyle(.secondary)
                     .disabled(vm.isBusy)
             } else {
                 DescentChoiceRow(
@@ -351,7 +371,7 @@ struct DescentRunPanel: View {
             }
         }
         Button("Move on") { vm.perform(.proceed) }
-            .buttonStyle(.descentOutline)
+            .buttonStyle(.secondary)
             .disabled(vm.isBusy)
     }
 
@@ -364,7 +384,7 @@ struct DescentRunPanel: View {
             lootList(pick.loot)
             if pick.choices.isEmpty {
                 Button("Take the spoils") { vm.perform(.takeRelic(nil)) }
-                    .buttonStyle(.descentGold)
+                    .buttonStyle(.primary)
                     .disabled(vm.isBusy)
             } else {
                 Text("CHOOSE ONE RELIC")
@@ -420,11 +440,11 @@ struct DescentRunPanel: View {
                     Text("\(vm.staminaCost)")
                 }
             }
-            .buttonStyle(.descentGold)
+            .buttonStyle(.primary)
             .disabled(vm.isStarting)
             .accessibilityLabel("Descend again, costs \(vm.staminaCost) stamina")
             Button("Return to town", action: onLeave)
-                .buttonStyle(.descentOutline)
+                .buttonStyle(.secondary)
         }
     }
 }
