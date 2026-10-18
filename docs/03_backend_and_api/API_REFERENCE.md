@@ -233,7 +233,17 @@ Actions: `begin_depth`, `torch{node_id}`, `move{node_id}`, `strike`, `brace`, `p
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | /minigames/fortune-wheel/spin | Yes | Spin the wheel |
+| GET | /minigames/fortune-wheel/status | Yes | Spins left, odds, Fortuna's Treasury (`treasury`, `treasury_max_bet`) |
+| POST | /minigames/fortune-wheel/spin | Yes | Spin; `win_amount` includes `jackpot_share` from the Treasury on x5 |
+
+## Fortune's Table (jackpot wheel, 4–6 seats)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /minigames/fortune-table/status | Yes | Tables (tiers), rake, rounds today/limit, open round, last 10 rounds. Settles rounds whose lobby ended |
+| POST | /minigames/fortune-table/join | Yes | `{character_id, tier, stake}` — stake gold, open a round (or resume the open one). Errors: `BAD_STAKE`, `TIER_LOCKED`, `NOT_ENOUGH_GOLD`, `DAILY_LIMIT` (429) |
+| POST | /minigames/fortune-table/topup | Yes | `{character_id, round_id, amount}` — add to your seat. Errors: `LOCKED`, `BELOW_MIN`, `OVER_MAX`, `NOT_OPEN`, `NOT_ENOUGH_GOLD` |
+| GET | /minigames/fortune-table/state | Yes | `?character_id&round_id` — seats so far; after the lobby the first call draws + pays; `seed` revealed once settled |
 
 ## Daily Systems
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { WHEEL_SECTORS } from '@/lib/game/fortune-wheel'
+import {
+  JACKPOT_SECTOR_INDEX, WHEEL_SECTORS, drainTreasury, feedTreasury, treasuryFeed, treasuryShare,
+} from '@/lib/game/fortune-wheel'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
@@ -97,6 +99,16 @@ export async function POST(req: NextRequest) {
         data: { gold: { decrement: bet_amount } },
       })
 
+      // 2 % of the bet feeds Fortuna's Treasury; the jackpot sector pays a
+      // share of it on top of x5 (bet / max bet of the whole Treasury).
+      let treasury = await feedTreasury(tx, treasuryFeed(bet_amount))
+      let jackpotShare = 0
+      if (winningSectorIndex === JACKPOT_SECTOR_INDEX) {
+        jackpotShare = treasuryShare(treasury, bet_amount)
+        treasury = await drainTreasury(tx, jackpotShare)
+      }
+      const totalWin = winAmount + jackpotShare
+
       // Create completed session (single-step game, no guess phase)
       await tx.minigameSession.create({
         data: {
@@ -109,7 +121,8 @@ export async function POST(req: NextRequest) {
             won,
             sectorIndex: winningSectorIndex,
             multiplier: winningSector.multiplier,
-            winAmount,
+            winAmount: totalWin,
+            jackpotShare,
           },
         },
       })
@@ -119,12 +132,12 @@ export async function POST(req: NextRequest) {
       if (won) {
         const updated = await tx.user.update({
           where: { id: user.id },
-          data: { gold: { increment: winAmount } },
+          data: { gold: { increment: totalWin } },
         })
         finalGold = updated.gold
       }
 
-      return { finalGold, characterId: character_id, spinsToday: todaySpins + 1 }
+      return { finalGold, characterId: character_id, spinsToday: todaySpins + 1, totalWin, jackpotShare, treasury }
     })
 
     // Update daily + weekly quest progress (non-critical, outside transaction)
@@ -140,7 +153,9 @@ export async function POST(req: NextRequest) {
       won,
       sector_index: winningSectorIndex,
       multiplier: winningSector.multiplier,
-      win_amount: winAmount,
+      win_amount: result.totalWin,
+      jackpot_share: result.jackpotShare,
+      treasury: result.treasury,
       gold: result.finalGold,
       spins_today: result.spinsToday,
       spins_limit: DAILY_SPIN_LIMIT,
@@ -150,6 +165,7 @@ export async function POST(req: NextRequest) {
         index: s.index,
         multiplier: s.multiplier,
         label: s.label,
+        jackpot: s.index === JACKPOT_SECTOR_INDEX,
       })),
     })
   } catch (error) {

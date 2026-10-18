@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { wheelOdds } from '@/lib/game/fortune-wheel'
+import { WHEEL_TREASURY, readTreasury, wheelOdds } from '@/lib/game/fortune-wheel'
 
 const DAILY_SPIN_LIMIT = 10
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     // Count today's spins + fetch user wallet in parallel
     const today = new Date().toISOString().split('T')[0]
-    const [spinsToday, dbUser] = await Promise.all([
+    const [spinsToday, dbUser, treasury] = await Promise.all([
       prisma.minigameSession.count({
         where: {
           characterId,
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.user.findUnique({ where: { id: user.id }, select: { gold: true } }),
+      readTreasury(prisma),
     ])
 
     return NextResponse.json({
@@ -43,6 +44,10 @@ export async function GET(req: NextRequest) {
       gold: dbUser?.gold ?? 0,
       // Odds disclosure (App Store 3.1.1) — shown under the wager buttons.
       odds: wheelOdds(),
+      // Fortuna's Treasury — progressive jackpot on the x5 sector.
+      treasury,
+      treasury_max_bet: WHEEL_TREASURY.maxBet,
+      treasury_take_rate: WHEEL_TREASURY.takeRate,
     })
   } catch (error) {
     console.error('fortune-wheel status error:', error)

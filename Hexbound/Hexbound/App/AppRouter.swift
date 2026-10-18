@@ -70,6 +70,7 @@ enum AppRoute: Hashable, Codable {
     case stash
     case shellGame
     case fortuneWheel
+    case fortuneTable
     case goldMine
     case dungeonRush
 
@@ -142,6 +143,8 @@ extension AppRoute {
             return .shellGame
         case "fortune-wheel", "fortunewheel":
             return .fortuneWheel
+        case "fortune-table", "fortunetable":
+            return .fortuneTable
         case "gold-mine", "goldmine":
             return .goldMine
         case "dungeon-rush", "dungeonrush":
@@ -227,6 +230,7 @@ struct MainRouterView: View {
         case .stash: StashDetailView()
         case .shellGame: ShellGameDetailView()
         case .fortuneWheel: FortuneWheelDetailView()
+        case .fortuneTable: FortuneTableDetailView()
         case .goldMine: GoldMineDetailView()
         // 2026-10-17: Dungeon Rush v2 "The Descent" replaces the 12-room rush (v1 views stay for reference).
         case .dungeonRush: DescentDetailView()

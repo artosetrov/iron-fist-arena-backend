@@ -56,6 +56,16 @@ final class FortuneWheelViewModel {
     /// Published odds from /status; empty until loaded.
     var odds: [FortuneWheelOdd] = []
     var spinsLimit: Int = 10
+    /// Fortuna's Treasury — progressive jackpot on the x5 sector (nil until loaded).
+    var treasury: Int?
+    /// Bets this size or more get the full take; smaller bets scale down.
+    var treasuryMaxBet = 1000
+    /// Fraction of the Treasury a max bet takes on x5.
+    var treasuryTakeRate = 0.2
+    /// Gold and Treasury after a spin, held until the wheel stops so the
+    /// counters don't give the result away mid-spin.
+    private var pendingGold: Int?
+    private var pendingTreasury: Int?
     var isLoading = true
     var errorMessage: String?
 
@@ -137,11 +147,20 @@ final class FortuneWheelViewModel {
 
     var spinsUsed: Int { spinsLimit - spinsRemaining }
 
+    /// What the jackpot sector would add from the Treasury at the selected bet.
+    var treasuryShareForSelectedBet: Int? {
+        guard let treasury else { return nil }
+        return Int(Double(treasury) * min(1, Double(selectedBet) / Double(max(treasuryMaxBet, 1))) * treasuryTakeRate)
+    }
+
     struct SpinResult {
         let won: Bool
         let sectorIndex: Int
         let multiplier: Double
+        /// Total paid, Treasury share included.
         let winAmount: Int
+        /// Part of `winAmount` that came from the Treasury.
+        var jackpotShare: Int = 0
     }
 
     // MARK: - Load Status
@@ -161,6 +180,9 @@ final class FortuneWheelViewModel {
             spinsRemaining = data.spinsRemaining
             spinsLimit = data.spinsLimit
             odds = data.odds ?? []
+            treasury = data.treasury ?? treasury
+            treasuryMaxBet = data.treasuryMaxBet ?? treasuryMaxBet
+            treasuryTakeRate = data.treasuryTakeRate ?? treasuryTakeRate
             hasLoadedStatus = true
         } catch {
             // Was: show the wheel anyway and let the backend enforce limits.
@@ -195,11 +217,13 @@ final class FortuneWheelViewModel {
                 won: data.won,
                 sectorIndex: data.sectorIndex,
                 multiplier: data.multiplier,
-                winAmount: data.winAmount
+                winAmount: data.winAmount,
+                jackpotShare: data.jackpotShare ?? 0
             )
 
-            // Update gold from server
-            appState.currentCharacter?.gold = data.gold
+            // Server gold / Treasury land when the wheel stops (onAnimationComplete).
+            pendingGold = data.gold
+            pendingTreasury = data.treasury
 
             // Update daily limit from server
             spinsRemaining = data.spinsRemaining
@@ -234,6 +258,7 @@ final class FortuneWheelViewModel {
 
     /// Called after wheel animation completes — update NPC speech and reset state
     func onAnimationComplete() {
+        applyPending()
         guard let result else {
             isSpinning = false
             return
@@ -253,8 +278,21 @@ final class FortuneWheelViewModel {
     }
 
     func reset() {
+        applyPending()
         result = nil
         isSpinning = false
+    }
+
+    /// Bank the server's gold and Treasury from the last spin.
+    func applyPending() {
+        if let pendingGold {
+            appState.currentCharacter?.gold = pendingGold
+            self.pendingGold = nil
+        }
+        if let pendingTreasury {
+            treasury = pendingTreasury
+            self.pendingTreasury = nil
+        }
     }
 
     func randomizeSpeech() {

@@ -7,6 +7,8 @@ struct FortuneWheelDetailView: View {
     // Wheel animation
     @State private var wheelRotation: Double = 0
     @State private var isAnimating = false
+    /// Painted slot the last spin stopped on — outlined once the wheel rests.
+    @State private var landedSlot: Int?
 
     // Result modal
     @State private var showResultModal = false
@@ -43,6 +45,7 @@ struct FortuneWheelDetailView: View {
             AmbientManager.shared.setZone(.tavern)
         }
         .onDisappear {
+            vm?.applyPending()
             AmbientManager.shared.setZone(.hub)
         }
         .task {
@@ -86,6 +89,9 @@ struct FortuneWheelDetailView: View {
                 // Scrollable content: payouts + divider + wheel
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: LayoutConstants.spaceSM) {
+                        // Treasury jackpot + the way to Fortune's Table
+                        fortuneHeader(vm)
+
                         // Payouts — ABOVE wheel (per Figma)
                         payoutSection(vm)
 
@@ -112,6 +118,103 @@ struct FortuneWheelDetailView: View {
         }
     }
 
+    // MARK: - Treasury + Fortune's Table entry
+
+    private func fortuneHeader(_ vm: FortuneWheelViewModel) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Hidden until the server reports a Treasury (older backends don't).
+            if vm.treasury != nil {
+                treasuryPanel(vm)
+            }
+            tableEntry(wide: vm.treasury == nil)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceXS)
+    }
+
+    /// Fortuna's Treasury — every bet feeds it, the x5 sector pays it out.
+    private func treasuryPanel(_ vm: FortuneWheelViewModel) -> some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+            Text("FORTUNA'S TREASURY")
+                .font(DarkFantasyTheme.body)
+                .tracking(1)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("icon-gold")
+                    .resizable()
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                NumberTickUpText(
+                    value: vm.treasury ?? 0,
+                    color: DarkFantasyTheme.goldBright,
+                    font: DarkFantasyTheme.section
+                )
+            }
+            if let share = vm.treasuryShareForSelectedBet {
+                Text("x5 adds \(share.formatted()) at this bet")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.info)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(LayoutConstants.spaceMS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .stroke(DarkFantasyTheme.info.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                )
+        )
+        .depthShadow(.card)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Fortuna's Treasury \(vm.treasury ?? 0) gold. Paid on the x5 sector.")
+    }
+
+    /// The table game: play against the tavern regulars for one shared pot.
+    private func tableEntry(wide: Bool) -> some View {
+        Button {
+            HapticManager.light()
+            SFXManager.shared.play(.uiTap)
+            appState.mainPath.append(AppRoute.fortuneTable)
+        } label: {
+            VStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "person.3.fill")
+                    .font(DarkFantasyTheme.iconMedium)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                Text("FORTUNE'S TABLE")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                Text("Winner takes the pot")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: wide ? .infinity : 128, maxHeight: .infinity)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                            .stroke(DarkFantasyTheme.gold, lineWidth: 1.5)
+                    )
+            )
+            .depthShadow(.card)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Fortune's Table. Play against the regulars, winner takes the pot.")
+    }
+
     // MARK: - Payout Section (above wheel — Figma: Speech Card Payout Pill)
 
     private func payoutSection(_ vm: FortuneWheelViewModel) -> some View {
@@ -131,7 +234,6 @@ struct FortuneWheelDetailView: View {
                 )
         )
         .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceXS)
     }
 
     /// Figma: PayoutPill — flat color tint bg + color border, Inter fonts
@@ -193,7 +295,8 @@ struct FortuneWheelDetailView: View {
                 // Wheel with sectors + asset icons
                 FortuneWheelView(
                     sectors: vm.sectors,
-                    rotation: wheelRotation
+                    rotation: wheelRotation,
+                    highlightedSlot: isAnimating ? nil : landedSlot
                 )
                 .frame(width: wheelSize, height: wheelSize)
 
@@ -436,7 +539,9 @@ struct FortuneWheelDetailView: View {
     }
 
     private func resultAmountText(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> String {
-        if result.won {
+        if result.won, result.jackpotShare > 0 {
+            return "+\(result.winAmount.formatted()) Gold\nincl. \(result.jackpotShare.formatted()) from the Treasury"
+        } else if result.won {
             return "+\(result.winAmount.formatted()) Gold (\(vm.sectors[result.sectorIndex].label))"
         } else {
             return "-\(vm.selectedBet.formatted()) Gold"
@@ -453,17 +558,25 @@ struct FortuneWheelDetailView: View {
     private func performSpin(_ vm: FortuneWheelViewModel) async {
         guard let spinResult = await vm.spin() else { return }
 
-        let sectorAngle = 360.0 / Double(vm.sectors.count)
-        let sectorCenter = Double(spinResult.sectorIndex) * sectorAngle + sectorAngle / 2.0
-
+        // Land on the painted slot that shows the server's sector, from
+        // wherever the wheel rested after the last spin. (The old maths
+        // assumed every spin started at 0°, so from the second spin on the
+        // pointer stopped on a different slot than the one that paid.)
+        let slot = FortuneWheelLayout.slot(forSector: spinResult.sectorIndex, in: vm.sectors)
+        let slotAngle = FortuneWheelLayout.slotAngle
+        let jitter = Double.random(in: -0.3...0.3) * slotAngle
+        let target = 360.0 - (Double(slot) * slotAngle + slotAngle / 2.0) + jitter
+        let current = wheelRotation.truncatingRemainder(dividingBy: 360.0)
+        var delta = (target - current).truncatingRemainder(dividingBy: 360.0)
+        if delta < 0 { delta += 360.0 }
         let fullSpins = Double(Int.random(in: 5...8)) * 360.0
-        let finalAngle = fullSpins + (360.0 - sectorCenter)
 
         isAnimating = true
         showResultModal = false
         resultScale = 0.5
+        landedSlot = slot
 
-        wheelRotation += finalAngle
+        wheelRotation += fullSpins + delta
 
         // Wait for animation to complete
         try? await Task.sleep(for: .seconds(4.2))
@@ -480,147 +593,108 @@ struct FortuneWheelDetailView: View {
     }
 }
 
-// MARK: - Fortune Wheel View (the actual pie chart wheel with asset icons)
+// MARK: - Fortune Wheel Layout
 
+/// The painted face (`fortune-wheel-face`) already carries the sector art —
+/// 12 slots clockwise from 12 o'clock: rune ×5, coins, crown ×3, skull,
+/// coins, skull, skull, coins, skull, coins, skull, skull. The server's
+/// sector table alternates differently, so each server sector is shown on
+/// a slot painted for its multiplier (the n-th sector of a multiplier on the
+/// n-th slot painted for it). Odds are the server's; this is display only.
+enum FortuneWheelLayout {
+    static let slots: [Double] = [5, 2, 3, 0, 1.5, 0, 0, 1.5, 0, 1.5, 0, 0]
+    static var slotAngle: Double { 360.0 / Double(slots.count) }
+
+    static func slot(forSector index: Int, in sectors: [WheelSector]) -> Int {
+        guard sectors.indices.contains(index) else { return max(index, 0) % slots.count }
+        let multiplier = sectors[index].multiplier
+        let occurrence = sectors[..<index].filter { $0.multiplier == multiplier }.count
+        let painted = slots.indices.filter { slots[$0] == multiplier }
+        return painted.indices.contains(occurrence) ? painted[occurrence] : index % slots.count
+    }
+
+    static func label(for multiplier: Double) -> String {
+        multiplier == 1.5 ? "x1.5" : "x\(Int(multiplier))"
+    }
+
+    static func color(for multiplier: Double) -> Color {
+        switch multiplier {
+        case 1.5: return DarkFantasyTheme.gold
+        case 2: return DarkFantasyTheme.goldBright
+        case 3: return DarkFantasyTheme.purple
+        default: return DarkFantasyTheme.info
+        }
+    }
+}
+
+// MARK: - Fortune Wheel View
+
+/// The painted wheel with code-drawn multiplier labels on the paying slots
+/// and, once it rests, an outline on the slot that won or lost.
 struct FortuneWheelView: View {
     let sectors: [WheelSector]
     let rotation: Double
+    var highlightedSlot: Int?
 
     var body: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
-            let center = CGPoint(x: size / 2, y: size / 2)
             let radius = size / 2
 
             ZStack {
-                // Wheel face texture (background)
                 Image("fortune-wheel-face")
                     .resizable()
+                    .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
                     .clipShape(Circle())
 
-                // Semi-transparent sector overlays for color tinting
-                ForEach(sectors) { sector in
-                    sectorSlice(sector, center: center, radius: radius - 6)
+                if let highlightedSlot {
+                    let wedge = WheelWedge(slot: highlightedSlot, count: FortuneWheelLayout.slots.count)
+                    wedge.fill(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityMild))
+                    wedge.stroke(DarkFantasyTheme.goldBright, lineWidth: 3)
                 }
 
-                // Inner divider lines
-                ForEach(sectors) { sector in
-                    dividerLine(index: sector.id, center: center, radius: radius - 6)
+                ForEach(FortuneWheelLayout.slots.indices, id: \.self) { slot in
+                    let multiplier = FortuneWheelLayout.slots[slot]
+                    if multiplier > 0 {
+                        Text(FortuneWheelLayout.label(for: multiplier))
+                            .font(DarkFantasyTheme.cardTitle)
+                            .foregroundStyle(FortuneWheelLayout.color(for: multiplier))
+                            .padding(.horizontal, LayoutConstants.spaceXS)
+                            .background(Capsule().fill(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy)))
+                            // Out by the rim, then turned to the slot's middle
+                            // (offset first, so the turn swings it round the hub).
+                            .offset(y: -radius * 0.78)
+                            .rotationEffect(.degrees(Double(slot) * FortuneWheelLayout.slotAngle
+                                                     + FortuneWheelLayout.slotAngle / 2))
+                    }
                 }
-
-                // Sector asset icons + labels
-                ForEach(sectors) { sector in
-                    sectorContent(sector, radius: radius - 6)
-                }
-
-                // Inner circle border
-                Circle()
-                    .stroke(DarkFantasyTheme.goldDim.opacity(DarkFantasyTheme.opacityHeavy), lineWidth: 1)
-                    .frame(width: 56, height: 56)
             }
+            .frame(width: size, height: size)
             .rotationEffect(.degrees(rotation))
             .animation(.timingCurve(0.2, 0.8, 0.2, 1.0, duration: 4.0), value: rotation)
         }
         .aspectRatio(1, contentMode: .fit)
         .drawingGroup()
     }
+}
 
-    @ViewBuilder
-    private func sectorSlice(_ sector: WheelSector, center: CGPoint, radius: CGFloat) -> some View {
-        let sectorAngle = 360.0 / Double(sectors.count)
-        let startAngle = Double(sector.id) * sectorAngle - 90
-        let endAngle = startAngle + sectorAngle
+/// One slot of the wheel, inside the iron rim.
+private struct WheelWedge: Shape {
+    let slot: Int
+    let count: Int
 
-        Path { path in
-            path.move(to: center)
-            path.addArc(
-                center: center,
-                radius: radius,
-                startAngle: .degrees(startAngle),
-                endAngle: .degrees(endAngle),
-                clockwise: false
-            )
-            path.closeSubpath()
-        }
-        .fill(sectorFillColor(sector))
-    }
-
-    private func sectorFillColor(_ sector: WheelSector) -> some ShapeStyle {
-        if sector.isLose {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [
-                        DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy),
-                        DarkFantasyTheme.bgSecondary.opacity(DarkFantasyTheme.opacityMedium)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        } else {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [
-                        sector.color.opacity(DarkFantasyTheme.opacityMedium),
-                        sector.color.opacity(DarkFantasyTheme.opacitySoft)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func dividerLine(index: Int, center: CGPoint, radius: CGFloat) -> some View {
-        let sectorAngle = 360.0 / Double(sectors.count)
-        let angle = Double(index) * sectorAngle - 90
-
-        Path { path in
-            path.move(to: center)
-            let endX = center.x + radius * cos(angle * .pi / 180)
-            let endY = center.y + radius * sin(angle * .pi / 180)
-            path.addLine(to: CGPoint(x: endX, y: endY))
-        }
-        .stroke(DarkFantasyTheme.goldDim.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
-    }
-
-    @ViewBuilder
-    private func sectorContent(_ sector: WheelSector, radius: CGFloat) -> some View {
-        let sectorAngle = 360.0 / Double(sectors.count)
-        let midAngle = (Double(sector.id) * sectorAngle + sectorAngle / 2.0 - 90) * .pi / 180
-
-        // Icon position (closer to outer edge)
-        let iconRadius = radius * 0.7
-        let iconX = iconRadius * cos(midAngle)
-        let iconY = iconRadius * sin(midAngle)
-
-        // Sector asset icon
-        Image(sector.sectorAsset)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(
-                width: sector.isLose ? 56 : 80,
-                height: sector.isLose ? 56 : 80
-            )
-            .shadow(color: sector.color.opacity(sector.isLose ? 0 : 1.0), radius: 6)
-            .offset(x: iconX, y: iconY)
-            .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
-
-        // Multiplier label (closer to center)
-        if !sector.isLose {
-            let labelRadius = radius * 0.42
-            let labelX = labelRadius * cos(midAngle)
-            let labelY = labelRadius * sin(midAngle)
-
-            Text(sector.label)
-                .font(sector.multiplier >= 5 ? DarkFantasyTheme.body : DarkFantasyTheme.body)
-                .foregroundStyle(sector.color)
-                .shadow(color: sector.color.opacity(DarkFantasyTheme.opacityHeavy), radius: 4)
-                .offset(x: labelX, y: labelY)
-                .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
-        }
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2 * 0.86
+        let span = 360.0 / Double(max(count, 1))
+        let start = Double(slot) * span - 90
+        var path = Path()
+        path.move(to: center)
+        path.addArc(center: center, radius: radius,
+                    startAngle: .degrees(start), endAngle: .degrees(start + span), clockwise: false)
+        path.closeSubpath()
+        return path
     }
 }
 

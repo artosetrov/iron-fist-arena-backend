@@ -329,6 +329,12 @@ struct FortuneWheelStatusResponse: Codable {
     let gold: Int?
     /// Server-published outcome probabilities (App Store 3.1.1 odds disclosure).
     let odds: [FortuneWheelOdd]?
+    /// Fortuna's Treasury — progressive jackpot paid on the x5 sector.
+    let treasury: Int?
+    /// Bets this size or more get the full take; smaller bets scale down.
+    let treasuryMaxBet: Int?
+    /// Fraction of the Treasury a max bet takes on x5.
+    let treasuryTakeRate: Double?
 }
 
 struct FortuneWheelOdd: Codable, Identifiable {
@@ -349,13 +355,19 @@ struct FortuneWheelSectorResponse: Codable, Equatable {
     let index: Int
     let multiplier: Double
     let label: String
+    let jackpot: Bool?
 }
 
 struct FortuneWheelSpinResponse: Codable {
     let won: Bool
     let sectorIndex: Int
     let multiplier: Double
+    /// Total paid, Treasury share included.
     let winAmount: Int
+    /// Part of `winAmount` that came from the Treasury (x5 only).
+    let jackpotShare: Int?
+    /// Treasury after this spin.
+    let treasury: Int?
     let gold: Int
     let spinsToday: Int?
     let spinsLimit: Int

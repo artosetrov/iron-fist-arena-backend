@@ -90,9 +90,13 @@ export async function POST(req: NextRequest) {
         backupId = backup.id
       }
 
-      await tx.gameConfig.deleteMany()
+      // `runtime` rows are live counters the game writes (e.g. Fortuna's
+      // Treasury), not tuning: a restore keeps them as they are, so it can't
+      // reset a jackpot or roll it back to an older, bigger amount.
+      await tx.gameConfig.deleteMany({ where: { category: { not: 'runtime' } } })
 
       for (const config of parsedConfigs) {
+        if (config.category === 'runtime') continue
         await tx.gameConfig.create({
           data: {
             key: config.key,

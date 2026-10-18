@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/push-scheduled", "schedule": "*/15 * * * *" }
+    {
+      "path": "/api/cron/push-scheduled",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/fortune-table-settle",
+      "schedule": "*/15 * * * *"
+    }
   ]
 }

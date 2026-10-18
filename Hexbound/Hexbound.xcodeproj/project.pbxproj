@@ -148,6 +148,10 @@
 		3E60DAFC7472A5B40C11F434 /* arena-pvp.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 69222F90A75EB0B4EF5146D9 /* arena-pvp.mp3 */; };
 		3F158567061BEC058DB2A2CA /* NPCCompactHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05DE5020E58145ECF366FFFC /* NPCCompactHintView.swift */; };
 		3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */; };
+		4C0C369D3EDD8070E9D3F31A /* FortuneTableModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BECF3A97C5073B89AF9931B /* FortuneTableModels.swift */; };
+		344D18B10A763711E50984A6 /* FortuneTableViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1C2DB737B3282B60F1AA06 /* FortuneTableViewModel.swift */; };
+		01046F4FA39D9149A4C5D712 /* FortuneTableWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828DC2FA2B0C42A20C82A612 /* FortuneTableWheel.swift */; };
+		EEDCCC642F46BA890437EACE /* FortuneTableDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631B9BE97E007674DDD7C673 /* FortuneTableDetailView.swift */; };
 		3F2D8E7A9C0B1A2F3E4D5C6B /* FortuneWheelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */; };
 		3FCB08B04556F9D2F092E22A /* ui_purchase.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8832D5981A718B505131DA10 /* ui_purchase.wav */; };
 		3FFF14D4E32D7490B8BDA538 /* footstep_stone_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */; };
@@ -752,6 +756,10 @@
 		5B42BBC0B4EAB3BC0FA590D4 /* combat_shield.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_shield.wav; sourceTree = "<group>"; };
 		5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelDetailView.swift; sourceTree = "<group>"; };
+		1BECF3A97C5073B89AF9931B /* FortuneTableModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneTableModels.swift; sourceTree = "<group>"; };
+		CC1C2DB737B3282B60F1AA06 /* FortuneTableViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneTableViewModel.swift; sourceTree = "<group>"; };
+		828DC2FA2B0C42A20C82A612 /* FortuneTableWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneTableWheel.swift; sourceTree = "<group>"; };
+		631B9BE97E007674DDD7C673 /* FortuneTableDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneTableDetailView.swift; sourceTree = "<group>"; };
 		5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelViewModel.swift; sourceTree = "<group>"; };
 		5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomDetailView.swift; sourceTree = "<group>"; };
 		5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandState.swift; sourceTree = "<group>"; };
@@ -1821,6 +1829,9 @@
 				D35CE70A000000000000000D /* DescentViewModel.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
+				631B9BE97E007674DDD7C673 /* FortuneTableDetailView.swift */,
+				828DC2FA2B0C42A20C82A612 /* FortuneTableWheel.swift */,
+				CC1C2DB737B3282B60F1AA06 /* FortuneTableViewModel.swift */,
 				9D3616ED882512BF3531BF8A /* GoldMineCards.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */,
@@ -1942,6 +1953,7 @@
 				F4CAF60AABBE26D01F453568 /* MatchHistory.swift */,
 				MSG001REF00001 /* Message.swift */,
 				ec84daaf1ccbd9ba48d0f8f6 /* MinigameSession.swift */,
+				1BECF3A97C5073B89AF9931B /* FortuneTableModels.swift */,
 				056220C532DB828C69C4C356 /* Opponent.swift */,
 				1AF032F325DD5BAD86985581 /* PassiveTree.swift */,
 				7F3A9E2B41C8D605E1A0B3C8 /* OpponentProfile.swift */,
@@ -2574,6 +2586,10 @@
 				A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */,
 				3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */,
 				3F2D8E7A9C0B1A2F3E4D5C6B /* FortuneWheelViewModel.swift in Sources */,
+				EEDCCC642F46BA890437EACE /* FortuneTableDetailView.swift in Sources */,
+				01046F4FA39D9149A4C5D712 /* FortuneTableWheel.swift in Sources */,
+				344D18B10A763711E50984A6 /* FortuneTableViewModel.swift in Sources */,
+				4C0C369D3EDD8070E9D3F31A /* FortuneTableModels.swift in Sources */,
 				42A1B2C3D4E5F60DM1CF002 /* DungeonMapBuildingConfig.swift in Sources */,
 				42A1B2C3D4E5F60DM2BV002 /* DungeonMapBuildingView.swift in Sources */,
 				42A1B2C3D4E5F60DM4ED002 /* DungeonMapEditorView.swift in Sources */,

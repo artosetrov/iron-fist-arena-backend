@@ -50,7 +50,7 @@ private struct TavernHost: Identifiable {
         TavernHost(
             id: .wheel,
             title: "FORTUNE WHEEL",
-            hint: "Spin the wheel. Up to x5 your wager.",
+            hint: "Spin for the Treasury, or take a seat at her table.",
             accent: DarkFantasyTheme.purple,
             route: .fortuneWheel,
             plate: CGPoint(x: 1150, y: 1690),

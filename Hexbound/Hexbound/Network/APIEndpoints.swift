@@ -119,6 +119,12 @@ enum APIEndpoints {
     static let fortuneWheelSpin = "/api/minigames/fortune-wheel/spin"
     static let fortuneWheelStatus = "/api/minigames/fortune-wheel/status"
 
+    // MARK: - Fortune's Table (jackpot wheel, 4–6 seats)
+    static let fortuneTableStatus = "/api/minigames/fortune-table/status"
+    static let fortuneTableJoin = "/api/minigames/fortune-table/join"
+    static let fortuneTableTopUp = "/api/minigames/fortune-table/topup"
+    static let fortuneTableState = "/api/minigames/fortune-table/state"
+
     // MARK: - Gold Mine
     static let goldMineStatus = "/api/minigames/gold-mine/status"
     static let goldMineStart = "/api/minigames/gold-mine/start"
