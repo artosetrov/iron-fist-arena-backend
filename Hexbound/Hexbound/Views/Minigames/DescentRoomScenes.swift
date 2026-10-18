@@ -6,6 +6,9 @@ struct DescentCombatStage: View {
     let combat: DescentCombat
     let hitToken: Int
     let isActive: Bool
+    /// Back to the fork for 8% HP. Shown on the scene so the panel keeps one row
+    /// of buttons; a guardian cannot be fled (`canFlee` false — a trait chip says so).
+    var onFlee: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -92,8 +95,39 @@ struct DescentCombatStage: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.top, LayoutConstants.spaceSM)
                 .frame(maxHeight: .infinity, alignment: .top)
+
+                if combat.canFlee, let onFlee {
+                    fleeButton(onFlee)
+                        .padding(.leading, LayoutConstants.spaceMS)
+                        .padding(.bottom, LayoutConstants.spaceMS)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                }
             }
         }
+    }
+
+    private func fleeButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("ui-arrow-left")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 14, height: 14)
+                Text("FLEE")
+                    .tracking(1.5)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("−8% HP")
+                    .foregroundStyle(DarkFantasyTheme.textDanger)
+            }
+            .frame(minHeight: 28)
+        }
+        .buttonStyle(.compactOutline(color: DarkFantasyTheme.textSecondary))
+        // Opaque under the outline: it floats over the painting.
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .accessibilityLabel("Flee to the fork, costs 8% of your health")
     }
 }
 
@@ -167,6 +201,9 @@ struct DescentTraitChips: View {
         DescentFlowLayout(spacing: LayoutConstants.spaceXS) {
             ForEach(combat.traits) { trait in
                 chip(trait.label, color: DarkFantasyTheme.textSecondary)
+            }
+            if !combat.canFlee {
+                chip("No escape", color: DarkFantasyTheme.textSecondary)
             }
             if combat.windup {
                 chip("Crushing blow next round", color: DarkFantasyTheme.textDanger)

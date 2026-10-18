@@ -28,8 +28,9 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
   own (`.primary` main action, `.secondary` ways out) — the custom plate buttons were dropped on 2026-10-18.
 - **Fights look like the arena:** the dice are the arena's `DiceDieView` tiles on its dice table — two lanes,
   your strike vs their guard and theirs vs yours, with `DiceChipView` results — and they tumble while a round is
-  in flight (`DescentViewModel.isRollingRound`). Controls: Strike `.primary`, Brace / Potion `.combatControl`,
-  AUTO `.combatToggle`. The room painting is dimmed per asset to one depth (`DescentStyle.combatDim`, luma table
+  in flight (`DescentViewModel.isRollingRound`). Controls in one row: AUTO `.combatToggle`, Strike `.primary`,
+  Brace / Potion `.combatControl`; Flee (−8% HP) is a small button on the scene, bottom left, and a guardian
+  shows a "No escape" trait chip instead. The room painting is dimmed per asset to one depth (`DescentStyle.combatDim`, luma table
   `DescentGeometry.backdropLuma` — re-measure if a backdrop is regenerated), so pale Ossuary halls no longer wash
   the fight out; hits wash the foe red (as the arena boss), crits light only the screen edges in gold.
 - **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in

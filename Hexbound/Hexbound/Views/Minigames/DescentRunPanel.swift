@@ -150,25 +150,36 @@ struct DescentRunPanel: View {
                 hint: s.hero.isLow && s.hero.potions > 0 ? "Low health — drink a potion" : nil,
                 notice: vm.autoNotice
             )
-            // The arena's controls: the gold FIGHT button, neutral combat buttons beside it.
-            // Not greyed out while a round is in flight (`perform` ignores taps then) —
-            // the tumbling dice show the wait instead of a flickering button.
+            // One row, as on the arena: AUTO beside the gold FIGHT button, then Brace
+            // and the flask. Fleeing sits on the scene (`DescentCombatStage`).
+            // Nothing greys out while a round is in flight (`perform` ignores taps
+            // then) — the tumbling dice show the wait instead of a flickering button.
             let potionOff = s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp
             HStack(spacing: LayoutConstants.spaceSM) {
+                Button { vm.toggleAuto() } label: {
+                    Text("AUTO")
+                }
+                .buttonStyle(.combatToggle(isActive: vm.autoFight))
+                .frame(width: 64)
+                .accessibilityLabel("Auto-fight")
+                .accessibilityValue(vm.autoFight ? "On" : "Off")
                 Button("Strike") { vm.perform(.strike) }
                     .buttonStyle(.primary)
                     .disabled(vm.autoFight)
-                Button("Brace") { vm.perform(.brace) }
-                    .buttonStyle(.combatControl)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
-                            .allowsHitTesting(false)
-                    )
-                    .frame(width: 100)
-                    .disabled(vm.autoFight)
-                    .opacity(vm.autoFight ? 0.45 : 1)
-                    .accessibilityHint(c.windup ? "A crushing blow is coming" : "")
+                Button { vm.perform(.brace) } label: {
+                    Text("BRACE")
+                }
+                .buttonStyle(.combatControl)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
+                        .allowsHitTesting(false)
+                )
+                .frame(width: 80)
+                .disabled(vm.autoFight)
+                .opacity(vm.autoFight ? 0.45 : 1)
+                .accessibilityLabel("Brace")
+                .accessibilityHint(c.windup ? "A crushing blow is coming" : "")
                 Button {
                     vm.perform(.potion)
                 } label: {
@@ -182,39 +193,10 @@ struct DescentRunPanel: View {
                     }
                 }
                 .buttonStyle(.combatControl)
-                .frame(width: 80)
+                .frame(width: 64)
                 .disabled(vm.autoFight || potionOff)
                 .opacity(vm.autoFight || potionOff ? 0.45 : 1)
                 .accessibilityLabel("Drink a potion, \(s.hero.potions) left")
-            }
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button { vm.toggleAuto() } label: {
-                    Text("AUTO")
-                }
-                .buttonStyle(.combatToggle(isActive: vm.autoFight))
-                .frame(width: 100)
-                .accessibilityLabel("Auto-fight")
-                .accessibilityValue(vm.autoFight ? "On" : "Off")
-                Spacer(minLength: LayoutConstants.spaceSM)
-                if c.canFlee {
-                    Button {
-                        vm.perform(.flee)
-                    } label: {
-                        Text("Flee to the fork (−8% HP)")
-                            .font(DarkFantasyTheme.buttonLabelCompact)
-                            .underline()
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(minHeight: LayoutConstants.touchMin)
-                    .disabled(vm.isBusy)
-                } else {
-                    Text("No escape from a guardian")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                        .multilineTextAlignment(.trailing)
-                }
             }
         }
     }

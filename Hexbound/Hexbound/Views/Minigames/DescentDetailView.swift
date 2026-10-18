@@ -503,7 +503,9 @@ private struct DescentRunView: View {
             }
         case .combat:
             if let combat = s.combat {
-                DescentCombatStage(combat: combat, hitToken: vm.enemyHitToken, isActive: isActive)
+                DescentCombatStage(combat: combat, hitToken: vm.enemyHitToken, isActive: isActive) {
+                    vm.perform(.flee)
+                }
             }
         case .spoils:
             ZStack {
