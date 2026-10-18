@@ -20,25 +20,18 @@ describe('dungeon.ts', () => {
     vi.clearAllMocks()
   })
 
-  it('returns scheduled variety rooms before any DB boss lookup', async () => {
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+  it('floor 3 is a boss floor — variety rooms are off until the client has a room screen', async () => {
+    prismaMock.dungeon.findFirst.mockResolvedValue({ id: 'dng-tc' })
+    prismaMock.dungeonBoss.findFirst.mockResolvedValue({
+      name: 'Cave Spider', level: 3, hp: 222, damage: 12, speed: 10, defense: 8,
+    })
 
     const floor = await generateDungeonFloorFromDB(3, 'normal', 'training_camp')
 
-    expect(floor).toEqual({
-      enemies: [],
-      isBoss: false,
-      room: {
-        type: 'treasure',
-        floor: 2,
-        goldReward: 250,
-        itemChance: 0.5,
-      },
-    })
-    expect(prismaMock.dungeon.findFirst).not.toHaveBeenCalled()
-    expect(prismaMock.dungeonBoss.findFirst).not.toHaveBeenCalled()
-
-    randomSpy.mockRestore()
+    expect(floor.isBoss).toBe(true)
+    expect(floor.room).toBeUndefined()
+    expect(floor.enemies).toHaveLength(1)
+    expect(floor.enemies[0].name).toBe('Cave Spider')
   })
 
   it('uses DB boss data on regular combat floors', async () => {
