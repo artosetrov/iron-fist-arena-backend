@@ -10,7 +10,7 @@ import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { getDiceConfig, getStaminaConfig } from '@/lib/game/live-config'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
-import type { Enemy } from '@/lib/game/dungeon'
+import { generateDungeonFloorFromDB, type Enemy } from '@/lib/game/dungeon'
 import { Prisma } from '@prisma/client'
 import { randomUUID } from 'crypto'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
@@ -189,10 +189,16 @@ export async function POST(req: NextRequest) {
 
     // Pull the first boss enemy from the current floor's state. Matches the
     // dungeon-run fight contract (one boss per floor).
-    const dungeonBoss: Enemy | null =
+    let dungeonBoss: Enemy | null =
       dungeonRun !== null
         ? (((dungeonRun.state as unknown as DungeonRunFightState | null)?.enemies?.[0]) ?? null)
         : null
+    // Runs that landed on an old variety floor (3/5/7/9) carry `enemies: []`.
+    // Every floor is a boss now — regenerate it instead of bricking the run.
+    if (opponentType === 'dungeon_boss' && dungeonRun && !dungeonBoss) {
+      const floor = await generateDungeonFloorFromDB(dungeonRun.currentFloor, dungeonRun.difficulty, dungeonRun.dungeonId)
+      dungeonBoss = floor.enemies[0] ?? null
+    }
     if (opponentType === 'dungeon_boss' && !dungeonBoss) {
       return NextResponse.json({ error: 'Dungeon floor has no boss to fight' }, { status: 409 })
     }

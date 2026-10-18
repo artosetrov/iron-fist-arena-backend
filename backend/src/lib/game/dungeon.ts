@@ -160,7 +160,15 @@ const VARIETY_ROOM_SCHEDULE: Record<number, RoomType[]> = {
   8: ['rest', 'merchant'],         // Floor 9: last stop before final boss
 };
 
+// 2026-10-18: OFF. The iOS client has no UI for variety rooms — every trail
+// stop is a named boss (10 per dungeon). With the interactive dice fight
+// (`/pvp/match/start`, opponent_type dungeon_boss) a variety floor stored
+// `enemies: []` and floor 3 failed with "Dungeon floor has no boss to fight".
+// Turn back on only together with a client room screen.
+const VARIETY_ROOMS_ENABLED = false;
+
 function generateVarietyRoom(floor: number): DungeonRoom | null {
+  if (!VARIETY_ROOMS_ENABLED) return null;
   const options = VARIETY_ROOM_SCHEDULE[floor];
   if (!options) return null;
 
