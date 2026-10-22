@@ -429,6 +429,23 @@ private struct DescentRunView: View {
     let onLeave: () -> Void
 
     var body: some View {
+        // The end of the run is a reward card that takes the whole screen.
+        if snapshot.isOver, let result = snapshot.result {
+            DescentResultCard(
+                result: result,
+                depthKey: snapshot.depthKey,
+                depthRoman: snapshot.depthRoman,
+                staminaCost: vm.staminaCost,
+                isStarting: vm.isStarting,
+                onAgain: { Task { await vm.start() } },
+                onLeave: onLeave
+            )
+        } else {
+            runScreen
+        }
+    }
+
+    private var runScreen: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 DescentHUD(
@@ -542,43 +559,10 @@ private struct DescentRunView: View {
                     titleColor: DarkFantasyTheme.goldBright
                 )
             }
-        case .result:
-            resultStage(s)
-        case .unknown:
+        case .result, .unknown:
+            // A finished run shows `DescentResultCard` instead of this screen; this
+            // is only reached if a result screen arrives without its result.
             DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall", dim: 0.4)
-        }
-    }
-
-    private func resultStage(_ s: DescentSnapshot) -> some View {
-        let outcome = s.result?.outcome ?? "dead"
-        let asset: String = switch outcome {
-        case "victory": "rush2-bg-treasure"
-        case "escaped": "rush2-bg-entrance"
-        default: "rush2-bg-\(s.depthKey)-hall"
-        }
-        let eyebrow: String = switch outcome {
-        case "victory": "Victory"
-        case "escaped": "Escaped"
-        case "abandoned": "Abandoned"
-        default: "Defeat"
-        }
-        let title: String = switch outcome {
-        case "victory": "The deep is conquered"
-        case "escaped": "Back in the daylight"
-        case "abandoned": "You turned back"
-        default: "You fell in the dark"
-        }
-        let rooms = s.result?.rooms ?? s.stats.rooms
-        let kills = s.result?.kills ?? s.stats.kills
-        return ZStack {
-            DescentBackdrop(asset: asset, dim: 0.5)
-            DescentVignette()
-            DescentTitleCard(
-                eyebrow: eyebrow,
-                title: title,
-                text: "Depth \(s.depthRoman) · \(rooms) rooms · \(kills) foes slain",
-                titleColor: outcome == "dead" ? DarkFantasyTheme.textDanger : DarkFantasyTheme.goldBright
-            )
         }
     }
 }

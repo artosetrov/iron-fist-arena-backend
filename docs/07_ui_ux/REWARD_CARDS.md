@@ -38,7 +38,7 @@ Code: `Views/Components/RewardCard.swift` (card, frame, illustration, title, row
 | Family | Crest / corners | Scene | Windows |
 |---|---|---|---|
 | `arena` | crossed swords and shield | `bg-arena` | arena victory and defeat, rank up, the scripted first fight |
-| `dungeon` | crowned horned skull, claws | `bg-dungeon` | boss victory, dungeon defeat, Dungeon Rush treasure |
+| `dungeon` | crowned horned skull, claws | `bg-dungeon` | boss victory, dungeon defeat, the end of a Dungeon Rush run |
 | `fortune` | dice and a wheel, coins | `bg-fortune-wheel` | shell game, fortune wheel, Fortune's Table |
 | `mine` | pickaxes and a lantern, timber | `bg-gold-mine` | Gold Mine payout and chest |
 | `merchant` | scales and a purse, ribbons | `bg-shop` | purchases, contraband, special offers |
@@ -87,6 +87,11 @@ The tier is cosmetic — it never changes what the server grants.
 | Season summary | `SeasonSummaryModalView` | glory | final BP level (+1 with premium) | XP medallion |
 | Tutorial victory | `VictoryOverlayView` | arena | iron | the hero |
 | Shell game, fortune wheel, Fortune's Table | `MinigameResultModal` (+ the three game views) | fortune | win: the game's reading (wheel ×1.5 bronze, ×2 silver, ×3 gold, ×5 or jackpot mythic; the table's chest rarity) and the gold; loss: iron, dimmed | gold by amount; the game's own picture on a line under the title |
-| Dungeon Rush treasure | `TreasureRewardOverlay` | dungeon | the gold (a blessing: at least silver) | the matching `rush2-chest-*-open` on `bg-rush-treasure` |
+| Dungeon Rush run end (The Descent) | `DescentResultCard` (replaces the run screen) | dungeon | what came out (gold + XP, item rarities; shards do not count); victory at least gold; a fall or a retreat: dimmed | victory: the matching `rush2-chest-*-open` on `rush2-bg-treasure`; escaped: on `rush2-bg-entrance`; a fall: the hero in the depth's hall |
+| Dungeon Rush v1 treasure | `TreasureRewardOverlay` | dungeon | the gold (a buff: at least silver) | the matching `rush2-chest-*-open` on `bg-rush-treasure` — v1 is not reachable since The Descent (no route opens `DungeonRushDetailView`) |
 | Gold Mine payout | `MineClaimRewardView` | mine | the payout (the chest: at least gold) | gold / gems art; the chest scene inside the card |
 | Purchase reveal | `PurchaseRewardRevealView` | merchant | the pack (`-tierN` of its art), else the amounts | the pack's own painting, or gold / gems art |
+
+The Descent's in-run beats (spoils after a fight, an opened chest, an event's loot, the
+guardian's relic) stay in its action panel: they are steps of one continuous run, not
+windows. Only the end of the run is a card.

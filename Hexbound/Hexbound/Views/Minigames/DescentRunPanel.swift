@@ -43,7 +43,10 @@ struct DescentRunPanel: View {
                 .buttonStyle(.secondary)
                 .disabled(vm.isBusy)
         case .result:
-            resultPanel(s)
+            // The run's end is `DescentResultCard`, which replaces the run screen;
+            // a result screen without its result still gets a way out.
+            Button("Return to town", action: onLeave)
+                .buttonStyle(.secondary)
         case .unknown:
             Button("Refresh") { Task { await vm.load() } }
                 .buttonStyle(.secondary)
@@ -386,47 +389,6 @@ struct DescentRunPanel: View {
                     }
                 }
             }
-        }
-    }
-
-    // MARK: Result
-
-    @ViewBuilder
-    private func resultPanel(_ s: DescentSnapshot) -> some View {
-        if let r = s.result {
-            DescentSummaryBox(title: "You keep") {
-                DescentValueLine(label: "Gold", value: "\(r.keptGold)", color: DarkFantasyTheme.textGold)
-                DescentValueLine(label: "Experience", value: "\(r.xp) XP")
-                DescentItemsList(items: r.keptItems, empty: "No items this time")
-            }
-            if r.outcome == "dead" || r.outcome == "abandoned" {
-                DescentSummaryBox(title: "Lost in the dark", note: "Half your bag", danger: true) {
-                    DescentValueLine(label: "Gold from your bag", value: "−\(r.lostGold)", color: DarkFantasyTheme.textDanger)
-                    if !r.lostItems.isEmpty {
-                        DescentItemsList(items: r.lostItems)
-                    }
-                    Text("The other half made it out with you. Stashed loot and experience are never lost.")
-                        .font(DarkFantasyTheme.tale)
-                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                }
-            }
-            Button {
-                Task { await vm.start() }
-            } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Text("Descend again")
-                    Image("icon-stamina")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text("\(vm.staminaCost)")
-                }
-            }
-            .buttonStyle(.primary)
-            .disabled(vm.isStarting)
-            .accessibilityLabel("Descend again, costs \(vm.staminaCost) stamina")
-            Button("Return to town", action: onLeave)
-                .buttonStyle(.secondary)
         }
     }
 }
