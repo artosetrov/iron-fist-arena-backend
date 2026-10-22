@@ -202,11 +202,10 @@ enum RewardCardLayout {
     }
 
     /// Illustration height as a share of the window width — full, and the compact
-    /// size used when the full card does not fit the screen.
+    /// size used when the full card does not fit the screen (and, scrolling, when
+    /// even that does not fit).
     static let artRatio: CGFloat = 0.9
     static let compactArtRatio: CGFloat = 0.58
-    /// The last size before the card is pinned to the screen and its content scrolls.
-    static let smallArtRatio: CGFloat = 0.4
 
     /// Loot: 72 pt tiles, three to a row, each in an 80 pt column with its name
     /// under it — three columns fit the narrowest card's content (about 259 pt).
