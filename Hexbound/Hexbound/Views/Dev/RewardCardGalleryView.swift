@@ -160,6 +160,21 @@ struct RewardCardGalleryView: View {
                 Page(name: "rush · treasure", view: AnyView(TreasureRewardOverlay(gold: 340, buff: nil, buffAssetName: nil, onDismiss: {}))),
                 Page(name: "mine · haul", view: AnyView(MineClaimRewardView(reward: .init(kind: .haul, goldEarned: 260, gemsEarned: 1, chest: nil), onDismiss: {}))),
                 Page(name: "shop · gem pack", view: AnyView(PurchaseRewardRevealView(content: PurchaseRevealContent(artAsset: "shop-gems-tier3", accent: DarkFantasyTheme.purple, burst: .epic, rewards: [.gems(550)]), onDismiss: {}))),
+                Page(name: "descent · victory", view: AnyView(DescentResultCard(
+                    result: DescentResult(outcome: "victory", keptGold: 1840, keptItems: [
+                        DescentBagItem(kind: "item", name: "Pyrox Greatsword", rarity: "epic", itemType: "weapon", itemLevel: 24, imageKey: "loot-pyrox-greatsword", imageUrl: nil, shardTier: nil, amount: 1),
+                        DescentBagItem(kind: "shard", name: "Legendary Shard", rarity: "legendary", itemType: nil, itemLevel: nil, imageKey: nil, imageUrl: nil, shardTier: "t1", amount: 3),
+                    ], lostGold: 0, lostItems: [], xp: 620, depthReached: 2, rooms: 21, kills: 15),
+                    depthKey: "molten", depthRoman: "III", staminaCost: 30, isStarting: false, onAgain: {}, onLeave: {}
+                ))),
+                Page(name: "descent · defeat", view: AnyView(DescentResultCard(
+                    result: DescentResult(outcome: "dead", keptGold: 210, keptItems: [
+                        DescentBagItem(kind: "item", name: "Necrotic Tome", rarity: "rare", itemType: "relic", itemLevel: 22, imageKey: "loot-necrotic-tome", imageUrl: nil, shardTier: nil, amount: 1),
+                    ], lostGold: 210, lostItems: [
+                        DescentBagItem(kind: "item", name: "Bone Shield", rarity: "uncommon", itemType: "shield", itemLevel: 21, imageKey: "loot-bone-shield", imageUrl: nil, shardTier: nil, amount: 1),
+                    ], xp: 180, depthReached: 1, rooms: 9, kills: 6),
+                    depthKey: "ossuary", depthRoman: "II", staminaCost: 30, isStarting: false, onAgain: {}, onLeave: {}
+                ))),
             ]
         }
     }

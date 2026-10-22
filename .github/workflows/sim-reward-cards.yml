@@ -61,7 +61,7 @@ jobs:
           python3 - "$APP" "$BID" <<'PY'
           import os, subprocess, sys, time
           app, bid = sys.argv[1], sys.argv[2]
-          PAGES, INTERVAL, SETTLE = 28, 4.5, 3.0   # the gallery turns a page every 4.5 s
+          PAGES, INTERVAL, SETTLE = 30, 4.5, 3.0   # the gallery turns a page every 4.5 s
           def run(*a):
               return subprocess.run(["xcrun", "simctl", *a], capture_output=True, text=True)
           for tag, udid in (("pro", os.environ.get("UDID")), ("small", os.environ.get("UDID_SMALL"))):
