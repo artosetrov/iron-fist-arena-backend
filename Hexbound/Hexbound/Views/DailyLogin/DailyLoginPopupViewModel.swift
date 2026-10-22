@@ -252,7 +252,19 @@ final class DailyLoginPopupViewModel {
             goldReward: goldReward,
             gemsReward: gemsReward,
             xpReward: 0,
-            lootItems: lootItems
+            lootItems: lootItems,
+            family: .tribute,
+            tier: Self.cardTier(forDay: claimedDay)
         )
+    }
+
+    /// The week's streak climbs the metals: days 1–2 iron, 3–4 bronze, 5–6 silver, day 7 gold.
+    private static func cardTier(forDay day: Int) -> RewardCardTier {
+        switch day {
+        case ..<3: .iron
+        case 3..<5: .bronze
+        case 5..<7: .silver
+        default: .gold
+        }
     }
 }
