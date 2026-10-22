@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CombatResultDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
 
     // XP bar animation state
     @State private var xpBarProgress: CGFloat = 0
@@ -273,6 +274,8 @@ struct CombatResultDetailView: View {
             }
         }()
 
+        let card = cardStyle(res)
+
         return BattleResultConfig(
             isVictory: isWin,
             title: isWin ? "VICTORY!" : "DEFEAT",
@@ -288,7 +291,8 @@ struct CombatResultDetailView: View {
             xpBarConfig: XPBarConfig(
                 displayLevel: displayLevel,
                 progress: xpBarProgress,
-                leveledUp: showLevelUpFlash
+                leveledUp: showLevelUpFlash,
+                willLevelUp: res.leveledUp == true
             ),
             dungeonProgress: nil,
             lootItems: lootItems,
@@ -299,8 +303,42 @@ struct CombatResultDetailView: View {
             },
             combatLog: combatLogEntries,
             buttons: buttons,
-            duel: duelInfo(res)
+            duel: duelInfo(res),
+            cardFamily: card.family,
+            cardTier: card.tier,
+            cardArt: card.art
         )
+    }
+
+    // MARK: - Reward card
+
+    /// Where the fight was, what it was worth, who it was against.
+    /// Arena / PvP / challenge: the arena frame in the player's ladder tier, the
+    /// rival painted big. Dungeon fights (boss and rush fights show their own
+    /// result screens now; kept for any that still land here): the dungeon frame
+    /// at the enemy's level, the boss on its lair.
+    /// Anything else (training, bots): the arena frame, the gold and XP set the tier.
+    /// The loot's rarity can only lift the tier (`BattleResultConfig.resolvedCardTier`).
+    private func cardStyle(_ res: CombatResultInfo) -> (family: RewardCardFamily, tier: RewardCardTier?, art: RewardCardArt?) {
+        guard let data = combatData else { return (.arena, nil, nil) }
+        let enemy = data.enemy
+        let rival = RewardCardArt.hero(skinKey: enemy.avatar, characterClass: enemy.characterClass, mirrored: true)
+
+        switch source {
+        case "arena", "pvp", "challenge":
+            let rating: Int? = res.ratingAfter ?? appState.currentCharacter?.pvpRating
+            let tier: RewardCardTier? = rating.map { RewardCardTier(rankKey: PvPLadder.current.rank(for: $0).key) }
+            return (.arena, tier, rival)
+        case "dungeon", "dungeon_rush":
+            let boss: BossInfo? = EnemyPortraitResolver.bossInfo(forOpponentId: enemy.id, cache: cache)
+                ?? EnemyPortraitResolver.bossInfo(for: enemy.characterName, cache: cache)
+            let rushArt: RewardCardArt? = EnemyPortraitResolver.rushEnemyPortrait(for: enemy.characterName)
+                .map { RewardCardArt.figure($0) }
+            let art: RewardCardArt = RewardCardArt.dungeonBoss(boss, dungeonId: data.dungeon?.dungeonId) ?? rushArt ?? rival
+            return (.dungeon, RewardCardTier(level: boss?.level ?? enemy.level), art)
+        default:
+            return (.arena, nil, rival)
+        }
     }
 
     // MARK: - Duel (PvP header)

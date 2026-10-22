@@ -66,7 +66,10 @@ struct LootDetailView: View {
                 ResultButton(title: "TAKE ALL", icon: nil, style: .primary) {
                     goBack()
                 }
-            ]
+            ],
+            // Dungeon Rush treasure ("VIEW LOOT"): the dungeon frame, its metal
+            // set by the best drop, the best drop as the illustration.
+            cardFamily: .dungeon
         )
     }
 

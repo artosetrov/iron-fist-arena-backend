@@ -478,28 +478,24 @@ struct ShellGameDetailView: View {
     }
 
     private func resultModal(_ vm: ShellGameViewModel, isWin: Bool) -> some View {
-        GameModal(
-            accent: MinigameResultAccent.color(isWin: isWin),
-            maxWidth: 300,
-            onDismiss: { dismissModal(vm) }
-        ) {
-            ZStack {
-                MinigameResultModal(
-                    isWin: isWin,
-                    title: resultTitle(vm),
-                    amountText: resultAmountText(vm),
-                    onContinue: { dismissModal(vm) }
-                ) {
-                    Image(isWin ? "shell_ball" : "shell_cup")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                }
+        // A full-screen fortune card with its own backdrop (no GameModal).
+        ZStack {
+            MinigameResultModal(
+                isWin: isWin,
+                title: resultTitle(vm),
+                amountText: resultAmountText(vm),
+                winnings: isWin ? vm.winAmount : 0,
+                onContinue: { dismissModal(vm) }
+            ) {
+                Image(isWin ? "shell_ball" : "shell_cup")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            }
 
-                if isWin {
-                    RewardBurstView(style: .claim, isActive: $showWinBurst)
-                        .frame(height: 0) // Overlay effect, no layout space
-                        .allowsHitTesting(false)
-                }
+            if isWin {
+                RewardBurstView(style: .claim, isActive: $showWinBurst)
+                    .frame(height: 0) // Overlay effect, no layout space
+                    .allowsHitTesting(false)
             }
         }
         .opacity(showResultModal ? 1 : 0)

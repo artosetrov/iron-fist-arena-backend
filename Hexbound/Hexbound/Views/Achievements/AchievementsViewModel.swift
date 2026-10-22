@@ -109,7 +109,9 @@ final class AchievementsViewModel {
             gemsReward: gems,
             xpReward: xp,
             lootItems: Self.cosmeticLoot(title: reward?.title, frame: reward?.frame),
-            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) }
+            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) },
+            family: .glory,
+            art: UIImage(named: achievement.badgeAsset) != nil ? .object(achievement.badgeAsset, fill: 0.56) : nil
         )
         claimRewardConfig = config
 

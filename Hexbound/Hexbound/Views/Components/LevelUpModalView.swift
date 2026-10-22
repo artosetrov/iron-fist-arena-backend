@@ -3,6 +3,9 @@ import SwiftUI
 // MARK: - Level Up Modal (Ceremony Upgrade — Sprint 1)
 // Full ornamental redesign: rotating rays, scale-in title, tick-up reward counters,
 // gold particle burst, unlock pills, shimmer CTA.
+// Since 2026-10-22 the ceremony plays on an ascension reward card (RewardCard.swift):
+// winged-sun crest, the metal of the new level's bracket (the hero-card ladder),
+// the player's hero as the illustration.
 // Server-authoritative fields used today: levelUpNewLevel, levelUpStatPoints.
 // Building unlocks are derived from local unlock config crossed by the new level.
 // Keep this ceremony honest: do not surface extra reward rows unless the
@@ -65,6 +68,14 @@ struct LevelUpModalView: View {
         }
     }
 
+    /// The player's hero, standing in the forge's light.
+    private var heroArt: RewardCardArt {
+        guard let hero = appState.currentCharacter else {
+            return .object("reward-level-up", fill: 0.6)
+        }
+        return .hero(skinKey: hero.avatar, characterClass: hero.characterClass)
+    }
+
     var body: some View {
         ZStack {
             // Backdrop
@@ -78,102 +89,104 @@ struct LevelUpModalView: View {
                     .transition(.opacity)
             }
 
-            // Main content
-            VStack(spacing: 0) {
-                Spacer()
+            // The card: frame and hero arrive with the rays, the ceremony plays on it.
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .ascension,
+                    tier: RewardCardTier(level: newLevel),
+                    art: heroArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: { cardHeader },
+                    content: { cardContent },
+                    actions: { continueButton }
+                )
+            }
+            .opacity(showRays ? 1 : 0)
 
-                // Shield / emblem area with burst
-                ZStack {
-                    if showBurst {
-                        RewardBurstView(style: .levelUp, isActive: $showBurst, particleCount: 30)
-                            .allowsHitTesting(false)
-                    }
-
-                    shieldEmblem
+            // Particle burst over the illustration
+            if showBurst {
+                GeometryReader { geo in
+                    RewardBurstView(style: .levelUp, isActive: $showBurst, particleCount: 30)
+                        .position(x: geo.size.width / 2, y: geo.size.height * 0.32)
                 }
-                .frame(height: 120)
-                .padding(.bottom, LayoutConstants.spaceSM)
-
-                // "LEVEL UP!" title — scale-in with blur
-                Text("LEVEL UP!")
-                    .font(DarkFantasyTheme.cinematicTitle)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.8), radius: 16)
-                    .shadow(color: DarkFantasyTheme.goldBright.opacity(0.4), radius: 4)
-                    .scaleEffect(titleScale)
-                    .blur(radius: titleBlur)
-                    .opacity(titleOpacity)
-
-                // New level number
-                Text("LEVEL \(newLevel)")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .opacity(showLevel ? 1 : 0)
-                    .offset(y: showLevel ? 0 : 8)
-                    .padding(.top, LayoutConstants.spaceSM)
-
-                // Ornamental divider
-                if showDivider {
-                    ScrollworkDivider(
-                        color: DarkFantasyTheme.gold.opacity(0.5),
-                        accentColor: DarkFantasyTheme.goldBright
-                    )
-                    .frame(width: 200)
-                    .padding(.vertical, LayoutConstants.spaceMD)
-                    .transition(.opacity)
-                }
-
-                // Reward cards in ornamental panel
-                if showRewards {
-                    VStack(spacing: LayoutConstants.spaceMD) {
-                        rewardCardsSection
-
-                        // Unlock pills
-                        if showUnlocks && !unlocks.isEmpty {
-                            unlockSection
-                        }
-                    }
-                    .padding(LayoutConstants.spaceMD)
-                    .background(
-                        RadialGlowBackground(
-                            baseColor: DarkFantasyTheme.bgSecondary,
-                            glowColor: DarkFantasyTheme.bgTertiary,
-                            glowIntensity: 0.4,
-                            cornerRadius: LayoutConstants.modalRadius
-                        )
-                    )
-                    .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-                    .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
-                    .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
-                    .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
-                    .compositingGroup()
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-
-                Spacer()
-
-                // Continue button
-                if showButton {
-                    Button("CONTINUE") {
-                        HapticManager.medium()
-                        appState.dismissLevelUpModal()
-                    }
-                    .buttonStyle(.primary)
-                    .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: true)
-                    .shimmer(color: DarkFantasyTheme.gold, duration: 3)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceLG * 2)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
+                .allowsHitTesting(false)
             }
         }
         .onAppear(perform: startCeremony)
         .onDisappear {
             resetState()
         }
+    }
+
+    // MARK: - Card
+
+    /// "LEVEL UP!" slams in (the approved 2.5 → 1 title beat), then the level, then the divider.
+    private var cardHeader: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text("LEVEL UP!")
+                .font(DarkFantasyTheme.cinematicTitle)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+                .shadow(color: DarkFantasyTheme.gold.opacity(0.8), radius: 16)
+                .shadow(color: DarkFantasyTheme.goldBright.opacity(0.4), radius: 4)
+                .scaleEffect(titleScale)
+                .blur(radius: titleBlur)
+                .opacity(titleOpacity)
+                .accessibilityAddTraits(.isHeader)
+
+            // New level number
+            Text("LEVEL \(newLevel)")
+                .font(DarkFantasyTheme.title)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .opacity(showLevel ? 1 : 0)
+                .offset(y: showLevel ? 0 : 8)
+
+            // Ornamental divider
+            ScrollworkDivider(
+                color: DarkFantasyTheme.gold.opacity(0.5),
+                accentColor: DarkFantasyTheme.goldBright
+            )
+            .frame(width: 200)
+            .padding(.top, LayoutConstants.spaceXS)
+            .opacity(showDivider ? 1 : 0)
+        }
+    }
+
+    /// Rewards and unlocks are laid out from the start and faded in, so the card
+    /// keeps its height while the ceremony plays.
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            rewardCardsSection
+                .opacity(showRewards ? 1 : 0)
+                .offset(y: showRewards ? 0 : 10)
+
+            if !unlocks.isEmpty {
+                unlockSection
+                    .opacity(showUnlocks ? 1 : 0)
+            }
+        }
+    }
+
+    private var continueButton: some View {
+        Button {
+            HapticManager.medium()
+            appState.dismissLevelUpModal()
+        } label: {
+            Text("CONTINUE")
+                .font(DarkFantasyTheme.buttonLabel)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: showButton)
+        .shimmer(color: DarkFantasyTheme.gold, duration: 3)
+        .opacity(showButton ? 1 : 0)
+        .offset(y: showButton ? 0 : 15)
+        .allowsHitTesting(showButton)
+        // Laid out from the start (the card keeps its height); out of VoiceOver's
+        // reach until it shows.
+        .accessibilityHidden(!showButton)
     }
 
     // MARK: - Rotating Rays
@@ -215,134 +228,26 @@ struct LevelUpModalView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: - Shield Emblem
-
-    private var shieldEmblem: some View {
-        ZStack {
-            // Gold glow behind shield
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            DarkFantasyTheme.goldBright.opacity(0.35),
-                            DarkFantasyTheme.gold.opacity(0.12),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 80
-                    )
-                )
-                .frame(width: 160, height: 160)
-
-            // Shield shape
-            shieldPath
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            DarkFantasyTheme.gold,
-                            DarkFantasyTheme.borderOrnament,
-                            DarkFantasyTheme.goldDim
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 64, height: 76)
-                .overlay(
-                    shieldPath
-                        .stroke(DarkFantasyTheme.goldBright, lineWidth: 2)
-                        .frame(width: 64, height: 76)
-                )
-                .surfaceLighting(cornerRadius: 0, topHighlight: 0.15, bottomShadow: 0.2)
-                .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: 12)
-
-            // Level number inside shield
-            Text("\(newLevel)")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
-        }
-        .opacity(showTitle ? 1 : 0)
-    }
-
-    // Shield shape path
-    private var shieldPath: some Shape {
-        ShieldShape()
-    }
-
     // MARK: - Reward Cards Section
 
     private var rewardCardsSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            rewardCard(
-                iconName: "star.fill",
-                iconColor: DarkFantasyTheme.goldBright,
+        VStack(spacing: LayoutConstants.spaceXS) {
+            RewardCardRow(
+                icon: "reward-level-up",
+                value: "+\(displayedStatPoints)",
                 label: "Stat Points",
-                value: displayedStatPoints
+                color: DarkFantasyTheme.goldBright
             )
 
             if passivePoints > 0 {
-                rewardCard(
-                    iconName: "sparkles",
-                    iconColor: DarkFantasyTheme.purple,
+                RewardCardRow(
+                    icon: "reward-first-win",
+                    value: "+\(displayedPassivePoints)",
                     label: passivePoints == 1 ? "Passive Point" : "Passive Points",
-                    value: displayedPassivePoints
+                    color: DarkFantasyTheme.purple
                 )
             }
         }
-    }
-
-    @ViewBuilder
-    private func rewardCard(
-        iconName: String,
-        iconColor: Color,
-        label: String,
-        value: Int
-    ) -> some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            // Icon in circle
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 36, height: 36)
-                Image(systemName: iconName)
-                    .font(DarkFantasyTheme.body.bold())
-                    .foregroundStyle(iconColor)
-            }
-
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-            Spacer()
-
-            Text("+\(value)")
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .contentTransition(.numericText())
-                .animation(.easeOut(duration: 0.1), value: value)
-        }
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(
-            cornerRadius: LayoutConstants.cardRadius - 2,
-            inset: 2,
-            color: iconColor.opacity(0.1)
-        )
-        .cornerBrackets(color: iconColor.opacity(0.3), length: 12, thickness: 1.5)
-        .compositingGroup()
-        .shadow(color: iconColor.opacity(0.15), radius: 8)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 4, y: 2)
     }
 
     // MARK: - Unlock Section
@@ -354,9 +259,17 @@ struct LevelUpModalView: View {
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .tracking(2)
 
-            HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(unlocks) { unlock in
-                    unlockPill(entry: unlock)
+            // Two to a row: the card is narrower than the screen.
+            let rows = stride(from: 0, to: unlocks.count, by: 2).map {
+                Array(unlocks[$0..<min($0 + 2, unlocks.count)])
+            }
+            VStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        ForEach(row) { unlock in
+                            unlockPill(entry: unlock)
+                        }
+                    }
                 }
             }
         }
@@ -544,41 +457,5 @@ struct LevelUpModalView: View {
         titleOpacity = 0
         displayedStatPoints = 0
         displayedPassivePoints = 0
-    }
-}
-
-// MARK: - Shield Shape
-
-private struct ShieldShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let w = rect.width
-        let h = rect.height
-
-        var path = Path()
-        // Top flat edge
-        path.move(to: CGPoint(x: w * 0.1, y: 0))
-        path.addLine(to: CGPoint(x: w * 0.9, y: 0))
-        // Right edge curves in
-        path.addQuadCurve(
-            to: CGPoint(x: w * 0.85, y: h * 0.5),
-            control: CGPoint(x: w, y: h * 0.15)
-        )
-        // Bottom point
-        path.addQuadCurve(
-            to: CGPoint(x: w * 0.5, y: h),
-            control: CGPoint(x: w * 0.75, y: h * 0.8)
-        )
-        // Left bottom
-        path.addQuadCurve(
-            to: CGPoint(x: w * 0.15, y: h * 0.5),
-            control: CGPoint(x: w * 0.25, y: h * 0.8)
-        )
-        // Left edge back up
-        path.addQuadCurve(
-            to: CGPoint(x: w * 0.1, y: 0),
-            control: CGPoint(x: 0, y: h * 0.15)
-        )
-        path.closeSubpath()
-        return path
     }
 }

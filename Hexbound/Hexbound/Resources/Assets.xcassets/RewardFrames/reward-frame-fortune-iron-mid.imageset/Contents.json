@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "reward-frame-fortune-iron-mid.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "reward-frame-fortune-iron-mid@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "reward-frame-fortune-iron-mid@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
