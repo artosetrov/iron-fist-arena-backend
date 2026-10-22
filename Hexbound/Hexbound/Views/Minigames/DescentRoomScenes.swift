@@ -6,6 +6,9 @@ struct DescentCombatStage: View {
     let combat: DescentCombat
     let hitToken: Int
     let isActive: Bool
+    /// Back to the fork for 8% HP. Shown on the scene so the panel keeps one row
+    /// of buttons; a guardian cannot be fled (`canFlee` false — a trait chip says so).
+    var onFlee: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -29,8 +32,26 @@ struct DescentCombatStage: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                DescentBackdrop(asset: combat.bg, dim: 0.36)
-                DescentVignette(strength: 0.55)
+                // A dark stage, as on the arena: the painting sits low, the floor
+                // fades into the panel and the foe stands on its own shadow.
+                DescentBackdrop(asset: combat.bg, dim: DescentStyle.combatDim(combat.bg))
+                DescentVignette(strength: 0.6)
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.7),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.55), location: 1),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .allowsHitTesting(false)
+                Ellipse()
+                    .fill(RadialGradient(
+                        colors: [DarkFantasyTheme.bgAbyss.opacity(0.85), .clear],
+                        center: .center, startRadius: 0, endRadius: geo.size.width * 0.3
+                    ))
+                    .frame(width: geo.size.width * 0.6, height: max(12, geo.size.height * 0.06))
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.955)
+                    .allowsHitTesting(false)
 
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate
@@ -38,6 +59,15 @@ struct DescentCombatStage: View {
                     Image(combat.art)
                         .resizable()
                         .scaledToFit()
+                        .overlay {
+                            // Hit flash, as on the arena: the foe's own shape washes red for a beat.
+                            Image(combat.art)
+                                .resizable()
+                                .scaledToFit()
+                                .colorMultiply(DarkFantasyTheme.danger)
+                                .modifier(DescentHitWash(token: hitToken))
+                                .allowsHitTesting(false)
+                        }
                         .frame(height: geo.size.height * spriteHeightFraction)
                         .frame(maxWidth: geo.size.width * 0.94)
                         .offset(y: -bob)
@@ -65,12 +95,44 @@ struct DescentCombatStage: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.top, LayoutConstants.spaceSM)
                 .frame(maxHeight: .infinity, alignment: .top)
+
+                if combat.canFlee, let onFlee {
+                    fleeButton(onFlee)
+                        .padding(.leading, LayoutConstants.spaceMS)
+                        .padding(.bottom, LayoutConstants.spaceMS)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                }
             }
         }
     }
+
+    private func fleeButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("ui-arrow-left")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 14, height: 14)
+                Text("FLEE")
+                    .tracking(1.5)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("−8% HP")
+                    .foregroundStyle(DarkFantasyTheme.textDanger)
+            }
+            .frame(minHeight: 28)
+        }
+        .buttonStyle(.compactOutline(color: DarkFantasyTheme.textSecondary))
+        // Opaque under the outline: it floats over the painting.
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .accessibilityLabel("Flee to the fork, costs 8% of your health")
+    }
 }
 
-/// A red blink and a small knock-back each time the enemy is hit.
+/// A small knock-back and a red rim each time the enemy is hit. No brightening:
+/// the pale ink sprites blow out to white when lifted.
 private struct DescentHitReaction: ViewModifier {
     let token: Int
 
@@ -78,12 +140,28 @@ private struct DescentHitReaction: ViewModifier {
         content.keyframeAnimator(initialValue: CGFloat(0), trigger: token) { view, v in
             view
                 .offset(x: v * 10, y: -v * 3)
-                .brightness(Double(v) * 0.22)
-                .shadow(color: DarkFantasyTheme.danger.opacity(Double(v) * 0.9), radius: 18 * v)
+                .shadow(color: DarkFantasyTheme.danger.opacity(Double(v) * 0.6), radius: 14 * v)
         } keyframes: { _ in
             KeyframeTrack {
                 LinearKeyframe(1, duration: 0.06)
                 SpringKeyframe(0, duration: 0.3)
+            }
+        }
+    }
+}
+
+/// Opacity of the red wash over the foe's shape on a hit (peak as on the arena boss, 0.45).
+private struct DescentHitWash: ViewModifier {
+    let token: Int
+
+    func body(content: Content) -> some View {
+        content.keyframeAnimator(initialValue: 0.0, trigger: token) { view, v in
+            view.opacity(v)
+        } keyframes: { _ in
+            KeyframeTrack {
+                LinearKeyframe(0.45, duration: 0.05)
+                LinearKeyframe(0.45, duration: 0.07)
+                LinearKeyframe(0, duration: 0.25)
             }
         }
     }
@@ -123,6 +201,9 @@ struct DescentTraitChips: View {
         DescentFlowLayout(spacing: LayoutConstants.spaceXS) {
             ForEach(combat.traits) { trait in
                 chip(trait.label, color: DarkFantasyTheme.textSecondary)
+            }
+            if !combat.canFlee {
+                chip("No escape", color: DarkFantasyTheme.textSecondary)
             }
             if combat.windup {
                 chip("Crushing blow next round", color: DarkFantasyTheme.textDanger)

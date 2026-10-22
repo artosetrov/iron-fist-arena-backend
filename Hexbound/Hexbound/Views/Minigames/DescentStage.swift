@@ -336,41 +336,46 @@ struct DescentBanner: View {
     }
 }
 
-/// Red edges when the hero is hurt, a white-gold blink on a critical hit.
+/// Red edges when the hero is hurt, gold edges on a critical hit. Only the rim
+/// lights up — the middle of the scene is never washed out.
 struct DescentFlashLayer: View {
     let hurtToken: Int
     let critToken: Int
 
     var body: some View {
         ZStack {
-            GeometryReader { geo in
-                RadialGradient(
-                    colors: [.clear, DarkFantasyTheme.danger.opacity(0.7)],
-                    center: .center,
-                    startRadius: min(geo.size.width, geo.size.height) * 0.25,
-                    endRadius: max(geo.size.width, geo.size.height) * 0.75
-                )
-            }
-            .keyframeAnimator(initialValue: 0.0, trigger: hurtToken) { view, v in
-                view.opacity(v)
-            } keyframes: { _ in
-                KeyframeTrack {
-                    LinearKeyframe(0.85, duration: 0.04)
-                    LinearKeyframe(0, duration: 0.45)
+            rim(DarkFantasyTheme.danger.opacity(0.7))
+                .keyframeAnimator(initialValue: 0.0, trigger: hurtToken) { view, v in
+                    view.opacity(v)
+                } keyframes: { _ in
+                    KeyframeTrack {
+                        LinearKeyframe(0.85, duration: 0.04)
+                        LinearKeyframe(0, duration: 0.45)
+                    }
                 }
-            }
-            DescentStyle.core
+            rim(DarkFantasyTheme.goldBright.opacity(0.5))
                 .keyframeAnimator(initialValue: 0.0, trigger: critToken) { view, v in
                     view.opacity(v)
                 } keyframes: { _ in
                     KeyframeTrack {
-                        LinearKeyframe(0.35, duration: 0.03)
-                        LinearKeyframe(0, duration: 0.25)
+                        LinearKeyframe(0.8, duration: 0.04)
+                        LinearKeyframe(0, duration: 0.35)
                     }
                 }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func rim(_ color: Color) -> some View {
+        GeometryReader { geo in
+            RadialGradient(
+                colors: [.clear, color],
+                center: .center,
+                startRadius: min(geo.size.width, geo.size.height) * 0.25,
+                endRadius: max(geo.size.width, geo.size.height) * 0.75
+            )
+        }
     }
 }
 
