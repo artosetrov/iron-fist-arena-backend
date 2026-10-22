@@ -29,9 +29,9 @@ struct RewardCard<Header: View, Content: View, Actions: View>: View {
     @ViewBuilder var content: () -> Content
     @ViewBuilder var actions: () -> Actions
 
-    /// Set by `RewardCardStage` when even the smallest card is taller than the
-    /// screen: the card takes the screen's height and its content scrolls between
-    /// the title and the buttons, which stay in reach.
+    /// Set by `RewardCardStage` when even the compact card is taller than the
+    /// screen: the card takes the screen's height; the illustration, the title and
+    /// the rewards scroll under the crest while the buttons stay in reach.
     @Environment(\.rewardCardScrollsContent) private var scrollsContent
 
     var body: some View {
@@ -44,20 +44,52 @@ struct RewardCard<Header: View, Content: View, Actions: View>: View {
         // starts `bleed` above the window).
         let crestReach = max(0, (m.crestBottom - m.windowTop) * w) + bleed + LayoutConstants.spaceXS
 
-        VStack(spacing: LayoutConstants.spaceSM) {
-            // The illustration is drawn in the background (it bleeds under the frame);
-            // this keeps its place in the layout.
-            Color.clear.frame(height: artH)
+        Group {
+            if scrollsContent {
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    ScrollView(.vertical) {
+                        VStack(spacing: LayoutConstants.spaceSM) {
+                            // Inside the scroll, so it moves away and leaves the rewards
+                            // the room; the ScrollView trims its bleed.
+                            RewardCardArtPanel(art: art, family: family, tier: tier, dimmed: dimmed, crestReach: crestReach)
+                                .frame(width: windowW + 2 * bleed, height: artH + bleed)
+                                .frame(width: windowW)
+                            headerView(width: w)
+                            content()
+                                .padding(.horizontal, w * RewardCardLayout.contentInset)
+                                .padding(.bottom, LayoutConstants.spaceLG)
+                        }
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollIndicatorsFlash(onAppear: true)
+                    // The last rewards melt into the card above the buttons.
+                    .mask {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .black, location: 0),
+                                .init(color: .black, location: 0.9),
+                                .init(color: .clear, location: 1),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                    // Up under the top border, as the fitted card's illustration bleeds.
+                    .padding(.top, -bleed)
 
-            header()
-                .padding(.top, -RewardCardLayout.titleOverlap)
-                .padding(.horizontal, w * RewardCardLayout.contentInset)
-
-            contentArea(width: w)
-
-            actions()
-                .padding(.horizontal, w * RewardCardLayout.actionInset)
-                .padding(.top, LayoutConstants.spaceXS)
+                    actionsView(width: w)
+                }
+            } else {
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    // The illustration is drawn in the background (it bleeds under the
+                    // frame); this keeps its place in the layout.
+                    Color.clear.frame(height: artH)
+                    headerView(width: w)
+                    content()
+                        .padding(.horizontal, w * RewardCardLayout.contentInset)
+                    actionsView(width: w)
+                }
+            }
         }
         .frame(width: windowW)
         .padding(.top, m.windowTop * w)
@@ -74,8 +106,10 @@ struct RewardCard<Header: View, Content: View, Actions: View>: View {
                 let bodyH = max(0, geo.size.height - y0 - (m.windowBottom * w - bleed))
                 ZStack(alignment: .top) {
                     RewardCardLayout.body
-                    RewardCardArtPanel(art: art, family: family, tier: tier, dimmed: dimmed, crestReach: crestReach)
-                        .frame(width: bodyW, height: artH + bleed)
+                    if !scrollsContent {
+                        RewardCardArtPanel(art: art, family: family, tier: tier, dimmed: dimmed, crestReach: crestReach)
+                            .frame(width: bodyW, height: artH + bleed)
+                    }
                 }
                 .frame(width: bodyW, height: bodyH, alignment: .top)
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
@@ -90,34 +124,18 @@ struct RewardCard<Header: View, Content: View, Actions: View>: View {
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 12, y: 8)
     }
 
-    /// The rewards: as tall as they are, or — when the stage pins the card to the
-    /// screen — scrolling inside it, faded at the edges, the indicator flashed once.
-    @ViewBuilder
-    private func contentArea(width w: CGFloat) -> some View {
-        if scrollsContent {
-            ScrollView(.vertical) {
-                content()
-                    .padding(.horizontal, w * RewardCardLayout.contentInset)
-                    .padding(.vertical, LayoutConstants.spaceSM)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicatorsFlash(onAppear: true)
-            .mask {
-                LinearGradient(
-                    stops: [
-                        .init(color: .clear, location: 0),
-                        .init(color: .black, location: 0.04),
-                        .init(color: .black, location: 0.9),
-                        .init(color: .clear, location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
-        } else {
-            content()
-                .padding(.horizontal, w * RewardCardLayout.contentInset)
-        }
+    /// The title, climbing onto the illustration's fade.
+    private func headerView(width w: CGFloat) -> some View {
+        header()
+            .padding(.top, -RewardCardLayout.titleOverlap)
+            .padding(.horizontal, w * RewardCardLayout.contentInset)
+    }
+
+    /// The buttons, in the band no corner ornament reaches.
+    private func actionsView(width w: CGFloat) -> some View {
+        actions()
+            .padding(.horizontal, w * RewardCardLayout.actionInset)
+            .padding(.top, LayoutConstants.spaceXS)
     }
 }
 
@@ -404,9 +422,8 @@ struct RewardCardLootName: View {
 
 /// Puts a reward card on screen: centred, as wide as the phone allows. If the
 /// full card does not fit (small phones, long loot lists) the illustration
-/// shrinks, twice; if even that does not fit, the card takes the screen's height
-/// and its rewards scroll inside it — the title and the buttons never leave the
-/// screen.
+/// shrinks; if even that does not fit, the card takes the screen's height and
+/// everything above its buttons scrolls — the buttons never leave the screen.
 struct RewardCardStage<Card: View>: View {
     @ViewBuilder let card: (_ width: CGFloat, _ artRatio: CGFloat) -> Card
 
@@ -416,8 +433,7 @@ struct RewardCardStage<Card: View>: View {
             ViewThatFits(in: .vertical) {
                 card(width, RewardCardLayout.artRatio)
                 card(width, RewardCardLayout.compactArtRatio)
-                card(width, RewardCardLayout.smallArtRatio)
-                card(width, RewardCardLayout.smallArtRatio)
+                card(width, RewardCardLayout.compactArtRatio)
                     .environment(\.rewardCardScrollsContent, true)
                     .frame(maxHeight: geo.size.height)
             }

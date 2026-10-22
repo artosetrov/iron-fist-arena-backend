@@ -26,9 +26,11 @@ Code: `Views/Components/RewardCard.swift` (card, frame, illustration, title, row
 - **Any height.** Each frame is cut into a top cap, a rail strip and a bottom cap. The strip
   repeats to fill the content's height; the caps cross-fade into it.
 - **Fits the screen.** `RewardCardStage` centres the card at `min(screen − 32, 380)` pt. If it
-  does not fit, the illustration drops from 0.9 to 0.58, then to 0.4 of the window width; if it
-  still does not fit, the card is pinned to the screen's height and only its content scrolls
-  (indicator flashed, edges faded) — the title and the buttons never leave the screen.
+  does not fit, the illustration drops from 0.9 to 0.58 of the window width; if it still does
+  not fit, the card is pinned to the screen's height and everything above its buttons — the
+  illustration, the title, the rewards — scrolls under the crest (indicator flashed, the last
+  lines faded): the buttons never leave the screen. A smaller illustration was tried and
+  dropped: under the crest and the title it left a sliver of the subject.
 - **The crest never covers the subject.** The frame metrics carry how far each crest hangs into
   the window (`crestBottom`); the illustration keeps its subject's top below it.
 - **Text and buttons** stay inside the band the frame metrics are measured in (8 % of the
