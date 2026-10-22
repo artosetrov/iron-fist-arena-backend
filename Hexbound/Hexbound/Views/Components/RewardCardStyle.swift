@@ -171,13 +171,15 @@ struct RewardCardArt: Equatable {
         RewardCardArt(subject: .image(asset), fill: fill, sink: -0.06)
     }
 
-    /// The illustration for a bundle of rewards: the most valuable thing in it.
+    /// The illustration for a bundle of rewards: the most valuable thing in it — a
+    /// rare or better item, else gems or gold, whichever is worth more (a gem weighs
+    /// as 20 gold, as in `RewardCardTier(gold:gems:xp:)`).
     static func headline(gold: Int, gems: Int, xp: Int, items: [(imageKey: String?, rarity: ItemRarity)], hasConsumables: Bool) -> RewardCardArt {
         if let item = items.filter({ $0.imageKey != nil }).max(by: { $0.rarity.tier < $1.rarity.tier }),
            item.rarity.tier >= ItemRarity.rare.tier, let key = item.imageKey {
             return .object(key, fill: 0.62)
         }
-        if gems > 0 { return .object(gems >= 100 ? "reward-art-gems-heap" : "reward-art-gems-few") }
+        if gems > 0, gems * 20 >= gold { return .object(gems >= 100 ? "reward-art-gems-heap" : "reward-art-gems-few") }
         if gold > 0 {
             switch gold {
             case ..<300: return .object("reward-art-gold-purse", fill: 0.66)
@@ -203,6 +205,14 @@ enum RewardCardLayout {
     /// size used when the full card does not fit the screen.
     static let artRatio: CGFloat = 0.9
     static let compactArtRatio: CGFloat = 0.58
+    /// The last size before the card is pinned to the screen and its content scrolls.
+    static let smallArtRatio: CGFloat = 0.4
+
+    /// Loot: 72 pt tiles, three to a row, each in an 80 pt column with its name
+    /// under it — three columns fit the narrowest card's content (about 259 pt).
+    static let lootTile: CGFloat = 72
+    static let lootCellWidth: CGFloat = 80
+    static let lootPerRow = 3
 
     /// How far the title climbs onto the illustration's fade.
     static let titleOverlap: CGFloat = 34

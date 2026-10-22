@@ -43,8 +43,9 @@ struct DescentRunPanel: View {
                 .buttonStyle(.secondary)
                 .disabled(vm.isBusy)
         case .result:
-            // The run's end is `DescentResultCard`, which replaces the run screen;
-            // a result screen without its result still gets a way out.
+            // The run's end is `DescentResultCard`, over this screen; this way out
+            // shows for the beat before it fades in, and if a result screen ever
+            // arrives without its result.
             Button("Return to town", action: onLeave)
                 .buttonStyle(.secondary)
         case .unknown:

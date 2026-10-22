@@ -429,20 +429,22 @@ private struct DescentRunView: View {
     let onLeave: () -> Void
 
     var body: some View {
-        // The end of the run is a reward card that takes the whole screen.
-        if snapshot.isOver, let result = snapshot.result {
-            DescentResultCard(
-                result: result,
-                depthKey: snapshot.depthKey,
-                depthRoman: snapshot.depthRoman,
-                staminaCost: vm.staminaCost,
-                isStarting: vm.isStarting,
-                onAgain: { Task { await vm.start() } },
-                onLeave: onLeave
-            )
-        } else {
-            runScreen
-        }
+        runScreen
+            // The end of the run is a reward card over the whole screen. It fades in
+            // a beat late, so the last blow's numbers, coins and flash play first.
+            .overlay {
+                if snapshot.isOver, let result = snapshot.result {
+                    DescentResultCard(
+                        result: result,
+                        depthKey: snapshot.depthKey,
+                        depthRoman: snapshot.depthRoman,
+                        staminaCost: vm.staminaCost,
+                        isStarting: vm.isStarting,
+                        onAgain: { Task { await vm.start() } },
+                        onLeave: onLeave
+                    )
+                }
+            }
     }
 
     private var runScreen: some View {
@@ -559,9 +561,13 @@ private struct DescentRunView: View {
                     titleColor: DarkFantasyTheme.goldBright
                 )
             }
-        case .result, .unknown:
-            // A finished run shows `DescentResultCard` instead of this screen; this
-            // is only reached if a result screen arrives without its result.
+        case .result:
+            // The room the result card fades in over (`DescentResultCard`).
+            DescentBackdrop(
+                asset: DescentResultCard.sceneAsset(outcome: s.result?.outcome ?? "dead", depthKey: s.depthKey),
+                dim: 0.5
+            )
+        case .unknown:
             DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall", dim: 0.4)
         }
     }
