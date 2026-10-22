@@ -102,21 +102,22 @@ struct DailyQuestsDetailView: View {
         }
     }
 
-    // MARK: - Quest Icon Asset
+    // MARK: - Quest Banner Art
 
-    /// Returns the asset image name for a quest type.
-    /// For `item_upgrade` uses the hero's avatar (dynamic).
-    private func questIconAsset(for questType: String) -> String {
+    /// Painted scene behind a quest card's title (2026-10-18,
+    /// `docs/08_prompts/QUEST_BANNERS_PROMPTS.md`): one per quest type, the
+    /// subject on the right, the left side dark for the text. nil for a type
+    /// without art — the banner keeps its plain fill.
+    private func questBannerAsset(for questType: String) -> String? {
         switch questType {
-        case "pvp_wins":          return "building-arena"
-        case "dungeons_complete": return "building-dungeon"
-        case "gold_spent":        return "building-shop"
-        case "item_upgrade":
-            return appState.currentCharacter?.avatar ?? "knight"
-        case "consumable_use":    return "health-potion-medium"
-        case "shell_game_play":   return "shell-cup"
-        case "gold_mine_collect": return "building-gold-mine"
-        default:                  return "icon-xp" // safe fallback
+        case "pvp_wins":          return "quest-banner-pvp"
+        case "dungeons_complete": return "quest-banner-dungeon"
+        case "gold_spent":        return "quest-banner-shop"
+        case "item_upgrade":      return "quest-banner-upgrade"
+        case "consumable_use":    return "quest-banner-alchemy"
+        case "shell_game_play":   return "quest-banner-shell"
+        case "gold_mine_collect": return "quest-banner-mine"
+        default:                  return nil
         }
     }
 
@@ -138,7 +139,6 @@ struct DailyQuestsDetailView: View {
     // MARK: - Layout
 
     private static let bannerHeight: CGFloat = 104
-    private static let bannerArtSize: CGFloat = 150
     private static let bannerTextWidth: CGFloat = 220
     private static let chestArtSize: CGFloat = 56
     private static let rewardTileHeight: CGFloat = 44
@@ -291,19 +291,35 @@ struct DailyQuestsDetailView: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// Title, task and (when finished) a "Done" pill over the building art.
+    /// Title, task and (when finished) a "Done" pill over the quest's
+    /// painted scene, which fills the whole banner.
     private func questBanner(_ quest: Quest) -> some View {
         ZStack {
             DarkFantasyTheme.bgTertiary
 
-            HStack {
-                Spacer(minLength: 0)
-                Image(questIconAsset(for: quest.type))
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: Self.bannerArtSize, height: Self.bannerArtSize)
-                    .offset(x: LayoutConstants.spaceMS)
+            if let art = questBannerAsset(for: quest.type) {
+                // Pinned right so the subject is never the part that's cropped.
+                Color.clear
+                    .overlay(alignment: .trailing) {
+                        Image(art)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                    }
+                    .clipped()
                     .accessibilityHidden(true)
+
+                // Keeps the title and task readable over the painting.
+                LinearGradient(
+                    stops: [
+                        .init(color: DarkFantasyTheme.bgSecondary.opacity(0.88), location: 0),
+                        .init(color: DarkFantasyTheme.bgSecondary.opacity(0.62), location: 0.45),
+                        .init(color: DarkFantasyTheme.bgSecondary.opacity(0), location: 0.8)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .accessibilityHidden(true)
             }
 
             HStack {

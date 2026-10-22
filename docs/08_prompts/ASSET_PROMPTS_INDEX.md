@@ -32,6 +32,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Currency Icons | `icon-gold`, `icon-gems`, `icon-xp`, `icon-stamina` (+ `reward-gold`, `reward-xp`) — pen-and-ink replacements of the cartoon set | `docs/08_prompts/CURRENCY_ICONS_PROMPTS.md` | Active | 4 |
 | Empty-State Illustrations | `empty-allies`, `empty-scrolls`, `empty-duels`, `empty-shop`, `empty-revenge` — pen-and-ink spot art for empty screens (replaces SF Symbols) | `docs/08_prompts/EMPTY_STATE_ICONS_PROMPTS.md` | Active | 5 |
 | NPC Portraits | `npc-<speaker>` + `npc-<speaker>-face` for all 13 voiced NPCs (tavern, arena, merchant, sage, healer, medic, smith, dungeon, mine, herald, chronicler, finch, fortuna) — one face per voice, ink + watercolour NPC family | `docs/08_prompts/NPC_PORTRAITS_PROMPTS.md` | Active | 13 portraits + 13 head crops |
+| Daily Quest Banners | `quest-banner-pvp/-dungeon/-shop/-upgrade/-alchemy/-shell/-mine` — painted 4:1 scene behind each quest card title, subject right, left dark for text | `docs/08_prompts/QUEST_BANNERS_PROMPTS.md` | Active | 7 |
 | Gold Mine Screen | `mine-cart-side-empty/-full`, `mine-rail-tile`, `mine-ladder-tile`, `mine-level-plate`, `bg-gold-mine`, `mine-chest-closed/-ajar/-open`, `icon-hourglass`, `icon-mine-bonus`, `icon-mine-boost`, `icon-mine-lock` — side-view carts on tiled rails, shaft ladder and level plates, mine backdrop, expedition chest, mine UI icons | `docs/08_prompts/GOLD_MINE_ASSETS_PROMPTS.md` | Active | 14 |
 
 ---
