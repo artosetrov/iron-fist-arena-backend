@@ -18,9 +18,27 @@ struct HexboundApp: App {
     /// takes about this long; the launch never hands over before it has played.
     private static let minimumBootDuration: Duration = .seconds(2)
 
+    private static let galleryMode: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-RewardCardGallery")
+        #else
+        return false
+        #endif
+    }()
+
+    @ViewBuilder private var galleryView: some View {
+        #if DEBUG
+        RewardCardGalleryView()
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             ZStack {
+                // TEMPORARY (claude/sim-cards): the reward card gallery for CI screenshots.
+                if Self.galleryMode {
+                    galleryView
+                } else {
                 // `currentScreen` starts at `.auth`, so a cold start opens on
                 // the title screen in its launch state.
                 switch appState.currentScreen {
@@ -38,6 +56,7 @@ struct HexboundApp: App {
                     OnboardingCinematicView(heroName: heroName)
                 case .game:
                     MainRouterView()
+                }
                 }
             }
             .environment(appState)

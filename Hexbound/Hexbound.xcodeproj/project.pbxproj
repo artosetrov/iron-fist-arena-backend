@@ -536,6 +536,7 @@
 		F9909BCB68BC7D5F631926DA /* amb_thunder_distant.wav in Resources */ = {isa = PBXBuildFile; fileRef = F88E05D11E0E6EBFE2A7FFBE /* amb_thunder_distant.wav */; };
 		FA1D5ADF4E4BF99CD25E24A0 /* battle_defeat.wav in Resources */ = {isa = PBXBuildFile; fileRef = C85F785CF8E8E558B7C62520 /* battle_defeat.wav */; };
 		FD62818BA32BB2B9EF44DCFE /* ScreenCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */; };
+		3E2CC3E3B3F67EB0BC1FAC15 /* RewardCardGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786362CB1B126DC9DACA9118 /* RewardCardGalleryView.swift */; };
 		FDC084356F65FE817387BB67 /* HeroForgeOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C32A0D0D13CFB0AAECC6847C /* HeroForgeOverlayView.swift */; };
 		FE5A756EC46BA49C9CB41A5F /* ui_open.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7C880E81BB00C0825153DE0E /* ui_open.wav */; };
 		FEF22085A9926BC6841BD45A /* CharacterPortraitInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1892A44F2E9F60825C782E /* CharacterPortraitInfo.swift */; };
@@ -969,6 +970,7 @@
 		B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasureRewardOverlay.swift; sourceTree = "<group>"; };
 		B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowHPPotionBanner.swift; sourceTree = "<group>"; };
 		B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCatalogView.swift; sourceTree = "<group>"; };
+		786362CB1B126DC9DACA9118 /* RewardCardGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardCardGalleryView.swift; sourceTree = "<group>"; };
 		B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cinzel-Bold.ttf"; sourceTree = "<group>"; };
 		B698D5CED6FEC43EB2AD372F /* door_creak.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = door_creak.wav; sourceTree = "<group>"; };
 		B6D065AB078ABF21D519E164 /* combat_block_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_block_3.wav; sourceTree = "<group>"; };
@@ -1479,6 +1481,7 @@
 				A1B2C3D4E5F6A7B8C9D0E4F1 /* ModalsCatalogView.swift */,
 				A1B2C3D4E5F6A7B8C9D0E5F1 /* ProgressBarsCatalogView.swift */,
 				B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */,
+				786362CB1B126DC9DACA9118 /* RewardCardGalleryView.swift */,
 			);
 			path = Dev;
 			sourceTree = "<group>";
@@ -2723,6 +2726,7 @@
 				4DAF59473C0FDF7E526B4BF4 /* RegisterViewModel.swift in Sources */,
 				B1FD7C06AD25A6CD94815611 /* RevengeEntry.swift in Sources */,
 				FD62818BA32BB2B9EF44DCFE /* ScreenCatalogView.swift in Sources */,
+				3E2CC3E3B3F67EB0BC1FAC15 /* RewardCardGalleryView.swift in Sources */,
 				FDC084356F65FE817387BB67 /* HeroForgeOverlayView.swift in Sources */,
 				50EE3B465FD846F749B06FBC /* ScreenLayout.swift in Sources */,
 				7B9C1D3E5F7A9B1C3D5E7F8A /* SessionExpiredModalView.swift in Sources */,
