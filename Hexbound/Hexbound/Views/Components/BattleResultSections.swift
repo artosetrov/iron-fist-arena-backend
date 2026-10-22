@@ -268,9 +268,9 @@ extension BattleResultCardView {
 
     // MARK: - Loot Section
 
-    /// Loot tile side and tiles per row: three 72pt tiles fit the narrowest card.
-    static let lootTile: CGFloat = 72
-    static let lootPerRow = 3
+    /// Loot tile side and tiles per row (`RewardCardLayout`).
+    static var lootTile: CGFloat { RewardCardLayout.lootTile }
+    static var lootPerRow: Int { RewardCardLayout.lootPerRow }
 
     var lootSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
@@ -284,7 +284,7 @@ extension BattleResultCardView {
             // a lazy grid: the stage measures the card's ideal height.)
             VStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(lootRows, id: \.self) { row in
-                    HStack(spacing: LayoutConstants.spaceSM) {
+                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         ForEach(row, id: \.self) { index in
                             inlineLootCard(config.lootItems[index], index: index)
                         }
@@ -303,11 +303,22 @@ extension BattleResultCardView {
         }
     }
 
-    /// A face-down tile that flips to the item on its beat; a tap on the item
-    /// opens its details.
-    @ViewBuilder
+    /// A face-down tile that flips to the item on its beat, its name appearing
+    /// under it; a tap on the item opens its details.
     func inlineLootCard(_ item: LootItemDisplay, index: Int) -> some View {
         let isRevealed = revealedLootIndices.contains(index)
+        return VStack(spacing: LayoutConstants.spaceXS) {
+            lootTileFace(item, index: index, isRevealed: isRevealed)
+            // Laid out from the start so the row keeps its height through the flip.
+            RewardCardLootName(name: item.name, color: item.rarityColor)
+                .opacity(isRevealed ? 1 : 0)
+                .animation(.easeOut(duration: MotionConstants.fast), value: isRevealed)
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    func lootTileFace(_ item: LootItemDisplay, index: Int, isRevealed: Bool) -> some View {
         let rarityColor = item.rarityColor
 
         ZStack {
@@ -367,56 +378,71 @@ extension BattleResultCardView {
 
     // MARK: - Combat Log (optional)
 
-    @ViewBuilder
+    /// One line on the card; the rounds open in a sheet, so the card never grows
+    /// (and never jumps to another size) when the player reads them.
     var combatLogSection: some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            // Header — tap to toggle
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    showCombatLog.toggle()
-                }
-                HapticManager.light()
-            } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "scroll.fill")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("COMBAT LOG")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .tracking(1.2)
-                    Spacer(minLength: 0)
-                    Text("\(config.combatLog.count) rounds")
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Image(systemName: "chevron.down")
-                        .font(DarkFantasyTheme.caption.bold())
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .rotationEffect(.degrees(showCombatLog ? 180 : 0))
-                }
-                .padding(.horizontal, LayoutConstants.spaceMD)
-                .padding(.vertical, LayoutConstants.spaceSM)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
+        Button {
+            showCombatLog = true
+            HapticManager.light()
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image("hud-quests")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                Text("COMBAT LOG")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .tracking(1.2)
+                Spacer(minLength: 0)
+                Text("\(config.combatLog.count) rounds")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.caption.bold())
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .frame(minHeight: LayoutConstants.touchMin)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                    )
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Combat log, \(config.combatLog.count) rounds")
+        .sheet(isPresented: $showCombatLog) {
+            combatLogSheet
+        }
+    }
 
-            if showCombatLog {
+    var combatLogSheet: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Text("COMBAT LOG")
+                .font(DarkFantasyTheme.section)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .padding(.top, LayoutConstants.spaceLG)
+                .accessibilityAddTraits(.isHeader)
+            ScrollView {
                 VStack(spacing: LayoutConstants.space2XS) {
                     ForEach(Array(config.combatLog.enumerated()), id: \.offset) { index, entry in
                         combatLogRow(index: index + 1, entry: entry)
                     }
                 }
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceLG)
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(DarkFantasyTheme.bgSecondary)
     }
 
     @ViewBuilder

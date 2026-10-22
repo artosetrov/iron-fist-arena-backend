@@ -289,8 +289,8 @@ struct ClaimRewardModalView: View {
         }
     }
 
-    private static let lootTile: CGFloat = 72
-    private static let lootPerRow = 3
+    private static var lootTile: CGFloat { RewardCardLayout.lootTile }
+    private static var lootPerRow: Int { RewardCardLayout.lootPerRow }
 
     @ViewBuilder
     private func lootItemCard(_ item: ClaimLootItem) -> some View {

@@ -14,6 +14,7 @@ the strip meet without a seam. The client also cross-fades both caps into the st
 
 Usage:
   python3 scripts/reward_card_frames.py <frames_dir> [--pt 360] [--only arena-gold,mine-iron]
+  python3 scripts/reward_card_frames.py --remeasure   # re-read the geometry of the shipped caps
 
 <frames_dir> holds the raws as <family>-<tier>.png. Writes
   Hexbound/Hexbound/Resources/Assets.xcassets/RewardFrames/
@@ -116,8 +117,29 @@ def slice_frame(path, tol):
         "insetL": inner_l / W, "insetR": (W - inner_r) / W,
         "windowTop": win_top / W, "contentTop": content_top / W,
         "windowBottom": (H - win_bot) / W, "contentBottom": content_bottom / W,
+        "crestBottom": crest_bottom(alpha[:mid], inner_l, inner_r, win_top) / W,
     }
     return {"top": top, "mid": strip, "bottom": bottom}, geo, W
+
+
+def crest_bottom(alpha, inner_l, inner_r, win_top):
+    """Lowest row the crest reaches in the middle of the window (rows from the top),
+    so the illustration can keep its subject's head below it."""
+    ca = int(inner_l + (inner_r - inner_l) * 0.3)
+    cb = int(inner_l + (inner_r - inner_l) * 0.7)
+    rows = np.where((alpha[:, ca:cb] > 0.5).any(axis=1))[0]
+    return max((rows.max() + 1) if len(rows) else win_top, win_top)
+
+
+def remeasure(metrics):
+    """Fill in the crest reach of every shipped frame from its @3x top cap, without
+    cutting the frames again."""
+    for key, g in metrics.items():
+        path = os.path.join(XC, f"reward-frame-{key}-top.imageset", f"reward-frame-{key}-top@3x.png")
+        alpha = np.asarray(Image.open(path).convert("RGBA"))[..., 3] / 255.0
+        W = alpha.shape[1]
+        g["crestBottom"] = round(crest_bottom(alpha, g["insetL"] * W, (1 - g["insetR"]) * W, g["windowTop"] * W) / W, 4)
+        print(f"{key}: crestBottom={g['crestBottom']:.3f} (window top {g['windowTop']:.3f})")
 
 
 def write_imageset(name, arr, src_w, pt):
@@ -160,13 +182,16 @@ def write_swift(metrics):
         "    let windowTop: CGFloat, contentTop: CGFloat",
         "    /// The same two edges at the bottom, measured from the bottom of the bottom cap.",
         "    let windowBottom: CGFloat, contentBottom: CGFloat",
+        "    /// The lowest the crest reaches into the middle of the window (from the top of the top",
+        "    /// cap): the illustration keeps its subject below it.",
+        "    let crestBottom: CGFloat",
         "",
         "    static func of(_ family: RewardCardFamily, _ tier: RewardCardTier) -> RewardCardFrameMetrics {",
         "        table[\"\\(family.rawValue)-\\(tier.assetKey)\"] ?? fallback",
         "    }",
         "",
         "    private static let fallback = RewardCardFrameMetrics(top: 0.35, mid: 0.22, bottom: 0.25, insetL: 0.09, insetR: 0.09,",
-        "        windowTop: 0.19, contentTop: 0.34, windowBottom: 0.12, contentBottom: 0.17)",
+        "        windowTop: 0.19, contentTop: 0.34, windowBottom: 0.12, contentBottom: 0.17, crestBottom: 0.32)",
         "",
         "    private static let table: [String: RewardCardFrameMetrics] = [",
     ]
@@ -177,7 +202,7 @@ def write_swift(metrics):
             f'        "{key}": .init(top: {f(g["top"])}, mid: {f(g["mid"])}, bottom: {f(g["bottom"])}, '
             f'insetL: {f(g["insetL"])}, insetR: {f(g["insetR"])}, windowTop: {f(g["windowTop"])}, '
             f'contentTop: {f(g["contentTop"])}, windowBottom: {f(g["windowBottom"])}, '
-            f'contentBottom: {f(g["contentBottom"])}),')
+            f'contentBottom: {f(g["contentBottom"])}, crestBottom: {f(g["crestBottom"])}),')
     lines += ["    ]", "}", ""]
     with open(SWIFT, "w") as fh:
         fh.write("\n".join(lines))
@@ -185,10 +210,22 @@ def write_swift(metrics):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("frames_dir")
+    ap.add_argument("frames_dir", nargs="?")
     ap.add_argument("--pt", type=int, default=360, help="card width at @1x in points")
     ap.add_argument("--only", default="")
+    ap.add_argument("--remeasure", action="store_true", help="re-read geometry from the shipped caps only")
     a = ap.parse_args()
+    if a.remeasure:
+        metrics_path = os.path.join(HERE, "reward_card_frames.metrics.json")
+        metrics = json.load(open(metrics_path))
+        remeasure(metrics)
+        with open(metrics_path, "w") as f:
+            json.dump(metrics, f, indent=1, sort_keys=True)
+        write_swift(metrics)
+        print(f"remeasured {len(metrics)} frames, {SWIFT}")
+        return
+    if not a.frames_dir:
+        ap.error("frames_dir is required (or pass --remeasure)")
     os.makedirs(XC, exist_ok=True)
     with open(os.path.join(XC, "Contents.json"), "w") as f:
         json.dump({"info": {"author": "xcode", "version": 1}, "properties": {"provides-namespace": False}}, f, indent=2)

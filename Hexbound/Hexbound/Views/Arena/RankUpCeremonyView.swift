@@ -92,6 +92,7 @@ struct RankUpCeremonyView: View {
                 rankBadge(rank: newRank, isOld: false)
                     .shadow(color: DarkFantasyTheme.goldBright.opacity(glowOpacity), radius: 20)
                     .opacity(showNewRank ? 1 : 0)
+                    .accessibilityHidden(!showNewRank)
             }
             .frame(maxWidth: .infinity)
 
@@ -99,6 +100,7 @@ struct RankUpCeremonyView: View {
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .opacity(showNewRank ? 1 : 0)
+                .accessibilityHidden(!showNewRank)
 
             // Rewards
             // Promotion carries no reward of its own today, so this block is
@@ -129,6 +131,7 @@ struct RankUpCeremonyView: View {
         .buttonStyle(.primary)
         .opacity(showButton ? 1 : 0)
         .allowsHitTesting(showButton)
+        .accessibilityHidden(!showButton)
     }
 
     // MARK: - Components

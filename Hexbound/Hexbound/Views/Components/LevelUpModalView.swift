@@ -184,6 +184,9 @@ struct LevelUpModalView: View {
         .opacity(showButton ? 1 : 0)
         .offset(y: showButton ? 0 : 15)
         .allowsHitTesting(showButton)
+        // Laid out from the start (the card keeps its height); out of VoiceOver's
+        // reach until it shows.
+        .accessibilityHidden(!showButton)
     }
 
     // MARK: - Rotating Rays

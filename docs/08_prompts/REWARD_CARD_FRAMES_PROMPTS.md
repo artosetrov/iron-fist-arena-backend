@@ -18,6 +18,10 @@ reward illustrations. Nano Banana 2.1 via Higgsfield, 2K.
    `Assets.xcassets/RewardFrames/reward-frame-<family>-<tier>-{top,mid,bottom}` at
    @1x/@2x/@3x (360 pt wide) and regenerates `RewardCardFrameMetrics.swift` from
    `scripts/reward_card_frames.metrics.json`. Re-run it for any frame you regenerate.
+   It also measures how far each crest hangs into the middle of the window
+   (`crestBottom`): the card keeps its illustration's subject below it.
+   `python3 scripts/reward_card_frames.py --remeasure` re-reads the geometry from the
+   shipped caps without cutting the frames again.
 4. **Reward art** — the art style guide template verbatim, `1:1`, the item anchor
    `chest_godplate` (`1c5bda93-1f54-4c55-9261-c03d3d8fe087`) as reference; ingest with
    `scripts/ingest_generated_sprite.py <raw> reward-art-<name> --pt 280 --out …/RewardArt`.
@@ -120,6 +124,7 @@ weathered oak plank".
 | `reward-art-gems-heap` | open iron-bound casket overflowing with violet gems | green | `cb4fd27b-05db-41df-bab8-3a76e04f7180` |
 | `reward-art-xp` | the `reward-xp` laurel medallion redrawn large (`reward-xp@3x` as a second reference) | magenta | `b486b3f4-eb7c-469e-afe8-2661e8659b65` |
 | `reward-art-potions` | red, blue and amber potions on a small wooden rack | magenta | `101ed1eb-457e-4ae5-b1cf-1282f743dc7b` |
+| `reward-art-fortune-loss` | the purse overturned and empty, two blank bone dice, one tarnished coin (a lost minigame); `reward-art-gold-purse` as the first reference | magenta (muted, re-keyed) | `783c07ea-e857-4235-a6ec-471b17c3a2dd` |
 
 Coins are "stamped with a small skull under a crown", like `icon-gold`.
 

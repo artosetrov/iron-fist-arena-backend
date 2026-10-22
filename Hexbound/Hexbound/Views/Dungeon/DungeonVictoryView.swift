@@ -32,9 +32,6 @@ struct DungeonVictoryView: View {
     @State private var contentShown = false
     @State private var levelUpDelivered = false
 
-    /// Loot tiles: three 72pt tiles fit the narrowest card.
-    private static let lootTile: CGFloat = 72
-    private static let lootPerRow = 3
     /// The next boss teaser: its height and the width of the boss standing in it.
     private static let nextBossHeight: CGFloat = 96
     private static let nextBossArtWidth: CGFloat = 88
@@ -207,28 +204,33 @@ struct DungeonVictoryView: View {
         }
     }
 
-    /// The drops, three to a row. (Plain stacks, not a lazy grid: the stage
-    /// measures the card's ideal height.)
+    /// The drops, three to a row, each named under its tile. (Plain stacks, not a
+    /// lazy grid: the stage measures the card's ideal height.)
     private var lootGrid: some View {
         let items = lootDisplays
-        let rows: [[LootItemDisplay]] = stride(from: 0, to: items.count, by: Self.lootPerRow).map { start in
-            Array(items[start..<min(start + Self.lootPerRow, items.count)])
+        let perRow = RewardCardLayout.lootPerRow
+        let rows: [[LootItemDisplay]] = stride(from: 0, to: items.count, by: perRow).map { start in
+            Array(items[start..<min(start + perRow, items.count)])
         }
 
         return VStack(spacing: LayoutConstants.spaceSM) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(spacing: LayoutConstants.spaceSM) {
+                HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                     ForEach(Array(row.enumerated()), id: \.offset) { _, item in
-                        ItemCardView(
-                            rarity: item.rarity,
-                            imageKey: item.imageKey,
-                            imageUrl: item.imageUrl,
-                            fallbackIcon: item.fallbackIcon,
-                            systemIcon: item.sfIcon,
-                            systemIconColor: item.sfColor,
-                            context: .loot
-                        ) {}
-                        .frame(width: Self.lootTile, height: Self.lootTile)
+                        VStack(spacing: LayoutConstants.spaceXS) {
+                            ItemCardView(
+                                rarity: item.rarity,
+                                imageKey: item.imageKey,
+                                imageUrl: item.imageUrl,
+                                fallbackIcon: item.fallbackIcon,
+                                systemIcon: item.sfIcon,
+                                systemIconColor: item.sfColor,
+                                context: .loot
+                            ) {}
+                            .frame(width: RewardCardLayout.lootTile, height: RewardCardLayout.lootTile)
+                            RewardCardLootName(name: item.name, color: item.rarityColor)
+                        }
+                        .accessibilityElement(children: .ignore)
                         .accessibilityLabel(Text("\(item.name), \(item.rarityName)"))
                     }
                 }

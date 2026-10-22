@@ -224,6 +224,7 @@ Every window that pays the player or ends a fight is a painted card: `RewardCard
 - **Art**: `.figure(boss-full)` for bosses, `.hero(skinKey:characterClass:)` for heroes and opponents (`mirrored: true` for enemies), `.object(asset)` for rewards; `RewardCardArt.headline(...)` picks the most valuable thing in a bundle.
 - Losses: same family and tier, `dimmed: true`, title in `DarkFantasyTheme.danger`.
 - The card is as tall as its content (the frame repeats its rail strip). Lay content out from the start and reveal it with opacity, so the stage does not jump between full and compact sizes mid-ceremony.
+- Too tall for the screen, `RewardCardStage` shrinks the illustration twice, then pins the card to the screen and scrolls only its content — the buttons always stay on screen. Never wrap a reward card in your own `ScrollView`; never make it grow in place (a combat log, a details list) — open a sheet instead.
 - CLAIMED! sources pass `family:` / `tier:` / `art:` on `ClaimRewardConfig`; shop builders use `ClaimRewardConfig.fromOfferContents(…, family:)`.
 - New frames or regenerated art: `docs/08_prompts/REWARD_CARD_FRAMES_PROMPTS.md`, then `python3 scripts/reward_card_frames.py <dir>` (regenerates `RewardCardFrameMetrics.swift` — never edit it by hand).
 

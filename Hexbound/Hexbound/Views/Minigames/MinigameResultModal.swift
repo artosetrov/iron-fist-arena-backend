@@ -14,8 +14,9 @@ enum MinigameResultAccent {
 /// Since 2026-10-22 it is a fortune reward card (`RewardCard`): a win shows the
 /// winnings as gold in the fortune-teller's tent and the card's metal follows the
 /// prize (the wheel's jackpot is mythic); a loss is the same card drained of
-/// colour, with a red title. The game's own picture — the ball, the cup, the
-/// wheel's sector, the prize — sits on the result line under the title.
+/// colour, with a red title and the stake gone (an overturned, empty purse). The
+/// game's own picture — the ball, the cup, the wheel's sector, the prize — sits
+/// on the result line under the title.
 ///
 /// The view is full-screen and owns its backdrop: present it directly (not
 /// inside `GameModal`). A tap on the backdrop or a swipe down continues, as
@@ -81,9 +82,10 @@ struct MinigameResultModal<Illustration: View>: View {
         return RewardCardTier.best([tier, RewardCardTier(gold: winnings)])
     }
 
-    /// A win: the gold, sized by the winnings. A loss: the empty tent.
+    /// A win: the gold, sized by the winnings. A loss: the purse, tipped over and empty.
     private var cardArt: RewardCardArt {
-        guard isWin, winnings > 0 else { return RewardCardArt(subject: .none) }
+        guard isWin else { return .object("reward-art-fortune-loss", fill: 0.6) }
+        guard winnings > 0 else { return RewardCardArt(subject: .none) }
         return .headline(gold: winnings, gems: 0, xp: 0, items: [], hasConsumables: false)
     }
 
