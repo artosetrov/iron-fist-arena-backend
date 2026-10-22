@@ -12,6 +12,10 @@ import SwiftUI
 ///
 /// Fires on a TIER change only. Divisions move three times per tier, and a
 /// full-screen ceremony three times as often would stop meaning anything.
+///
+/// Since 2026-10-22 it plays on an arena reward card (RewardCard.swift): the
+/// metal of the new tier, the player's hero as the illustration, old → new rank
+/// in one line under the title.
 struct RankUpCeremonyView: View {
     let oldRank: String
     let newRank: String
@@ -19,6 +23,8 @@ struct RankUpCeremonyView: View {
     let goldReward: Int
     let gemReward: Int
     let onDismiss: () -> Void
+
+    @Environment(AppState.self) private var appState
 
     @State private var showOldRank = false
     @State private var showTransition = false
@@ -33,73 +39,22 @@ struct RankUpCeremonyView: View {
             DarkFantasyTheme.bgAbyss.opacity(0.92)
                 .ignoresSafeArea()
 
-            VStack(spacing: LayoutConstants.spaceXL) {
-                Spacer()
-
-                // Title
-                Text("RANK UP")
-                    .font(DarkFantasyTheme.cinematicTitle)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .tracking(4)
-                    .opacity(showOldRank ? 1 : 0)
-
-                // Old rank
-                if showOldRank {
-                    rankBadge(rank: oldRank, isOld: true)
-                        .opacity(showTransition ? 0.4 : 1)
-                }
-
-                // Arrow transition
-                if showTransition {
-                    Image(systemName: "chevron.down.2")
-                        .font(DarkFantasyTheme.title.bold())
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
-
-                // New rank with glow
-                if showNewRank {
-                    rankBadge(rank: newRank, isOld: false)
-                        .shadow(color: DarkFantasyTheme.goldBright.opacity(glowOpacity), radius: 20)
-
-                    Text("Rating: \(newRating)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-
-                // Rewards
-                // Promotion carries no reward of its own today, so this block
-                // is usually empty — the divider would otherwise float alone
-                // under the new rank.
-                if showRewards, goldReward > 0 || gemReward > 0 {
-                    GoldDivider()
-                        .padding(.horizontal, LayoutConstants.cinematicPaddingH)
-
-                    HStack(spacing: LayoutConstants.spaceXL) {
-                        if goldReward > 0 {
-                            rewardPill(icon: "icon-gold", amount: goldReward)
-                        }
-                        if gemReward > 0 {
-                            rewardPill(icon: "icon-gems", amount: gemReward)
-                        }
-                    }
-                }
-
-                Spacer()
-
-                // Dismiss button
-                if showButton {
-                    Button {
-                        onDismiss()
-                    } label: {
-                        Text("Glory Awaits")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.primary)
-                    .padding(.horizontal, LayoutConstants.spaceXL)
-                }
-
-                Spacer().frame(height: LayoutConstants.spaceXL)
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .arena,
+                    tier: RewardCardTier(rankKey: PvPRank.tierKey(fromLabel: newRank)),
+                    art: heroArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: {
+                        RewardCardTitle(title: "RANK UP", tracking: 4)
+                            .opacity(showOldRank ? 1 : 0)
+                    },
+                    content: { cardContent },
+                    actions: { dismissButton }
+                )
             }
+            .opacity(showOldRank ? 1 : 0)
         }
         .onAppear {
             startCeremony()
@@ -109,54 +64,106 @@ struct RankUpCeremonyView: View {
         }
     }
 
+    // MARK: - Card
+
+    /// The player's hero, standing in the arena.
+    private var heroArt: RewardCardArt {
+        guard let hero = appState.currentCharacter else {
+            return .object("icon-pvp-rating", fill: 0.5)
+        }
+        return .hero(skinKey: hero.avatar, characterClass: hero.characterClass)
+    }
+
+    /// Old rank → new rank, the rating, and whatever the promotion paid. Laid out
+    /// from the start and revealed in beats, so the card keeps its height.
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
+                rankBadge(rank: oldRank, isOld: true)
+                    .opacity(showTransition ? 0.4 : 1)
+
+                Image("ui-arrow-right")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                    .opacity(showTransition ? 1 : 0)
+                    .accessibilityHidden(true)
+
+                rankBadge(rank: newRank, isOld: false)
+                    .shadow(color: DarkFantasyTheme.goldBright.opacity(glowOpacity), radius: 20)
+                    .opacity(showNewRank ? 1 : 0)
+            }
+            .frame(maxWidth: .infinity)
+
+            Text("Rating: \(newRating)")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .opacity(showNewRank ? 1 : 0)
+
+            // Rewards
+            // Promotion carries no reward of its own today, so this block is
+            // usually absent.
+            if goldReward > 0 || gemReward > 0 {
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    if goldReward > 0 {
+                        RewardCardRow(icon: "icon-gold", value: "+\(goldReward)", label: "Gold",
+                                      color: DarkFantasyTheme.goldBright)
+                    }
+                    if gemReward > 0 {
+                        RewardCardRow(icon: "icon-gems", value: "+\(gemReward)", label: "Gems",
+                                      color: DarkFantasyTheme.purple)
+                    }
+                }
+                .opacity(showRewards ? 1 : 0)
+            }
+        }
+    }
+
+    private var dismissButton: some View {
+        Button {
+            onDismiss()
+        } label: {
+            Text("Glory Awaits")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .opacity(showButton ? 1 : 0)
+        .allowsHitTesting(showButton)
+    }
+
     // MARK: - Components
 
     private func rankBadge(rank: String, isOld: Bool) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
+        let color = isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
+        let frameColor = isOld ? DarkFantasyTheme.borderMedium : rankColor(for: newRank)
+        return VStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: PvPRank.icon(forTierKey: PvPRank.tierKey(fromLabel: rank)))
-                .font((isOld ? DarkFantasyTheme.title : DarkFantasyTheme.cinematicTitle).bold())
-                .foregroundStyle(
-                    isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
-                )
+                .font((isOld ? DarkFantasyTheme.section : DarkFantasyTheme.title).bold())
+                .foregroundStyle(color)
 
             Text(rank.uppercased())
-                .font(isOld ? DarkFantasyTheme.title : DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(
-                    isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
-                )
-                .tracking(2)
+                .font(isOld ? DarkFantasyTheme.cardTitle : DarkFantasyTheme.section)
+                .foregroundStyle(color)
+                .tracking(1.5)
+                .lineLimit(1)
+                // Never below the 16 pt floor: 18 × 0.9, 22 × 0.75.
+                .minimumScaleFactor(isOld ? 0.9 : 0.75)
         }
-        .padding(LayoutConstants.spaceLG)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .frame(minWidth: isOld ? 88 : 112)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
                 glowColor: isOld ? DarkFantasyTheme.bgTertiary : rankColor(for: newRank).opacity(0.15),
                 glowIntensity: isOld ? 0.3 : 0.6,
-                cornerRadius: LayoutConstants.modalRadius
+                cornerRadius: LayoutConstants.cardRadius
             )
         )
-        .surfaceLighting(cornerRadius: LayoutConstants.modalRadius)
-        .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: (isOld ? DarkFantasyTheme.borderMedium : rankColor(for: newRank)).opacity(0.2))
-        .cornerBrackets(color: (isOld ? DarkFantasyTheme.borderMedium : rankColor(for: newRank)).opacity(0.5), length: 18, thickness: 2)
-        .cornerDiamonds(color: (isOld ? DarkFantasyTheme.borderMedium : rankColor(for: newRank)).opacity(0.4), size: 6)
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: frameColor.opacity(0.2))
+        .cornerBrackets(color: frameColor.opacity(0.5), length: 12, thickness: 1.5)
         .compositingGroup()
-    }
-
-    private func rewardPill(icon: String, amount: Int) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            Image(icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-            Text("+\(amount)")
-                .font(DarkFantasyTheme.body.bold())
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-        }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.bgSecondary)
-        .clipShape(Capsule())
-        .overlay(Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1))
     }
 
     // MARK: - Animation

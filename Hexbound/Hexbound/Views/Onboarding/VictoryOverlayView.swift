@@ -11,6 +11,9 @@ import SwiftUI
 /// Rewards read from `appState.tutorialRewards` which was populated by
 /// `TutorialFightViewModel.resolve`. If the payload is missing (shouldn't
 /// happen, but defensive), we skip straight to the lore intro.
+///
+/// Since 2026-10-22 the rewards sit on an arena reward card (RewardCard.swift):
+/// iron — the first fight — with the new hero as the illustration.
 struct VictoryOverlayView: View {
     let heroName: String
 
@@ -46,120 +49,103 @@ struct VictoryOverlayView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: LayoutConstants.spaceLG) {
-                Spacer()
-
-                // Title
-                Text("VICTORY")
-                    .font(DarkFantasyTheme.cinematicTitle)
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 12)
-                    .opacity(titleOpacity)
-
-                Text("Well fought, \(heroName).")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .opacity(titleOpacity)
-
-                Spacer().frame(height: LayoutConstants.spaceLG)
-
-                // Reward rows
-                VStack(spacing: LayoutConstants.spaceMS) {
-                    if let rewards = appState.tutorialRewards {
-                        rewardRow(
-                            icon: "dollarsign.circle.fill",
-                            text: "+\(rewards.gold) GOLD",
-                            color: DarkFantasyTheme.gold,
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .arena,
+                    tier: .iron,
+                    art: heroArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: {
+                        RewardCardTitle(
+                            title: "VICTORY",
+                            subtitle: "Well fought, \(heroName).",
+                            color: DarkFantasyTheme.gold
                         )
-                        .opacity(goldRowOpacity)
-
-                        rewardRow(
-                            icon: "star.circle.fill",
-                            text: "+\(rewards.xp) XP",
-                            color: DarkFantasyTheme.toastLevelUp,
-                        )
-                        .opacity(xpRowOpacity)
-
-                        if let itemName = rewards.itemName {
-                            rewardRow(
-                                icon: "shield.fill",
-                                text: itemName.uppercased(),
-                                color: DarkFantasyTheme.textPrimary,
-                            )
-                            .opacity(itemRowOpacity)
-                        }
-
-                        if rewards.leveledUp, let newLevel = rewards.newLevel {
-                            rewardRow(
-                                icon: "arrow.up.circle.fill",
-                                text: "LEVEL \(newLevel) REACHED",
-                                color: DarkFantasyTheme.toastLevelUp,
-                            )
-                            .opacity(levelUpRowOpacity)
-                        }
-
-                        if rewards.statPointsAwarded > 0 {
-                            rewardRow(
-                                icon: "sparkles",
-                                text: "+\(rewards.statPointsAwarded) STAT \(rewards.statPointsAwarded == 1 ? "POINT" : "POINTS")",
-                                color: DarkFantasyTheme.gold,
-                            )
-                            .opacity(statPointsRowOpacity)
-                        }
-
-                        if rewards.passivePointsAwarded > 0 {
-                            rewardRow(
-                                icon: "hexagon.fill",
-                                text: "+\(rewards.passivePointsAwarded) PASSIVE \(rewards.passivePointsAwarded == 1 ? "POINT" : "POINTS")",
-                                color: DarkFantasyTheme.toastLevelUp,
-                            )
-                            .opacity(passivePointsRowOpacity)
-                        }
-                    }
-                }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-
-                Spacer()
-
-                Button {
-                    advance()
-                } label: {
-                    Text("CONTINUE")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.primary)
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, LayoutConstants.spaceLG)
-                .opacity(ctaOpacity)
+                        .opacity(titleOpacity)
+                    },
+                    content: { rewardRows },
+                    actions: { continueButton }
+                )
             }
+            .opacity(titleOpacity)
         }
         .onAppear(perform: startRevealSequence)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Victory. Continue to see the lore intro.")
     }
 
-    // MARK: - Subviews
+    // MARK: - Card
 
-    private func rewardRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            Image(systemName: icon)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(color)
-            Text(text)
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-            Spacer()
+    /// The hero who just won; the arena's victory painting if the hero is not loaded yet.
+    private var heroArt: RewardCardArt {
+        guard let hero = appState.currentCharacter else {
+            return RewardCardArt(subject: .none, backdrop: "onboarding-victory")
         }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(Color.black.opacity(0.5))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .stroke(color.opacity(0.5), lineWidth: 1),
-                ),
-        )
+        return .hero(skinKey: hero.avatar, characterClass: hero.characterClass)
+    }
+
+    /// Reward lines, revealed one after another.
+    @ViewBuilder
+    private var rewardRows: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            if let rewards = appState.tutorialRewards {
+                RewardCardRow(icon: "icon-gold", value: "+\(rewards.gold)", label: "Gold",
+                              color: DarkFantasyTheme.gold)
+                    .opacity(goldRowOpacity)
+
+                RewardCardRow(icon: "reward-xp", value: "+\(rewards.xp)", label: "XP",
+                              color: DarkFantasyTheme.toastLevelUp)
+                    .opacity(xpRowOpacity)
+
+                if let itemName = rewards.itemName {
+                    RewardCardRow(
+                        icon: UIImage(named: rewards.itemCatalogKey) != nil ? rewards.itemCatalogKey : "reward-loot",
+                        value: itemName.uppercased(),
+                        label: "",
+                        color: DarkFantasyTheme.textPrimary
+                    )
+                    .opacity(itemRowOpacity)
+                }
+
+                if rewards.leveledUp, let newLevel = rewards.newLevel {
+                    RewardCardRow(icon: "reward-level-up", value: "LEVEL \(newLevel)", label: "reached",
+                                  color: DarkFantasyTheme.toastLevelUp)
+                        .opacity(levelUpRowOpacity)
+                }
+
+                if rewards.statPointsAwarded > 0 {
+                    RewardCardRow(
+                        icon: "reward-level-up",
+                        value: "+\(rewards.statPointsAwarded)",
+                        label: rewards.statPointsAwarded == 1 ? "Stat Point" : "Stat Points",
+                        color: DarkFantasyTheme.gold
+                    )
+                    .opacity(statPointsRowOpacity)
+                }
+
+                if rewards.passivePointsAwarded > 0 {
+                    RewardCardRow(
+                        icon: "reward-first-win",
+                        value: "+\(rewards.passivePointsAwarded)",
+                        label: rewards.passivePointsAwarded == 1 ? "Passive Point" : "Passive Points",
+                        color: DarkFantasyTheme.toastLevelUp
+                    )
+                    .opacity(passivePointsRowOpacity)
+                }
+            }
+        }
+    }
+
+    private var continueButton: some View {
+        Button {
+            advance()
+        } label: {
+            Text("CONTINUE")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .opacity(ctaOpacity)
     }
 
     // MARK: - Reveal Sequence

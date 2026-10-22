@@ -261,11 +261,14 @@ struct RewardCardTitle: View {
     var color: Color = DarkFantasyTheme.goldBright
     /// The pulse some ceremonies give the title once it has landed.
     var glow: Bool = false
+    /// Letter spacing, for titles that carried their own (RANK UP).
+    var tracking: CGFloat = 0
 
     var body: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text(title)
                 .font(DarkFantasyTheme.cinematicTitle)
+                .tracking(tracking)
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
@@ -307,9 +310,11 @@ struct RewardCardRow: View {
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+            if !label.isEmpty {
+                Text(label)
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
