@@ -61,7 +61,9 @@ jobs:
           python3 - "$APP" "$BID" <<'PY'
           import os, subprocess, sys, time
           app, bid = sys.argv[1], sys.argv[2]
-          PAGES, INTERVAL, SETTLE = 30, 4.5, 3.0   # the gallery turns a page every 4.5 s
+          # One launch per page (-RewardCardGalleryPage N): a timed carousel drifts on a
+          # slow CI simulator. SETTLE covers the longest ceremony.
+          PAGES, SETTLE = 30, 7.0
           def run(*a):
               return subprocess.run(["xcrun", "simctl", *a], capture_output=True, text=True)
           for tag, udid in (("pro", os.environ.get("UDID")), ("small", os.environ.get("UDID_SMALL"))):
@@ -70,12 +72,16 @@ jobs:
               run("boot", udid); run("bootstatus", udid, "-b")
               run("status_bar", udid, "override", "--time", "9:41", "--batteryState", "charged", "--batteryLevel", "100")
               run("install", udid, app); time.sleep(3)
-              run("launch", udid, bid, "-RewardCardGallery")
-              t0 = time.time() + 1.5          # the gallery is up ~1.5 s after launch
+              run("launch", udid, bid, "-RewardCardGallery", "-RewardCardGalleryPage", "0"); time.sleep(15)  # warm-up
               for k in range(PAGES):
-                  target = t0 + k * INTERVAL + SETTLE
-                  time.sleep(max(0, target - time.time()))
-                  run("io", udid, "screenshot", f"sim-cards/{tag}_{k:02d}.png")
+                  run("terminate", udid, bid); time.sleep(1)
+                  r = run("launch", udid, bid, "-RewardCardGallery", "-RewardCardGalleryPage", str(k))
+                  if r.returncode != 0:
+                      print("launch failed", tag, k, r.stderr.strip())
+                  time.sleep(SETTLE)
+                  r = run("io", udid, "screenshot", f"sim-cards/{tag}_{k:02d}.png")
+                  if r.returncode != 0:
+                      print("screenshot failed", tag, k, r.stderr.strip())
               run("shutdown", udid)
           print(sorted(os.listdir("sim-cards")))
           PY

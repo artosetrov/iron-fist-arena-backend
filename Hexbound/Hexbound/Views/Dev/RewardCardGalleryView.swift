@@ -10,6 +10,8 @@ struct RewardCardGalleryView: View {
     @State private var ready = false
     static let interval: Double = 4.5
     static let pageCount = Page.all.count
+    /// `-RewardCardGalleryPage N`: page N alone, no timer (CI launches once per page).
+    static let fixedPage: Int? = UserDefaults.standard.string(forKey: "RewardCardGalleryPage").flatMap { Int($0) }
 
     var body: some View {
         let pages = Page.all
@@ -31,6 +33,11 @@ struct RewardCardGalleryView: View {
         }
         .task {
             prepareHero()
+            if let fixed = Self.fixedPage {
+                page = fixed
+                ready = true
+                return
+            }
             ready = true
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(Self.interval))
@@ -100,25 +107,41 @@ struct RewardCardGalleryView: View {
             let epic = LootItemDisplay(name: "Pyrox Greatsword", rarityName: "EPIC", rarityColor: DarkFantasyTheme.rarityEpic, imageKey: "loot-pyrox-greatsword", imageUrl: nil, sfIcon: nil, sfColor: nil, fallbackIcon: "shippingbox", rarityTier: 3)
             let rare = LootItemDisplay(name: "Necrotic Tome", rarityName: "RARE", rarityColor: DarkFantasyTheme.rarityRare, imageKey: "loot-necrotic-tome", imageUrl: nil, sfIcon: nil, sfColor: nil, fallbackIcon: "shippingbox", rarityTier: 2)
             let duel = DuelResultInfo(playerSkinKey: "orc_m_ironjaw", playerClass: .warrior, playerLevel: 24, ratingBefore: 1426, rivalName: "Morgrath", rivalSkinKey: "orc_m_bloodlord", rivalClass: .warrior, rivalLevel: 25, onViewRival: nil, onMessageRival: nil)
+            let log = (0..<9).map { i in
+                CombatLogSummaryEntry(isPlayerAttacking: i % 2 == 0, attackerName: i % 2 == 0 ? "Art" : "Morgrath",
+                                      damage: 20 + i * 3, heal: 0, isCrit: i == 4, isMiss: i == 3, isDodge: false, isBlocked: i == 5)
+            }
+            let arenaButtons = [
+                ResultButton(title: "BACK TO ARENA", style: .primary, action: {}),
+                ResultButton(title: "BACK TO CASTLE", style: .ghost, action: {}),
+            ]
+            let stars = [StarCondition(label: "Win", earned: true), StarCondition(label: "50% HP", earned: true), StarCondition(label: "No potions", earned: false)]
             let win = BattleResultConfig(
-                isVictory: true, title: "VICTORY!", subtitle: "vs. Morgrath", illustrationImage: nil,
+                isVictory: true, title: "VICTORY!", subtitle: nil, illustrationImage: nil,
+                starConditions: stars,
                 goldReward: 180, xpReward: 60, ratingChange: 24, firstWinBonus: true,
                 xpBefore: 600, xpNeeded: 1000,
                 xpBarConfig: XPBarConfig(displayLevel: 24, progress: 0.66, leveledUp: false),
                 dungeonProgress: nil,
                 lootItems: [rare], onLootTap: nil,
-                buttons: [ResultButton(title: "CONTINUE", style: .primary, action: {})],
+                combatLog: log,
+                buttons: arenaButtons,
                 duel: duel,
-                cardFamily: .arena, cardTier: .gold
+                cardFamily: .arena, cardTier: .gold,
+                cardArt: .hero(skinKey: "orc_m_bloodlord", characterClass: .warrior, mirrored: true)
             )
             let loss = BattleResultConfig(
-                isVictory: false, title: "DEFEAT", subtitle: "vs. Rook the Grim", illustrationImage: nil,
+                isVictory: false, title: "DEFEAT", subtitle: "So close — 12 HP left on Rook.", illustrationImage: nil,
                 goldReward: 0, xpReward: 15, ratingChange: -9, firstWinBonus: false,
-                xpBarConfig: nil, dungeonProgress: nil,
+                xpNeeded: 1000,
+                xpBarConfig: XPBarConfig(displayLevel: 24, progress: 0.61, leveledUp: false),
+                dungeonProgress: nil,
                 lootItems: [], onLootTap: nil,
-                buttons: [ResultButton(title: "CONTINUE", style: .secondary, action: {})],
-                duel: DuelResultInfo(playerSkinKey: "orc_m_ironjaw", playerClass: .warrior, playerLevel: 24, ratingBefore: 1450, rivalName: "Rook the Grim", rivalSkinKey: "human_m_bastion_lord", rivalClass: .tank, rivalLevel: 26, onViewRival: nil, onMessageRival: nil),
-                cardFamily: .arena, cardTier: .silver
+                combatLog: log,
+                buttons: arenaButtons,
+                duel: DuelResultInfo(playerSkinKey: "orc_m_ironjaw", playerClass: .warrior, playerLevel: 24, ratingBefore: 1450, rivalName: "Rook the Grim", rivalSkinKey: "human_m_bastion_lord", rivalClass: .tank, rivalLevel: 26, onViewRival: {}, onMessageRival: {}),
+                cardFamily: .arena, cardTier: .silver,
+                cardArt: .hero(skinKey: "human_m_bastion_lord", characterClass: .tank, mirrored: true)
             )
             let boss = BattleResultConfig(
                 isVictory: true, title: "BOSS DEFEATED", subtitle: "Golden Golem · Scorched Mines", illustrationImage: nil,
@@ -126,7 +149,7 @@ struct RewardCardGalleryView: View {
                 xpBarConfig: XPBarConfig(displayLevel: 24, progress: 0.82, leveledUp: false),
                 dungeonProgress: DungeonProgressConfig(defeated: 7, total: 10, isComplete: false),
                 lootItems: [epic, rare], onLootTap: nil,
-                buttons: [ResultButton(title: "FIGHT NEXT", style: .primary, action: {})],
+                buttons: [ResultButton(title: "FIGHT NEXT", style: .primary, action: {}), ResultButton(title: "Back to the dungeon", style: .ghost, action: {})],
                 cardFamily: .dungeon, cardArt: .figure("boss-golden-golem-full")
             )
             return [
