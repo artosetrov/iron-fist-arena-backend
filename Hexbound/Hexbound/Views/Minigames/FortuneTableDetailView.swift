@@ -744,34 +744,34 @@ struct FortuneTableDetailView: View {
     @ViewBuilder
     private func resultModal(_ vm: FortuneTableViewModel, round: FortuneTableRound, result: FortuneTableResult) -> some View {
         let item = result.chest.first
-        GameModal(
-            accent: MinigameResultAccent.color(isWin: result.won),
-            maxWidth: 320,
-            onDismiss: { showResultModal = false }
+        // A full-screen fortune card with its own backdrop (no GameModal); an
+        // item in the chest lifts the card to that item's rarity.
+        MinigameResultModal(
+            isWin: result.won,
+            title: result.won ? "THE POT IS YOURS!" : "\((round.winner?.name ?? "A RIVAL").uppercased()) WINS",
+            amountText: result.won
+                ? "+\(result.payout.formatted()) Gold" + (item.map { "\n+ \($0.name)" } ?? "")
+                : "−\(round.yourStake.formatted()) Gold",
+            amountLineLimit: 2,
+            winnings: result.won ? result.payout : 0,
+            tier: result.won
+                ? item.flatMap { ItemRarity(rawValue: $0.rarity) }.map { RewardCardTier(rarity: $0) }
+                : nil,
+            onContinue: { showResultModal = false }
         ) {
-            MinigameResultModal(
-                isWin: result.won,
-                title: result.won ? "THE POT IS YOURS!" : "\((round.winner?.name ?? "A RIVAL").uppercased()) WINS",
-                amountText: result.won
-                    ? "+\(result.payout.formatted()) Gold" + (item.map { "\n+ \($0.name)" } ?? "")
-                    : "−\(round.yourStake.formatted()) Gold",
-                amountLineLimit: 2,
-                onContinue: { showResultModal = false }
-            ) {
-                if result.won {
-                    if let item, item.shard == nil {
-                        ItemImageView(imageKey: item.imageKey, imageUrl: item.imageUrl)
-                    } else {
-                        Image("icon-chest").resizable().aspectRatio(contentMode: .fit)
-                    }
-                } else if let portrait = round.winner?.portrait {
-                    Image(portrait)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(Circle())
+            if result.won {
+                if let item, item.shard == nil {
+                    ItemImageView(imageKey: item.imageKey, imageUrl: item.imageUrl)
                 } else {
-                    Image("icon-fortune-lose").resizable().aspectRatio(contentMode: .fit)
+                    Image("icon-chest").resizable().aspectRatio(contentMode: .fit)
                 }
+            } else if let portrait = round.winner?.portrait {
+                Image(portrait)
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                Image("icon-fortune-lose").resizable().aspectRatio(contentMode: .fit)
             }
         }
     }
