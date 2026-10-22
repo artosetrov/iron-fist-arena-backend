@@ -84,6 +84,7 @@ jobs:
         run: |
           cd sim-cards
           for f in *.png; do
+            [ -e "$f" ] || continue
             sips -Z 1000 -s format jpeg -s formatOptions 82 "$f" --out "${f%.png}.jpg" >/dev/null
           done
           rm -f *.png
@@ -93,7 +94,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b sim-out
+          # An orphan commit holding only the screenshots: the checkout is shallow, and
+          # if claude/sim-cards moved during the run a commit on top of it would make
+          # git send the whole tree with a shallow boundary, which GitHub refuses.
+          git checkout --orphan sim-out
+          git rm -rf --cached . >/dev/null
+          echo "run ${GITHUB_RUN_ID} of ${GITHUB_SHA}" > sim-cards/RUN.txt
           git add -f sim-cards
-          git commit -m "chore: reward card screenshots [skip ci]"
-          git push --force origin HEAD:refs/heads/claude/sim-cards-out
+          git commit -q -m "chore: reward card screenshots [skip ci]"
+          if ! git push --force origin HEAD:refs/heads/claude/sim-cards-out 2> push.err; then
+            echo "::error::push failed: $(tr '\n' ' ' < push.err | cut -c1-900)"
+            exit 1
+          fi
