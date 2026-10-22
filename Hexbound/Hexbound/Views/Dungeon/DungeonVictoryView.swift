@@ -1,9 +1,13 @@
 import SwiftUI
 
-/// Victory over a dungeon boss (classic or dice fight). Full-screen over the
-/// dungeon: the defeated boss's portrait with a DEFEATED ribbon, stars,
+/// Victory over a dungeon boss (classic or dice fight), on a painted reward
+/// card over the dungeon: the fallen boss standing on its lair, the stars,
 /// rewards (gold, XP, loot — never PvP rating), the XP bar, the dungeon's
 /// progress, and the next boss already revealed with FIGHT NEXT.
+///
+/// The card is the dungeon family; its tier is the boss's level, lifted by
+/// the best drop (`RewardCardTier`). The stage shrinks the illustration, then
+/// scrolls, when the card does not fit.
 ///
 /// Runs the same XP bar fill + LEVEL UP! flash as the arena result screen
 /// and defers the level-up modal until the bar finishes filling. Keep the
@@ -28,8 +32,12 @@ struct DungeonVictoryView: View {
     @State private var contentShown = false
     @State private var levelUpDelivered = false
 
-    private static let medallionSize: CGFloat = 132
-    private static let tileHeight: CGFloat = 64
+    /// Loot tiles: three 72pt tiles fit the narrowest card.
+    private static let lootTile: CGFloat = 72
+    private static let lootPerRow = 3
+    /// The next boss teaser: its height and the width of the boss standing in it.
+    private static let nextBossHeight: CGFloat = 96
+    private static let nextBossArtWidth: CGFloat = 88
 
     // MARK: Derived
 
@@ -59,33 +67,50 @@ struct DungeonVictoryView: View {
         ]
     }
 
+    // MARK: Card
+
+    /// The frame's metal: the fallen boss's level (the gold and XP when the boss
+    /// is unknown), lifted by the best drop.
+    private var cardTier: RewardCardTier {
+        var readings: [RewardCardTier?] = [
+            defeatedBoss.map { RewardCardTier(level: $0.level) }
+                ?? RewardCardTier(gold: vm.victoryGold, xp: vm.victoryXP)
+        ]
+        for item in lootDisplays {
+            readings.append(RewardCardTier(rarity: item.rarity))
+        }
+        return RewardCardTier.best(readings)
+    }
+
+    /// The fallen boss on its lair; the best reward when the boss has no art.
+    private var cardArt: RewardCardArt {
+        RewardCardArt.dungeonBoss(defeatedBoss, dungeonId: vm.dungeon?.id)
+            ?? .headline(
+                gold: vm.victoryGold,
+                gems: 0,
+                xp: vm.victoryXP,
+                items: lootDisplays.map { (imageKey: $0.imageKey, rarity: $0.rarity) },
+                hasConsumables: lootDisplays.contains { $0.fallbackIcon == ItemType.consumable.icon }
+            )
+    }
+
     // MARK: Body
 
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: LayoutConstants.spaceMD) {
-                        medallion
-                            .padding(.top, LayoutConstants.spaceLG)
-                        titleBlock
-                        rewardsGrid
-                        xpRow
-                        progressBlock
-                        if let next = nextBoss {
-                            nextBossCard(next)
-                        }
-                    }
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceMD)
-                }
-                .scrollIndicators(.hidden)
-
-                buttons
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceSM)
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .dungeon,
+                    tier: cardTier,
+                    art: cardArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: { titleBlock },
+                    content: { cardContent },
+                    actions: { buttons }
+                )
             }
             .opacity(contentShown ? 1 : 0)
         }
@@ -100,75 +125,48 @@ struct DungeonVictoryView: View {
         }
     }
 
-    // MARK: Medallion
-
-    @ViewBuilder
-    private var medallion: some View {
-        if let boss = defeatedBoss {
-            ZStack {
-                Circle().fill(DarkFantasyTheme.bgSecondary)
-                BossArtImage(boss: boss, kind: .portrait, style: .lit, contentMode: .fill)
-                    .frame(width: Self.medallionSize, height: Self.medallionSize)
-                    .saturation(0.45)
-                    .clipShape(Circle())
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            starsRow
+            rewardsList
+            if !lootDisplays.isEmpty {
+                lootGrid
             }
-            .frame(width: Self.medallionSize, height: Self.medallionSize)
-            .overlay(Circle().stroke(DarkFantasyTheme.goldBright, lineWidth: 4))
-            .overlay(alignment: .bottom) {
-                Text("DEFEATED")
-                    .font(DarkFantasyTheme.buttonLabelCompact)
-                    .tracking(2)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .padding(.horizontal, LayoutConstants.spaceMS)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .fill(DarkFantasyTheme.danger)
-                    )
-                    .offset(y: 12)
+            xpRow
+            progressBlock
+            if let next = nextBoss {
+                nextBossCard(next)
             }
-            .dualShadow(glowColor: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMedium), glowRadius: 12, depth: .elevated)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("\(boss.name) defeated"))
         }
     }
 
     // MARK: Title + stars
 
     private var titleBlock: some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            Text(vm.isDungeonComplete
-                 ? (isTraining ? "TRAINING COMPLETE!" : "DUNGEON CLEARED!")
-                 : "VICTORY!")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .tracking(1)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .padding(.top, LayoutConstants.spaceSM)
+        RewardCardTitle(
+            title: vm.isDungeonComplete
+                ? (isTraining ? "TRAINING COMPLETE!" : "DUNGEON CLEARED!")
+                : "VICTORY!",
+            subtitle: defeatedBoss.map { "\($0.name) · Stage \($0.id)" }
+        )
+    }
 
-            if let boss = defeatedBoss {
-                Text("\(boss.name) · Stage \(boss.id)")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-
-            HStack(spacing: LayoutConstants.spaceMD) {
-                ForEach(Array(stars.enumerated()), id: \.offset) { _, star in
-                    VStack(spacing: 0) {
-                        Image(systemName: star.earned ? "star.fill" : "star")
-                            .font(DarkFantasyTheme.section)
-                            .foregroundStyle(star.earned ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium)
-                        Text(star.label)
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(star.earned ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(Text("\(star.label): \(star.earned ? "earned" : "missed")"))
+    private var starsRow: some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            ForEach(Array(stars.enumerated()), id: \.offset) { _, star in
+                VStack(spacing: 0) {
+                    Image(systemName: star.earned ? "star.fill" : "star")
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(star.earned ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium)
+                    Text(star.label)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(star.earned ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("\(star.label): \(star.earned ? "earned" : "missed")"))
             }
-            .padding(.top, LayoutConstants.spaceXS)
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Rewards
@@ -192,59 +190,51 @@ struct DungeonVictoryView: View {
         }
     }
 
-    private var rewardsGrid: some View {
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM), count: 3),
-            spacing: LayoutConstants.spaceSM
-        ) {
-            if vm.victoryGold > 0 {
-                rewardTile(asset: "icon-gold", value: "+\(vm.victoryGold)", color: DarkFantasyTheme.goldBright, label: "gold")
-            }
-            if vm.victoryXP > 0 {
-                rewardTile(asset: "icon-xp", value: "+\(vm.victoryXP)", color: DarkFantasyTheme.xpRing, label: "XP")
-            }
-            ForEach(Array(lootDisplays.enumerated()), id: \.offset) { _, item in
-                ItemCardView(
-                    rarity: item.rarity,
-                    imageKey: item.imageKey,
-                    imageUrl: item.imageUrl,
-                    fallbackIcon: item.fallbackIcon,
-                    systemIcon: item.sfIcon,
-                    systemIconColor: item.sfColor,
-                    context: .loot
-                ) {}
-                .frame(width: Self.tileHeight, height: Self.tileHeight)
-                .frame(maxWidth: .infinity)
-                .accessibilityLabel(Text("\(item.name), \(item.rarityName)"))
+    /// One line per currency; the card grows with the list.
+    @ViewBuilder
+    private var rewardsList: some View {
+        if vm.victoryGold > 0 || vm.victoryXP > 0 {
+            VStack(spacing: LayoutConstants.spaceXS) {
+                if vm.victoryGold > 0 {
+                    RewardCardRow(icon: "icon-gold", value: "+\(vm.victoryGold)", label: "Gold",
+                                  color: DarkFantasyTheme.goldBright)
+                }
+                if vm.victoryXP > 0 {
+                    RewardCardRow(icon: "icon-xp", value: "+\(vm.victoryXP)", label: "XP",
+                                  color: DarkFantasyTheme.xpRing)
+                }
             }
         }
     }
 
-    private func rewardTile(asset: String, value: String, color: Color, label: String) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(asset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
-            Text(value)
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+    /// The drops, three to a row. (Plain stacks, not a lazy grid: the stage
+    /// measures the card's ideal height.)
+    private var lootGrid: some View {
+        let items = lootDisplays
+        let rows: [[LootItemDisplay]] = stride(from: 0, to: items.count, by: Self.lootPerRow).map { start in
+            Array(items[start..<min(start + Self.lootPerRow, items.count)])
+        }
+
+        return VStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, item in
+                        ItemCardView(
+                            rarity: item.rarity,
+                            imageKey: item.imageKey,
+                            imageUrl: item.imageUrl,
+                            fallbackIcon: item.fallbackIcon,
+                            systemIcon: item.sfIcon,
+                            systemIconColor: item.sfColor,
+                            context: .loot
+                        ) {}
+                        .frame(width: Self.lootTile, height: Self.lootTile)
+                        .accessibilityLabel(Text("\(item.name), \(item.rarityName)"))
+                    }
+                }
+            }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: Self.tileHeight)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(value) \(label)"))
     }
 
     // MARK: XP
@@ -354,12 +344,13 @@ struct DungeonVictoryView: View {
     // MARK: Next boss
 
     private func nextBossCard(_ next: BossInfo) -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("NEXT · STAGE \(next.id)")
-                    .font(DarkFantasyTheme.body)
-                    .tracking(2)
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.gold)
+                    .lineLimit(1)
                 Text(next.name.uppercased())
                     .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -368,16 +359,18 @@ struct DungeonVictoryView: View {
                 Text("Lv \(next.level) · \(next.hp) HP")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .lineLimit(1)
             }
             .padding(.leading, LayoutConstants.spaceMS)
-            Spacer(minLength: LayoutConstants.spaceSM)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             BossStageArt(boss: next, mirrored: true, light: DarkFantasyTheme.purple)
-                .frame(width: 140, height: 112)
+                .frame(width: Self.nextBossArtWidth, height: Self.nextBossHeight)
         }
-        .frame(height: 112)
+        .frame(height: Self.nextBossHeight)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+                .fill(DarkFantasyTheme.bgTertiary)
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)

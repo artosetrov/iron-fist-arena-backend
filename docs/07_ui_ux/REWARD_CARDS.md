@@ -86,3 +86,7 @@ The tier is cosmetic — it never changes what the server grants.
 | Rank up | `RankUpCeremonyView` | arena | new rank | the hero |
 | Season summary | `SeasonSummaryModalView` | glory | final BP level (+1 with premium) | XP medallion |
 | Tutorial victory | `VictoryOverlayView` | arena | iron | the hero |
+| Shell game, fortune wheel, Fortune's Table | `MinigameResultModal` (+ the three game views) | fortune | win: the game's reading (wheel ×1.5 bronze, ×2 silver, ×3 gold, ×5 or jackpot mythic; the table's chest rarity) and the gold; loss: iron, dimmed | gold by amount; the game's own picture on a line under the title |
+| Dungeon Rush treasure | `TreasureRewardOverlay` | dungeon | the gold (a blessing: at least silver) | the matching `rush2-chest-*-open` on `bg-rush-treasure` |
+| Gold Mine payout | `MineClaimRewardView` | mine | the payout (the chest: at least gold) | gold / gems art; the chest scene inside the card |
+| Purchase reveal | `PurchaseRewardRevealView` | merchant | the pack (`-tierN` of its art), else the amounts | the pack's own painting, or gold / gems art |
