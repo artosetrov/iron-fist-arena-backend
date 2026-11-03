@@ -401,24 +401,28 @@ struct DescentBanner: View {
 
     /// Slam overlay: the stamp drops from 1.45x onto the scene, a dark pool
     /// behind it so it reads over any painting, and lands with a heavy thud.
+    /// On a short scene (a small phone, a tall panel) it shrinks to fit.
     private func stamp(_ asset: String) -> some View {
         let down = landed || reduceMotion
-        return ZStack {
-            Ellipse()
-                .fill(RadialGradient(
-                    colors: [DarkFantasyTheme.bgAbyss.opacity(0.6), DarkFantasyTheme.bgAbyss.opacity(0)],
-                    center: .center, startRadius: 0, endRadius: 190
-                ))
-                .frame(width: 380, height: 230)
-                .opacity(down ? 1 : 0)
-            Image(asset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: Self.stampWidth)
-                .rotationEffect(.degrees(-4))
-                .scaleEffect(down ? 1 : 1.45)
-                .opacity(down ? 1 : 0)
-                .depthShadow(.elevated)
+        return GeometryReader { geo in
+            ZStack {
+                Ellipse()
+                    .fill(RadialGradient(
+                        colors: [DarkFantasyTheme.bgAbyss.opacity(0.6), DarkFantasyTheme.bgAbyss.opacity(0)],
+                        center: .center, startRadius: 0, endRadius: 190
+                    ))
+                    .frame(width: 380, height: min(230, geo.size.height))
+                    .opacity(down ? 1 : 0)
+                Image(asset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: Self.stampWidth, maxHeight: max(geo.size.height - 2 * LayoutConstants.spaceLG, 60))
+                    .rotationEffect(.degrees(-4))
+                    .scaleEffect(down ? 1 : 1.45)
+                    .opacity(down ? 1 : 0)
+                    .depthShadow(.elevated)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .animation(MotionConstants.springBouncy, value: landed)
         .onAppear {
