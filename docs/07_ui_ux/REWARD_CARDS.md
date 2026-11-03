@@ -130,7 +130,8 @@ The tier is cosmetic — it never changes what the server grants.
 
 The Descent's in-run beats (spoils after a fight, an opened chest, an event's loot, the
 guardian's relic) stay in its action panel: they are steps of one continuous run, not
-windows. Only the end of the run is a card. The spoils still show their gold and XP as
-reward cells (`DescentSpoilsPanel`): the gold cell reads "Bag 340 → 520" with the red
-at-risk dot (`RewardCell.Item.bagBefore` — the gold enters the bag on "Take it all"), the
+windows. Only the end of the run is a card. Wherever the panel shows loot — the spoils,
+the guardian's spoils above the relic pick, an opened chest, an event's find — its gold and
+XP are reward cells (`DescentLootSummary`): the gold cell reads "Bag 340 → 520" with the red
+at-risk dot (`RewardCell.Item.bagBefore` — the gold enters the bag when it is taken), the
 XP cell fills the level bar (the server grants the XP on the kill).
