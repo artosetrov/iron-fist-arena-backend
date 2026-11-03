@@ -34,7 +34,7 @@ struct DescentGalleryView: View {
 }
 
 enum DescentGalleryFixtures {
-    static let pageCount = 10
+    static let pageCount = 11
 
     static func page(_ i: Int) -> (snapshot: DescentSnapshot, banner: String?) {
         switch i {
@@ -47,6 +47,7 @@ enum DescentGalleryFixtures {
         case 6: return (snap(screen: "event", current: 3, tale: "A stone angel weeps light into a basin.", extra: angel), nil)
         case 7: return (snap(screen: "chest", current: 3, tale: "An iron chest, banded and cold.", extra: chest), nil)
         case 8: return (snap(screen: "merchant", current: 3, tale: "A hooded trader blocks the way.", extra: merchant), nil)
+        case 10: return (snap(screen: "chest", current: 3, tale: "The lid gives. Coins spill across the stone.", extra: openChest), nil)
         default: return (snap(screen: "depthCard", current: 0, tale: "The heat rises from below.", extra: ""), nil)
         }
     }
@@ -108,6 +109,8 @@ enum DescentGalleryFixtures {
     private static let angel = #""event":{"id":"angel","scene":"rush2-ev-angel","text":"A stone angel weeps light into a basin.","done":false,"resultText":null,"loot":[],"then":null,"choices":[{"i":0,"label":"Pray for strength","hint":"{++15% damage+} for the rest of the run.","icon":"rush2-relic-shadowblade","disabledReason":null},{"i":1,"label":"Pray for vigor","hint":"{++150 max HP+} and heal 150.","icon":"rush2-icon-potion","disabledReason":null}],"runes":null}"#
 
     private static let chest = #""chest":{"tier":"iron","name":"Iron chest","inspected":false,"opened":false,"loot":[]}"#
+
+    private static let openChest = #""chest":{"tier":"iron","name":"Iron chest","inspected":false,"opened":true,"loot":[{"kind":"gold","amount":140},{"kind":"potion","amount":1},{"kind":"torch","amount":1}]}"#
 
     private static let merchant = #""merchant":{"wares":[{"i":0,"kind":"potion","name":"Health potion","desc":"Heals 162.","icon":"rush2-icon-potion","price":100,"sold":false,"available":true},{"i":1,"kind":"torch","name":"Torch","desc":"Light a dark passage.","icon":"rush2-icon-torch","price":45,"sold":false,"available":true},{"i":2,"kind":"relic","name":"Bloodstone","desc":"Heal 5% on every kill.","icon":"rush2-relic-bloodstone","price":320,"sold":false,"available":true},{"i":3,"kind":"relic","name":"Iron Heart","desc":"+60 max HP.","icon":"rush2-relic-ironheart","price":320,"sold":false,"available":false}]}"#
 }

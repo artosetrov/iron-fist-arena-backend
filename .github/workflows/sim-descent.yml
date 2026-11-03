@@ -62,7 +62,7 @@ jobs:
           import os, subprocess, sys, time
           app, bid = sys.argv[1], sys.argv[2]
           # One launch per page (-DescentGalleryPage N). SETTLE covers the stamp and the counting cells.
-          PAGES, SETTLE = 10, 6.0
+          PAGES, SETTLE = 11, 6.0
           def run(*a):
               return subprocess.run(["xcrun", "simctl", *a], capture_output=True, text=True)
           for tag, udid in (("pro", os.environ.get("UDID")), ("small", os.environ.get("UDID_SMALL"))):
