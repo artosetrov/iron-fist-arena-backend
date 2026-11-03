@@ -20,10 +20,7 @@ struct DescentRunPanel: View {
             combatPanel(s)
         case .spoils:
             tale(s)
-            lootList(s.spoils?.loot ?? [])
-            Button("Take it all") { vm.perform(.takeLoot) }
-                .buttonStyle(.primary)
-                .disabled(vm.isBusy)
+            DescentSpoilsPanel(vm: vm, snapshot: s)
         case .chest:
             chestPanel(s)
         case .event:
@@ -77,31 +74,108 @@ struct DescentRunPanel: View {
     private func forkPanel(_ s: DescentSnapshot) -> some View {
         if let fork = s.fork {
             tale(s)
-            ForEach(fork.options) { option in
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    DescentChoiceRow(
-                        title: option.known ? (option.typeName ?? "Passage") : "Darkness",
-                        subtitle: option.cue,
-                        suffix: option.side,
-                        selected: vm.selectedNodeId == option.id,
-                        accent: option.known ? DescentStyle.glow(option.roomType) : DarkFantasyTheme.vfxStormFog,
-                        direction: DescentDirection(side: option.side),
-                        action: { vm.select(option) }
-                    ) {
-                        if option.known, let type = option.roomType {
-                            DescentRowIcon(asset: type.iconAsset)
-                        } else {
-                            DescentDarkGlyph()
-                        }
-                    }
-                    if !option.known {
-                        torchButton(option, torches: s.hero.torches)
-                    }
-                }
+            if fork.options.count == 2 {
+                forkCards(fork, torches: s.hero.torches)
+            } else {
+                forkRows(fork, torches: s.hero.torches)
             }
             Button(enterTitle) { vm.enterSelected() }
                 .buttonStyle(.primary)
                 .disabled(vm.selectedOption == nil || vm.isBusy)
+        }
+    }
+
+    /// Two passages: two cards, in the order they lie (left, right).
+    private func forkCards(_ fork: DescentFork, torches: Int) -> some View {
+        DescentChoiceCards {
+            ForEach(fork.options.sorted { $0.lane < $1.lane }) { option in
+                DescentChoiceCard(
+                    title: option.known ? (option.typeName ?? "Passage") : "Darkness",
+                    subtitle: option.cue,
+                    selected: vm.selectedNodeId == option.id,
+                    accent: option.known ? DescentStyle.glow(option.roomType) : DarkFantasyTheme.vfxStormFog,
+                    direction: DescentDirection(side: option.side),
+                    bottomInset: option.known ? 0 : Self.cardTorchHeight + LayoutConstants.spaceSM,
+                    action: { vm.select(option) }
+                ) {
+                    if option.known, let type = option.roomType {
+                        DescentRowIcon(asset: type.iconAsset, size: 50)
+                    } else {
+                        DescentDarkGlyph()
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if !option.known {
+                        cardTorchButton(option, torches: torches)
+                            .padding(.horizontal, LayoutConstants.spaceMS)
+                            .padding(.bottom, LayoutConstants.spaceMS)
+                    }
+                }
+            }
+        }
+    }
+
+    private static let cardTorchHeight: CGFloat = 44
+
+    /// Lighting a dark passage, inside its card.
+    private func cardTorchButton(_ option: DescentForkOption, torches: Int) -> some View {
+        Button {
+            vm.perform(.torch(nodeId: option.id))
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("rush2-icon-torch")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 18)
+                    .shadow(color: torches > 0 ? DarkFantasyTheme.glowEmber.opacity(0.6) : .clear, radius: 5)
+                Text("LIGHT")
+                    .tracking(1.5)
+                    .foregroundStyle(torches > 0 ? DarkFantasyTheme.rankChallenger : DarkFantasyTheme.textDisabled)
+                Text("· \(torches)")
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                    .monospacedDigit()
+            }
+            .font(DarkFantasyTheme.buttonLabelCompact)
+            .frame(maxWidth: .infinity, minHeight: Self.cardTorchHeight)
+            .background {
+                let shape = DescentChamferShape(chamfer: 8)
+                ZStack {
+                    shape.fill(LinearGradient(colors: [DarkFantasyTheme.bgCardGradientEnd, DarkFantasyTheme.bgDungeonDeep], startPoint: .top, endPoint: .bottom))
+                    shape.strokeBorder(torches > 0 ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
+                }
+                .compositingGroup()
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 3)
+            }
+            .opacity(torches > 0 ? 1 : 0.55)
+        }
+        .buttonStyle(DescentRowPressStyle())
+        .disabled(torches == 0 || vm.isBusy)
+        .accessibilityLabel(torches > 0 ? "Light the dark passage, \(torches) torches left" : "No torches left")
+    }
+
+    @ViewBuilder
+    private func forkRows(_ fork: DescentFork, torches: Int) -> some View {
+        ForEach(fork.options) { option in
+            HStack(spacing: LayoutConstants.spaceSM) {
+                DescentChoiceRow(
+                    title: option.known ? (option.typeName ?? "Passage") : "Darkness",
+                    subtitle: option.cue,
+                    suffix: option.side,
+                    selected: vm.selectedNodeId == option.id,
+                    accent: option.known ? DescentStyle.glow(option.roomType) : DarkFantasyTheme.vfxStormFog,
+                    direction: DescentDirection(side: option.side),
+                    action: { vm.select(option) }
+                ) {
+                    if option.known, let type = option.roomType {
+                        DescentRowIcon(asset: type.iconAsset)
+                    } else {
+                        DescentDarkGlyph()
+                    }
+                }
+                if !option.known {
+                    torchButton(option, torches: torches)
+                }
+            }
         }
     }
 
@@ -124,6 +198,10 @@ struct DescentRunPanel: View {
                     .font(DarkFantasyTheme.buttonLabelCompact)
                     .tracking(1.5)
                     .foregroundStyle(torches > 0 ? DarkFantasyTheme.rankChallenger : DarkFantasyTheme.textDisabled)
+                Text("×\(torches)")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                    .monospacedDigit()
             }
             .frame(width: LayoutConstants.touchComfortable + 8, height: 76)
             .background {
@@ -152,7 +230,8 @@ struct DescentRunPanel: View {
             DescentVerdict(
                 lines: c.verdict,
                 hint: s.hero.isLow && s.hero.potions > 0 ? "Low health — drink a potion" : nil,
-                notice: vm.autoNotice
+                notice: vm.autoNotice,
+                warning: c.windup ? "Crushing blow next round · Brace" : nil
             )
             // One row, as on the arena: AUTO beside the gold FIGHT button, then Brace
             // and the flask. Fleeing sits on the scene (`DescentCombatStage`).
@@ -216,25 +295,38 @@ struct DescentRunPanel: View {
                 Button("Take it all") { vm.perform(.takeLoot) }
                     .buttonStyle(.primary)
                     .disabled(vm.isBusy)
-            } else {
+            } else if chest.inspected {
                 DescentChoiceRow(
                     title: "Open the chest",
-                    subtitle: chest.inspected ? "{+It is a real chest.+}" : "What could go wrong?",
+                    subtitle: "{+It is a real chest.+}",
                     disabled: vm.isBusy,
                     accent: DarkFantasyTheme.glowTreasure,
                     action: { vm.perform(.openChest) }
                 ) {
                     DescentRowIcon(asset: "rush2-chest-\(chest.tier)-closed")
                 }
-                if !chest.inspected {
-                    DescentChoiceRow(
-                        title: "Inspect it · 1 torch",
+                Button("Leave it be") { vm.perform(.leave) }
+                    .buttonStyle(.secondary)
+                    .disabled(vm.isBusy)
+            } else {
+                DescentChoiceCards {
+                    DescentChoiceCard(
+                        title: "Open it",
+                        subtitle: "What could go wrong?",
+                        disabled: vm.isBusy,
+                        accent: DarkFantasyTheme.glowTreasure,
+                        action: { vm.perform(.openChest) }
+                    ) {
+                        DescentRowIcon(asset: "rush2-chest-\(chest.tier)-closed", size: 50)
+                    }
+                    DescentChoiceCard(
+                        title: "Inspect · 1 torch",
                         subtitle: s.hero.torches > 0 ? "Hold the light close and look for teeth." : "{-You have no torches.-}",
                         disabled: vm.isBusy || s.hero.torches == 0,
                         accent: DarkFantasyTheme.glowWarm,
                         action: { vm.perform(.inspect) }
                     ) {
-                        DescentRowIcon(asset: "rush2-icon-torch")
+                        DescentRowIcon(asset: "rush2-icon-torch", size: 50)
                     }
                 }
                 Button("Leave it be") { vm.perform(.leave) }
@@ -268,6 +360,20 @@ struct DescentRunPanel: View {
                         .buttonStyle(.primary)
                         .disabled(vm.isBusy)
                 }
+            } else if event.choices.count == 2 {
+                DescentChoiceCards {
+                    ForEach(event.choices) { choice in
+                        DescentChoiceCard(
+                            title: choice.label,
+                            subtitle: choice.disabledReason.map { "{-\($0)-}" } ?? choice.hint,
+                            disabled: vm.isBusy || choice.disabledReason != nil,
+                            accent: DarkFantasyTheme.rankMaster,
+                            action: { vm.perform(.choose(choice.i)) }
+                        ) {
+                            DescentRowIcon(asset: choice.icon, size: 50)
+                        }
+                    }
+                }
             } else {
                 ForEach(event.choices) { choice in
                     DescentChoiceRow(
@@ -298,32 +404,37 @@ struct DescentRunPanel: View {
                     .buttonStyle(.secondary)
                     .disabled(vm.isBusy)
             } else {
-                DescentChoiceRow(
-                    title: "Rest",
-                    subtitle: "{++30% HP.+} Sleep by the fire.",
-                    disabled: vm.isBusy,
-                    accent: DarkFantasyTheme.glowEmber,
-                    action: { vm.perform(.camp("rest")) }
-                ) {
-                    DescentRowIcon(asset: "rush2-node-camp")
-                }
-                DescentChoiceRow(
-                    title: "Sharpen your blade",
-                    subtitle: "{++12% damage+} for the rest of the run.",
-                    disabled: vm.isBusy,
-                    accent: DarkFantasyTheme.glowEmber,
-                    action: { vm.perform(.camp("sharpen")) }
-                ) {
-                    DescentRowIcon(asset: "rush2-relic-shadowblade")
-                }
-                DescentChoiceRow(
-                    title: "Stash your loot",
-                    subtitle: stashText(camp),
-                    disabled: vm.isBusy || !camp.canStash,
-                    accent: DarkFantasyTheme.glowEmber,
-                    action: { vm.perform(.camp("stash")) }
-                ) {
-                    DescentRowIcon(asset: "rush2-chest-wood-closed")
+                DescentChoiceCards {
+                    DescentChoiceCard(
+                        title: "Rest",
+                        subtitle: "{++30% HP+} by the fire.",
+                        disabled: vm.isBusy,
+                        accent: DarkFantasyTheme.glowEmber,
+                        compact: true,
+                        action: { vm.perform(.camp("rest")) }
+                    ) {
+                        DescentRowIcon(asset: "rush2-node-camp")
+                    }
+                    DescentChoiceCard(
+                        title: "Sharpen",
+                        subtitle: "{++12% damage+} for the run.",
+                        disabled: vm.isBusy,
+                        accent: DarkFantasyTheme.glowEmber,
+                        compact: true,
+                        action: { vm.perform(.camp("sharpen")) }
+                    ) {
+                        DescentRowIcon(asset: "rush2-relic-shadowblade")
+                    }
+                    DescentChoiceCard(
+                        title: "Stash",
+                        subtitle: stashText(camp),
+                        disabled: vm.isBusy || !camp.canStash,
+                        accent: DarkFantasyTheme.glowEmber,
+                        compact: true,
+                        action: { vm.perform(.camp("stash")) }
+                    ) {
+                        DescentRowIcon(asset: "rush2-chest-wood-closed")
+                    }
                 }
                 Text("YOU HAVE TIME FOR ONE")
                     .font(DarkFantasyTheme.buttonLabelCompact)
@@ -336,7 +447,7 @@ struct DescentRunPanel: View {
     private func stashText(_ camp: DescentCamp) -> String {
         guard camp.canStash else { return "Your bag is empty." }
         let items = camp.stashItems > 0 ? " and \(camp.stashItems) item\(camp.stashItems > 1 ? "s" : "")" : ""
-        return "Stash **\(camp.stashGold)** gold\(items) in the camp chest. Safe even if you fall."
+        return "Keep **\(camp.stashGold)** gold\(items) safe."
     }
 
     // MARK: Merchant
@@ -393,3 +504,83 @@ struct DescentRunPanel: View {
         }
     }
 }
+
+// MARK: - Spoils
+
+/// After a fight: the gold and XP as reward cells, as in every reward window
+/// (docs/07_ui_ux/REWARD_CARDS.md, "Reward cells"), then the rest of the loot.
+/// The gold goes into the bag — at risk until the run ends, so its cell reads
+/// "Bag 340 → 520" with the risk dot; the XP is already the hero's (the server
+/// grants it on the kill), so its cell fills the level bar.
+struct DescentSpoilsPanel: View {
+    @Bindable var vm: DescentViewModel
+    let snapshot: DescentSnapshot
+
+    @Environment(AppState.self) private var appState
+    /// Read once, when the spoils appear: later updates must not move the cells.
+    @State private var bagBefore: Int?
+    @State private var xpLevel: RewardCellLevel?
+    @State private var counting = false
+
+    private var loot: [DescentLoot] { snapshot.spoils?.loot ?? [] }
+    private var gold: Int { loot.filter { $0.kind == "gold" }.reduce(0) { $0 + $1.amount } }
+    private var xp: Int { loot.filter { $0.kind == "xp" }.reduce(0) { $0 + $1.amount } }
+    private var others: [DescentLoot] { loot.filter { $0.kind != "gold" && $0.kind != "xp" } }
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            if gold > 0 || xp > 0 {
+                RewardCells(items: cells, isActive: counting)
+                if gold > 0 {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Circle()
+                            .fill(DarkFantasyTheme.danger)
+                            .frame(width: 7, height: 7)
+                            .accessibilityHidden(true)
+                        Text("Half the bag is lost if you fall. XP is kept.")
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            ForEach(Array(others.enumerated()), id: \.offset) { _, entry in
+                DescentLootRow(loot: entry)
+            }
+            Button("Take it all") { vm.perform(.takeLoot) }
+                .buttonStyle(.primary)
+                .disabled(vm.isBusy)
+        }
+        .onAppear(perform: capture)
+    }
+
+    private var cells: [RewardCell.Item] {
+        var items: [RewardCell.Item] = []
+        if gold > 0 {
+            items.append(RewardCell.Item(kind: .gold, amount: gold, bagBefore: bagBefore ?? snapshot.bag.gold))
+        }
+        if xp > 0 {
+            items.append(RewardCell.Item(kind: .xp, amount: xp, level: xpLevel))
+        }
+        return items
+    }
+
+    /// The bag before the gold, the level bar after the XP; then the cells
+    /// count, once the stamp has landed on the scene.
+    private func capture() {
+        guard bagBefore == nil else { return }
+        bagBefore = snapshot.bag.gold
+        if let char = appState.currentCharacter, xp > 0 {
+            xpLevel = RewardCellLevel.after(level: char.level, xp: char.experience ?? 0, gained: xp)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.countDelay) {
+            counting = true
+        }
+    }
+
+    /// The SLAIN stamp slams in first (`DescentBanner`).
+    private static let countDelay: Double = 0.45
+}
+

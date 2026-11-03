@@ -7,7 +7,7 @@ struct DescentCombatStage: View {
     let hitToken: Int
     let isActive: Bool
     /// Back to the fork for 8% HP. Shown on the scene so the panel keeps one row
-    /// of buttons; a guardian cannot be fled (`canFlee` false — a trait chip says so).
+    /// of buttons; a guardian cannot be fled (`canFlee` false — the duel strip says so).
     var onFlee: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,20 +21,13 @@ struct DescentCombatStage: View {
         }
     }
 
-    private var nameColor: Color {
-        combat.isBoss ? DarkFantasyTheme.textDanger : combat.isElite ? DarkFantasyTheme.btnOrangeBright : DarkFantasyTheme.textPrimary
-    }
-
-    private var kindLabel: String {
-        combat.isBoss ? "Guardian" : combat.isElite ? "Elite" : "Level \(combat.level)"
-    }
-
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 // A dark stage, as on the arena: the painting sits low, the floor
-                // fades into the panel and the foe stands on its own shadow.
-                DescentBackdrop(asset: combat.bg, dim: DescentStyle.combatDim(combat.bg))
+                // fades into the panel and the foe stands on its own shadow. Its
+                // name, health and traits are in the HUD's duel strip, off the art.
+                DescentBackdrop(asset: combat.bg)
                 DescentVignette(strength: 0.6)
                 LinearGradient(
                     stops: [
@@ -76,25 +69,6 @@ struct DescentCombatStage: View {
                         .dualShadow(glowColor: combat.isBoss ? DarkFantasyTheme.danger.opacity(0.25) : .clear, glowRadius: 24, depth: .elevated)
                 }
                 .accessibilityLabel(combat.name)
-
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text(kindLabel.uppercased())
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .tracking(3)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Text(combat.name.uppercased())
-                        .font(DarkFantasyTheme.section)
-                        .tracking(1.5)
-                        .foregroundStyle(nameColor)
-                        .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    DescentEnemyHPBar(fraction: combat.hpFraction, hp: combat.hp, maxHp: combat.maxHp)
-                    DescentTraitChips(combat: combat)
-                }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceSM)
-                .frame(maxHeight: .infinity, alignment: .top)
 
                 if combat.canFlee, let onFlee {
                     fleeButton(onFlee)
@@ -164,67 +138,6 @@ private struct DescentHitWash: ViewModifier {
                 LinearKeyframe(0, duration: 0.25)
             }
         }
-    }
-}
-
-struct DescentEnemyHPBar: View {
-    let fraction: Double
-    let hp: Int
-    let maxHp: Int
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .fill(DarkFantasyTheme.hpCriticalGradient)
-                    .frame(width: geo.size.width * max(0, min(1, fraction)))
-                    .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
-                    .animation(.easeOut(duration: MotionConstants.normal), value: fraction)
-            }
-        }
-        .frame(height: 12)
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-        )
-        .accessibilityElement()
-        .accessibilityLabel("Enemy health \(hp) of \(maxHp)")
-    }
-}
-
-struct DescentTraitChips: View {
-    let combat: DescentCombat
-
-    var body: some View {
-        DescentFlowLayout(spacing: LayoutConstants.spaceXS) {
-            ForEach(combat.traits) { trait in
-                chip(trait.label, color: DarkFantasyTheme.textSecondary)
-            }
-            if !combat.canFlee {
-                chip("No escape", color: DarkFantasyTheme.textSecondary)
-            }
-            if combat.windup {
-                chip("Crushing blow next round", color: DarkFantasyTheme.textDanger)
-            }
-            if combat.enraged {
-                chip("Frenzied", color: DarkFantasyTheme.btnOrangeBright)
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func chip(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(DarkFantasyTheme.buttonLabelCompact)
-            .foregroundStyle(color)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.space2XS)
-            .background(Capsule().fill(DarkFantasyTheme.bgAbyss.opacity(0.7)))
-            .overlay(Capsule().stroke(color.opacity(0.4), lineWidth: 1))
     }
 }
 
@@ -331,7 +244,7 @@ struct DescentChestStage: View {
         GeometryReader { geo in
             let width = min(geo.size.width * 0.72, geo.size.height * 0.85)
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-treasure", dim: 0.4)
+                DescentBackdrop(asset: "rush2-bg-treasure")
                 DescentVignette(strength: 0.55)
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate
@@ -420,7 +333,7 @@ struct DescentEventStage: View {
             let aspect = event.scene == "rush2-ev-runedoor" ? DescentGeometry.runeDoorAspect : DescentGeometry.sceneAspect
             let map = DescentSceneMapper(size: geo.size, aspect: aspect, focusY: 0.5)
             ZStack {
-                DescentBackdrop(asset: event.scene, dim: 0.22, aspect: aspect, focusY: 0.5)
+                DescentBackdrop(asset: event.scene, aspect: aspect, focusY: 0.5)
                 DescentVignette(strength: 0.5)
                 if let runes = event.runes {
                     TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
@@ -499,7 +412,7 @@ struct DescentCampStage: View {
         GeometryReader { geo in
             let map = DescentSceneMapper(size: geo.size, focusY: 0.62)
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-campfire", dim: 0.2, focusY: 0.62)
+                DescentBackdrop(asset: "rush2-bg-campfire", focusY: 0.62)
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate
                     let fire = map.point(DescentGeometry.campfire)
@@ -526,7 +439,7 @@ struct DescentMerchantStage: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-merchant", dim: 0.32)
+                DescentBackdrop(asset: "rush2-bg-merchant")
                 DescentVignette(strength: 0.5)
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate

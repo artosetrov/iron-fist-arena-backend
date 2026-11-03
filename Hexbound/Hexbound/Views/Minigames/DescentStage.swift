@@ -2,11 +2,14 @@ import SwiftUI
 
 // MARK: - Scene backdrop
 
-/// A Descent painting, aspect-filled and anchored on `focusY`, with the dim and
-/// vignette every room shares. The painting is art; all light on top of it is code.
+/// A Descent painting, aspect-filled and anchored on `focusY`, in the night
+/// grade every room shares (`DescentNightGrade.metal`: the paper and stone go
+/// slate-dark, fire and lava keep their colour). The painting is art; all light
+/// on top of it is code.
 struct DescentBackdrop: View {
     let asset: String
-    var dim: Double = 0.2
+    /// More dark on top of the grade, where text sits over the scene (a title card).
+    var dim: Double = 0
     var aspect: CGFloat = DescentGeometry.sceneAspect
     var focusY: CGFloat = 0.52
 
@@ -19,12 +22,22 @@ struct DescentBackdrop: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: map.imageRect.width, height: map.imageRect.height)
+                    .descentNightGrade(asset)
                     .position(x: map.imageRect.midX, y: map.imageRect.midY)
-                DarkFantasyTheme.bgAbyss.opacity(dim)
+                if dim > 0 {
+                    DarkFantasyTheme.bgAbyss.opacity(dim)
+                }
             }
         }
         .clipped()
         .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// The Descent's night grade at the painting's own exposure.
+    func descentNightGrade(_ asset: String) -> some View {
+        colorEffect(ShaderLibrary.descentNightGrade(.float(DescentStyle.nightExposure(asset))))
     }
 }
 
@@ -319,20 +332,76 @@ struct DescentCoinRain: View {
 
 // MARK: - Banner, flashes, shake
 
-/// "Slain" / "Guardian slain" — stamped across the scene.
+/// "Slain" / "Guardian slain" — a painted stamp slammed across the scene.
+///
+/// The word is part of the painting here: a blood smear for a kill, the iron
+/// plaque of skulls for the guardian — the approved exception to "no text in
+/// art" (ART_STYLE_GUIDE §1, 2026-11-03). Any other text falls back to type.
 struct DescentBanner: View {
     let text: String
 
+    @State private var landed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        Text(text)
-            .font(DarkFantasyTheme.combatCalloutLarge)
-            .tracking(4)
-            .foregroundStyle(DarkFantasyTheme.goldBright)
-            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 2, y: 2)
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 18)
-            .rotationEffect(.degrees(-8))
-            .transition(.opacity)
-            .accessibilityLabel(text)
+        Group {
+            if let asset = Self.stampAsset(for: text) {
+                stamp(asset)
+            } else {
+                Text(text)
+                    .font(DarkFantasyTheme.combatCalloutLarge)
+                    .tracking(4)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 2, y: 2)
+                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 18)
+                    .rotationEffect(.degrees(-8))
+            }
+        }
+        .transition(.opacity)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+
+    /// Slam overlay: the stamp drops from 1.45x onto the scene, a dark pool
+    /// behind it so it reads over any painting, and lands with a heavy thud.
+    private func stamp(_ asset: String) -> some View {
+        let down = landed || reduceMotion
+        return ZStack {
+            Ellipse()
+                .fill(RadialGradient(
+                    colors: [DarkFantasyTheme.bgAbyss.opacity(0.6), DarkFantasyTheme.bgAbyss.opacity(0)],
+                    center: .center, startRadius: 0, endRadius: 190
+                ))
+                .frame(width: 380, height: 230)
+                .opacity(down ? 1 : 0)
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: Self.stampWidth)
+                .rotationEffect(.degrees(-4))
+                .scaleEffect(down ? 1 : 1.45)
+                .opacity(down ? 1 : 0)
+                .depthShadow(.elevated)
+        }
+        .animation(MotionConstants.springBouncy, value: landed)
+        .onAppear {
+            guard !landed else { return }
+            DispatchQueue.main.async { landed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                HapticManager.heavy()
+            }
+        }
+    }
+
+    static let stampWidth: CGFloat = 300
+
+    static func stampAsset(for text: String) -> String? {
+        switch text.lowercased() {
+        case "slain": "rush2-stamp-slain"
+        case "guardian slain": "rush2-stamp-guardian-slain"
+        default: nil
+        }
     }
 }
 

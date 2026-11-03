@@ -503,7 +503,7 @@ private struct DescentRunView: View {
         switch s.screenKind {
         case .depthCard:
             ZStack {
-                DescentBackdrop(asset: "rush2-fork-\(s.depthKey)-1", dim: 0.58)
+                DescentBackdrop(asset: "rush2-fork-\(s.depthKey)-1", dim: 0.35)
                 DescentVignette()
                 DescentTitleCard(eyebrow: "Depth \(s.depthRoman)", title: s.depthName, text: s.depthBlurb)
             }
@@ -528,7 +528,7 @@ private struct DescentRunView: View {
             }
         case .spoils:
             ZStack {
-                DescentBackdrop(asset: s.spoils?.bg ?? "rush2-bg-\(s.depthKey)-hall", dim: 0.3)
+                DescentBackdrop(asset: s.spoils?.bg ?? "rush2-bg-\(s.depthKey)-hall")
                 DescentVignette()
             }
         case .chest:
@@ -547,12 +547,12 @@ private struct DescentRunView: View {
             DescentMerchantStage(isActive: isActive)
         case .relic:
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.45)
+                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.2)
                 DescentVignette()
             }
         case .depthClear:
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.5)
+                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.3)
                 DescentVignette()
                 DescentTitleCard(
                     eyebrow: "Depth \(s.depthRoman) cleared",
@@ -565,10 +565,10 @@ private struct DescentRunView: View {
             // The room the result card fades in over (`DescentResultCard`).
             DescentBackdrop(
                 asset: DescentResultCard.sceneAsset(outcome: s.result?.outcome ?? "dead", depthKey: s.depthKey),
-                dim: 0.5
+                dim: 0.3
             )
         case .unknown:
-            DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall", dim: 0.4)
+            DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall")
         }
     }
 }

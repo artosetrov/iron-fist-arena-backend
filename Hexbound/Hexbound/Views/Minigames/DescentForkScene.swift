@@ -57,7 +57,7 @@ struct DescentForkScene: View {
             let map = DescentSceneMapper(size: geo.size)
             let arches = DescentGeometry.arches(depthKey: snapshot.depthKey, count: count)
             ZStack {
-                DescentBackdrop(asset: asset, dim: fork.isBossGate ? 0.34 : 0.18)
+                DescentBackdrop(asset: asset, dim: fork.isBossGate ? 0.2 : 0)
 
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate

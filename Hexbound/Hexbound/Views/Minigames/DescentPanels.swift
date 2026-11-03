@@ -113,6 +113,98 @@ struct DescentInfoPlate<Icon: View>: View {
     }
 }
 
+/// One of a few options side by side: a large medallion on top, the name and
+/// what it does under it, on the same iron plate as a row. Two options (and
+/// the campfire's three) are cards in a row (`DescentChoiceCards`); longer
+/// lists stay rows.
+struct DescentChoiceCard<Icon: View>: View {
+    let title: String
+    let subtitle: String?
+    var trailing: String?
+    var selected = false
+    var disabled = false
+    var accent: Color = DarkFantasyTheme.gold
+    var direction: DescentDirection?
+    /// Three in a row: a smaller medallion and tighter tracking.
+    var compact = false
+    /// Room kept free at the bottom for a button laid over the card (a fork's LIGHT).
+    var bottomInset: CGFloat = 0
+    let action: () -> Void
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: LayoutConstants.spaceSM) {
+                DescentMedallion(
+                    accent: accent,
+                    lit: selected,
+                    direction: direction,
+                    size: compact ? DescentMedallionMetrics.size : DescentMedallionMetrics.cardSize,
+                    content: icon
+                )
+                Text(title.uppercased())
+                    .font(DarkFantasyTheme.cardTitle)
+                    .tracking(compact ? 1 : 2)
+                    .foregroundStyle(titleStyle)
+                    .shadow(color: selected ? accent.opacity(0.7) : .clear, radius: 8)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(DescentText.attributed(subtitle, base: DarkFantasyTheme.textSecondary))
+                        .font(DarkFantasyTheme.tale)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(5)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let trailing {
+                    Text(trailing)
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.textGold)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, compact ? LayoutConstants.spaceSM : LayoutConstants.spaceMS)
+            .padding(.top, LayoutConstants.spaceMS)
+            .padding(.bottom, LayoutConstants.spaceMD + bottomInset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                DescentPlate(accent: accent, selected: selected, lightFrom: UnitPoint(x: 0.5, y: 0.16), showsChevron: false)
+            }
+            .saturation(disabled ? 0.3 : 1)
+            .opacity(disabled ? 0.6 : 1)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(DescentRowPressStyle())
+        .disabled(disabled)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// Enamel title: cream at the top, the room's colour below (as on a row).
+    private var titleStyle: AnyShapeStyle {
+        if disabled { return AnyShapeStyle(DarkFantasyTheme.textTertiaryAA) }
+        return AnyShapeStyle(LinearGradient(
+            colors: [DarkFantasyTheme.vfxStunGlow, selected ? accent.opacity(0.85) : accent.opacity(0.7)],
+            startPoint: .top, endPoint: .bottom
+        ))
+    }
+}
+
+/// Cards side by side, all as tall as the tallest.
+struct DescentChoiceCards<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            content()
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
 /// Medallion, title, story line and the plate behind them.
 struct DescentPlateContent<Icon: View>: View {
     let title: String
@@ -183,6 +275,8 @@ struct DescentPlateContent<Icon: View>: View {
 
 enum DescentMedallionMetrics {
     static let size: CGFloat = 60
+    /// On a card, where the icon leads.
+    static let cardSize: CGFloat = 76
     /// How far the medallion breaks out past the plate's left edge.
     static let overhang: CGFloat = 10
 }
@@ -192,9 +286,8 @@ struct DescentMedallion<Content: View>: View {
     let accent: Color
     var lit = false
     var direction: DescentDirection?
+    var size: CGFloat = DescentMedallionMetrics.size
     @ViewBuilder let content: () -> Content
-
-    private let size = DescentMedallionMetrics.size
 
     var body: some View {
         ZStack {
@@ -205,7 +298,7 @@ struct DescentMedallion<Content: View>: View {
                 ))
                 .padding(3)
             content()
-                .frame(width: 42, height: 42)
+                .frame(width: size * 0.7, height: size * 0.7)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.85), radius: 2, y: 2)
             // Recessed rim, then the bronze ring and its four rivets.
             Circle()
@@ -255,6 +348,11 @@ struct DescentPlate: View {
     let accent: Color
     var selected = false
     var chamfer: CGFloat = 12
+    /// Where the room's colour lights the plate from: a row's medallion on the
+    /// left (nil), a card's at the top.
+    var lightFrom: UnitPoint? = nil
+    /// A row points on (the chosen passage); a card does not.
+    var showsChevron = true
 
     var body: some View {
         let shape = DescentChamferShape(chamfer: chamfer)
@@ -270,8 +368,8 @@ struct DescentPlate: View {
                 ))
                 shape.fill(RadialGradient(
                     colors: [accent.opacity(selected ? 0.36 : 0.15), accent.opacity(selected ? 0.1 : 0.04), accent.opacity(0)],
-                    center: UnitPoint(x: 16 / max(w, 1), y: 0.5),
-                    startRadius: 0, endRadius: max(w * 0.66, 130)
+                    center: lightFrom ?? UnitPoint(x: 16 / max(w, 1), y: 0.5),
+                    startRadius: 0, endRadius: lightFrom == nil ? max(w * 0.66, 130) : max(h * 0.8, 130)
                 ))
                 Path { p in
                     p.move(to: CGPoint(x: chamfer, y: 2))
@@ -288,7 +386,7 @@ struct DescentPlate: View {
                         .rotationEffect(.degrees(45))
                         .position(point)
                 }
-                if selected {
+                if selected, showsChevron {
                     Path { p in
                         p.move(to: CGPoint(x: w - 20, y: h / 2 - 7))
                         p.addLine(to: CGPoint(x: w - 13, y: h / 2))
@@ -656,6 +754,8 @@ struct DescentVerdict: View {
     let lines: [DescentLine]
     let hint: String?
     let notice: String?
+    /// What the foe does next (a crushing blow) — right above Brace, where it is answered.
+    var warning: String? = nil
 
     var body: some View {
         VStack(spacing: LayoutConstants.space2XS) {
@@ -672,6 +772,11 @@ struct DescentVerdict: View {
             }
             if let notice {
                 Text(notice).foregroundStyle(DarkFantasyTheme.textWarning)
+            }
+            if let warning {
+                Text(warning.uppercased())
+                    .tracking(1)
+                    .foregroundStyle(DarkFantasyTheme.textDanger)
             }
         }
         .font(DarkFantasyTheme.buttonLabelCompact)

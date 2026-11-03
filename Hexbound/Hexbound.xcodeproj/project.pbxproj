@@ -67,6 +67,7 @@
 		D35CE70B0000000000000009 /* DescentSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000009 /* DescentSheets.swift */; };
 		D35CE70B000000000000000A /* DescentStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000A /* DescentStage.swift */; };
 		D35CE70B000000000000000B /* DescentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000B /* DescentStyle.swift */; };
+		D35CE70B000000000000004D /* DescentNightGrade.metal in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000004D /* DescentNightGrade.metal */; };
 		D35CE70B000000000000000C /* DescentText.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000C /* DescentText.swift */; };
 		D35CE70B000000000000000D /* DescentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000D /* DescentViewModel.swift */; };
 		PRIV00001000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */; };
@@ -619,6 +620,7 @@
 		D35CE70A0000000000000009 /* DescentSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentSheets.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000A /* DescentStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStage.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000B /* DescentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStyle.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000004D /* DescentNightGrade.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DescentNightGrade.metal; sourceTree = "<group>"; };
 		D35CE70A000000000000000C /* DescentText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentText.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000D /* DescentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentViewModel.swift; sourceTree = "<group>"; };
 		PRIV00001000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -1840,6 +1842,7 @@
 				D35CE70A0000000000000009 /* DescentSheets.swift */,
 				D35CE70A000000000000000A /* DescentStage.swift */,
 				D35CE70A000000000000000B /* DescentStyle.swift */,
+				D35CE70A000000000000004D /* DescentNightGrade.metal */,
 				D35CE70A000000000000000C /* DescentText.swift */,
 				D35CE70A000000000000000D /* DescentViewModel.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
@@ -2597,6 +2600,7 @@
 				D35CE70B0000000000000009 /* DescentSheets.swift in Sources */,
 				D35CE70B000000000000000A /* DescentStage.swift in Sources */,
 				D35CE70B000000000000000B /* DescentStyle.swift in Sources */,
+				D35CE70B000000000000004D /* DescentNightGrade.metal in Sources */,
 				D35CE70B000000000000000C /* DescentText.swift in Sources */,
 				D35CE70B000000000000000D /* DescentViewModel.swift in Sources */,
 				A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */,

@@ -140,13 +140,16 @@ struct RewardCell: View {
         var shown: Int? = nil
         /// The balance after this reward; nil hides the "Total" line.
         var total: Int? = nil
+        /// Gold that goes into the Descent's bag, at risk until the run ends:
+        /// the bag before it. The line reads "Bag 340 → 520" with the risk dot.
+        var bagBefore: Int? = nil
         /// XP only: the level bar this XP fills; nil hides it.
         var level: RewardCellLevel? = nil
         /// The cell is laid out from the start and faded in on its beat.
         var isVisible: Bool = true
 
         var id: Kind { kind }
-        var hasContext: Bool { total != nil || level != nil }
+        var hasContext: Bool { total != nil || bagBefore != nil || level != nil }
     }
 
     let item: Item
@@ -263,6 +266,9 @@ struct RewardCell: View {
 
     private var spokenLabel: String {
         let total = item.total.map { ", total \($0.formatted())" } ?? ""
+        if item.kind == .gold, let before = item.bagBefore {
+            return "\(item.amount) gold, into your bag: \((before + item.amount).formatted()), at risk"
+        }
         switch item.kind {
         case .gold: return "\(item.amount) gold\(total)"
         case .gems: return "\(item.amount) gems\(total)"
@@ -327,6 +333,15 @@ struct RewardCell: View {
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
+            } else if let before = item.bagBefore {
+                GoldDivider()
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .frame(height: contextRowHeight)
+                // The bag fills as the gold counts; the red dot: at risk until you climb out.
+                ViewThatFits(in: .horizontal) {
+                    bagLine(before: before, after: before + shown, showsBefore: true)
+                    bagLine(before: before, after: before + shown, showsBefore: false)
+                }
             } else if let total = item.total {
                 GoldDivider()
                     .padding(.horizontal, LayoutConstants.spaceXS)
@@ -345,6 +360,24 @@ struct RewardCell: View {
                     .hidden()
             }
         }
+    }
+
+    private func bagLine(before: Int, after: Int, showsBefore: Bool) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Text(showsBefore ? "Bag \(before.formatted()) →" : "Bag")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .monospacedDigit()
+            Text(after.formatted())
+                .font(DarkFantasyTheme.body.weight(.semibold))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .monospacedDigit()
+            Circle()
+                .fill(DarkFantasyTheme.danger)
+                .frame(width: 7, height: 7)
+                .shadow(color: DarkFantasyTheme.dangerGlow, radius: 3)
+        }
+        .lineLimit(1)
     }
 
     private func totalLine(_ total: Int, withWord: Bool) -> some View {

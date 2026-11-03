@@ -33,7 +33,7 @@ struct DescentResultCard: View {
 
     var body: some View {
         ZStack {
-            DescentBackdrop(asset: sceneAsset, dim: 0.62)
+            DescentBackdrop(asset: sceneAsset, dim: 0.4)
                 .ignoresSafeArea()
             DescentVignette()
                 .ignoresSafeArea()
