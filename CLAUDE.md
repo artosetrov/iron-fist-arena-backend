@@ -67,7 +67,7 @@ Repo-wide summary:
 
 Canonical rules: `docs/08_prompts/ART_STYLE_GUIDE.md` (Visual DNA + *Generation Rules*). Repo-wide invariants:
 
-- **AI paints, code rules.** Never bake into a PNG: glow, cast shadows, **text**, particles, motion blur. Those are SwiftUI/VFX code.
+- **AI paints, code rules.** Never bake into a PNG: glow, cast shadows, **text**, particles, motion blur. Those are SwiftUI/VFX code. One approved exception: the Descent's kill stamps (`rush2-stamp-slain`, `rush2-stamp-guardian-slain`) carry their word — see ART_STYLE_GUIDE §1.
 - The style bible (prompt template + the fixed light sentence) goes on every generation call **verbatim**; an approved asset of the same class rides along as the golden anchor.
 - Generate at ≥ 3× display size in points, fill `@1x/@2x/@3x`; no 1x-only imagesets.
 - Key out a magenta background, not white. Approve only in the assembled screen at display size (`canvas` agent, Step 6).

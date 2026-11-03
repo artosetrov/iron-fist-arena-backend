@@ -29,10 +29,28 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
 - **Fights look like the arena:** the dice are the arena's `DiceDieView` tiles on its dice table — two lanes,
   your strike vs their guard and theirs vs yours, with `DiceChipView` results — and they tumble while a round is
   in flight (`DescentViewModel.isRollingRound`). Controls in one row: AUTO `.combatToggle`, Strike `.primary`,
-  Brace / Potion `.combatControl`; Flee (−8% HP) is a small button on the scene, bottom left, and a guardian
-  shows a "No escape" trait chip instead. The room painting is dimmed per asset to one depth (`DescentStyle.combatDim`, luma table
-  `DescentGeometry.backdropLuma` — re-measure if a backdrop is regenerated), so pale Ossuary halls no longer wash
-  the fight out; hits wash the foe red (as the arena boss), crits light only the screen edges in gold.
+  Brace / Potion `.combatControl`; Flee (−8% HP) is a small button on the scene, bottom left (a guardian
+  cannot be fled: "No escape" in the duel strip). Hits wash the foe red (as the arena boss), crits light only
+  the screen edges in gold.
+- **Run screen (2026-11-03, canvas "Descent run screen", variant B):**
+  - *HUD* (`DescentHUD`): one row — back · the depth's name with its track of rooms and the guardian's mark
+    (the whole title opens the map) · the bag with its risk dot. Under it, out of a fight: HP, the +DMG% /
+    CURSED pills and the flask. In a fight, the **duel strip** (`DescentDuelStrip`): your HP and the foe's face
+    to face, the foe's kind and name, and one line of traits (`trait.short`, e.g. "Crush every 3rd"; FRENZIED in
+    orange once it sets in). Nothing is drawn over the foe's art any more. Torches show on the fork's LIGHT
+    button and in the bag, relics in the bag; in a fight the flask is in the action row.
+  - *What comes next* — "Crushing blow next round · Brace" — is in the verdict, right above Brace.
+  - *Night grade* (`DescentNightGrade.metal`, `.descentNightGrade`, on every `DescentBackdrop`): the pale paper
+    and stone go slate-dark, warm saturated bright pixels (fire, lava, torches) keep their colour.
+    `DescentStyle.nightExposure` brings each painting to one depth from `DescentGeometry.backdropLuma` (every
+    room painting — re-measure if one is regenerated or added). `dim:` is now only extra dark for text over a scene.
+  - *Kill stamps* (`DescentBanner`): `rush2-stamp-slain` / `rush2-stamp-guardian-slain`, the word painted in
+    (approved exception, `docs/08_prompts/DESCENT_STAMPS_PROMPTS.md`), slammed in with a heavy haptic.
+  - *Spoils* (`DescentSpoilsPanel`): gold and XP as reward cells — "Bag 340 → 520" with the risk dot, the XP in
+    the level bar — then the other loot as rows.
+  - *Two-way choices* are two cards side by side (`DescentChoiceCard` in `DescentChoiceCards`: a large medallion,
+    the name, what it does under it): a fork of two (LIGHT inside a dark passage's card), an event of two,
+    open/inspect a chest. The campfire's three short options are three cards. Longer lists stay rows.
 - **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
   `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop
