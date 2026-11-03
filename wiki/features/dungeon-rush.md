@@ -57,6 +57,11 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
     open/inspect a chest. The campfire's three short options are three cards. Longer lists stay rows. A title
     too long for one line is set as two lines of its own (`DescentCardTitle`: at " · ", else at the space that
     halves it best), so each line keeps the whole enamel gradient.
+  - *The walk* (`DescentWalkOverlay`, `DescentViewModel.walk`): "Take this path" opens the depth's map and the
+    hero's figure hops along the route to the chosen room (1.1 s, a footstep per hop), the trail inking in behind it.
+    The room is held back until the figure arrives and the server has answered; the map then shows the room for a
+    beat (its token and name — a dark passage's room too) and closes. A tap skips the walk; with Reduce Motion the
+    figure is simply there. Solid ink on the map is where the hero has been, dotted is the way ahead.
 - **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
   `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop

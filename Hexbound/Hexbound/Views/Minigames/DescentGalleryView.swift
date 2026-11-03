@@ -25,6 +25,7 @@ struct DescentGalleryView: View {
             model.snapshot = fixture.snapshot
             model.phase = .playing
             model.banner = fixture.banner
+            model.walk = DescentGalleryFixtures.walk(page)
             if let fork = fixture.snapshot.fork {
                 model.selectedNodeId = fork.options.first(where: { $0.known })?.id
             }
@@ -34,7 +35,7 @@ struct DescentGalleryView: View {
 }
 
 enum DescentGalleryFixtures {
-    static let pageCount = 11
+    static let pageCount = 13
 
     static func page(_ i: Int) -> (snapshot: DescentSnapshot, banner: String?) {
         switch i {
@@ -48,6 +49,8 @@ enum DescentGalleryFixtures {
         case 7: return (snap(screen: "chest", current: 3, tale: "An iron chest, banded and cold.", extra: chest), nil)
         case 8: return (snap(screen: "merchant", current: 3, tale: "A hooded trader blocks the way.", extra: merchant), nil)
         case 10: return (snap(screen: "chest", current: 3, tale: "The lid gives. Coins spill across the stone.", extra: openChest), nil)
+        case 11: return (snap(screen: "fork", current: 2, cleared: true, tale: "Two ways lead on.", map: walkMapBefore, extra: walkFork), nil)
+        case 12: return (snap(screen: "chest", current: 3, tale: "An iron chest, banded and cold.", map: walkMapAfter, extra: chest), nil)
         default: return (snap(screen: "depthCard", current: 0, tale: "The heat rises from below.", extra: ""), nil)
         }
     }
@@ -57,7 +60,7 @@ enum DescentGalleryFixtures {
 
     private static func snap(
         screen: String, depth: Int = 2, depthKey: String = "molten", depthName: String = "The Molten Heart",
-        hero: String = DescentGalleryFixtures.defaultHero, current: Int, cleared: Bool = false, tale: String? = nil, extra: String
+        hero: String = DescentGalleryFixtures.defaultHero, current: Int, cleared: Bool = false, tale: String? = nil, map: String = #"{"rows":[],"startNext":[]}"#, extra: String
     ) -> DescentSnapshot {
         let taleJSON = tale.map { "\"\($0)\"" } ?? "null"
         let json = """
@@ -69,7 +72,7 @@ enum DescentGalleryFixtures {
          "stats":{"kills":3,"rooms":4,"chests":1},
          "progress":{"total":5,"current":\(current),"currentCleared":\(cleared)},
          "tale":\(taleJSON),
-         "map":{"rows":[],"startNext":[]},"fx":[]\(extra.isEmpty ? "" : ",")
+         "map":\(map),"fx":[]\(extra.isEmpty ? "" : ",")
          \(extra)
         }
         """
@@ -109,6 +112,27 @@ enum DescentGalleryFixtures {
     private static let angel = #""event":{"id":"angel","scene":"rush2-ev-angel","text":"A stone angel weeps light into a basin.","done":false,"resultText":null,"loot":[],"then":null,"choices":[{"i":0,"label":"Pray for strength","hint":"{++15% damage+} for the rest of the run.","icon":"rush2-relic-shadowblade","disabledReason":null},{"i":1,"label":"Pray for vigor","hint":"{++150 max HP+} and heal 150.","icon":"rush2-icon-potion","disabledReason":null}],"runes":null}"#
 
     private static let chest = #""chest":{"tier":"iron","name":"Iron chest","inspected":false,"opened":false,"loot":[]}"#
+
+    /// The walk overlay: 11 mid-route from 1-0 into the dark 2-1, 12 arrived (the room revealed).
+    static func walk(_ i: Int) -> DescentWalk? {
+        let before = page(11).snapshot.map
+        switch i {
+        case 11:
+            return DescentWalk(map: before, from: "1-0", to: "2-1", destination: nil, cue: "Only darkness, and a cold draft.",
+                               started: .now, duration: DescentWalk.walkDuration, pinned: 0.55)
+        case 12:
+            return DescentWalk(map: before, from: "1-0", to: "2-1", destination: nil, cue: "Only darkness, and a cold draft.",
+                               started: .now, duration: DescentWalk.walkDuration, arrived: true)
+        default:
+            return nil
+        }
+    }
+
+    private static let walkMapBefore = #"{"rows":[[{"id":"0-0","r":0,"lane":0,"next":["1-0","1-1"],"type":"combat","visited":true,"cleared":true,"reachable":false,"current":false},{"id":"0-2","r":0,"lane":2,"next":["1-1","1-2"],"type":"event","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"1-0","r":1,"lane":0,"next":["2-0","2-1"],"type":"treasure","visited":true,"cleared":true,"reachable":false,"current":true},{"id":"1-1","r":1,"lane":1,"next":["2-0","2-1","2-2"],"type":"combat","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"1-2","r":1,"lane":2,"next":["2-1","2-2"],"type":"elite","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"2-0","r":2,"lane":0,"next":["3-0","3-1"],"type":"combat","visited":false,"cleared":false,"reachable":true,"current":false},{"id":"2-1","r":2,"lane":1,"next":["3-0","3-1","3-2"],"type":null,"visited":false,"cleared":false,"reachable":true,"current":false},{"id":"2-2","r":2,"lane":2,"next":["3-1","3-2"],"type":null,"visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"3-0","r":3,"lane":0,"next":["4-0"],"type":null,"visited":false,"cleared":false,"reachable":false,"current":false},{"id":"3-1","r":3,"lane":1,"next":["4-0","4-2"],"type":"camp","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"3-2","r":3,"lane":2,"next":["4-2"],"type":null,"visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"4-0","r":4,"lane":0,"next":["B"],"type":"camp","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"4-2","r":4,"lane":2,"next":["B"],"type":"merchant","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"B","r":5,"lane":1,"next":[],"type":"boss","visited":false,"cleared":false,"reachable":false,"current":false}]],"startNext":["0-0","0-2"]}"#
+
+    private static let walkMapAfter = #"{"rows":[[{"id":"0-0","r":0,"lane":0,"next":["1-0","1-1"],"type":"combat","visited":true,"cleared":true,"reachable":false,"current":false},{"id":"0-2","r":0,"lane":2,"next":["1-1","1-2"],"type":"event","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"1-0","r":1,"lane":0,"next":["2-0","2-1"],"type":"treasure","visited":true,"cleared":true,"reachable":false,"current":false},{"id":"1-1","r":1,"lane":1,"next":["2-0","2-1","2-2"],"type":"combat","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"1-2","r":1,"lane":2,"next":["2-1","2-2"],"type":"elite","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"2-0","r":2,"lane":0,"next":["3-0","3-1"],"type":"combat","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"2-1","r":2,"lane":1,"next":["3-0","3-1","3-2"],"type":"treasure","visited":true,"cleared":false,"reachable":false,"current":true},{"id":"2-2","r":2,"lane":2,"next":["3-1","3-2"],"type":null,"visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"3-0","r":3,"lane":0,"next":["4-0"],"type":"combat","visited":false,"cleared":false,"reachable":true,"current":false},{"id":"3-1","r":3,"lane":1,"next":["4-0","4-2"],"type":"camp","visited":false,"cleared":false,"reachable":true,"current":false},{"id":"3-2","r":3,"lane":2,"next":["4-2"],"type":null,"visited":false,"cleared":false,"reachable":true,"current":false}],[{"id":"4-0","r":4,"lane":0,"next":["B"],"type":"camp","visited":false,"cleared":false,"reachable":false,"current":false},{"id":"4-2","r":4,"lane":2,"next":["B"],"type":"merchant","visited":false,"cleared":false,"reachable":false,"current":false}],[{"id":"B","r":5,"lane":1,"next":[],"type":"boss","visited":false,"cleared":false,"reachable":false,"current":false}]],"startNext":["0-0","0-2"]}"#
+
+    private static let walkFork = #""fork":{"lead":"Two ways lead on.","isBossGate":false,"options":[{"id":"2-0","lane":0,"side":"Left","known":true,"type":"combat","typeName":"Monster","cue":"Claws scrape on stone.","fled":false,"revealed":false},{"id":"2-1","lane":1,"side":"Right","known":false,"type":null,"typeName":null,"cue":"Only darkness, and a cold draft.","fled":false,"revealed":false}]}"#
 
     private static let openChest = #""chest":{"tier":"iron","name":"Iron chest","inspected":false,"opened":true,"loot":[{"kind":"gold","amount":140},{"kind":"potion","amount":1},{"kind":"torch","amount":1}]}"#
 
