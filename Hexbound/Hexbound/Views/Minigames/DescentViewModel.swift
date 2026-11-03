@@ -13,6 +13,46 @@ struct DescentFloater: Identifiable, Equatable {
     let jitter: CGFloat
 }
 
+/// The hero's walk across the depth's map after "Take this path" (`DescentWalkOverlay`):
+/// the map opens, the figure walks the route to the chosen room with the trail
+/// inking in behind it, and the room appears once the walk is over and the
+/// server has answered. A tap skips the walk.
+struct DescentWalk: Equatable {
+    /// The map as it was when the hero set off.
+    let map: DescentMap
+    /// The room the hero leaves; nil at the depth's entrance.
+    let from: String?
+    let to: String
+    /// The room's name when it is known ("Monster"); nil for a dark passage.
+    let destination: String?
+    /// What the passage sounded like ("Claws scrape on stone.").
+    let cue: String
+    let started: Date
+    /// Along the route; 0 with Reduce Motion (the figure is simply there).
+    let duration: TimeInterval
+    var skipped = false
+    /// The server answered: the room is in, and the map shows it for a beat before it closes.
+    var arrived = false
+    /// Previews only: a fixed point along the route.
+    var pinned: Double?
+
+    /// The map fades in before the figure sets off.
+    static let lead: TimeInterval = 0.25
+    static let walkDuration: TimeInterval = 1.1
+    /// Hops of the figure along the route, one footstep each.
+    static let steps = 3
+
+    /// 0…1 along the route at `date`.
+    func progress(at date: Date) -> Double {
+        if let pinned { return pinned }
+        if skipped || arrived || duration <= 0 { return 1 }
+        return min(max((date.timeIntervalSince(started) - Self.lead) / duration, 0), 1)
+    }
+
+    /// When the figure reaches the room — the walk alone, not the server.
+    var endsAt: Date { started.addingTimeInterval(Self.lead + duration) }
+}
+
 /// Dungeon Rush v2 "The Descent".
 ///
 /// The server owns the run: this view model sends one action at a time with the
@@ -51,6 +91,8 @@ final class DescentViewModel {
     var showMap = false
     var showBag = false
     var showAbandonConfirm = false
+    /// The hero walking the map to the room just chosen (`DescentWalkOverlay`).
+    var walk: DescentWalk?
 
     // MARK: FX beats (the views animate on token changes)
 
@@ -69,6 +111,7 @@ final class DescentViewModel {
 
     @ObservationIgnored private var autoTask: Task<Void, Never>?
     @ObservationIgnored private var bannerTask: Task<Void, Never>?
+    @ObservationIgnored private var footstepTask: Task<Void, Never>?
 
     init(appState: AppState, cache: GameDataCache?) {
         self.appState = appState
@@ -152,6 +195,7 @@ final class DescentViewModel {
     func onDisappear() {
         stopAuto()
         bannerTask?.cancel()
+        footstepTask?.cancel()
     }
 
     // MARK: - Player actions
@@ -170,9 +214,31 @@ final class DescentViewModel {
         HapticManager.selection()
     }
 
+    /// "Take this path": the map opens and the hero walks there (`walk`) while the
+    /// move goes to the server.
     func enterSelected() {
-        guard let option = selectedOption else { return }
+        guard let option = selectedOption, let s = snapshot, !isBusy else { return }
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+        walk = DescentWalk(
+            map: s.map,
+            from: s.map.rows.joined().first(where: { $0.current })?.id,
+            to: option.id,
+            destination: option.known ? option.typeName : nil,
+            cue: option.cue,
+            started: .now,
+            duration: reduceMotion ? 0 : DescentWalk.walkDuration
+        )
+        SFXManager.shared.play(.scrollUnfurl)
+        if !reduceMotion { playFootsteps() }
         perform(.move(nodeId: option.id))
+    }
+
+    /// A tap on the map: the figure is there at once.
+    func skipWalk() {
+        guard var w = walk, !w.skipped, !w.arrived else { return }
+        w.skipped = true
+        walk = w
+        footstepTask?.cancel()
     }
 
     func toggleAuto() {
@@ -200,20 +266,25 @@ final class DescentViewModel {
         guard let snap = snapshot else { return }
         switch await service.act(runId: snap.runId, seq: snap.seq, action: action) {
         case .success(let res):
+            await finishWalk()
             apply(res.view, playFx: true)
             applyRewards(res)
+            await arrive()
         case .failure(.stale(let view)):
+            endWalk()
             if let view {
                 apply(view, playFx: false)
             } else {
                 await refresh()
             }
         case .failure(.runOver(let message)):
+            endWalk()
             stopAuto()
             snapshot = nil
             phase = .intro
             appState.showToast(message, type: .info)
         case .failure(let failure):
+            endWalk()
             stopAuto()
             SFXManager.shared.play(.uiError)
             appState.showToast(
@@ -222,6 +293,49 @@ final class DescentViewModel {
                 actionLabel: "Retry"
             ) { [weak self] in
                 self?.perform(action)
+            }
+        }
+    }
+
+    // MARK: - The walk
+
+    /// Holds the room back until the figure has reached it (or the walk was
+    /// skipped), so the room's sounds start as the map shows the arrival.
+    private func finishWalk() async {
+        while let w = walk, !w.skipped, !w.arrived, w.pinned == nil {
+            let left = w.endsAt.timeIntervalSinceNow
+            if left <= 0 { break }
+            try? await Task.sleep(for: .milliseconds(Int(min(left, 0.05) * 1000) + 1))
+        }
+    }
+
+    /// The room is in: the map shows it for a beat — its token, the trail
+    /// up to it — then closes.
+    private func arrive() async {
+        guard var w = walk else { return }
+        w.arrived = true
+        walk = w
+        footstepTask?.cancel()
+        try? await Task.sleep(for: .milliseconds(w.skipped ? 150 : 600))
+        walk = nil
+    }
+
+    /// The move failed: the map closes on the fork.
+    private func endWalk() {
+        footstepTask?.cancel()
+        walk = nil
+    }
+
+    /// One footstep per hop of the figure.
+    private func playFootsteps() {
+        footstepTask?.cancel()
+        footstepTask = Task { [weak self] in
+            let step = DescentWalk.walkDuration / Double(DescentWalk.steps)
+            try? await Task.sleep(for: .seconds(DescentWalk.lead + step / 2))
+            for _ in 0..<DescentWalk.steps {
+                guard !Task.isCancelled, let w = self?.walk, !w.skipped, !w.arrived else { return }
+                SFXManager.shared.play(.footstepStone)
+                try? await Task.sleep(for: .seconds(step))
             }
         }
     }
