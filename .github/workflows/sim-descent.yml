@@ -1,0 +1,113 @@
+# TEMPORARY — throwaway branch claude/sim-descent only. Builds the app for a simulator,
+# launches it with -DescentGallery (a DEBUG page: the Descent run screen in fixed states)
+# and screenshots each page, so the screen can be reviewed without a dev Mac.
+# Not for main; delete the branch after review.
+name: Sim descent (temporary)
+
+on:
+  push:
+    branches: [claude/sim-descent]
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Placeholder runtime config (launches; no real backend)
+        run: |
+          cp Hexbound/Config/Local.secrets.example.xcconfig Hexbound/Config/Local.secrets.xcconfig
+          sed -i '' 's/^HEXBOUND_SENTRY_DSN = .*/HEXBOUND_SENTRY_DSN =/' Hexbound/Config/Local.secrets.xcconfig
+
+      - name: Pick an iPhone simulator (Pro and SE-sized)
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json, subprocess
+          d = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))["devices"]
+          devs = [(rt, dev) for rt, ds in d.items() if "iOS" in rt for dev in ds]
+          devs.sort(key=lambda c: c[0])
+          def pick(pred):
+              c = [x for x in devs if pred(x[1]["name"])]
+              return c[-1][1]["udid"] if c else ""
+          print("UDID=" + pick(lambda n: n.endswith("Pro") and "iPhone" in n))
+          print("UDID_SMALL=" + pick(lambda n: "SE" in n or n.endswith("iPhone 16e") or n.endswith("iPhone 17e")))
+          PY
+          cat "$GITHUB_ENV"
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Hexbound/Hexbound.xcodeproj \
+            -scheme Hexbound \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
+      - name: Screenshot the gallery
+        run: |
+          mkdir -p sim-descent
+          APP=$(find build/Build/Products -maxdepth 2 -name "Hexbound.app" | head -1)
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          python3 - "$APP" "$BID" <<'PY'
+          import os, subprocess, sys, time
+          app, bid = sys.argv[1], sys.argv[2]
+          # One launch per page (-DescentGalleryPage N). SETTLE covers the stamp and the counting cells.
+          PAGES, SETTLE = 10, 6.0
+          def run(*a):
+              return subprocess.run(["xcrun", "simctl", *a], capture_output=True, text=True)
+          for tag, udid in (("pro", os.environ.get("UDID")), ("small", os.environ.get("UDID_SMALL"))):
+              if not udid:
+                  continue
+              run("boot", udid); run("bootstatus", udid, "-b")
+              run("status_bar", udid, "override", "--time", "9:41", "--batteryState", "charged", "--batteryLevel", "100")
+              run("install", udid, app); time.sleep(3)
+              run("launch", udid, bid, "-DescentGallery", "-DescentGalleryPage", "0"); time.sleep(15)  # warm-up
+              for k in range(PAGES):
+                  run("terminate", udid, bid); time.sleep(1)
+                  r = run("launch", udid, bid, "-DescentGallery", "-DescentGalleryPage", str(k))
+                  if r.returncode != 0:
+                      print("launch failed", tag, k, r.stderr.strip())
+                  time.sleep(SETTLE)
+                  r = run("io", udid, "screenshot", f"sim-descent/{tag}_{k:02d}.png")
+                  if r.returncode != 0:
+                      print("screenshot failed", tag, k, r.stderr.strip())
+              run("shutdown", udid)
+          print(sorted(os.listdir("sim-descent")))
+          PY
+
+      - name: Shrink for git
+        run: |
+          cd sim-descent
+          for f in *.png; do
+            [ -e "$f" ] || continue
+            sips -Z 1000 -s format jpeg -s formatOptions 82 "$f" --out "${f%.png}.jpg" >/dev/null
+          done
+          rm -f *.png
+          ls -la | head
+
+      - name: Commit the screenshots to claude/sim-descent-out
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # An orphan commit holding only the screenshots: the checkout is shallow, and
+          # if claude/sim-descent moved during the run a commit on top of it would make
+          # git send the whole tree with a shallow boundary, which GitHub refuses.
+          git checkout --orphan sim-out
+          git rm -rf --cached . >/dev/null
+          echo "run ${GITHUB_RUN_ID} of ${GITHUB_SHA}" > sim-descent/RUN.txt
+          git add -f sim-descent
+          git commit -q -m "chore: descent screenshots [skip ci]"
+          if ! git push --force origin HEAD:refs/heads/claude/sim-descent-out 2> push.err; then
+            echo "::error::push failed: $(tr '\n' ' ' < push.err | cut -c1-900)"
+            exit 1
+          fi

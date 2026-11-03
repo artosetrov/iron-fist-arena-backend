@@ -67,6 +67,7 @@
 		D35CE70B0000000000000009 /* DescentSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A0000000000000009 /* DescentSheets.swift */; };
 		D35CE70B000000000000000A /* DescentStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000A /* DescentStage.swift */; };
 		D35CE70B000000000000000B /* DescentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000B /* DescentStyle.swift */; };
+		D35CE70B000000000000004E /* DescentGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000004E /* DescentGalleryView.swift */; };
 		D35CE70B000000000000004D /* DescentNightGrade.metal in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000004D /* DescentNightGrade.metal */; };
 		D35CE70B000000000000000C /* DescentText.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000C /* DescentText.swift */; };
 		D35CE70B000000000000000D /* DescentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35CE70A000000000000000D /* DescentViewModel.swift */; };
@@ -620,6 +621,7 @@
 		D35CE70A0000000000000009 /* DescentSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentSheets.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000A /* DescentStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStage.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000B /* DescentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentStyle.swift; sourceTree = "<group>"; };
+		D35CE70A000000000000004E /* DescentGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentGalleryView.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000004D /* DescentNightGrade.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DescentNightGrade.metal; sourceTree = "<group>"; };
 		D35CE70A000000000000000C /* DescentText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentText.swift; sourceTree = "<group>"; };
 		D35CE70A000000000000000D /* DescentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescentViewModel.swift; sourceTree = "<group>"; };
@@ -1842,6 +1844,7 @@
 				D35CE70A0000000000000009 /* DescentSheets.swift */,
 				D35CE70A000000000000000A /* DescentStage.swift */,
 				D35CE70A000000000000000B /* DescentStyle.swift */,
+				D35CE70A000000000000004E /* DescentGalleryView.swift */,
 				D35CE70A000000000000004D /* DescentNightGrade.metal */,
 				D35CE70A000000000000000C /* DescentText.swift */,
 				D35CE70A000000000000000D /* DescentViewModel.swift */,
@@ -2600,6 +2603,7 @@
 				D35CE70B0000000000000009 /* DescentSheets.swift in Sources */,
 				D35CE70B000000000000000A /* DescentStage.swift in Sources */,
 				D35CE70B000000000000000B /* DescentStyle.swift in Sources */,
+				D35CE70B000000000000004E /* DescentGalleryView.swift in Sources */,
 				D35CE70B000000000000004D /* DescentNightGrade.metal in Sources */,
 				D35CE70B000000000000000C /* DescentText.swift in Sources */,
 				D35CE70B000000000000000D /* DescentViewModel.swift in Sources */,

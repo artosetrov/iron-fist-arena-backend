@@ -18,9 +18,30 @@ struct HexboundApp: App {
     /// takes about this long; the launch never hands over before it has played.
     private static let minimumBootDuration: Duration = .seconds(2)
 
+    // TEMPORARY (claude/sim-descent): the Descent gallery for CI screenshots.
+    private static let galleryPage: Int? = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        guard args.contains("-DescentGallery") else { return nil }
+        if let i = args.firstIndex(of: "-DescentGalleryPage"), i + 1 < args.count { return Int(args[i + 1]) ?? 0 }
+        return 0
+        #else
+        return nil
+        #endif
+    }()
+
+    @ViewBuilder private func galleryView(_ page: Int) -> some View {
+        #if DEBUG
+        DescentGalleryView(page: page)
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             ZStack {
+                if let page = Self.galleryPage {
+                    galleryView(page)
+                } else {
                 // `currentScreen` starts at `.auth`, so a cold start opens on
                 // the title screen in its launch state.
                 switch appState.currentScreen {
@@ -38,6 +59,7 @@ struct HexboundApp: App {
                     OnboardingCinematicView(heroName: heroName)
                 case .game:
                     MainRouterView()
+                }
                 }
             }
             .environment(appState)

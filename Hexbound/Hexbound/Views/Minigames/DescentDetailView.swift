@@ -422,7 +422,7 @@ private struct DescentRulesSheet: View {
 
 // MARK: - A run in progress
 
-private struct DescentRunView: View {
+struct DescentRunView: View {  // TEMPORARY internal for the sim gallery
     @Bindable var vm: DescentViewModel
     let snapshot: DescentSnapshot
     let isActive: Bool
