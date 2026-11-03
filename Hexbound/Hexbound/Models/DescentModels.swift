@@ -221,7 +221,11 @@ struct DescentCombat: Decodable, Equatable {
 struct DescentTrait: Decodable, Equatable, Identifiable {
     let key: String
     let label: String
+    /// The trait in a few words ("Crush every 3rd") for the duel strip; older servers omit it.
+    let short: String?
     var id: String { key }
+
+    var shortLabel: String { short ?? label }
 }
 
 struct DescentLine: Decodable, Equatable {

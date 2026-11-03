@@ -47,16 +47,20 @@ enum DescentStyle {
         }
     }
 
-    /// How far a fight's painting is dimmed. Every room is brought down to about
-    /// the same depth (`combatLuma`), so the foe is the brightest thing on screen —
-    /// as on the arena's dark stage. The pale parchment rooms (the Ossuary, the
-    /// treasure vault) need about twice the dim of the dark Warrens.
-    static func combatDim(_ asset: String) -> Double {
-        guard let luma = DescentGeometry.backdropLuma[asset], luma > 0 else { return 0.55 }
-        return min(0.72, max(0.36, 1 - combatLuma / luma))
+    /// How bright the night grade (`DescentNightGrade.metal`) leaves a painting.
+    /// Every room is brought to about the same depth (`nightLuma`), so a pale
+    /// parchment room (the Ossuary, the treasure vault, the angel) and a dark one
+    /// (the Warrens) read as the same night, and the foe and the fire stay the
+    /// brightest things on screen.
+    static func nightExposure(_ asset: String) -> Double {
+        guard let luma = DescentGeometry.backdropLuma[asset], luma > 0 else { return 1 }
+        return min(1.2, max(0.65, nightLuma / (nightTint * luma)))
     }
 
-    static let combatLuma = 0.17
+    /// Mean luminance the night grade aims for.
+    static let nightLuma = 0.13
+    /// How much of a painting's luminance the slate tint keeps.
+    static let nightTint = 0.41
 }
 
 // MARK: - Fork geometry
@@ -77,8 +81,9 @@ enum DescentGeometry {
     static let sceneAspect: CGFloat = 1290.0 / 1747.0
     static let runeDoorAspect: CGFloat = 1290.0 / 1669.0
 
-    /// Mean luminance (0…1) of each room a fight can happen in, measured on the
-    /// @3x JPEG. Re-measure when a painting is regenerated.
+    /// Mean luminance (0…1) of each room painting, measured on the @3x image —
+    /// the night grade's exposure (`DescentStyle.nightExposure`). Re-measure when
+    /// a painting is regenerated or added.
     static let backdropLuma: [String: Double] = [
         "rush2-bg-ossuary-hall": 0.467,
         "rush2-bg-ossuary-elite": 0.464,
@@ -90,6 +95,26 @@ enum DescentGeometry {
         "rush2-bg-molten-elite": 0.325,
         "rush2-bg-molten-arena": 0.335,
         "rush2-bg-treasure": 0.5,
+        "rush2-bg-campfire": 0.379,
+        "rush2-bg-merchant": 0.324,
+        "rush2-bg-entrance": 0.367,
+        "rush2-fork-ossuary-1": 0.475,
+        "rush2-fork-ossuary-2": 0.434,
+        "rush2-fork-ossuary-3": 0.483,
+        "rush2-fork-warrens-1": 0.262,
+        "rush2-fork-warrens-2": 0.217,
+        "rush2-fork-warrens-3": 0.283,
+        "rush2-fork-molten-1": 0.252,
+        "rush2-fork-molten-2": 0.236,
+        "rush2-fork-molten-3": 0.249,
+        "rush2-ev-altar": 0.363,
+        "rush2-ev-angel": 0.51,
+        "rush2-ev-bridge": 0.339,
+        "rush2-ev-cache": 0.512,
+        "rush2-ev-explorer": 0.491,
+        "rush2-ev-fountain": 0.444,
+        "rush2-ev-runedoor": 0.445,
+        "rush2-ev-troll": 0.326,
     ]
 
     static let archTable: [String: [DescentArch]] = [

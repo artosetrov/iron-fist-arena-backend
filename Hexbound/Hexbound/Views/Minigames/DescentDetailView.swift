@@ -467,12 +467,19 @@ private struct DescentRunView: View {
                         DescentBanner(text: banner)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // The scene takes what the HUD and the panel leave, never more: nothing
+                // on it (a stamp and its dark pool) may push the buttons off the screen.
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
                 .clipped()
                 .descentShake(vm.shakeToken)
 
-                DescentPanel(maxHeight: geo.size.height * 0.52) {
-                    DescentRunPanel(vm: vm, snapshot: snapshot, onLeave: onLeave)
+                // Up to 58% of the screen: on a small phone a fork's two cards or the
+                // spoils fit above their button; taller (a merchant, relic picks), the
+                // panel scrolls and the buttons stay put.
+                DescentPanel(maxHeight: geo.size.height * 0.58) {
+                    DescentRunPanel(vm: vm, snapshot: snapshot)
+                } footer: {
+                    DescentRunActions(vm: vm, snapshot: snapshot, onLeave: onLeave)
                 }
                 .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea(edges: .bottom))
             }
@@ -503,7 +510,7 @@ private struct DescentRunView: View {
         switch s.screenKind {
         case .depthCard:
             ZStack {
-                DescentBackdrop(asset: "rush2-fork-\(s.depthKey)-1", dim: 0.58)
+                DescentBackdrop(asset: "rush2-fork-\(s.depthKey)-1", dim: 0.35)
                 DescentVignette()
                 DescentTitleCard(eyebrow: "Depth \(s.depthRoman)", title: s.depthName, text: s.depthBlurb)
             }
@@ -528,7 +535,7 @@ private struct DescentRunView: View {
             }
         case .spoils:
             ZStack {
-                DescentBackdrop(asset: s.spoils?.bg ?? "rush2-bg-\(s.depthKey)-hall", dim: 0.3)
+                DescentBackdrop(asset: s.spoils?.bg ?? "rush2-bg-\(s.depthKey)-hall")
                 DescentVignette()
             }
         case .chest:
@@ -547,12 +554,12 @@ private struct DescentRunView: View {
             DescentMerchantStage(isActive: isActive)
         case .relic:
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.45)
+                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.2)
                 DescentVignette()
             }
         case .depthClear:
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.5)
+                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.3)
                 DescentVignette()
                 DescentTitleCard(
                     eyebrow: "Depth \(s.depthRoman) cleared",
@@ -565,10 +572,10 @@ private struct DescentRunView: View {
             // The room the result card fades in over (`DescentResultCard`).
             DescentBackdrop(
                 asset: DescentResultCard.sceneAsset(outcome: s.result?.outcome ?? "dead", depthKey: s.depthKey),
-                dim: 0.5
+                dim: 0.3
             )
         case .unknown:
-            DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall", dim: 0.4)
+            DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-hall")
         }
     }
 }

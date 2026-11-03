@@ -92,6 +92,15 @@ export const TRAITS: Record<TraitKey, string> = {
   enrage: 'Frenzy below 35% HP',
 }
 
+/** The same traits in a few words: the fight's one-line strip on iOS (the duel strip). */
+export const TRAIT_SHORT: Record<TraitKey, string> = {
+  regen: 'Mends every 3rd',
+  dodge: 'Evasive',
+  heavy: 'Crush every 3rd',
+  armor: 'Armored',
+  enrage: 'Frenzy below 35%',
+}
+
 export interface DepthDef {
   key: DepthKey
   name: string

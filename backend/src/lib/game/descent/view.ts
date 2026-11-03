@@ -8,7 +8,7 @@
 // =============================================================================
 
 import {
-  CHESTS, CUE_DARK, CUE_FLED, DEPTHS, DEPTH_OPENINGS, DESCENT, FORK_LINES, MOBS, RELICS, TRAITS, TYPE_NAME,
+  CHESTS, CUE_DARK, CUE_FLED, DEPTHS, DEPTH_OPENINGS, DESCENT, FORK_LINES, MOBS, RELICS, TRAITS, TRAIT_SHORT, TYPE_NAME,
   type NodeType, type RelicKey, type TraitKey,
 } from './content'
 import {
@@ -71,7 +71,7 @@ export interface CombatView {
   level: number
   hp: number
   maxHp: number
-  traits: Array<{ key: string; label: string }>
+  traits: Array<{ key: string; label: string; short: string }>
   windup: boolean
   enraged: boolean
   bg: string
@@ -307,7 +307,11 @@ export function buildDescentView(runId: string, s: DescentState, fx: Fx[] = []):
     level: s.combat.level,
     hp: s.combat.hp,
     maxHp: s.combat.maxHp,
-    traits: s.combat.traits.map((t) => ({ key: t, label: TRAITS[t as TraitKey] ?? t })),
+    traits: s.combat.traits.map((t) => ({
+      key: t,
+      label: TRAITS[t as TraitKey] ?? t,
+      short: TRAIT_SHORT[t as TraitKey] ?? TRAITS[t as TraitKey] ?? t,
+    })),
     windup: s.combat.windup,
     enraged: s.combat.enraged,
     bg: s.combat.bg,

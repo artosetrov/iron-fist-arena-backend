@@ -2,13 +2,18 @@ import SwiftUI
 
 // MARK: - Scene backdrop
 
-/// A Descent painting, aspect-filled and anchored on `focusY`, with the dim and
-/// vignette every room shares. The painting is art; all light on top of it is code.
+/// A Descent painting, aspect-filled and anchored on `focusY`, in the night
+/// grade every room shares (`DescentNightGrade.metal`: the paper and stone go
+/// slate-dark, fire and lava keep their colour). The painting is art; all light
+/// on top of it is code.
 struct DescentBackdrop: View {
     let asset: String
-    var dim: Double = 0.2
+    /// More dark on top of the grade, where text sits over the scene (a title card).
+    var dim: Double = 0
     var aspect: CGFloat = DescentGeometry.sceneAspect
     var focusY: CGFloat = 0.52
+    /// Firelight in the room (the campfire), lit into the grade itself.
+    var lights: [DescentLight] = []
 
     var body: some View {
         GeometryReader { geo in
@@ -19,12 +24,56 @@ struct DescentBackdrop: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: map.imageRect.width, height: map.imageRect.height)
+                    .descentNightGrade(asset, lights: lights, size: map.imageRect.size)
                     .position(x: map.imageRect.midX, y: map.imageRect.midY)
-                DarkFantasyTheme.bgAbyss.opacity(dim)
+                if dim > 0 {
+                    DarkFantasyTheme.bgAbyss.opacity(dim)
+                }
             }
         }
         .clipped()
         .accessibilityHidden(true)
+    }
+}
+
+/// A pool of firelight on a painting, for the night grade.
+struct DescentLight: Equatable {
+    /// Where the light sits on the painting (0…1).
+    let center: CGPoint
+    /// How far it reaches, as a share of the painting's width.
+    let radius: CGFloat
+    /// 0…1; pools add up, capped at full light.
+    let strength: Double
+
+    /// The campfire (`DescentGeometry.campfire`): a warm pool on the floor, the
+    /// pack, the pot and the chest, and a faint wash up the cave walls, both
+    /// breathing with the flames. A little brighter once the hero has rested.
+    static func campfire(flicker f: Double, rested: Bool) -> [DescentLight] {
+        let lift = rested ? 1.12 : 1
+        return [
+            DescentLight(center: DescentGeometry.campfire, radius: 0.48 * (0.97 + 0.03 * f), strength: (0.78 + 0.08 * f) * lift),
+            DescentLight(center: DescentGeometry.campfire, radius: 1.2, strength: (0.32 + 0.06 * f) * lift),
+        ]
+    }
+}
+
+extension View {
+    /// The Descent's night grade at the painting's own exposure, with its firelight
+    /// (`size`: the painting as drawn, which the lights are measured on).
+    func descentNightGrade(_ asset: String, lights: [DescentLight] = [], size: CGSize) -> some View {
+        var values: [Float] = []
+        for light in lights {
+            values += [
+                Float(light.center.x * size.width),
+                Float(light.center.y * size.height),
+                Float(light.radius * size.width),
+                Float(light.strength),
+            ]
+        }
+        if values.isEmpty {
+            values = [0, 0, 1, 0]
+        }
+        return colorEffect(ShaderLibrary.descentNightGrade(.float(DescentStyle.nightExposure(asset)), .floatArray(values)))
     }
 }
 
@@ -319,20 +368,80 @@ struct DescentCoinRain: View {
 
 // MARK: - Banner, flashes, shake
 
-/// "Slain" / "Guardian slain" — stamped across the scene.
+/// "Slain" / "Guardian slain" — a painted stamp slammed across the scene.
+///
+/// The word is part of the painting here: a blood smear for a kill, the iron
+/// plaque of skulls for the guardian — the approved exception to "no text in
+/// art" (ART_STYLE_GUIDE §1, 2026-11-03). Any other text falls back to type.
 struct DescentBanner: View {
     let text: String
 
+    @State private var landed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        Text(text)
-            .font(DarkFantasyTheme.combatCalloutLarge)
-            .tracking(4)
-            .foregroundStyle(DarkFantasyTheme.goldBright)
-            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 2, y: 2)
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 18)
-            .rotationEffect(.degrees(-8))
-            .transition(.opacity)
-            .accessibilityLabel(text)
+        Group {
+            if let asset = Self.stampAsset(for: text) {
+                stamp(asset)
+            } else {
+                Text(text)
+                    .font(DarkFantasyTheme.combatCalloutLarge)
+                    .tracking(4)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 2, y: 2)
+                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 18)
+                    .rotationEffect(.degrees(-8))
+            }
+        }
+        .transition(.opacity)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+
+    /// Slam overlay: the stamp drops from 1.45x onto the scene, a dark pool
+    /// behind it so it reads over any painting, and lands with a heavy thud.
+    /// On a short scene (a small phone, a tall panel) it shrinks to fit.
+    private func stamp(_ asset: String) -> some View {
+        let down = landed || reduceMotion
+        return GeometryReader { geo in
+            ZStack {
+                Ellipse()
+                    .fill(RadialGradient(
+                        colors: [DarkFantasyTheme.bgAbyss.opacity(0.6), DarkFantasyTheme.bgAbyss.opacity(0)],
+                        center: .center, startRadius: 0, endRadius: 190
+                    ))
+                    .frame(width: 380, height: min(230, geo.size.height))
+                    .opacity(down ? 1 : 0)
+                Image(asset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: Self.stampWidth, maxHeight: max(geo.size.height - 2 * LayoutConstants.spaceLG, 60))
+                    .rotationEffect(.degrees(-4))
+                    .scaleEffect(down ? 1 : 1.45)
+                    .opacity(down ? 1 : 0)
+                    .depthShadow(.elevated)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .animation(MotionConstants.springBouncy, value: landed)
+        .onAppear {
+            guard !landed else { return }
+            DispatchQueue.main.async { landed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                HapticManager.heavy()
+            }
+        }
+    }
+
+    static let stampWidth: CGFloat = 300
+
+    static func stampAsset(for text: String) -> String? {
+        switch text.lowercased() {
+        case "slain": "rush2-stamp-slain"
+        case "guardian slain": "rush2-stamp-guardian-slain"
+        default: nil
+        }
     }
 }
 

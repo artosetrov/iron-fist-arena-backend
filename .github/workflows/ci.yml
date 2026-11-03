@@ -130,12 +130,14 @@ jobs:
       - name: Verify every Swift file is in the Xcode project
         # A .swift file that is not in project.pbxproj silently does not
         # compile, so the build below would pass while shipping stale code.
+        # Metal shaders (DescentNightGrade.metal) are compiled sources too, so
+        # they count on both sides.
         run: |
-          on_disk=$(find Hexbound -name '*.swift' | wc -l | tr -d ' ')
+          on_disk=$(find Hexbound \( -name '*.swift' -o -name '*.metal' \) | wc -l | tr -d ' ')
           in_proj=$(grep -c 'in Sources \*/ = {isa = PBXBuildFile' Hexbound.xcodeproj/project.pbxproj | tr -d ' ')
           echo "on disk: $on_disk  in project: $in_proj"
           if [ "$on_disk" != "$in_proj" ]; then
-            echo "::error::Swift file count mismatch — a file is missing from project.pbxproj"
+            echo "::error::Source file count mismatch — a .swift or .metal file is missing from project.pbxproj"
             exit 1
           fi
 
