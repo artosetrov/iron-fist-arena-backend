@@ -82,7 +82,8 @@ export async function applyLevelUp(
     console.error('Referral qualification reward error (level-up):', error);
   }
 
-  // Track level-up achievements (fire-and-forget — uses main prisma, not tx)
+  // Track level-up achievements (errors logged, never fail the level-up —
+  // uses main prisma, not tx: they only touch achievement rows).
   try {
     const { prisma } = await import('@/lib/prisma');
     await updateMultipleAchievements(prisma, characterId, [
@@ -91,9 +92,18 @@ export async function applyLevelUp(
       { key: 'reach_level_50', increment: result.newLevel, absolute: true },
     ]);
 
-    // Check milestone rewards (fire-and-forget)
+    // Milestone rewards pay the user's wallet, so they run on the caller's
+    // executor (`tx`): inside a caller's transaction that has already
+    // credited the wallet, a root-client transaction would wait on that row
+    // lock while this waits on it — a deadlock until both time out (P2028 on
+    // /api/dungeon-rush/v2/act, 2026-11-03). With the root client the award
+    // still opens its own transaction.
     const { checkAndAwardMilestones } = await import('./milestones');
-    const awarded = await checkAndAwardMilestones(prisma, characterId, result.newLevel);
+    const awarded = await checkAndAwardMilestones(
+      tx as unknown as Parameters<typeof checkAndAwardMilestones>[0],
+      characterId,
+      result.newLevel,
+    );
     if (awarded.length > 0) {
       result.milestonesAwarded = awarded.map(m => ({
         level: m.level,

@@ -13,7 +13,7 @@
 // (gold surplus was the audit's finding; gems were the scarce currency).
 // =============================================================================
 
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 export interface MilestoneReward {
   gold: number
@@ -176,21 +176,31 @@ export const MILESTONES: MilestoneDefinition[] = [
   },
 ]
 
+type MilestoneDb = PrismaClient | Prisma.TransactionClient
+
+/** The root client can open its own transaction; a caller's transaction cannot. */
+function isRootClient(db: MilestoneDb): db is PrismaClient {
+  return typeof (db as Partial<PrismaClient>).$transaction === 'function'
+}
+
 /**
  * Check and award pending milestone rewards after a level-up.
  * Returns the list of milestones claimed (usually 0 or 1).
+ *
+ * `db` is the root client (the award runs in its own transaction) or the
+ * caller's transaction (the award joins it). A caller inside a transaction
+ * must pass that transaction: its reward has already locked the user's
+ * wallet row, so an award on a transaction of its own waits on that lock
+ * while the caller waits on the award — a deadlock until both time out
+ * (P2028 on /api/dungeon-rush/v2/act, 2026-11-03).
  */
-function isUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002'
-}
-
 export async function checkAndAwardMilestones(
-  prisma: PrismaClient,
+  db: MilestoneDb,
   characterId: string,
   currentLevel: number,
 ): Promise<{ level: number; reward: MilestoneReward }[]> {
   // Get character's userId for gem awards
-  const char = await prisma.character.findUnique({
+  const char = await db.character.findUnique({
     where: { id: characterId },
     select: { userId: true },
   })
@@ -198,7 +208,7 @@ export async function checkAndAwardMilestones(
 
   // Claimed milestones for this ACCOUNT. Rewards are account currency, so a
   // second character crossing L10 must not pay the wallet again.
-  const claimed = await prisma.milestoneClaim.findMany({
+  const claimed = await db.milestoneClaim.findMany({
     where: { userId: char.userId },
     select: { milestoneLevel: true },
   })
@@ -212,29 +222,22 @@ export async function checkAndAwardMilestones(
   if (pendingMilestones.length === 0) return []
 
   // Award all pending milestones in one transaction
-  const awarded: { level: number; reward: MilestoneReward }[] = []
-
-  await prisma.$transaction(async (tx) => {
+  const award = async (tx: Prisma.TransactionClient) => {
+    const awarded: { level: number; reward: MilestoneReward }[] = []
     let totalGold = 0
     let totalGems = 0
 
     for (const milestone of pendingMilestones) {
-      // Create claim record. The (user, level) unique is the real guard: two
+      // Claim record. The (user, level) unique is the real guard: two
       // characters of one account levelling at the same moment (two devices)
-      // both pass the read above, and the second insert must lose quietly
-      // rather than fail that fight's level-up.
-      try {
-        await tx.milestoneClaim.create({
-          data: {
-            userId: char.userId,
-            characterId,
-            milestoneLevel: milestone.level,
-          },
-        })
-      } catch (error) {
-        if (isUniqueViolation(error)) continue
-        throw error
-      }
+      // both pass the read above, and the second insert must lose quietly.
+      // ON CONFLICT DO NOTHING rather than a caught P2002: a raised error
+      // would abort the caller's transaction this may be part of.
+      const { count } = await tx.milestoneClaim.createMany({
+        data: [{ userId: char.userId, characterId, milestoneLevel: milestone.level }],
+        skipDuplicates: true,
+      })
+      if (count === 0) continue
 
       totalGold += milestone.reward.gold
       totalGems += milestone.reward.gems
@@ -251,9 +254,10 @@ export async function checkAndAwardMilestones(
         data: currencyUpdate,
       })
     }
-  })
+    return awarded
+  }
 
-  return awarded
+  return isRootClient(db) ? db.$transaction(award) : award(db)
 }
 
 /**
