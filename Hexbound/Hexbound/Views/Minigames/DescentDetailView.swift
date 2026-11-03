@@ -467,7 +467,9 @@ struct DescentRunView: View {  // TEMPORARY internal for the sim gallery
                         DescentBanner(text: banner)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // The scene takes what the HUD and the panel leave, never more: nothing
+                // on it (a stamp and its dark pool) may push the buttons off the screen.
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
                 .clipped()
                 .descentShake(vm.shakeToken)
 

@@ -46,11 +46,17 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
     room painting — re-measure if one is regenerated or added). `dim:` is now only extra dark for text over a scene.
   - *Kill stamps* (`DescentBanner`): `rush2-stamp-slain` / `rush2-stamp-guardian-slain`, the word painted in
     (approved exception, `docs/08_prompts/DESCENT_STAMPS_PROMPTS.md`), slammed in with a heavy haptic.
-  - *Spoils* (`DescentSpoilsPanel`): gold and XP as reward cells — "Bag 340 → 520" with the risk dot, the XP in
-    the level bar — then the other loot as rows.
+  - *Loot* (`DescentLootSummary`): wherever the panel shows loot — after a fight, the guardian's above the relic
+    pick, an opened chest, an event's find — gold and XP are reward cells ("Bag 340 → 520" with the risk dot, the
+    XP in the level bar), then the other loot as rows.
+  - *Buttons stay on screen*: the room's buttons are a footer pinned under the panel (`DescentRunActions` in
+    `DescentPanel`). The panel takes up to 58% of the screen; past that the part above the buttons scrolls and
+    fades out at the bottom (a merchant's wares, relic picks, an iPhone SE).
   - *Two-way choices* are two cards side by side (`DescentChoiceCard` in `DescentChoiceCards`: a large medallion,
     the name, what it does under it): a fork of two (LIGHT inside a dark passage's card), an event of two,
-    open/inspect a chest. The campfire's three short options are three cards. Longer lists stay rows.
+    open/inspect a chest. The campfire's three short options are three cards. Longer lists stay rows. A title
+    too long for one line is set as two lines of its own (`DescentCardTitle`: at " · ", else at the space that
+    halves it best), so each line keeps the whole enamel gradient.
 - **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
   `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop
