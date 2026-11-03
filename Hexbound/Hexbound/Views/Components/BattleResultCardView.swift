@@ -54,9 +54,8 @@ struct BattleResultCardView: View {
     @State var xpItemVisible = true
     @State var ratingItemVisible = true
 
-    // Completion pulse opacity (1.0 → 0.7 → 1.0 when count-up finishes)
-    @State var goldPulseOpacity: Double = 1.0
-    @State var xpPulseOpacity: Double = 1.0
+    // Rating line's completion pulse (1.0 → 0.7 → 1.0 when its count lands;
+    // the gold and XP cells glow instead)
     @State var ratingPulseOpacity: Double = 1.0
 
     // Hero XP counter roll-up
@@ -182,15 +181,15 @@ struct BattleResultCardView: View {
                     .opacity(showRewards ? 1 : 0)
             }
 
-            // Rewards — one line each; the card grows with the list
+            // Rewards — gold and XP cells, then the rating line
             if hasRewards {
                 rewardsSection(ratingBefore: nil)
                     .opacity(showRewards ? 1 : 0)
                     .offset(y: showRewards ? 0 : 10)
             }
 
-            // XP Bar — HERO SIZE with numbers
-            if let xpBarConfig = config.xpBarConfig {
+            // XP Bar — HERO SIZE with numbers, unless the XP cell carries the level bar
+            if config.xpLevel == nil, let xpBarConfig = config.xpBarConfig {
                 heroXpBarView(xpBarConfig)
                     .opacity(showRewards ? 1 : 0)
             }

@@ -17,7 +17,8 @@ struct TreasureRewardOverlay: View {
 
     @State private var appeared = false
     @State private var cardScale: CGFloat = 0.85
-    @State private var goldCount: Double = 0
+    /// The gold cell starts counting (its own tick-up) when this turns on.
+    @State private var goldCounting = false
     @State private var showBurst = false
     @State private var animationDone = false
     @State private var skipped = false
@@ -100,7 +101,10 @@ struct TreasureRewardOverlay: View {
     private var rewards: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             if gold > 0 {
-                RewardCardRow(icon: "icon-gold", value: "+\(Int(goldCount))", label: "Gold")
+                // A skip shows the full amount at once.
+                RewardCells(items: [
+                    RewardCell.Item(kind: .gold, amount: gold, shown: skipped ? gold : nil),
+                ], isActive: goldCounting)
             }
 
             if let buff, let assetName = buffAssetName {
@@ -173,9 +177,7 @@ struct TreasureRewardOverlay: View {
         if gold > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 SFXManager.shared.play(.coinDrop)
-                withAnimation(.easeOut(duration: animationDuration)) {
-                    goldCount = Double(gold)
-                }
+                goldCounting = true
             }
         }
 
@@ -192,7 +194,6 @@ struct TreasureRewardOverlay: View {
         skipped = true
         withAnimation(.easeOut(duration: 0.1)) {
             cardScale = 1.0
-            goldCount = Double(gold)
         }
         animationDone = true
     }

@@ -4,31 +4,14 @@ extension BattleResultCardView {
 
     // MARK: - Rewards
 
-    /// One line per reward (`RewardCardRow`), in the order they tick up: gold,
-    /// XP, rating. Each line fades in on its beat and dips once its counter lands.
-    /// `ratingBefore` turns the rating line into "+22  1240 → 1262".
+    /// Gold and XP as reward cells (`RewardCells`), then the rating line, in
+    /// the order they tick up. Each fades in on its beat; a cell glows once its
+    /// counter lands, the rating line dips. `ratingBefore` turns the rating
+    /// line into "+22  1240 → 1262".
     func rewardsSection(ratingBefore: Int?) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            if let gold = config.goldReward, gold > 0 {
-                RewardCardRow(
-                    icon: "reward-gold",
-                    value: "+\(goldDisplay)",
-                    label: "Gold",
-                    color: DarkFantasyTheme.goldBright
-                )
-                .opacity(goldPulseOpacity)
-                .opacity(goldItemVisible ? 1 : 0)
-            }
-
-            if let xp = config.xpReward, xp > 0 {
-                RewardCardRow(
-                    icon: "reward-xp",
-                    value: "+\(xpDisplay)",
-                    label: "XP",
-                    color: DarkFantasyTheme.xpRing
-                )
-                .opacity(xpPulseOpacity)
-                .opacity(xpItemVisible ? 1 : 0)
+        VStack(spacing: LayoutConstants.spaceSM) {
+            if !rewardCellItems.isEmpty {
+                RewardCells(items: rewardCellItems)
             }
 
             if let change = config.ratingChange, change != 0 {
@@ -38,6 +21,20 @@ extension BattleResultCardView {
             }
         }
         .padding(.vertical, LayoutConstants.spaceXS)
+    }
+
+    /// The gold and XP cells, counted by this card's own tick-up.
+    var rewardCellItems: [RewardCell.Item] {
+        var items: [RewardCell.Item] = []
+        if let gold = config.goldReward, gold > 0 {
+            items.append(RewardCell.Item(kind: .gold, amount: gold, shown: goldDisplay,
+                                         total: config.goldTotal, isVisible: goldItemVisible))
+        }
+        if let xp = config.xpReward, xp > 0 {
+            items.append(RewardCell.Item(kind: .xp, amount: xp, shown: xpDisplay,
+                                         level: config.xpLevel, isVisible: xpItemVisible))
+        }
+        return items
     }
 
     func ratingRow(change: Int, before: Int?) -> some View {
@@ -600,7 +597,8 @@ extension BattleResultCardView {
                     .opacity(showLoot ? 1 : 0)
             }
 
-            if let xpBarConfig = config.xpBarConfig {
+            // The level bar, unless the XP cell carries it
+            if config.xpLevel == nil, let xpBarConfig = config.xpBarConfig {
                 compactXpRow(xpBarConfig)
                     .opacity(showRewards ? 1 : 0)
             }

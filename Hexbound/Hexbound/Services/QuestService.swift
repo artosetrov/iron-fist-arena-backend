@@ -176,7 +176,8 @@ final class QuestService {
             goldReward: quest.rewardGold,
             gemsReward: gems,
             xpReward: quest.rewardXp,
-            lootItems: []
+            lootItems: [],
+            showsBalance: true  // credited just above
         )
         appState.claimRewardConfig = config
 

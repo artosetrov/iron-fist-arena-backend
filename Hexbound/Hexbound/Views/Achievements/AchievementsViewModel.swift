@@ -111,7 +111,8 @@ final class AchievementsViewModel {
             lootItems: Self.cosmeticLoot(title: reward?.title, frame: reward?.frame),
             onDismiss: { [appState] in appState.releaseLevelUpHold(hold) },
             family: .glory,
-            art: UIImage(named: achievement.badgeAsset) != nil ? .object(achievement.badgeAsset, fill: 0.56) : nil
+            art: UIImage(named: achievement.badgeAsset) != nil ? .object(achievement.badgeAsset, fill: 0.56) : nil,
+            showsBalance: true  // credited just above
         )
         claimRewardConfig = config
 

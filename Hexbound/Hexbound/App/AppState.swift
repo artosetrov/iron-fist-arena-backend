@@ -73,6 +73,11 @@ final class AppState {
     @ObservationIgnored var combatScreenToken: UUID?
     var combatData: CombatData?
     var combatResult: CombatData?
+    /// `combatResult` is a "pvp" fight whose gold and XP are not on the hero
+    /// yet: a dice fight (`/pvp/match/complete`), not a classic one, whose
+    /// `ArenaViewModel.applyResolveToCharacter` credits before the push. The
+    /// result screen credits it optimistically and clears the flag.
+    @ObservationIgnored var combatRewardsNeedCredit = false
     var pendingLoot: [PendingLootItem] = []
     /// Fights finished since the session summary was last shown. The summary
     /// is on-demand; it opens by itself only when the player leaves combat

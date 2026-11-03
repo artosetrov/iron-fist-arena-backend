@@ -303,7 +303,8 @@ final class InboxViewModel {
             goldReward: Self.sum(attachments, type: "gold"),
             gemsReward: Self.sum(attachments, type: "gems"),
             xpReward: Self.sum(attachments, type: "xp"),
-            lootItems: attachments.compactMap(buildLootItem)
+            lootItems: attachments.compactMap(buildLootItem),
+            showsBalance: true  // the claim credits the hero before opening this
         )
     }
 

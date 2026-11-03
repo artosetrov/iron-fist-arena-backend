@@ -42,6 +42,11 @@ struct ClaimRewardConfig: Equatable {
     var family: RewardCardFamily = .tribute
     var tier: RewardCardTier? = nil
     var art: RewardCardArt? = nil
+    /// The hero already holds this reward when the modal opens (the caller
+    /// credited it, optimistically or with the server's totals): the reward
+    /// cells show the balances after it and the level bar. Leave it off when
+    /// the reward lands on the hero later (a shop offer, a referral).
+    var showsBalance: Bool = false
 
     /// The richest reading of this reward: the window's own tier, the amounts, the loot.
     var cardTier: RewardCardTier {
@@ -95,6 +100,8 @@ struct ClaimLootItem: Equatable, Identifiable {
 // MARK: - View
 
 struct ClaimRewardModalView: View {
+
+    @Environment(AppState.self) private var appState
 
     let config: ClaimRewardConfig
     let onDismiss: () -> Void
@@ -240,23 +247,19 @@ struct ClaimRewardModalView: View {
         config.goldReward > 0 || config.gemsReward > 0 || config.xpReward > 0
     }
 
+    /// Gold, gems and XP as reward cells, counted by this card's tick-up; with
+    /// `config.showsBalance`, the balances after them and the level bar.
     @ViewBuilder
     private var rewardsSection: some View {
-        // One line per reward; the card grows with the list.
-        VStack(spacing: LayoutConstants.spaceXS) {
-            if config.goldReward > 0 {
-                RewardCardRow(icon: "icon-gold", value: "+\(goldDisplay)", label: "Gold",
-                              color: DarkFantasyTheme.goldBright)
-            }
-            if config.gemsReward > 0 {
-                RewardCardRow(icon: "icon-gems", value: "+\(gemsDisplay)", label: "Gems",
-                              color: DarkFantasyTheme.purple)
-            }
-            if config.xpReward > 0 {
-                RewardCardRow(icon: "reward-xp", value: "+\(xpDisplay)", label: "XP",
-                              color: DarkFantasyTheme.xpRing)
-            }
+        let hero = config.showsBalance ? appState.currentCharacter : nil
+        let level = hero.flatMap {
+            RewardCellLevel.after(level: $0.level, xp: $0.experience ?? 0, gained: config.xpReward)
         }
+        RewardCells(items: [
+            RewardCell.Item(kind: .gold, amount: config.goldReward, shown: goldDisplay, total: hero?.gold),
+            RewardCell.Item(kind: .gems, amount: config.gemsReward, shown: gemsDisplay, total: hero?.gems),
+            RewardCell.Item(kind: .xp, amount: config.xpReward, shown: xpDisplay, level: level),
+        ])
         .padding(.vertical, LayoutConstants.spaceXS)
     }
 

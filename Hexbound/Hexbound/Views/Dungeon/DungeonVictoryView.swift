@@ -2,17 +2,17 @@ import SwiftUI
 
 /// Victory over a dungeon boss (classic or dice fight), on a painted reward
 /// card over the dungeon: the fallen boss standing on its lair, the stars,
-/// rewards (gold, XP, loot — never PvP rating), the XP bar, the dungeon's
-/// progress, and the next boss already revealed with FIGHT NEXT.
+/// rewards (gold and XP cells — the XP cell carries the level bar —, loot,
+/// never PvP rating), the dungeon's progress, and the next boss already
+/// revealed with FIGHT NEXT.
 ///
 /// The card is the dungeon family; its tier is the boss's level, lifted by
 /// the best drop (`RewardCardTier`). The stage shrinks the illustration, then
 /// scrolls, when the card does not fit.
 ///
-/// Runs the same XP bar fill + LEVEL UP! flash as the arena result screen
-/// and defers the level-up modal until the bar finishes filling. Keep the
-/// two in sync — if the arena animation sequence is tweaked, update
-/// `runXpBarAnimation()` below too.
+/// Defers the level-up modal until the reward has played out, as the arena
+/// result screen does (`runXpBarAnimation()`, which also drives the fallback
+/// XP row when the XP cell has no level bar). Keep the two in sync.
 struct DungeonVictoryView: View {
     @Environment(AppState.self) private var appState
     let vm: DungeonRoomViewModel
@@ -31,6 +31,11 @@ struct DungeonVictoryView: View {
     @State private var hasPlayedSting = false
     @State private var contentShown = false
     @State private var levelUpDelivered = false
+    /// Where the reward went, for the reward cells: the gold balance and the
+    /// level bar (the pre-fight snapshot → the hero as `applyVictory` left
+    /// them). Read once on appear, so the background reload cannot move them.
+    @State private var cellGoldTotal: Int?
+    @State private var cellXpLevel: RewardCellLevel?
 
     /// The next boss teaser: its height and the width of the boss standing in it.
     private static let nextBossHeight: CGFloat = 96
@@ -113,6 +118,7 @@ struct DungeonVictoryView: View {
         }
         .onAppear {
             captureXpSnapshot()
+            captureRewardCells()
             if !hasPlayedSting {
                 hasPlayedSting = true
                 AudioManager.shared.playSting("victory-fanfare.mp3")
@@ -129,7 +135,10 @@ struct DungeonVictoryView: View {
             if !lootDisplays.isEmpty {
                 lootGrid
             }
-            xpRow
+            // The XP cell carries the level bar; this row is its fallback.
+            if cellXpLevel == nil {
+                xpRow
+            }
             progressBlock
             if let next = nextBoss {
                 nextBossCard(next)
@@ -187,20 +196,14 @@ struct DungeonVictoryView: View {
         }
     }
 
-    /// One line per currency; the card grows with the list.
+    /// Gold and XP as reward cells, counting up once the card shows.
     @ViewBuilder
     private var rewardsList: some View {
         if vm.victoryGold > 0 || vm.victoryXP > 0 {
-            VStack(spacing: LayoutConstants.spaceXS) {
-                if vm.victoryGold > 0 {
-                    RewardCardRow(icon: "icon-gold", value: "+\(vm.victoryGold)", label: "Gold",
-                                  color: DarkFantasyTheme.goldBright)
-                }
-                if vm.victoryXP > 0 {
-                    RewardCardRow(icon: "icon-xp", value: "+\(vm.victoryXP)", label: "XP",
-                                  color: DarkFantasyTheme.xpRing)
-                }
-            }
+            RewardCells(items: [
+                RewardCell.Item(kind: .gold, amount: vm.victoryGold, total: cellGoldTotal),
+                RewardCell.Item(kind: .xp, amount: vm.victoryXP, level: cellXpLevel),
+            ], isActive: contentShown)
         }
     }
 
@@ -470,6 +473,22 @@ struct DungeonVictoryView: View {
         }
 
         xpBarProgress = oldXpFraction
+    }
+
+    /// The reward cells' balance and level bar. `applyVictory` credited the
+    /// gold and XP (one level wrapped) before this card opened.
+    private func captureRewardCells() {
+        guard let char = appState.currentCharacter else { return }
+        if vm.victoryGold > 0 {
+            cellGoldTotal = char.gold
+        }
+        guard vm.victoryXP > 0, vm.preFightLevel >= 1, char.level < Character.maxLevel else { return }
+        cellXpLevel = RewardCellLevel(
+            before: .init(level: vm.preFightLevel, xp: max(0, vm.preFightXP),
+                          needed: Character.xpToNextLevel(vm.preFightLevel)),
+            after: .init(level: char.level, xp: max(0, char.experience ?? 0),
+                         needed: Character.xpToNextLevel(char.level))
+        )
     }
 
     /// Show the level-up modal once. Returns true when it was shown now.
