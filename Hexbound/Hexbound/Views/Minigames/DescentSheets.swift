@@ -169,17 +169,19 @@ struct DescentMapBoard: View {
         .accessibilityLabel("Map of this depth")
     }
 
-    /// The figure stands on its room; walking, it hops once per step and leans
-    /// into each one.
+    /// The figure stands on its room like a game piece — its base just below the
+    /// token's centre, so it never reaches the room above — and walking, its base
+    /// follows the route's ink: it hops once per step and leans into each one.
     private func hero(s: CGFloat, at p: CGPoint, phase: Double) -> some View {
         let pace = phase * Double(DescentWalk.steps)
         let hop = sin(.pi * (pace - pace.rounded(.down)))
+        let size = 46 * s
         return Image("rush2-map-hero")
             .resizable()
             .scaledToFit()
-            .frame(width: 52 * s, height: 52 * s)
+            .frame(width: size, height: size)
             .rotationEffect(.degrees(4 * sin(.pi * pace)), anchor: .bottom)
-            .position(x: p.x, y: p.y - 36 * s - CGFloat(hop) * 7 * s)
+            .position(x: p.x, y: p.y + 10 * s - size / 2 - CGFloat(hop) * 7 * s)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
             .accessibilityLabel("You are here")
     }
