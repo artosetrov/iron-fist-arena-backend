@@ -496,6 +496,14 @@ private struct DescentRunView: View {
                 }
             }
         }
+        // "Take this path": the map, the hero walking there; the room shows once he arrives.
+        .overlay {
+            if let walk = vm.walk {
+                DescentWalkOverlay(walk: walk, snapshot: snapshot) { vm.skipWalk() }
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: DescentWalk.lead), value: vm.walk == nil)
         .alert("Abandon the descent?", isPresented: $vm.showAbandonConfirm) {
             Button("Abandon", role: .destructive) { vm.confirmAbandon() }
             Button("Keep going", role: .cancel) {}
@@ -522,7 +530,7 @@ private struct DescentRunView: View {
                     selectedId: vm.selectedNodeId,
                     revealedId: vm.revealedNodeId,
                     revealToken: vm.revealToken,
-                    isActive: isActive && !vm.showMap && !vm.showBag
+                    isActive: isActive && !vm.showMap && !vm.showBag && vm.walk == nil
                 ) { option in
                     vm.select(option)
                 }
