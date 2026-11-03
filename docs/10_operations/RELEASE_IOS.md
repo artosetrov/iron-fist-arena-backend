@@ -7,7 +7,10 @@
 ## Prerequisites
 
 1. **Apple Developer Account** with App Store Connect access
-2. **Xcode 15+** with iOS 17 SDK
+2. **Xcode 15+** with iOS 17 SDK. On **Xcode 26** also the **Metal Toolchain** component: the app compiles a Metal shader
+   (`Views/Minigames/DescentNightGrade.metal`) and Xcode 26 ships the Metal compiler separately — Xcode offers it on the
+   first build ("Download Xcode support for Metal Toolchain?" → Download & Install), or install it ahead:
+   Xcode → Settings → Components, or `xcodebuild -downloadComponent MetalToolchain`.
 3. **Fastlane** installed: `brew install fastlane`
 4. **Upload auth configured**: prefer App Store Connect API key env vars for CI, or use local ignored file `Hexbound/fastlane/Appfile.local`
 5. **Signing**: valid provisioning profile "Hexbound AppStore" for `com.hexbound.app`
@@ -150,6 +153,7 @@ For repo-local smoke verification, `xcodebuild -project Hexbound/Hexbound.xcodep
 | Missing upload auth | Set App Store Connect API key env vars, or create `fastlane/Appfile.local`, or provide `FASTLANE_*` env vars |
 | Build number conflict | Fastlane auto-increments, but if stuck: manually set in Xcode |
 | Thought Swift hardcoded the backend config | Config now comes from `Config/*.xcconfig` + `Info.plist`, not from Swift source |
+| Build stops on "Download Xcode support for Metal Toolchain?" (Xcode 26) | Download & Install — the Metal compiler for `DescentNightGrade.metal`; "Continue without Downloading" fails the build |
 
 ## Rollback
 
