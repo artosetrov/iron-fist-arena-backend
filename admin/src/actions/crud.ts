@@ -34,16 +34,19 @@ const RAW_CRUD_DENYLIST = new Set([
   '_prisma_migrations',
 ])
 
+type AdminUser = NonNullable<Awaited<ReturnType<typeof getAdminUser>>>
+
+/** The admin allowed to edit `tableName` through raw CRUD, or why not. */
 function requireRawCrudAccess(
-  admin: { role: string } | null,
+  admin: AdminUser | null,
   tableName: string,
-): { error: string } | null {
+): { admin: AdminUser } | { error: string } {
   if (!admin) return { error: 'Unauthorized' }
   if (admin.role !== 'admin') return { error: 'Admin role required for raw table edits' }
   if (RAW_CRUD_DENYLIST.has(tableName)) {
     return { error: `Table "${tableName}" cannot be edited through raw CRUD` }
   }
-  return null
+  return { admin }
 }
 
 function sanitizeName(name: string): string {
@@ -170,9 +173,9 @@ export async function createRecord(
   tableName: string,
   data: Record<string, unknown>
 ): Promise<{ success: true } | { error: string }> {
-  const admin = await getAdminUser()
-  const denied = requireRawCrudAccess(admin, tableName)
-  if (denied) return denied
+  const access = requireRawCrudAccess(await getAdminUser(), tableName)
+  if ('error' in access) return access
+  const { admin } = access
 
   try {
     const safeTable = sanitizeName(tableName)
@@ -203,9 +206,9 @@ export async function updateRecord(
   pkValue: string,
   data: Record<string, unknown>
 ): Promise<{ success: true } | { error: string }> {
-  const admin = await getAdminUser()
-  const denied = requireRawCrudAccess(admin, tableName)
-  if (denied) return denied
+  const access = requireRawCrudAccess(await getAdminUser(), tableName)
+  if ('error' in access) return access
+  const { admin } = access
 
   try {
     const safeTable = sanitizeName(tableName)
@@ -237,9 +240,9 @@ export async function deleteRecord(
   pkColumn: string,
   pkValue: string
 ): Promise<{ success: true } | { error: string }> {
-  const admin = await getAdminUser()
-  const denied = requireRawCrudAccess(admin, tableName)
-  if (denied) return denied
+  const access = requireRawCrudAccess(await getAdminUser(), tableName)
+  if ('error' in access) return access
+  const { admin } = access
 
   try {
     const safeTable = sanitizeName(tableName)
