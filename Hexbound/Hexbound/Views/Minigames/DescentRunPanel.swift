@@ -583,4 +583,3 @@ struct DescentSpoilsPanel: View {
     /// The SLAIN stamp slams in first (`DescentBanner`).
     private static let countDelay: Double = 0.45
 }
-
