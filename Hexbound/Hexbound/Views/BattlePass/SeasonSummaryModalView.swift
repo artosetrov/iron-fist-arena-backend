@@ -151,21 +151,34 @@ struct SeasonSummaryModalView: View {
     // MARK: - Stats Grid
 
     /// Two columns, three rows (plain stacks: the card's stage measures its height).
+    ///
+    /// Every cell is the same height. A label always takes the room of two lines,
+    /// so TOTAL BATTLES (wraps) and FINAL LEVEL (one line) match, and each row
+    /// stretches both cells to the taller one in case Dynamic Type changes that.
     private var statsGrid: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            HStack(spacing: LayoutConstants.spaceSM) {
+            statRow {
                 statCell(label: "FINAL LEVEL", value: summary.finalLevel, asset: "reward-level-up", index: 0)
                 statCell(label: "TOTAL BATTLES", value: summary.totalBattles, asset: "icon-fights", index: 1)
             }
-            HStack(spacing: LayoutConstants.spaceSM) {
+            statRow {
                 statCell(label: "VICTORIES", value: summary.wins, asset: "icon-wins", index: 2)
                 statCell(label: "PEAK RANK", value: summary.peakRank, asset: "icon-leaderboard", prefix: "#", index: 3)
             }
-            HStack(spacing: LayoutConstants.spaceSM) {
+            statRow {
                 statCell(label: "GOLD EARNED", value: summary.goldEarned, asset: "icon-gold", index: 4)
                 statCell(label: "REWARDS CLAIMED", value: summary.rewardsClaimed, asset: "hud-gift", index: 5)
             }
         }
+    }
+
+    /// A row whose height is its tallest cell: the cells fill it (`maxHeight: .infinity`),
+    /// and `fixedSize` keeps the row at that height instead of taking the whole card.
+    private func statRow<Cells: View>(@ViewBuilder cells: () -> Cells) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            cells()
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statCell(label: String, value: Int, asset: String, prefix: String = "", index: Int) -> some View {
@@ -188,14 +201,22 @@ struct SeasonSummaryModalView: View {
                 )
             }
 
-            Text(label)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(1)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
+            // Two lines of room for every label; a one-line label sits in the middle.
+            ZStack {
+                Text(verbatim: "X\nX")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .hidden()
+                    .accessibilityHidden(true)
+
+                Text(label)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                    .tracking(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, LayoutConstants.spaceSM)
         .padding(.horizontal, LayoutConstants.spaceXS)
         .background(
