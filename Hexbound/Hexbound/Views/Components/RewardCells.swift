@@ -188,7 +188,7 @@ struct RewardCell: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.vertical, LayoutConstants.spaceMS)
         .padding(.horizontal, LayoutConstants.spaceSM)
-        .background { background }
+        .background { panel }
         .overlay { levelUpFlash }
         .surfaceLighting(cornerRadius: radius, topHighlight: 0.08, bottomShadow: 0.12)
         .innerBorder(cornerRadius: radius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
@@ -276,7 +276,7 @@ struct RewardCell: View {
     // MARK: Background: the fill
 
     /// The cell's panel, and the colour that fills it left to right as the count runs.
-    private var background: some View {
+    private var panel: some View {
         ZStack(alignment: .leading) {
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
