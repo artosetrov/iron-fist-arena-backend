@@ -28,7 +28,7 @@ import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultip
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 import { goldBonusMultiplier, xpBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
-import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
+import { generateDungeonFloorFromDB, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { currentDailyValue } from '@/lib/game/daily-counter'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { Prisma } from '@prisma/client'
@@ -490,7 +490,7 @@ export async function POST(req: NextRequest) {
 
     // For dungeon_boss, pre-compute the next floor + advance conditions so we
     // can bundle the DungeonRun update into the same transaction.
-    let dungeonNextFloorData: ReturnType<typeof generateDungeonFloor> | null = null
+    let dungeonNextFloorData: Awaited<ReturnType<typeof generateDungeonFloorFromDB>> | null = null
     let dungeonIsComplete = false
     let dungeonFloorJustCleared = 0
     if (isDungeonBoss && dungeonRun && attackerWon) {
@@ -500,7 +500,8 @@ export async function POST(req: NextRequest) {
       dungeonIsComplete = bossIndex >= totalBosses
       dungeonNextFloorData = dungeonIsComplete
         ? { enemies: [], isBoss: false }
-        : generateDungeonFloor(dungeonRun.currentFloor + 1, dungeonRun.difficulty, dungeonRun.dungeonId)
+        // DB bosses first — same source the client's trail shows.
+        : await generateDungeonFloorFromDB(dungeonRun.currentFloor + 1, dungeonRun.difficulty, dungeonRun.dungeonId)
     }
 
     // Transactional finalize: idempotent via updateMany(status='in_progress')
