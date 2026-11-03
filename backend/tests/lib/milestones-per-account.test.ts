@@ -13,9 +13,15 @@ function fakePrisma(claims: Claim[], characters: Record<string, { userId: string
   const userUpdates: unknown[] = []
   const tx = {
     milestoneClaim: {
-      create: vi.fn(async ({ data }: { data: Claim }) => {
-        claims.push(data)
-        return data
+      // ON CONFLICT (user, level) DO NOTHING, as Postgres does it.
+      createMany: vi.fn(async ({ data }: { data: Claim[]; skipDuplicates?: boolean }) => {
+        let count = 0
+        for (const row of data) {
+          if (claims.some((c) => c.userId === row.userId && c.milestoneLevel === row.milestoneLevel)) continue
+          claims.push(row)
+          count += 1
+        }
+        return { count }
       }),
     },
     user: { update: vi.fn(async (args: unknown) => { userUpdates.push(args); return {} }) },
@@ -31,7 +37,7 @@ function fakePrisma(claims: Claim[], characters: Record<string, { userId: string
     },
     $transaction: vi.fn(async (fn: (t: typeof tx) => Promise<void>) => fn(tx)),
   }
-  return { prisma, claims, userUpdates }
+  return { prisma, tx, claims, userUpdates }
 }
 
 const first = MILESTONES[0]
@@ -63,6 +69,28 @@ describe('checkAndAwardMilestones', () => {
     const x = await checkAndAwardMilestones(prisma as never, 'char-x', first.level)
     expect(x.map((m) => m.level)).toEqual([first.level])
     expect(userUpdates).toHaveLength(1)
+  })
+
+  it("joins a caller's transaction instead of opening its own (no deadlock on the wallet row)", async () => {
+    const { prisma, tx, userUpdates } = fakePrisma([], { 'char-a': { userId: 'u1' } })
+    // A caller's transaction: the reads and writes of the root client, no $transaction.
+    const callerTx = { character: prisma.character, milestoneClaim: { ...prisma.milestoneClaim, ...tx.milestoneClaim }, user: tx.user }
+
+    const a = await checkAndAwardMilestones(callerTx as never, 'char-a', first.level)
+    expect(a.map((m) => m.level)).toEqual([first.level])
+    expect(prisma.$transaction).not.toHaveBeenCalled()
+    expect(userUpdates).toHaveLength(1)
+  })
+
+  it('skips a milestone another character claimed in the same moment, without raising', async () => {
+    // Both reads saw it unclaimed; the other insert landed first.
+    const { prisma, claims, userUpdates } = fakePrisma([], { 'char-a': { userId: 'u1' } })
+    prisma.milestoneClaim.findMany.mockResolvedValueOnce([])
+    claims.push({ userId: 'u1', characterId: 'char-b', milestoneLevel: first.level })
+
+    const a = await checkAndAwardMilestones(prisma as never, 'char-a', first.level)
+    expect(a).toEqual([])
+    expect(userUpdates).toHaveLength(0)
   })
 
   it('shows a milestone as claimed on every character of the account', async () => {
