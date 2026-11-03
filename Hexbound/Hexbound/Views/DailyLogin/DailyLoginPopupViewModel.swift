@@ -254,7 +254,10 @@ final class DailyLoginPopupViewModel {
             xpReward: 0,
             lootItems: lootItems,
             family: .tribute,
-            tier: Self.cardTier(forDay: claimedDay)
+            tier: Self.cardTier(forDay: claimedDay),
+            // Opened after the optimistic credit, or after the server's
+            // balances (a streak reset) — the hero holds it either way.
+            showsBalance: true
         )
     }
 

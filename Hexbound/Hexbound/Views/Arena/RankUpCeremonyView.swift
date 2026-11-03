@@ -106,16 +106,10 @@ struct RankUpCeremonyView: View {
             // Promotion carries no reward of its own today, so this block is
             // usually absent.
             if goldReward > 0 || gemReward > 0 {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    if goldReward > 0 {
-                        RewardCardRow(icon: "icon-gold", value: "+\(goldReward)", label: "Gold",
-                                      color: DarkFantasyTheme.goldBright)
-                    }
-                    if gemReward > 0 {
-                        RewardCardRow(icon: "icon-gems", value: "+\(gemReward)", label: "Gems",
-                                      color: DarkFantasyTheme.purple)
-                    }
-                }
+                RewardCells(items: [
+                    RewardCell.Item(kind: .gold, amount: goldReward),
+                    RewardCell.Item(kind: .gems, amount: gemReward),
+                ], isActive: showRewards)
                 .opacity(showRewards ? 1 : 0)
             }
         }

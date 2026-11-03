@@ -592,6 +592,8 @@ final class CombatViewModel {
             appState.combatResult = combatData
         }
 
+        // A classic fight: its resolve credits the hero (applyResolveToCharacter).
+        appState.combatRewardsNeedCredit = false
         appState.mainPath.append(AppRoute.combatResult)
     }
 }

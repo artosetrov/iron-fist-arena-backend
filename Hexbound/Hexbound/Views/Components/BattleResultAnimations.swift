@@ -88,10 +88,8 @@ extension BattleResultCardView {
                         goldItemVisible = true
                     }
                     HapticManager.light()
+                    // The cell glows on its own when the count lands.
                     rollUp(to: gold, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
-                        self.pulseReward(.gold)
-                    }
                 }
             }
 
@@ -103,9 +101,6 @@ extension BattleResultCardView {
                     }
                     HapticManager.light()
                     rollUp(to: xp, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
-                        self.pulseReward(.xp)
-                    }
                 }
             }
 
@@ -126,7 +121,7 @@ extension BattleResultCardView {
                         DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(i)) {
                             ratingDisplay = i * sign
                             if i == absTarget {
-                                self.pulseReward(.rating)
+                                self.pulseRating()
                             }
                         }
                     }
@@ -235,25 +230,16 @@ extension BattleResultCardView {
 
     // MARK: - Reward Item Reveal
 
-    enum RewardKind { case gold, xp, rating }
-
-    /// Completion pulse: opacity dip 1.0 → 0.7 → 1.0 (no scale per project rule).
-    func pulseReward(_ kind: RewardKind) {
+    /// The rating line's completion pulse: opacity dip 1.0 → 0.7 → 1.0 (no
+    /// scale per project rule). Gold and XP are cells, which glow instead.
+    func pulseRating() {
         let half = MotionConstants.rewardCompletionPulse / 2
         withAnimation(.easeOut(duration: half)) {
-            switch kind {
-            case .gold:   goldPulseOpacity = 0.7
-            case .xp:     xpPulseOpacity = 0.7
-            case .rating: ratingPulseOpacity = 0.7
-            }
+            ratingPulseOpacity = 0.7
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + half) {
             withAnimation(.easeIn(duration: half)) {
-                switch kind {
-                case .gold:   goldPulseOpacity = 1.0
-                case .xp:     xpPulseOpacity = 1.0
-                case .rating: ratingPulseOpacity = 1.0
-                }
+                ratingPulseOpacity = 1.0
             }
         }
     }

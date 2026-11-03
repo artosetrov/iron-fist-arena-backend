@@ -1093,6 +1093,9 @@ struct InteractiveBattleRouteView: View {
                 // sees the final data.
                 appState.combatResult = data
                 appState.combatData = data
+                // Nothing has put this fight's gold and XP on the hero yet
+                // (a classic fight's resolve does it before its push).
+                appState.combatRewardsNeedCredit = true
                 if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
                 appState.mainPath.append(AppRoute.combatResult)
             } else {

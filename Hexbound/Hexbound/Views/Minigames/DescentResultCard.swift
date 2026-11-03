@@ -19,6 +19,11 @@ struct DescentResultCard: View {
 
     @State private var revealed = false
     @State private var burst = false
+    /// Where the run's reward went, for the reward cells: the gold balance and
+    /// the level bar, read when the card shows (the server's totals are on the
+    /// hero by then — `DescentViewModel.applyRewards`).
+    @State private var cellGoldTotal: Int?
+    @State private var cellXpLevel: RewardCellLevel?
 
     /// Long enough for the floating numbers and the coin rain of the last action.
     private static let revealDelay: Double = 0.9
@@ -64,6 +69,7 @@ struct DescentResultCard: View {
         .accessibilityHidden(!revealed)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.revealDelay) {
+                captureRewardCells()
                 revealed = true
                 guard !fell else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.normal) { burst = true }
@@ -72,6 +78,17 @@ struct DescentResultCard: View {
     }
 
     // MARK: - Reading
+
+    /// The run's XP came in kill by kill (level-ups already shown), so the bar
+    /// is read back from where the hero ended: a run worth more than a level
+    /// reads as one.
+    private func captureRewardCells() {
+        guard let char = appState.currentCharacter else { return }
+        if result.keptGold > 0 {
+            cellGoldTotal = char.gold
+        }
+        cellXpLevel = RewardCellLevel.after(level: char.level, xp: char.experience ?? 0, gained: result.xp)
+    }
 
     private var title: String {
         switch result.outcome {
@@ -143,12 +160,10 @@ struct DescentResultCard: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
-            VStack(spacing: LayoutConstants.spaceXS) {
-                RewardCardRow(icon: "icon-gold", value: "+\(result.keptGold)", label: "Gold")
-                if result.xp > 0 {
-                    RewardCardRow(icon: "reward-xp", value: "+\(result.xp)", label: "XP", color: DarkFantasyTheme.xpRing)
-                }
-            }
+            RewardCells(items: [
+                RewardCell.Item(kind: .gold, amount: result.keptGold, total: cellGoldTotal),
+                RewardCell.Item(kind: .xp, amount: result.xp, level: cellXpLevel),
+            ], isActive: revealed)
 
             if result.keptItems.isEmpty {
                 Text("No items this time")

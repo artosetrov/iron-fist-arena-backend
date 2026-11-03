@@ -19,13 +19,11 @@ struct MineClaimRewardView: View {
     let onDismiss: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppState.self) private var appState
 
-    @State private var shownGold = 0
-    @State private var shownGems = 0
-    /// Latest amounts (a Collect All shows its own count first, then the
-    /// server's) — the delayed count-up reads these, not the first `reward`.
-    @State private var targetGold = 0
-    @State private var targetGems = 0
+    /// The haul's reward cells count once this turns on; a corrected amount
+    /// (a Collect All shows its own count first, then the server's) re-counts
+    /// from where the cell is.
     @State private var counted = false
     @State private var showHaul = false
     @State private var showChest = false
@@ -113,20 +111,13 @@ struct MineClaimRewardView: View {
         .coordinateSpace(.named(Self.space))
         .onPreferenceChange(MineChestAnchorKey.self) { anchors = $0 }
         .onAppear {
-            targetGold = reward.goldEarned
-            targetGems = reward.gemsEarned
             runEntry()
         }
         .onChange(of: reward) { _, next in
             // The server's correction (or the chest) can land after the
             // optimistic Collect All celebration opened — or while it closes.
-            targetGold = next.goldEarned
-            targetGems = next.gemsEarned
+            // The haul cells re-count on their own.
             withAnimation(MotionConstants.smooth) {
-                if counted {
-                    shownGold = next.goldEarned
-                    shownGems = next.gemsEarned
-                }
                 if isClosing {
                     isClosing = false
                     showHaul = true
@@ -157,17 +148,17 @@ struct MineClaimRewardView: View {
         }
     }
 
+    /// Gold and gems as reward cells, with the balances after them: every
+    /// path credits the hero before this opens (a Collect All optimistically,
+    /// a chest or a bonus run with the server's balances, which already hold
+    /// the chest).
     private var haulRows: some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            if reward.goldEarned > 0 {
-                RewardCardRow(icon: "icon-gold", value: "+\(shownGold)", label: "Gold",
-                              color: DarkFantasyTheme.goldBright)
-            }
-            if reward.gemsEarned > 0 {
-                RewardCardRow(icon: "icon-gems", value: "+\(shownGems)", label: "Gems",
-                              color: DarkFantasyTheme.cyan)
-            }
-        }
+        RewardCells(items: [
+            RewardCell.Item(kind: .gold, amount: reward.goldEarned,
+                            total: appState.currentCharacter?.gold),
+            RewardCell.Item(kind: .gems, amount: reward.gemsEarned,
+                            total: appState.currentCharacter?.gems),
+        ], isActive: counted)
     }
 
     private var actionButton: some View {
@@ -279,8 +270,6 @@ struct MineClaimRewardView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             withAnimation(MotionConstants.smooth) {
                 counted = true
-                shownGold = targetGold
-                shownGems = targetGems
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {

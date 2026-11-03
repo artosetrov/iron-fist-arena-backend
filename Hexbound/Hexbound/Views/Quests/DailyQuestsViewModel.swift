@@ -181,7 +181,8 @@ final class DailyQuestsViewModel {
             gemsReward: gems,
             xpReward: quest.rewardXp,
             lootItems: [],
-            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) }
+            onDismiss: { [appState] in appState.releaseLevelUpHold(hold) },
+            showsBalance: true  // credited just above
         )
         claimRewardConfig = config
 
@@ -237,7 +238,8 @@ final class DailyQuestsViewModel {
             lootItems: [],
             onDismiss: { [appState] in appState.releaseLevelUpHold(hold) },
             family: .tribute,
-            tier: .silver  // the day's bonus is worth more than any one quest
+            tier: .silver,  // the day's bonus is worth more than any one quest
+            showsBalance: true  // credited just above
         )
         claimRewardConfig = config
 

@@ -20,8 +20,8 @@ struct VictoryOverlayView: View {
     @Environment(AppState.self) private var appState
 
     @State private var titleOpacity: Double = 0
+    /// The gold and XP cells start (and stagger themselves) when this turns on.
     @State private var goldRowOpacity: Double = 0
-    @State private var xpRowOpacity: Double = 0
     @State private var itemRowOpacity: Double = 0
     @State private var levelUpRowOpacity: Double = 0
     @State private var statPointsRowOpacity: Double = 0
@@ -90,13 +90,15 @@ struct VictoryOverlayView: View {
     private var rewardRows: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             if let rewards = appState.tutorialRewards {
-                RewardCardRow(icon: "icon-gold", value: "+\(rewards.gold)", label: "Gold",
-                              color: DarkFantasyTheme.gold)
-                    .opacity(goldRowOpacity)
-
-                RewardCardRow(icon: "reward-xp", value: "+\(rewards.xp)", label: "XP",
-                              color: DarkFantasyTheme.toastLevelUp)
-                    .opacity(xpRowOpacity)
+                // The hero was reloaded from the server before this opened,
+                // so it already holds the gold and XP: balance and level bar.
+                let hero = appState.currentCharacter
+                RewardCells(items: [
+                    RewardCell.Item(kind: .gold, amount: rewards.gold, total: hero?.gold),
+                    RewardCell.Item(kind: .xp, amount: rewards.xp, level: hero.flatMap {
+                        RewardCellLevel.after(level: $0.level, xp: $0.experience ?? 0, gained: rewards.xp)
+                    }),
+                ], isActive: goldRowOpacity > 0)
 
                 if let itemName = rewards.itemName {
                     RewardCardRow(
@@ -161,9 +163,8 @@ struct VictoryOverlayView: View {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(400))
             withAnimation(.easeOut(duration: 0.4)) { goldRowOpacity = 1 }
-            try? await Task.sleep(for: .milliseconds(250))
-            withAnimation(.easeOut(duration: 0.4)) { xpRowOpacity = 1 }
-            try? await Task.sleep(for: .milliseconds(250))
+            // The XP cell follows a beat later on its own; the next row after it.
+            try? await Task.sleep(for: .milliseconds(500))
             withAnimation(.easeOut(duration: 0.4)) { itemRowOpacity = 1 }
             try? await Task.sleep(for: .milliseconds(250))
             withAnimation(.easeOut(duration: 0.4)) { levelUpRowOpacity = 1 }

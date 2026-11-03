@@ -32,6 +32,10 @@ struct BattleResultConfig {
     var xpBefore: Int? = nil  // XP before this fight
     var xpNeeded: Int? = nil  // Total XP needed for next level
 
+    // Reward cells (RewardCells.swift): where the reward went. nil hides the line.
+    var goldTotal: Int? = nil              // gold balance after this fight
+    var xpLevel: RewardCellLevel? = nil    // the level bar this fight's XP fills
+
     // XP bar (optional — arena/pvp show this)
     let xpBarConfig: XPBarConfig?
 

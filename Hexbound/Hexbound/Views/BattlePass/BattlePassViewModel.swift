@@ -99,6 +99,7 @@ final class BattlePassViewModel {
         let hold = appState.holdLevelUpForCeremony()
         var config = buildClaimRewardConfig(level: level, rewards: expected)
         config.onDismiss = { [appState] in appState.releaseLevelUpHold(hold) }
+        config.showsBalance = true  // credited just above
         claimRewardConfig = config
 
         // ── Confirm ──

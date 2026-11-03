@@ -29,6 +29,12 @@ struct CombatResultDetailView: View {
     /// onAppear can fire again (sheet/back) — count this fight once.
     @State private var fightCounted = false
 
+    /// Where this fight's reward went, for the reward cells: the gold balance
+    /// and the level bar the XP fills. Read once, right after the reward is on
+    /// the hero, so the background reload cannot move them mid-count.
+    @State private var cellGoldTotal: Int?
+    @State private var cellXpLevel: RewardCellLevel?
+
     private var combatData: CombatData? {
         appState.combatResult
     }
@@ -111,7 +117,13 @@ struct CombatResultDetailView: View {
             // only path that updates the counter → keep it for challenge.
             // Dungeon source has its own reward flow via DungeonRoomViewModel
             // and never lands on this screen.
-            let alreadyApplied = (source == "arena" || source == "pvp")
+            //
+            // A dice "pvp" fight (/pvp/match/complete) has no resolve step and
+            // reaches here uncredited (`combatRewardsNeedCredit`): credit it
+            // here like a challenge, or the counters and bars read it as
+            // already counted.
+            let alreadyApplied = (source == "arena" || source == "pvp") && !appState.combatRewardsNeedCredit
+            appState.combatRewardsNeedCredit = false
             if let res = result {
                 let xpReward = res.xpReward ?? 0
                 let goldReward = res.goldReward ?? 0
@@ -145,6 +157,7 @@ struct CombatResultDetailView: View {
                 }
             }
 
+            captureRewardCells()
             captureXpSnapshot()
             // Play victory/defeat SFX
             SFXManager.shared.play(isWin ? .battleVictory : .battleDefeat)
@@ -288,6 +301,8 @@ struct CombatResultDetailView: View {
             firstWinBonus: res.firstWinBonus == true,
             xpBefore: xpBeforeValue,
             xpNeeded: xpNeededValue,
+            goldTotal: cellGoldTotal,
+            xpLevel: cellXpLevel,
             xpBarConfig: XPBarConfig(
                 displayLevel: displayLevel,
                 progress: xpBarProgress,
@@ -718,6 +733,17 @@ struct CombatResultDetailView: View {
 
     private func xpNeededForLevel(_ level: Int) -> Int {
         Character.xpToNextLevel(level)
+    }
+
+    /// The gold balance and the level bar for the reward cells, from the hero
+    /// as this screen's onAppear left it: holding this fight's reward (classic
+    /// fights were credited before the push, everything else just above).
+    private func captureRewardCells() {
+        guard let char = appState.currentCharacter, let res = result else { return }
+        if (res.goldReward ?? 0) > 0 {
+            cellGoldTotal = char.gold
+        }
+        cellXpLevel = RewardCellLevel.after(level: char.level, xp: char.experience ?? 0, gained: res.xpReward ?? 0)
     }
 
     private func captureXpSnapshot() {

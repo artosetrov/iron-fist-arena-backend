@@ -108,11 +108,13 @@ final class BlackMarketViewModel {
                     statPointsAwarded: response.statPointsAwarded,
                     passivePointsAwarded: response.passivePointsAwarded
                 )
-                claimRewardConfig = .fromOfferContents(
+                var config = ClaimRewardConfig.fromOfferContents(
                     title: "CLAIMED!",
                     subtitle: "Drop #\(response.claimNumber)",
                     contents: response.contents
                 )
+                config.showsBalance = true  // the server's totals are applied above
+                claimRewardConfig = config
                 // The cache now holds a pre-claim "available" snapshot — drop
                 // it so the next entry doesn't serve a claimable card.
                 cache.invalidateContraband()

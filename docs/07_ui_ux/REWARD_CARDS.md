@@ -16,8 +16,8 @@ Code: `Views/Components/RewardCard.swift` (card, frame, illustration, title, row
   │     TITLE      │       ← on the fade
   │    subtitle    │
   │  ───── ◆ ───── │
-  │  +24  Rating   │       ← content: one line per reward, loot three to a row, progress…
-  │  +180 Gold     │
+  │ [+180 ][ +60 ] │       ← content: reward cells (gold · gems · XP), other rewards one line
+  │ [ GOLD][  XP ] │         each (+24 Rating), loot three to a row, progress…
   │  [ CONTINUE ]  │       ← actions
   └───────┬───────┘       ← frame bottom cap
        ornament
@@ -37,6 +37,34 @@ Code: `Views/Components/RewardCard.swift` (card, frame, illustration, title, row
   width inside the rails), so no corner ornament ever covers them.
 - **Losses** keep the family and tier, with `dimmed: true` (frame and illustration
   desaturate) and the title in `danger` red.
+
+## Reward cells — gold, gems, XP (2026-11-03)
+
+Currencies and XP are not lines but cells side by side (`RewardCells`, `Views/Components/RewardCells.swift`;
+prototype: variant C of the "Gold & XP cells" canvas).
+
+```
+ ┌──────────────┐ ┌──────────────┐
+ │  (coin) +650 │ │   (xp) +210  │   ← amount, counting up; the cell fills left → right
+ │     GOLD     │ │      XP      │     with its colour as it counts, glows once on landing
+ │  ───── ◆ ─── │ │ 12 ▓▓▓▓░░ 13 │   ← where it went: the balance after it, or the level bar
+ │ Total 12,480 │ │ 1,310 / 1,800│     (dim: what the hero had, bright: what this added)
+ └──────────────┘ └──────────────┘
+```
+
+- **The window drives the count.** Each item carries the window's own tick-up value
+  (`shown`, 0 → `amount`), so the cells keep each window's timing; the fill, the balance and
+  the bar are all read from it.
+- **XP spills over.** When the count finishes the level, the bar starts the next one, the label
+  turns to LEVEL UP in gold and the cell flashes once. `RewardCellLevel.after(level:xp:gained:)`
+  reads the bar from the hero after the reward — the server's hero or an optimistic one
+  (`creditRewardOptimistically` adds XP without levelling up; the overflow is carried).
+- **Layout.** Two cells share a row; with three, gold and gems share the first row and XP takes
+  the second (its bar needs the width). Cells in a row are one height; a cell beside one with
+  a balance or a bar keeps the room for it, so the lines of text stay level.
+- **Colours.** Gold `goldBright`, gems `purple`, XP `xpRing`. The fill tops out at 18 % so the
+  labels over it keep 4.5:1.
+- Other rewards (rating, items, stat points) stay one line each (`RewardCardRow`), under the cells.
 
 ## Families — where the reward came from
 
