@@ -412,17 +412,22 @@ struct DescentCampStage: View {
         GeometryReader { geo in
             let map = DescentSceneMapper(size: geo.size, focusY: 0.62)
             ZStack {
-                DescentBackdrop(asset: "rush2-bg-campfire", focusY: 0.62)
+                // The fire lights the cave inside the grade (`DescentLight.campfire`):
+                // the floor, the pack, the pot and the walls catch it as it breathes.
                 TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
                     let t = ctx.date.timeIntervalSinceReferenceDate
                     let fire = map.point(DescentGeometry.campfire)
                     ZStack {
-                        DescentTorchGlow(center: fire, radius: (rested ? 560 : 440) * map.k, t: t, color: DarkFantasyTheme.glowEmber)
+                        DescentBackdrop(
+                            asset: "rush2-bg-campfire",
+                            focusY: 0.62,
+                            lights: DescentLight.campfire(flicker: DescentMotion.flicker(t, period: 1.3), rested: rested)
+                        )
                         DescentTorchGlow(center: CGPoint(x: fire.x, y: fire.y - 5 * map.k), radius: 170 * map.k, t: t, phase: 0.6,
                                          color: DarkFantasyTheme.goldBright)
+                            .allowsHitTesting(false)
                     }
                 }
-                .allowsHitTesting(false)
                 DescentVignette(strength: 0.5)
             }
         }

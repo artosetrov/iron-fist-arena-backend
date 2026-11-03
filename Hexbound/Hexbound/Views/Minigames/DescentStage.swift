@@ -12,6 +12,8 @@ struct DescentBackdrop: View {
     var dim: Double = 0
     var aspect: CGFloat = DescentGeometry.sceneAspect
     var focusY: CGFloat = 0.52
+    /// Firelight in the room (the campfire), lit into the grade itself.
+    var lights: [DescentLight] = []
 
     var body: some View {
         GeometryReader { geo in
@@ -22,7 +24,7 @@ struct DescentBackdrop: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: map.imageRect.width, height: map.imageRect.height)
-                    .descentNightGrade(asset)
+                    .descentNightGrade(asset, lights: lights, size: map.imageRect.size)
                     .position(x: map.imageRect.midX, y: map.imageRect.midY)
                 if dim > 0 {
                     DarkFantasyTheme.bgAbyss.opacity(dim)
@@ -34,10 +36,44 @@ struct DescentBackdrop: View {
     }
 }
 
+/// A pool of firelight on a painting, for the night grade.
+struct DescentLight: Equatable {
+    /// Where the light sits on the painting (0…1).
+    let center: CGPoint
+    /// How far it reaches, as a share of the painting's width.
+    let radius: CGFloat
+    /// 0…1; pools add up, capped at full light.
+    let strength: Double
+
+    /// The campfire (`DescentGeometry.campfire`): a warm pool on the floor, the
+    /// pack, the pot and the chest, and a faint wash up the cave walls, both
+    /// breathing with the flames. A little brighter once the hero has rested.
+    static func campfire(flicker f: Double, rested: Bool) -> [DescentLight] {
+        let lift = rested ? 1.12 : 1
+        return [
+            DescentLight(center: DescentGeometry.campfire, radius: 0.48 * (0.97 + 0.03 * f), strength: (0.78 + 0.08 * f) * lift),
+            DescentLight(center: DescentGeometry.campfire, radius: 1.2, strength: (0.32 + 0.06 * f) * lift),
+        ]
+    }
+}
+
 extension View {
-    /// The Descent's night grade at the painting's own exposure.
-    func descentNightGrade(_ asset: String) -> some View {
-        colorEffect(ShaderLibrary.descentNightGrade(.float(DescentStyle.nightExposure(asset))))
+    /// The Descent's night grade at the painting's own exposure, with its firelight
+    /// (`size`: the painting as drawn, which the lights are measured on).
+    func descentNightGrade(_ asset: String, lights: [DescentLight] = [], size: CGSize) -> some View {
+        var values: [Float] = []
+        for light in lights {
+            values += [
+                Float(light.center.x * size.width),
+                Float(light.center.y * size.height),
+                Float(light.radius * size.width),
+                Float(light.strength),
+            ]
+        }
+        if values.isEmpty {
+            values = [0, 0, 1, 0]
+        }
+        return colorEffect(ShaderLibrary.descentNightGrade(.float(DescentStyle.nightExposure(asset)), .floatArray(values)))
     }
 }
 
