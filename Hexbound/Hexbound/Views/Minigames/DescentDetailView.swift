@@ -471,8 +471,13 @@ struct DescentRunView: View {  // TEMPORARY internal for the sim gallery
                 .clipped()
                 .descentShake(vm.shakeToken)
 
-                DescentPanel(maxHeight: geo.size.height * 0.52) {
-                    DescentRunPanel(vm: vm, snapshot: snapshot, onLeave: onLeave)
+                // Up to 58% of the screen: on a small phone a fork's two cards or the
+                // spoils fit above their button; taller (a merchant, relic picks), the
+                // panel scrolls and the buttons stay put.
+                DescentPanel(maxHeight: geo.size.height * 0.58) {
+                    DescentRunPanel(vm: vm, snapshot: snapshot)
+                } footer: {
+                    DescentRunActions(vm: vm, snapshot: snapshot, onLeave: onLeave)
                 }
                 .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea(edges: .bottom))
             }

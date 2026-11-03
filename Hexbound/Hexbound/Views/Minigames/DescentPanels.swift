@@ -2,30 +2,60 @@ import SwiftUI
 
 // MARK: - Panel container
 
-/// The action panel under the scene. Hugs its content and scrolls only when it
-/// would take more than `maxHeight` (relic picks on a small phone).
-struct DescentPanel<Content: View>: View {
+/// The panel under the scene: what there is to read and pick, then the room's
+/// buttons in `footer`. It hugs what it holds, up to `maxHeight`; past that the
+/// top part scrolls and the buttons stay put — the way on is always on screen
+/// (a merchant's wares, relic picks, a small phone).
+struct DescentPanel<Content: View, Footer: View>: View {
     let maxHeight: CGFloat
     @ViewBuilder let content: () -> Content
+    @ViewBuilder let footer: () -> Footer
     @State private var contentHeight: CGFloat = 220
+    @State private var footerHeight: CGFloat = 0
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: LayoutConstants.spaceSM) {
-                content()
+        let hasFooter = footerHeight > 0
+        let room = max(maxHeight - (hasFooter ? footerHeight + LayoutConstants.spaceMD : 0), 80)
+        VStack(spacing: 0) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    content()
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, LayoutConstants.spaceMS)
+                .padding(.bottom, hasFooter ? LayoutConstants.spaceSM : LayoutConstants.spaceMD)
+                .background(
+                    GeometryReader { g in
+                        Color.clear.preference(key: DescentPanelHeightKey.self, value: g.size.height)
+                    }
+                )
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.top, LayoutConstants.spaceMS)
-            .padding(.bottom, LayoutConstants.spaceMD)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(height: min(contentHeight, room))
+            .overlay(alignment: .bottom) {
+                // More below: the last row fades into the panel.
+                if contentHeight > room + 1 {
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.bgPrimary.opacity(0), DarkFantasyTheme.bgPrimary],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(height: LayoutConstants.spaceMD)
+                    .allowsHitTesting(false)
+                }
+            }
+            VStack(spacing: LayoutConstants.spaceSM) {
+                footer()
+            }
             .background(
                 GeometryReader { g in
-                    Color.clear.preference(key: DescentPanelHeightKey.self, value: g.size.height)
+                    Color.clear.preference(key: DescentPanelFooterHeightKey.self, value: g.size.height)
                 }
             )
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.bottom, hasFooter ? LayoutConstants.spaceMD : 0)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(height: min(max(contentHeight, 80), maxHeight))
         .onPreferenceChange(DescentPanelHeightKey.self) { contentHeight = $0 }
+        .onPreferenceChange(DescentPanelFooterHeightKey.self) { footerHeight = $0 }
         .background(DarkFantasyTheme.bgPrimary)
         .overlay(alignment: .top) {
             Rectangle().fill(DarkFantasyTheme.borderSubtle).frame(height: 1)
@@ -34,6 +64,13 @@ struct DescentPanel<Content: View>: View {
 }
 
 private struct DescentPanelHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct DescentPanelFooterHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
@@ -142,15 +179,8 @@ struct DescentChoiceCard<Icon: View>: View {
                     size: compact ? DescentMedallionMetrics.size : DescentMedallionMetrics.cardSize,
                     content: icon
                 )
-                Text(title.uppercased())
-                    .font(DarkFantasyTheme.cardTitle)
-                    .tracking(compact ? 1 : 2)
-                    .foregroundStyle(titleStyle)
+                DescentCardTitle(text: title, style: titleStyle, tracking: compact ? 1 : 2)
                     .shadow(color: selected ? accent.opacity(0.7) : .clear, radius: 8)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
                 if let subtitle, !subtitle.isEmpty {
                     Text(DescentText.attributed(subtitle, base: DarkFantasyTheme.textSecondary))
                         .font(DarkFantasyTheme.tale)
@@ -190,6 +220,61 @@ struct DescentChoiceCard<Icon: View>: View {
             colors: [DarkFantasyTheme.vfxStunGlow, selected ? accent.opacity(0.85) : accent.opacity(0.7)],
             startPoint: .top, endPoint: .bottom
         ))
+    }
+}
+
+/// A card's title in enamel, cream at the top of each line and the room's colour
+/// below. A gradient spans the whole text, so a title that wrapped would come out
+/// cream on its first line and coloured on the second; a long one is set as two
+/// lines of its own instead — at " · " ("INSPECT" / "1 TORCH"), else at the space
+/// that halves it best ("PRAY FOR" / "STRENGTH").
+struct DescentCardTitle: View {
+    let text: String
+    let style: AnyShapeStyle
+    var tracking: CGFloat = 2
+
+    var body: some View {
+        let title = text.uppercased()
+        ViewThatFits(in: .horizontal) {
+            line(title)
+            if let lines = Self.lines(title) {
+                VStack(spacing: 0) {
+                    line(lines.0)
+                    line(lines.1)
+                }
+            }
+            Text(title)
+                .font(DarkFantasyTheme.cardTitle)
+                .tracking(tracking)
+                .foregroundStyle(style)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.9)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+
+    private func line(_ text: String) -> some View {
+        Text(text)
+            .font(DarkFantasyTheme.cardTitle)
+            .tracking(tracking)
+            .foregroundStyle(style)
+            .lineLimit(1)
+            .fixedSize()
+    }
+
+    static func lines(_ title: String) -> (String, String)? {
+        if let dot = title.range(of: " · ") {
+            return (String(title[..<dot.lowerBound]), String(title[dot.upperBound...]))
+        }
+        let words = title.split(separator: " ").map(String.init)
+        guard words.count > 1 else { return nil }
+        let splits: [(String, String)] = (1..<words.count).map { i in
+            (words[..<i].joined(separator: " "), words[i...].joined(separator: " "))
+        }
+        return splits.min { a, b in max(a.0.count, a.1.count) < max(b.0.count, b.1.count) }
     }
 }
 

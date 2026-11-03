@@ -1,26 +1,24 @@
 import SwiftUI
 
-/// The action panel for whatever room the hero is standing in.
+/// What there is to read and pick in the room the hero is standing in: the top
+/// of the room's panel (`DescentPanel`). Its buttons are `DescentRunActions`,
+/// pinned under it.
 struct DescentRunPanel: View {
     @Bindable var vm: DescentViewModel
     let snapshot: DescentSnapshot
-    let onLeave: () -> Void
 
     var body: some View {
         let s = snapshot
         switch s.screenKind {
-        case .depthCard:
+        case .depthCard, .depthClear:
             tale(s)
-            Button(s.depth == 0 ? "Light your torch" : "Descend") { vm.perform(.beginDepth) }
-                .buttonStyle(.primary)
-                .disabled(vm.isBusy)
         case .fork:
             forkPanel(s)
         case .combat:
             combatPanel(s)
         case .spoils:
             tale(s)
-            DescentSpoilsPanel(vm: vm, snapshot: s)
+            DescentLootSummary(loot: s.spoils?.loot ?? [], bag: s.bag.gold)
         case .chest:
             chestPanel(s)
         case .event:
@@ -31,23 +29,8 @@ struct DescentRunPanel: View {
             merchantPanel(s)
         case .relic:
             relicPanel(s)
-        case .depthClear:
-            tale(s)
-            Button("Descend to depth \(DescentText.roman(s.depth + 2))") { vm.perform(.descend) }
-                .buttonStyle(.primary)
-                .disabled(vm.isBusy)
-            Button("Climb out · keep it all") { vm.perform(.escape) }
-                .buttonStyle(.secondary)
-                .disabled(vm.isBusy)
-        case .result:
-            // The run's end is `DescentResultCard`, over this screen; this way out
-            // shows for the beat before it fades in, and if a result screen ever
-            // arrives without its result.
-            Button("Return to town", action: onLeave)
-                .buttonStyle(.secondary)
-        case .unknown:
-            Button("Refresh") { Task { await vm.load() } }
-                .buttonStyle(.secondary)
+        case .result, .unknown:
+            EmptyView()
         }
     }
 
@@ -57,14 +40,6 @@ struct DescentRunPanel: View {
     private func tale(_ s: DescentSnapshot) -> some View {
         if let text = s.tale, !text.isEmpty {
             DescentTale(text: text)
-        }
-    }
-
-    private func lootList(_ loot: [DescentLoot]) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            ForEach(Array(loot.enumerated()), id: \.offset) { _, entry in
-                DescentLootRow(loot: entry)
-            }
         }
     }
 
@@ -79,9 +54,6 @@ struct DescentRunPanel: View {
             } else {
                 forkRows(fork, torches: s.hero.torches)
             }
-            Button(enterTitle) { vm.enterSelected() }
-                .buttonStyle(.primary)
-                .disabled(vm.selectedOption == nil || vm.isBusy)
         }
     }
 
@@ -179,11 +151,6 @@ struct DescentRunPanel: View {
         }
     }
 
-    private var enterTitle: String {
-        guard let option = vm.selectedOption else { return "Choose a path" }
-        return option.roomType == .boss ? "Face the guardian" : "Take this path"
-    }
-
     private func torchButton(_ option: DescentForkOption, torches: Int) -> some View {
         Button {
             vm.perform(.torch(nodeId: option.id))
@@ -233,54 +200,6 @@ struct DescentRunPanel: View {
                 notice: vm.autoNotice,
                 warning: c.windup ? "Crushing blow next round · Brace" : nil
             )
-            // One row, as on the arena: AUTO beside the gold FIGHT button, then Brace
-            // and the flask. Fleeing sits on the scene (`DescentCombatStage`).
-            // Nothing greys out while a round is in flight (`perform` ignores taps
-            // then) — the tumbling dice show the wait instead of a flickering button.
-            let potionOff = s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button { vm.toggleAuto() } label: {
-                    Text("AUTO")
-                }
-                .buttonStyle(.combatToggle(isActive: vm.autoFight))
-                .frame(width: 64)
-                .accessibilityLabel("Auto-fight")
-                .accessibilityValue(vm.autoFight ? "On" : "Off")
-                Button("Strike") { vm.perform(.strike) }
-                    .buttonStyle(.primary)
-                    .disabled(vm.autoFight)
-                Button { vm.perform(.brace) } label: {
-                    Text("BRACE")
-                }
-                .buttonStyle(.combatControl)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                        .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
-                        .allowsHitTesting(false)
-                )
-                .frame(width: 80)
-                .disabled(vm.autoFight)
-                .opacity(vm.autoFight ? 0.45 : 1)
-                .accessibilityLabel("Brace")
-                .accessibilityHint(c.windup ? "A crushing blow is coming" : "")
-                Button {
-                    vm.perform(.potion)
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image("rush2-icon-potion")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 26, height: 26)
-                        Text("\(s.hero.potions)")
-                            .monospacedDigit()
-                    }
-                }
-                .buttonStyle(.combatControl)
-                .frame(width: 64)
-                .disabled(vm.autoFight || potionOff)
-                .opacity(vm.autoFight || potionOff ? 0.45 : 1)
-                .accessibilityLabel("Drink a potion, \(s.hero.potions) left")
-            }
         }
     }
 
@@ -291,10 +210,10 @@ struct DescentRunPanel: View {
         if let chest = s.chest {
             tale(s)
             if chest.opened {
-                lootList(chest.loot)
-                Button("Take it all") { vm.perform(.takeLoot) }
-                    .buttonStyle(.primary)
-                    .disabled(vm.isBusy)
+                if !chest.loot.isEmpty {
+                    // The lid swings open on the scene first.
+                    DescentLootSummary(loot: chest.loot, bag: s.bag.gold, countDelay: 0.3)
+                }
             } else if chest.inspected {
                 DescentChoiceRow(
                     title: "Open the chest",
@@ -305,9 +224,6 @@ struct DescentRunPanel: View {
                 ) {
                     DescentRowIcon(asset: "rush2-chest-\(chest.tier)-closed")
                 }
-                Button("Leave it be") { vm.perform(.leave) }
-                    .buttonStyle(.secondary)
-                    .disabled(vm.isBusy)
             } else {
                 DescentChoiceCards {
                     DescentChoiceCard(
@@ -329,9 +245,6 @@ struct DescentRunPanel: View {
                         DescentRowIcon(asset: "rush2-icon-torch", size: 50)
                     }
                 }
-                Button("Leave it be") { vm.perform(.leave) }
-                    .buttonStyle(.secondary)
-                    .disabled(vm.isBusy)
             }
         }
     }
@@ -344,21 +257,7 @@ struct DescentRunPanel: View {
             tale(s)
             if event.done {
                 if !event.loot.isEmpty {
-                    lootList(event.loot)
-                }
-                switch event.then ?? "continue" {
-                case "take_loot":
-                    Button("Take it") { vm.perform(.takeLoot) }
-                        .buttonStyle(.primary)
-                        .disabled(vm.isBusy)
-                case "fight_now":
-                    Button("Fight!") { vm.perform(.fightNow) }
-                        .buttonStyle(.primary)
-                        .disabled(vm.isBusy)
-                default:
-                    Button("Continue") { vm.perform(.proceed) }
-                        .buttonStyle(.primary)
-                        .disabled(vm.isBusy)
+                    DescentLootSummary(loot: event.loot, bag: s.bag.gold, countDelay: 0.15)
                 }
             } else if event.choices.count == 2 {
                 DescentChoiceCards {
@@ -396,14 +295,7 @@ struct DescentRunPanel: View {
     private func campPanel(_ s: DescentSnapshot) -> some View {
         if let camp = s.camp {
             tale(s)
-            if camp.done {
-                Button("Push on") { vm.perform(.proceed) }
-                    .buttonStyle(.primary)
-                    .disabled(vm.isBusy)
-                Button("Climb out with your loot") { vm.perform(.escape) }
-                    .buttonStyle(.secondary)
-                    .disabled(vm.isBusy)
-            } else {
+            if !camp.done {
                 DescentChoiceCards {
                     DescentChoiceCard(
                         title: "Rest",
@@ -467,9 +359,6 @@ struct DescentRunPanel: View {
                 DescentRowIcon(asset: ware.icon)
             }
         }
-        Button("Move on") { vm.perform(.proceed) }
-            .buttonStyle(.secondary)
-            .disabled(vm.isBusy)
     }
 
     // MARK: Relic
@@ -478,12 +367,10 @@ struct DescentRunPanel: View {
     private func relicPanel(_ s: DescentSnapshot) -> some View {
         if let pick = s.relicChoice {
             tale(s)
-            lootList(pick.loot)
-            if pick.choices.isEmpty {
-                Button("Take the spoils") { vm.perform(.takeRelic(nil)) }
-                    .buttonStyle(.primary)
-                    .disabled(vm.isBusy)
-            } else {
+            if !pick.loot.isEmpty {
+                DescentLootSummary(loot: pick.loot, bag: s.bag.gold)
+            }
+            if !pick.choices.isEmpty {
                 Text("CHOOSE ONE RELIC")
                     .font(DarkFantasyTheme.buttonLabelCompact)
                     .tracking(2)
@@ -505,24 +392,168 @@ struct DescentRunPanel: View {
     }
 }
 
-// MARK: - Spoils
+// MARK: - Buttons
 
-/// After a fight: the gold and XP as reward cells, as in every reward window
-/// (docs/07_ui_ux/REWARD_CARDS.md, "Reward cells"), then the rest of the loot.
-/// The gold goes into the bag — at risk until the run ends, so its cell reads
-/// "Bag 340 → 520" with the risk dot; the XP is already the hero's (the server
-/// grants it on the kill), so its cell fills the level bar.
-struct DescentSpoilsPanel: View {
+/// The room's buttons, pinned under its panel (`DescentPanel`): they stay on
+/// screen when what is above them has to scroll.
+struct DescentRunActions: View {
     @Bindable var vm: DescentViewModel
     let snapshot: DescentSnapshot
+    let onLeave: () -> Void
+
+    var body: some View {
+        let s = snapshot
+        switch s.screenKind {
+        case .depthCard:
+            primary(s.depth == 0 ? "Light your torch" : "Descend") { vm.perform(.beginDepth) }
+        case .fork:
+            if s.fork != nil {
+                Button(enterTitle) { vm.enterSelected() }
+                    .buttonStyle(.primary)
+                    .disabled(vm.selectedOption == nil || vm.isBusy)
+            }
+        case .combat:
+            if let c = s.combat {
+                combatActions(s, combat: c)
+            }
+        case .spoils:
+            primary("Take it all") { vm.perform(.takeLoot) }
+        case .chest:
+            if let chest = s.chest {
+                if chest.opened {
+                    primary("Take it all") { vm.perform(.takeLoot) }
+                } else {
+                    secondary("Leave it be") { vm.perform(.leave) }
+                }
+            }
+        case .event:
+            if let event = s.event, event.done {
+                switch event.then ?? "continue" {
+                case "take_loot":
+                    primary("Take it") { vm.perform(.takeLoot) }
+                case "fight_now":
+                    primary("Fight!") { vm.perform(.fightNow) }
+                default:
+                    primary("Continue") { vm.perform(.proceed) }
+                }
+            }
+        case .camp:
+            if s.camp?.done == true {
+                primary("Push on") { vm.perform(.proceed) }
+                secondary("Climb out with your loot") { vm.perform(.escape) }
+            }
+        case .merchant:
+            secondary("Move on") { vm.perform(.proceed) }
+        case .relic:
+            if let pick = s.relicChoice, pick.choices.isEmpty {
+                primary("Take the spoils") { vm.perform(.takeRelic(nil)) }
+            }
+        case .depthClear:
+            primary("Descend to depth \(DescentText.roman(s.depth + 2))") { vm.perform(.descend) }
+            secondary("Climb out · keep it all") { vm.perform(.escape) }
+        case .result:
+            // The run's end is `DescentResultCard`, over this screen; this way out
+            // shows for the beat before it fades in, and if a result screen ever
+            // arrives without its result.
+            Button("Return to town", action: onLeave)
+                .buttonStyle(.secondary)
+        case .unknown:
+            Button("Refresh") { Task { await vm.load() } }
+                .buttonStyle(.secondary)
+        }
+    }
+
+    private func primary(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .buttonStyle(.primary)
+            .disabled(vm.isBusy)
+    }
+
+    private func secondary(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .buttonStyle(.secondary)
+            .disabled(vm.isBusy)
+    }
+
+    private var enterTitle: String {
+        guard let option = vm.selectedOption else { return "Choose a path" }
+        return option.roomType == .boss ? "Face the guardian" : "Take this path"
+    }
+
+    /// One row, as on the arena: AUTO beside the gold FIGHT button, then Brace
+    /// and the flask. Fleeing sits on the scene (`DescentCombatStage`).
+    /// Nothing greys out while a round is in flight (`perform` ignores taps
+    /// then) — the tumbling dice show the wait instead of a flickering button.
+    private func combatActions(_ s: DescentSnapshot, combat c: DescentCombat) -> some View {
+        let potionOff = s.hero.potions == 0 || s.hero.hp >= s.hero.maxHp
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            Button { vm.toggleAuto() } label: {
+                Text("AUTO")
+            }
+            .buttonStyle(.combatToggle(isActive: vm.autoFight))
+            .frame(width: 64)
+            .accessibilityLabel("Auto-fight")
+            .accessibilityValue(vm.autoFight ? "On" : "Off")
+            Button("Strike") { vm.perform(.strike) }
+                .buttonStyle(.primary)
+                .disabled(vm.autoFight)
+            Button { vm.perform(.brace) } label: {
+                Text("BRACE")
+            }
+            .buttonStyle(.combatControl)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .strokeBorder(DarkFantasyTheme.danger, lineWidth: c.windup ? 2 : 0)
+                    .allowsHitTesting(false)
+            )
+            .frame(width: 80)
+            .disabled(vm.autoFight)
+            .opacity(vm.autoFight ? 0.45 : 1)
+            .accessibilityLabel("Brace")
+            .accessibilityHint(c.windup ? "A crushing blow is coming" : "")
+            Button {
+                vm.perform(.potion)
+            } label: {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image("rush2-icon-potion")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 26, height: 26)
+                    Text("\(s.hero.potions)")
+                        .monospacedDigit()
+                }
+            }
+            .buttonStyle(.combatControl)
+            .frame(width: 64)
+            .disabled(vm.autoFight || potionOff)
+            .opacity(vm.autoFight || potionOff ? 0.45 : 1)
+            .accessibilityLabel("Drink a potion, \(s.hero.potions) left")
+        }
+    }
+}
+
+// MARK: - Loot
+
+/// Loot as every reward window shows it (docs/07_ui_ux/REWARD_CARDS.md, "Reward
+/// cells"): the gold and the XP in cells, the rest of the loot in rows under
+/// them — after a fight, under the guardian, in an opened chest, from an event.
+/// The gold goes into the bag when it is taken — at risk until the run ends, so
+/// its cell reads "Bag 340 → 520" with the risk dot; the XP is already the hero's
+/// (the server grants it on the kill), so its cell fills the level bar.
+struct DescentLootSummary: View {
+    let loot: [DescentLoot]
+    /// The bag now, before this loot goes into it.
+    let bag: Int
+    /// The beat before the cells count, for what lands on the scene first: a kill
+    /// stamp (`DescentBanner`), a chest's lid.
+    var countDelay: Double = 0.45
 
     @Environment(AppState.self) private var appState
-    /// Read once, when the spoils appear: later updates must not move the cells.
+    /// Read once, when the loot appears: later updates must not move the cells.
     @State private var bagBefore: Int?
     @State private var xpLevel: RewardCellLevel?
     @State private var counting = false
 
-    private var loot: [DescentLoot] { snapshot.spoils?.loot ?? [] }
     private var gold: Int { loot.filter { $0.kind == "gold" }.reduce(0) { $0 + $1.amount } }
     private var xp: Int { loot.filter { $0.kind == "xp" }.reduce(0) { $0 + $1.amount } }
     private var others: [DescentLoot] { loot.filter { $0.kind != "gold" && $0.kind != "xp" } }
@@ -532,34 +563,41 @@ struct DescentSpoilsPanel: View {
             if gold > 0 || xp > 0 {
                 RewardCells(items: cells, isActive: counting)
                 if gold > 0 {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Circle()
-                            .fill(DarkFantasyTheme.danger)
-                            .frame(width: 7, height: 7)
-                            .accessibilityHidden(true)
-                        Text("Half the bag is lost if you fall. XP is kept.")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
+                    riskLine
                 }
             }
             ForEach(Array(others.enumerated()), id: \.offset) { _, entry in
                 DescentLootRow(loot: entry)
             }
-            Button("Take it all") { vm.perform(.takeLoot) }
-                .buttonStyle(.primary)
-                .disabled(vm.isBusy)
         }
         .onAppear(perform: capture)
+    }
+
+    private var riskLine: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Circle()
+                .fill(DarkFantasyTheme.danger)
+                .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
+            Group {
+                if xp > 0 {
+                    Text("Half the bag is lost if you fall. XP is kept.")
+                } else {
+                    Text("Half the bag is lost if you fall.")
+                }
+            }
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var cells: [RewardCell.Item] {
         var items: [RewardCell.Item] = []
         if gold > 0 {
-            items.append(RewardCell.Item(kind: .gold, amount: gold, bagBefore: bagBefore ?? snapshot.bag.gold))
+            items.append(RewardCell.Item(kind: .gold, amount: gold, bagBefore: bagBefore ?? bag))
         }
         if xp > 0 {
             items.append(RewardCell.Item(kind: .xp, amount: xp, level: xpLevel))
@@ -567,19 +605,15 @@ struct DescentSpoilsPanel: View {
         return items
     }
 
-    /// The bag before the gold, the level bar after the XP; then the cells
-    /// count, once the stamp has landed on the scene.
+    /// The bag before the gold, the level bar after the XP; then the cells count.
     private func capture() {
         guard bagBefore == nil else { return }
-        bagBefore = snapshot.bag.gold
+        bagBefore = bag
         if let char = appState.currentCharacter, xp > 0 {
             xpLevel = RewardCellLevel.after(level: char.level, xp: char.experience ?? 0, gained: xp)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.countDelay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + countDelay) {
             counting = true
         }
     }
-
-    /// The SLAIN stamp slams in first (`DescentBanner`).
-    private static let countDelay: Double = 0.45
 }
