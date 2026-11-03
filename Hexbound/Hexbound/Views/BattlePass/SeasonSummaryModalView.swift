@@ -25,6 +25,11 @@ struct SeasonSummaryData {
 /// Kept deliberately rather than deleted: to wire it, persist the last seen
 /// season id, compare on battle-pass load, and enqueue this through
 /// `AppState.ModalType` with the summary the server already has.
+///
+/// Since 2026-10-22 it plays on a glory reward card (RewardCard.swift): the metal
+/// of the level reached (battle-pass brackets, one step up for a premium pass)
+/// and the laurel medallion as the illustration. It reads nothing from the
+/// environment, so it can be presented from anywhere once it is wired.
 struct SeasonSummaryModalView: View {
     let summary: SeasonSummaryData
     let onDismiss: () -> Void
@@ -51,104 +56,124 @@ struct SeasonSummaryModalView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: LayoutConstants.spaceLG) {
-                Spacer()
-
-                // Season name
-                if showTitle {
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        Text("SEASON COMPLETE")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .tracking(3)
-
-                        Text(summary.seasonName.uppercased())
-                            .font(DarkFantasyTheme.cinematicTitle)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .tracking(2)
-                    }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
-                // Stats grid — animated tick-up
-                if showStats {
-                    statsGrid
-                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                }
-
-                Spacer()
-
-                // "NEW SEASON BEGINS" slam
-                if showNewSeason {
-                    ZStack {
-                        Text("NEW SEASON BEGINS")
-                            .font(DarkFantasyTheme.title)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .tracking(3)
-                            .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
-                            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4)
-                            .opacity(newSeasonOpacity)
-
-                        RewardBurstView(style: .levelUp, isActive: $showBurst)
-                    }
-                }
-
-                Spacer()
-
-                // Continue button
-                if showContinue {
-                    Button {
-                        HapticManager.medium()
-                        onDismiss()
-                    } label: {
-                        Text("CONTINUE")
-                    }
-                    .buttonStyle(.primary)
-                    .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: true)
-                    .shimmer(color: DarkFantasyTheme.goldBright, duration: 2.5)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .glory,
+                    tier: cardTier,
+                    art: .object("reward-art-xp", fill: 0.68),
+                    width: width,
+                    artRatio: artRatio,
+                    header: { cardHeader },
+                    content: { cardContent },
+                    actions: { continueButton }
+                )
             }
-            .padding(.vertical, LayoutConstants.spaceLG)
+            .opacity(showTitle ? 1 : 0)
         }
         .onAppear {
             runCeremonySequence()
         }
     }
 
-    // MARK: - Stats Grid
+    // MARK: - Card
 
-    @ViewBuilder
-    private var statsGrid: some View {
-        let columns = [
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ]
-
-        LazyVGrid(columns: columns, spacing: LayoutConstants.spaceMD) {
-            statCell(label: "FINAL LEVEL", value: summary.finalLevel, icon: "star.fill", index: 0)
-            statCell(label: "TOTAL BATTLES", value: summary.totalBattles, icon: GameIcon.battle, index: 1)
-            statCell(label: "VICTORIES", value: summary.wins, icon: "trophy.fill", index: 2)
-            statCell(label: "PEAK RANK", value: summary.peakRank, icon: "crown", prefix: "#", index: 3)
-            statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "star.fill", assetIcon: "icon-gold", index: 4)
-            statCell(label: "REWARDS CLAIMED", value: summary.rewardsClaimed, icon: "gift", index: 5)
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
+    /// A hundred battle-pass levels in five metals (1–19 iron … 80+ mythic, as the
+    /// battle-pass claim cards), one step up for a season played with the premium pass.
+    private var cardTier: RewardCardTier {
+        let byLevel = min(5, 1 + summary.finalLevel / 20) + (summary.hadPremium ? 1 : 0)
+        return RewardCardTier(rawValue: min(5, byLevel)) ?? .iron
     }
 
-    @ViewBuilder
-    private func statCell(label: String, value: Int, icon: String, assetIcon: String? = nil, prefix: String = "", index: Int) -> some View {
+    private var cardHeader: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            if let assetIcon {
-                Image(assetIcon)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
-            } else {
-                AssetPlaceholderView(systemIcon: "star.fill")
-                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+            Text("SEASON COMPLETE")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(3)
+
+            Text(summary.seasonName.uppercased())
+                .font(DarkFantasyTheme.cinematicTitle)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .tracking(2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+                .accessibilityAddTraits(.isHeader)
+
+            GoldDivider()
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.top, LayoutConstants.spaceXS)
+        }
+        .opacity(showTitle ? 1 : 0)
+    }
+
+    /// Stats, then the NEW SEASON beat. Both are laid out from the start and
+    /// revealed in turn, so the card keeps its height.
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            statsGrid
+                .opacity(showStats ? 1 : 0)
+
+            // "NEW SEASON BEGINS" slam
+            Text("NEW SEASON BEGINS")
+                .font(DarkFantasyTheme.title)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .tracking(3)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
+                .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4)
+                .opacity(newSeasonOpacity)
+                .overlay {
+                    if showNewSeason {
+                        RewardBurstView(style: .levelUp, isActive: $showBurst)
+                            .allowsHitTesting(false)
+                    }
+                }
+        }
+    }
+
+    private var continueButton: some View {
+        Button {
+            HapticManager.medium()
+            onDismiss()
+        } label: {
+            Text("CONTINUE")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: showContinue)
+        .shimmer(color: DarkFantasyTheme.goldBright, duration: 2.5)
+        .opacity(showContinue ? 1 : 0)
+        .offset(y: showContinue ? 0 : 15)
+        .allowsHitTesting(showContinue)
+    }
+
+    // MARK: - Stats Grid
+
+    /// Two columns, three rows (plain stacks: the card's stage measures its height).
+    private var statsGrid: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                statCell(label: "FINAL LEVEL", value: summary.finalLevel, asset: "reward-level-up", index: 0)
+                statCell(label: "TOTAL BATTLES", value: summary.totalBattles, asset: "icon-fights", index: 1)
             }
+            HStack(spacing: LayoutConstants.spaceSM) {
+                statCell(label: "VICTORIES", value: summary.wins, asset: "icon-wins", index: 2)
+                statCell(label: "PEAK RANK", value: summary.peakRank, asset: "icon-leaderboard", prefix: "#", index: 3)
+            }
+            HStack(spacing: LayoutConstants.spaceSM) {
+                statCell(label: "GOLD EARNED", value: summary.goldEarned, asset: "icon-gold", index: 4)
+                statCell(label: "REWARDS CLAIMED", value: summary.rewardsClaimed, asset: "hud-gift", index: 5)
+            }
+        }
+    }
+
+    private func statCell(label: String, value: Int, asset: String, prefix: String = "", index: Int) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
 
             HStack(spacing: 0) {
                 if !prefix.isEmpty {
@@ -167,9 +192,12 @@ struct SeasonSummaryModalView: View {
                 .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.horizontal, LayoutConstants.spaceXS)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -185,8 +213,11 @@ struct SeasonSummaryModalView: View {
                 .stroke(DarkFantasyTheme.gold.opacity(0.15), lineWidth: 1)
         )
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.25), length: 12, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.gold.opacity(0.08), radius: 6)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .staggeredAppear(index: index)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Ceremony Sequence

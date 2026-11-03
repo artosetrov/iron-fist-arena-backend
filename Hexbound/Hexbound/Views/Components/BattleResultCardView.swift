@@ -1,18 +1,25 @@
 import SwiftUI
 
-/// Unified compact card overlay for victory / defeat / loot results.
+/// The result of a fight or a find, on a painted reward card (`RewardCard`).
 ///
-/// Used by:  CombatResultDetailView, DungeonVictoryView, LootDetailView
-/// Follows the "card on dimmed background" pattern with:
+/// Used by:  CombatResultDetailView (arena, PvP, challenges, training),
+/// DungeonDefeatView, LootDetailView. DungeonVictoryView draws its own card
+/// (stars, the dungeon's progress, the next boss).
+///
+/// The card's family, tier and illustration come from `BattleResultConfig`
+/// (`cardFamily`, `resolvedCardTier`, `resolvedCardArt`); a loss dims it.
+/// Around it, the ceremony:
 ///  • Screen flash (gold=victory, red=defeat) (Motion Audit §2.12)
-///  • Dramatic title slam (scale 2.5→1.0 with bounce)
 ///  • RewardBurstView particle explosion on victory
 ///  • Pulsing title glow (victory=gold, defeat=red)
 ///  • Staggered reward counters with tick-up
-///  • Inline loot cards (scale-in with per-item haptics)
+///  • Loot tiles flipped one by one (per-item haptics scaled by rarity)
 ///  • Shake + haptic on defeat
 ///  • Primary CTA: gold glowPulse + shimmer (victory) / red glowPulse (defeat)
 ///  • HapticManager integration throughout ceremony
+///
+/// Everything is laid out from the first frame and revealed with opacity, so
+/// the stage never jumps between its full and compact sizes mid-ceremony.
 struct BattleResultCardView: View {
 
     // MARK: - Config
@@ -32,7 +39,6 @@ struct BattleResultCardView: View {
 
     // Ceremony enhancements (Motion Audit §2.12, §3.8)
     @State var screenFlashOpacity: Double = 0
-    @State var titleScale: CGFloat = MotionConstants.vsScaleFrom // 2.5 → 1.0 slam
     @State var showRewardBurst = false
 
     // Reward counter roll-ups
@@ -116,35 +122,23 @@ struct BattleResultCardView: View {
                 .animation(.easeIn(duration: 0.6), value: showCard)
                 .allowsHitTesting(false)
 
-            // Main card — scrollable so buttons are always reachable
-            ScrollView(.vertical, showsIndicators: false) {
-                cardContent
+            // The card. The stage shrinks the illustration, then scrolls, when
+            // the whole card does not fit — the buttons stay reachable.
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: config.cardFamily,
+                    tier: config.resolvedCardTier,
+                    dimmed: !config.isVictory,
+                    art: config.resolvedCardArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: { titleView },
+                    content: { cardContent },
+                    actions: { actionsSection }
+                )
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.modalRadius))
-            .background(
-                    RadialGlowBackground(
-                        baseColor: DarkFantasyTheme.bgPrimary,
-                        glowColor: DarkFantasyTheme.bgSecondary,
-                        glowIntensity: 0.4,
-                        cornerRadius: LayoutConstants.modalRadius
-                    )
-                )
-                .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-                .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                        .stroke(accentColor.opacity(0.5), lineWidth: 2)
-                )
-                .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
-                .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
-                .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxHeight: UIScreen.main.bounds.height * 0.88)
-                .offset(x: shakeOffset)
-                .opacity(showCard ? 1 : 0)
+            .offset(x: shakeOffset)
+            .opacity(showCard ? 1 : 0)
         }
         .onAppear {
             runAnimationSequence()
@@ -168,15 +162,10 @@ struct BattleResultCardView: View {
         }
     }
 
-    /// Dungeon / training / loot layout (unchanged).
+    /// Dungeon / training / loot layout.
     @ViewBuilder
     var classicCardContent: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-
-            // Title — hero element, no illustration above
-            titleView
-                .padding(.top, LayoutConstants.spaceLG)
-
             // Victory Stars — labelled slots (earned + missed conditions visible)
             if let conditions = config.starConditions, config.isVictory, !conditions.isEmpty {
                 victoryStarsView(conditions: conditions)
@@ -184,11 +173,7 @@ struct BattleResultCardView: View {
 
             // Subtitle (near-miss motivation or general)
             if let subtitle = config.subtitle {
-                Text(subtitle)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
-                    .opacity(showTitle ? 1 : 0)
-                    .transition(.opacity)
+                subtitleText(subtitle)
             }
 
             // First Win Bonus
@@ -197,14 +182,9 @@ struct BattleResultCardView: View {
                     .opacity(showRewards ? 1 : 0)
             }
 
-            // Divider
-            GoldDivider()
-                .padding(.horizontal, LayoutConstants.spaceMD)
-                .opacity(showRewards ? 1 : 0)
-
-            // Rewards section
+            // Rewards — one line each; the card grows with the list
             if hasRewards {
-                rewardsSection
+                rewardsSection(ratingBefore: nil)
                     .opacity(showRewards ? 1 : 0)
                     .offset(y: showRewards ? 0 : 10)
             }
@@ -212,14 +192,12 @@ struct BattleResultCardView: View {
             // XP Bar — HERO SIZE with numbers
             if let xpBarConfig = config.xpBarConfig {
                 heroXpBarView(xpBarConfig)
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showRewards ? 1 : 0)
             }
 
             // Dungeon Progress (optional)
             if let dungeonProgress = config.dungeonProgress {
                 dungeonProgressBar(dungeonProgress)
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showRewards ? 1 : 0)
             }
 
@@ -232,61 +210,62 @@ struct BattleResultCardView: View {
             // Combat log (optional — PvP/Arena) — collapsible round summary
             if !config.combatLog.isEmpty {
                 combatLogSection
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showButtons ? 1 : 0)
             }
-
-            // Buttons inside card — tight to loot
-            buttonsSection
-                .padding(.top, LayoutConstants.spaceXS)
-                .padding(.horizontal, LayoutConstants.cardPadding)
-                .opacity(showButtons ? 1 : 0)
-                .offset(y: showButtons ? 0 : 15)
-
-            Spacer().frame(height: LayoutConstants.spaceMD)
         }
+    }
+
+    /// The buttons, in the card's action band.
+    var actionsSection: some View {
+        buttonsSection
+            .opacity(showButtons ? 1 : 0)
+            .offset(y: showButtons ? 0 : 15)
     }
 
     // MARK: - Title
 
-    @ViewBuilder
+    /// The title on the illustration's fade (with the card's gold divider).
     var titleView: some View {
-        Text(config.title)
-            .font(DarkFantasyTheme.cinematicTitle)
-            .foregroundStyle(accentColor)
-            .shadow(
-                color: accentColor.opacity(titleGlowPulse ? 0.6 : 0.2),
-                radius: titleGlowPulse ? 20 : 8
-            )
+        RewardCardTitle(title: config.title, color: accentColor, glow: titleGlowPulse)
+            .opacity(showTitle ? 1 : 0)
+    }
+
+    /// Near-miss motivation on a loss (gold), a plain line on a win.
+    func subtitleText(_ subtitle: String) -> some View {
+        Text(subtitle)
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
             .opacity(showTitle ? 1 : 0)
     }
 
     // MARK: - First Win Badge
 
-    @ViewBuilder
     var firstWinBadge: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image("reward-first-win")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 36, height: 36)
+                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
             Text("FIRST WIN BONUS x2!")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
-        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.horizontal, LayoutConstants.spaceMS)
         .padding(.vertical, LayoutConstants.spaceXS)
-        .background(DarkFantasyTheme.goldBright.opacity(0.12))
+        .background(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityLight))
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.goldBright.opacity(0.3), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Rewards
 
     var hasRewards: Bool {
-        (config.goldReward ?? 0) > 0 || (config.xpReward ?? 0) > 0 || config.ratingChange != nil
+        (config.goldReward ?? 0) > 0 || (config.xpReward ?? 0) > 0 || (config.ratingChange ?? 0) != 0
     }
 }

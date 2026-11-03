@@ -51,6 +51,52 @@ struct BattleResultConfig {
     // PvP duel layout (you vs the rival). Nil = the classic card used by
     // dungeon / training results.
     var duel: DuelResultInfo? = nil
+
+    // Reward card (2026-10-22, docs/07_ui_ux/REWARD_CARDS.md). The family is
+    // where the fight was; `cardTier` the window's own reading of what it was
+    // worth (a ladder tier, a boss level — nil reads the gold and XP), lifted
+    // by the loot's rarity; `cardArt` the illustration (nil: the most valuable
+    // reward, as on the CLAIMED! card).
+    var cardFamily: RewardCardFamily = .arena
+    var cardTier: RewardCardTier? = nil
+    var cardArt: RewardCardArt? = nil
+}
+
+extension BattleResultConfig {
+    /// The frame's metal: the window's reading, lifted by the best loot.
+    var resolvedCardTier: RewardCardTier {
+        var readings: [RewardCardTier?] = [cardTier ?? RewardCardTier(gold: goldReward ?? 0, xp: xpReward ?? 0)]
+        for item in lootItems {
+            readings.append(RewardCardTier(rarity: item.rarity))
+        }
+        return RewardCardTier.best(readings)
+    }
+
+    /// The illustration: the window's own, or the most valuable thing won.
+    var resolvedCardArt: RewardCardArt {
+        cardArt ?? .headline(
+            gold: goldReward ?? 0,
+            gems: 0,
+            xp: xpReward ?? 0,
+            items: lootItems.map { (imageKey: $0.imageKey, rarity: $0.rarity) },
+            hasConsumables: lootItems.contains { $0.fallbackIcon == ItemType.consumable.icon }
+        )
+    }
+}
+
+extension RewardCardArt {
+    /// A dungeon boss on its own lair: the full figure (the portrait when the
+    /// figure is not bundled), in front of the dungeon's painted trail when it
+    /// has one. nil when the boss has no art at all.
+    @MainActor
+    static func dungeonBoss(_ boss: BossInfo?, dungeonId: String?) -> RewardCardArt? {
+        guard let boss, let asset = EnemyPortraitResolver.fullBodyAsset(boss) else { return nil }
+        var art = RewardCardArt.figure(asset)
+        if let trail = DungeonTrailConfig.config(for: dungeonId)?.background, UIImage(named: trail) != nil {
+            art.backdrop = trail
+        }
+        return art
+    }
 }
 
 /// PvP result header: the player against the rival, rating before → after,
@@ -88,6 +134,10 @@ struct XPBarConfig {
     let displayLevel: Int
     let progress: CGFloat
     let leveledUp: Bool
+    /// This fight levels the hero up: the LEVEL UP! line is laid out from the
+    /// start and shown when `leveledUp` lands, so the card never grows (and
+    /// the stage never jumps to its compact size) mid-ceremony.
+    var willLevelUp: Bool = false
 }
 
 struct DungeonProgressConfig {

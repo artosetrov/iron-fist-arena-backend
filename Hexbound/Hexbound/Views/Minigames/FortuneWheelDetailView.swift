@@ -510,22 +510,23 @@ struct FortuneWheelDetailView: View {
 
     @ViewBuilder
     private func resultModal(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> some View {
-        GameModal(
-            accent: MinigameResultAccent.color(isWin: result.won),
-            maxWidth: 300,
-            onDismiss: { dismissModal(vm) }
+        // A full-screen fortune card with its own backdrop (no GameModal);
+        // its metal follows the sector: ×1.5 bronze … ×5 or the Treasury mythic.
+        MinigameResultModal(
+            isWin: result.won,
+            title: resultTitle(result),
+            amountText: resultAmountText(vm, result: result),
+            amountLineLimit: 2,
+            winnings: result.won ? result.winAmount : 0,
+            tier: !result.won ? nil
+                : result.jackpotShare > 0 || result.multiplier >= 5 ? .mythic
+                : result.multiplier >= 3 ? .gold
+                : result.multiplier >= 2 ? .silver : .bronze,
+            onContinue: { dismissModal(vm) }
         ) {
-            MinigameResultModal(
-                isWin: result.won,
-                title: resultTitle(result),
-                amountText: resultAmountText(vm, result: result),
-                amountLineLimit: 2,
-                onContinue: { dismissModal(vm) }
-            ) {
-                Image(vm.sectors[result.sectorIndex].sectorAsset)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            }
+            Image(vm.sectors[result.sectorIndex].sectorAsset)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
         }
         .opacity(showResultModal ? 1 : 0)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)

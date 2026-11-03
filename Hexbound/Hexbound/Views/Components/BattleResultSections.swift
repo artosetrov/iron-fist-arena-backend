@@ -1,85 +1,58 @@
 import SwiftUI
 
 extension BattleResultCardView {
-    var rewardsSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text("REWARDS")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
 
-            HStack(alignment: .top, spacing: LayoutConstants.spaceLG) {
-                if let gold = config.goldReward, gold > 0 {
-                    rewardCounter(
-                        iconImage: "reward-gold",
-                        value: "+\(goldDisplay)",
-                        label: "Gold",
-                        color: DarkFantasyTheme.goldBright,
-                        isVisible: goldItemVisible,
-                        pulseOpacity: goldPulseOpacity
-                    )
-                }
+    // MARK: - Rewards
 
-                if let xp = config.xpReward, xp > 0 {
-                    rewardCounter(
-                        iconImage: "reward-xp",
-                        value: "+\(xpDisplay)",
-                        label: "XP",
-                        color: DarkFantasyTheme.xpRing,
-                        isVisible: xpItemVisible,
-                        pulseOpacity: xpPulseOpacity
-                    )
-                }
+    /// One line per reward (`RewardCardRow`), in the order they tick up: gold,
+    /// XP, rating. Each line fades in on its beat and dips once its counter lands.
+    /// `ratingBefore` turns the rating line into "+22  1240 → 1262".
+    func rewardsSection(ratingBefore: Int?) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            if let gold = config.goldReward, gold > 0 {
+                RewardCardRow(
+                    icon: "reward-gold",
+                    value: "+\(goldDisplay)",
+                    label: "Gold",
+                    color: DarkFantasyTheme.goldBright
+                )
+                .opacity(goldPulseOpacity)
+                .opacity(goldItemVisible ? 1 : 0)
+            }
 
-                if let change = config.ratingChange, change != 0 {
-                    rewardCounter(
-                        iconImage: change > 0 ? "reward-rating-up" : "reward-rating-down",
-                        value: ratingDisplay > 0 ? "+\(ratingDisplay)" : "\(ratingDisplay)",
-                        label: "Rating",
-                        color: change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger,
-                        isVisible: ratingItemVisible,
-                        pulseOpacity: ratingPulseOpacity
-                    )
-                }
+            if let xp = config.xpReward, xp > 0 {
+                RewardCardRow(
+                    icon: "reward-xp",
+                    value: "+\(xpDisplay)",
+                    label: "XP",
+                    color: DarkFantasyTheme.xpRing
+                )
+                .opacity(xpPulseOpacity)
+                .opacity(xpItemVisible ? 1 : 0)
+            }
+
+            if let change = config.ratingChange, change != 0 {
+                ratingRow(change: change, before: ratingBefore)
+                    .opacity(ratingPulseOpacity)
+                    .opacity(ratingItemVisible ? 1 : 0)
             }
         }
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceXS)
     }
 
-    @ViewBuilder
-    func rewardCounter(
-        iconImage: String,
-        value: String,
-        label: String,
-        color: Color,
-        isVisible: Bool,
-        pulseOpacity: Double
-    ) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Image(iconImage)
-                .interpolation(.high)
-                .resizable()
-                .scaledToFit()
-                .frame(width: LayoutConstants.icon3XL, height: LayoutConstants.icon3XL)
-                .shadow(color: Color.black.opacity(0.4), radius: 6, y: 3)
+    func ratingRow(change: Int, before: Int?) -> some View {
+        let direction = change > 0 ? "up" : "down"
+        let label = before.map { "\($0) → \($0 + change)" } ?? "Rating"
+        let spoken = before.map { "Rating \(direction) \(abs(change)), \($0) to \($0 + change)" }
+            ?? "Rating \(direction) \(abs(change))"
 
-            Text(value)
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .shadow(color: Color.black.opacity(0.5), radius: 8)
-                .opacity(pulseOpacity)
-
-            Text(label)
-                .font(DarkFantasyTheme.caption)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(1)
-                .textCase(.uppercase)
-        }
-        .frame(maxWidth: .infinity)
-        .opacity(isVisible ? 1 : 0)
+        return RewardCardRow(
+            icon: change > 0 ? "reward-rating-up" : "reward-rating-down",
+            value: ratingDisplay > 0 ? "+\(ratingDisplay)" : "\(ratingDisplay)",
+            label: label,
+            color: change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+        )
+        .accessibilityLabel(Text(spoken))
     }
 
     // MARK: - Hero XP Bar (big numbers + thick bar)
@@ -87,7 +60,7 @@ extension BattleResultCardView {
     @ViewBuilder
     func heroXpBarView(_ xpConfig: XPBarConfig) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            // Header: Level + LEVEL UP badge
+            // Header: Level + LEVEL UP badge (same line, so the card keeps its height)
             HStack {
                 Text("Level \(xpConfig.displayLevel)")
                     .font(DarkFantasyTheme.cardTitle)
@@ -166,7 +139,7 @@ extension BattleResultCardView {
                         .overlay(
                             BarFillHighlight(cornerRadius: LayoutConstants.radiusLG)
                         )
-                        .frame(width: geo.size.width * min(xpConfig.progress, 1.0))
+                        .frame(width: geo.size.width * max(0, min(xpConfig.progress, 1.0)))
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
                         .shadow(color: DarkFantasyTheme.xpRing.opacity(0.5), radius: 10, y: 0)
                 }
@@ -207,7 +180,7 @@ extension BattleResultCardView {
                                 ? DarkFantasyTheme.canonicalHpGradient(percentage: 1.0)
                                 : DarkFantasyTheme.progressGradient
                         )
-                        .frame(width: geo.size.width * progress.fraction)
+                        .frame(width: geo.size.width * max(0, min(progress.fraction, 1)))
                         .animation(.easeOut(duration: MotionConstants.tickUpLong), value: progress.defeated)
                 }
             }
@@ -233,7 +206,6 @@ extension BattleResultCardView {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, LayoutConstants.spaceMD)
     }
 
     @ViewBuilder
@@ -276,7 +248,7 @@ extension BattleResultCardView {
             )
 
             Text(condition.label.uppercased())
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .tracking(0.8)
                 .foregroundStyle(
                     isRevealed && isEarned
@@ -285,110 +257,120 @@ extension BattleResultCardView {
                 )
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity)
                 .opacity(isRevealed ? 1 : 0)
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: LayoutConstants.icon2XL + 40, alignment: .top)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(condition.label): \(isEarned ? "earned" : "missed")"))
     }
 
     // MARK: - Loot Section
 
-    @ViewBuilder
+    /// Loot tile side and tiles per row (`RewardCardLayout`).
+    static var lootTile: CGFloat { RewardCardLayout.lootTile }
+    static var lootPerRow: Int { RewardCardLayout.lootPerRow }
+
     var lootSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("LOOT")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
+                .accessibilityAddTraits(.isHeader)
 
-            HStack(spacing: LayoutConstants.spaceMD) {
-                ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
-                    inlineLootCard(item, index: index)
+            // Three to a row: the card grows a row at a time. (Plain stacks, not
+            // a lazy grid: the stage measures the card's ideal height.)
+            VStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(lootRows, id: \.self) { row in
+                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+                        ForEach(row, id: \.self) { index in
+                            inlineLootCard(config.lootItems[index], index: index)
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
         }
     }
 
-    @ViewBuilder
+    /// Loot indices, three to a row.
+    var lootRows: [[Int]] {
+        let count = config.lootItems.count
+        return stride(from: 0, to: count, by: Self.lootPerRow).map { start in
+            Array(start..<min(start + Self.lootPerRow, count))
+        }
+    }
+
+    /// A face-down tile that flips to the item on its beat, its name appearing
+    /// under it; a tap on the item opens its details.
     func inlineLootCard(_ item: LootItemDisplay, index: Int) -> some View {
         let isRevealed = revealedLootIndices.contains(index)
+        return VStack(spacing: LayoutConstants.spaceXS) {
+            lootTileFace(item, index: index, isRevealed: isRevealed)
+            // Laid out from the start so the row keeps its height through the flip.
+            RewardCardLootName(name: item.name, color: item.rarityColor)
+                .opacity(isRevealed ? 1 : 0)
+                .animation(.easeOut(duration: MotionConstants.fast), value: isRevealed)
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    func lootTileFace(_ item: LootItemDisplay, index: Int, isRevealed: Bool) -> some View {
         let rarityColor = item.rarityColor
 
         ZStack {
             // Card back (shown before flip)
             if !isRevealed {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .fill(
-                            LinearGradient(
-                                colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(
+                        LinearGradient(
+                            colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                                .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
-                        )
-                        .overlay(
-                            Text("?")
-                                .font(DarkFantasyTheme.cardTitle)
-                                .foregroundStyle(DarkFantasyTheme.borderStrong)
-                        )
-
-                    Text("???")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .frame(width: 80)
-
-                    Text(" ")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                }
-                .rotation3DEffect(
-                    .degrees(isRevealed ? -90 : 0),
-                    axis: (x: 0, y: 1, z: 0)
-                )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                            .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
+                    )
+                    .overlay(
+                        Text("?")
+                            .font(DarkFantasyTheme.cardTitle)
+                            .foregroundStyle(DarkFantasyTheme.borderStrong)
+                    )
+                    .frame(width: Self.lootTile, height: Self.lootTile)
+                    .rotation3DEffect(
+                        .degrees(isRevealed ? -90 : 0),
+                        axis: (x: 0, y: 1, z: 0)
+                    )
+                    .accessibilityHidden(true)
             }
 
             // Card front (shown after flip)
             if isRevealed {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    ItemCardView(
-                        rarity: item.rarity,
-                        imageKey: item.imageKey,
-                        imageUrl: item.imageUrl,
-                        fallbackIcon: item.fallbackIcon,
-                        systemIcon: item.sfIcon,
-                        systemIconColor: item.sfColor,
-                        context: .loot
-                    ) {
-                        config.onLootTap?(index)
-                    }
-                    .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
-
-                    Text(item.name)
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .textCase(.uppercase)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 80)
-
-                    Text(item.rarityName)
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(rarityColor)
+                ItemCardView(
+                    rarity: item.rarity,
+                    imageKey: item.imageKey,
+                    imageUrl: item.imageUrl,
+                    fallbackIcon: item.fallbackIcon,
+                    systemIcon: item.sfIcon,
+                    systemIconColor: item.sfColor,
+                    context: .loot
+                ) {
+                    config.onLootTap?(index)
                 }
+                .frame(width: Self.lootTile, height: Self.lootTile)
                 .rotation3DEffect(
                     .degrees(isRevealed ? 0 : 90),
                     axis: (x: 0, y: 1, z: 0)
                 )
+                .accessibilityLabel(Text("\(item.name), \(item.rarityName)"))
             }
         }
+        .frame(width: Self.lootTile, height: Self.lootTile)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isRevealed)
         // Epic+ items get ambient glow pulse after reveal
         .glowPulse(color: rarityColor, intensity: item.rarityTier >= 3 ? 0.5 : 0, isActive: isRevealed && item.rarityTier >= 3)
@@ -396,56 +378,71 @@ extension BattleResultCardView {
 
     // MARK: - Combat Log (optional)
 
-    @ViewBuilder
+    /// One line on the card; the rounds open in a sheet, so the card never grows
+    /// (and never jumps to another size) when the player reads them.
     var combatLogSection: some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            // Header — tap to toggle
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    showCombatLog.toggle()
-                }
-                HapticManager.light()
-            } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "scroll.fill")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("COMBAT LOG")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .tracking(1.2)
-                    Spacer(minLength: 0)
-                    Text("\(config.combatLog.count) rounds")
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Image(systemName: "chevron.down")
-                        .font(DarkFantasyTheme.caption.bold())
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .rotationEffect(.degrees(showCombatLog ? 180 : 0))
-                }
-                .padding(.horizontal, LayoutConstants.spaceMD)
-                .padding(.vertical, LayoutConstants.spaceSM)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
+        Button {
+            showCombatLog = true
+            HapticManager.light()
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image("hud-quests")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                Text("COMBAT LOG")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .tracking(1.2)
+                Spacer(minLength: 0)
+                Text("\(config.combatLog.count) rounds")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.caption.bold())
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .frame(minHeight: LayoutConstants.touchMin)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                    )
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Combat log, \(config.combatLog.count) rounds")
+        .sheet(isPresented: $showCombatLog) {
+            combatLogSheet
+        }
+    }
 
-            if showCombatLog {
+    var combatLogSheet: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Text("COMBAT LOG")
+                .font(DarkFantasyTheme.section)
+                .tracking(2)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .padding(.top, LayoutConstants.spaceLG)
+                .accessibilityAddTraits(.isHeader)
+            ScrollView {
                 VStack(spacing: LayoutConstants.space2XS) {
                     ForEach(Array(config.combatLog.enumerated()), id: \.offset) { index, entry in
                         combatLogRow(index: index + 1, entry: entry)
                     }
                 }
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceLG)
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(DarkFantasyTheme.bgSecondary)
     }
 
     @ViewBuilder
@@ -565,187 +562,91 @@ extension BattleResultCardView {
     }
 
     // MARK: - Duel Layout (PvP)
-    // You vs the rival up top (rating before → after, rival profile / message
-    // as icon buttons), compact stars, one row of reward tiles (gold, XP, loot),
-    // a one-line level bar, the combat log, then a single primary CTA.
+    // The rival is the card's illustration. Under the title: their name with
+    // profile / message buttons, compact stars, the reward lines (rating with
+    // before → after), the loot, a one-line level bar, the combat log; the
+    // buttons sit in the card's action band.
 
-    static let duelPortraitSize: CGFloat = 112
     static let duelActionSize: CGFloat = 48
-    static let duelTileHeight: CGFloat = 64
     static let duelBarHeight: CGFloat = 10
 
     @ViewBuilder
     func duelCardContent(_ duel: DuelResultInfo) -> some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            titleView
-                .padding(.top, LayoutConstants.spaceLG)
-
-            duelHeader(duel)
-                .padding(.horizontal, LayoutConstants.cardPadding)
+        VStack(spacing: LayoutConstants.spaceSM) {
+            duelRivalRow(duel)
                 .opacity(showTitle ? 1 : 0)
 
             if let conditions = config.starConditions, config.isVictory, !conditions.isEmpty {
                 duelStarsRow(conditions)
-                    .padding(.horizontal, LayoutConstants.cardPadding)
             }
 
             if let subtitle = config.subtitle {
-                Text(subtitle)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, LayoutConstants.cardPadding)
-                    .opacity(showTitle ? 1 : 0)
+                subtitleText(subtitle)
             }
 
-            if hasDuelRewards {
-                duelRewardsSection
-                    .padding(.horizontal, LayoutConstants.cardPadding)
+            if config.firstWinBonus {
+                firstWinBadge
                     .opacity(showRewards ? 1 : 0)
+            }
+
+            if hasRewards {
+                rewardsSection(ratingBefore: duel.ratingBefore)
+                    .opacity(showRewards ? 1 : 0)
+                    .offset(y: showRewards ? 0 : 10)
+            }
+
+            if !config.lootItems.isEmpty {
+                lootSection
+                    .opacity(showLoot ? 1 : 0)
             }
 
             if let xpBarConfig = config.xpBarConfig {
                 compactXpRow(xpBarConfig)
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showRewards ? 1 : 0)
             }
 
             if !config.combatLog.isEmpty {
                 combatLogSection
-                    .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showButtons ? 1 : 0)
             }
-
-            buttonsSection
-                .padding(.horizontal, LayoutConstants.cardPadding)
-                .opacity(showButtons ? 1 : 0)
-                .offset(y: showButtons ? 0 : 15)
-
-            Spacer().frame(height: LayoutConstants.spaceXS)
         }
     }
 
-    var hasDuelRewards: Bool {
-        (config.goldReward ?? 0) > 0 || (config.xpReward ?? 0) > 0 || !config.lootItems.isEmpty
-    }
+    // MARK: Duel rival
 
-    // MARK: Duel header
-
-    @ViewBuilder
-    func duelHeader(_ duel: DuelResultInfo) -> some View {
-        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
-            duelFighter(
-                name: "YOU",
-                skinKey: duel.playerSkinKey,
-                characterClass: duel.playerClass,
-                isWinner: config.isVictory
-            ) {
-                duelRatingView(duel)
-            }
-
-            Text("VS")
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .padding(.top, Self.duelPortraitSize / 2 - LayoutConstants.spaceMS)
-                .accessibilityHidden(true)
-
-            duelFighter(
-                name: duel.rivalName.uppercased(),
-                skinKey: duel.rivalSkinKey,
-                characterClass: duel.rivalClass,
-                isWinner: !config.isVictory
-            ) {
+    /// Who the fight was against (painted big above), with their profile and a
+    /// message one tap away.
+    func duelRivalRow(_ duel: DuelResultInfo) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                Text("VS \(duel.rivalName.uppercased())")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .tracking(1)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
                 Text("Lv \(duel.rivalLevel) · \(duel.rivalClass.displayName)")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(1)
-
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    if let onView = duel.onViewRival {
-                        duelIconButton(
-                            asset: duel.rivalClass.iconAsset,
-                            label: "View \(duel.rivalName)'s profile",
-                            action: onView
-                        )
-                    }
-                    if let onMessage = duel.onMessageRival {
-                        duelIconButton(
-                            asset: "hud-inbox",
-                            label: "Message \(duel.rivalName)",
-                            action: onMessage
-                        )
-                    }
-                }
-                .padding(.top, LayoutConstants.space2XS)
             }
-        }
-    }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
 
-    func duelFighter<Details: View>(
-        name: String,
-        skinKey: String?,
-        characterClass: CharacterClass,
-        isWinner: Bool,
-        @ViewBuilder details: () -> Details
-    ) -> some View {
-        let frameColor = isWinner ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium
-
-        return VStack(spacing: LayoutConstants.spaceXS) {
-            CachedAvatarImage(
-                skinKey: skinKey,
-                characterClass: characterClass,
-                size: Self.duelPortraitSize
-            )
-            .background(DarkFantasyTheme.bgTertiary)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                    .stroke(frameColor, lineWidth: 3)
-            )
-            .opacity(isWinner ? 1 : 0.75)
-            .accessibilityHidden(true)
-
-            Text(name)
-                .font(DarkFantasyTheme.cardTitle)
-                .tracking(1)
-                .foregroundStyle(isWinner ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary)
-                .lineLimit(1)
-
-            details()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    /// "1 240 → 1 262" and the animated "+22" under the player's portrait.
-    @ViewBuilder
-    func duelRatingView(_ duel: DuelResultInfo) -> some View {
-        if let change = config.ratingChange, change != 0 {
-            if let before = duel.ratingBefore {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("\(before)")
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("→")
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("\(before + change)")
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-                .font(DarkFantasyTheme.body)
-                .monospacedDigit()
-                .lineLimit(1)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Rating \(before) to \(before + change)")
+            if let onView = duel.onViewRival {
+                duelIconButton(
+                    asset: duel.rivalClass.iconAsset,
+                    label: "View \(duel.rivalName)'s profile",
+                    action: onView
+                )
             }
-
-            Text(ratingDisplay > 0 ? "+\(ratingDisplay)" : "\(ratingDisplay)")
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .opacity(ratingPulseOpacity)
-        } else {
-            Text("Lv \(duel.playerLevel)")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
+            if let onMessage = duel.onMessageRival {
+                duelIconButton(
+                    asset: "hud-inbox",
+                    label: "Message \(duel.rivalName)",
+                    action: onMessage
+                )
+            }
         }
     }
 
@@ -801,108 +702,6 @@ extension BattleResultCardView {
         }
     }
 
-    // MARK: Duel rewards
-
-    var duelRewardsSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            HStack {
-                Text("REWARDS")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .tracking(2)
-                Spacer(minLength: 0)
-                if config.firstWinBonus {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image("reward-first-win")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
-                        Text("First win x2")
-                            .font(DarkFantasyTheme.body.bold())
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM), count: 3),
-                spacing: LayoutConstants.spaceSM
-            ) {
-                if let gold = config.goldReward, gold > 0 {
-                    duelRewardTile(
-                        asset: "icon-gold",
-                        value: "+\(goldDisplay)",
-                        color: DarkFantasyTheme.goldBright,
-                        label: "gold",
-                        pulseOpacity: goldPulseOpacity
-                    )
-                }
-                if let xp = config.xpReward, xp > 0 {
-                    duelRewardTile(
-                        asset: "icon-xp",
-                        value: "+\(xpDisplay)",
-                        color: DarkFantasyTheme.xpRing,
-                        label: "XP",
-                        pulseOpacity: xpPulseOpacity
-                    )
-                }
-                ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
-                    duelLootTile(item, index: index)
-                }
-            }
-        }
-    }
-
-    func duelRewardTile(asset: String, value: String, color: Color, label: String, pulseOpacity: Double) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(asset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
-            Text(value)
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .lineLimit(1)
-                .opacity(pulseOpacity)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: Self.duelTileHeight)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgTertiary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(color.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(value) \(label)")
-    }
-
-    @ViewBuilder
-    func duelLootTile(_ item: LootItemDisplay, index: Int) -> some View {
-        let isRevealed = revealedLootIndices.contains(index)
-
-        ItemCardView(
-            rarity: item.rarity,
-            imageKey: item.imageKey,
-            imageUrl: item.imageUrl,
-            fallbackIcon: item.fallbackIcon,
-            systemIcon: item.sfIcon,
-            systemIconColor: item.sfColor,
-            context: .loot
-        ) {
-            config.onLootTap?(index)
-        }
-        .frame(width: Self.duelTileHeight, height: Self.duelTileHeight)
-        .frame(maxWidth: .infinity)
-        .opacity(isRevealed ? 1 : 0)
-        .accessibilityLabel("\(item.name), \(item.rarityName)")
-    }
-
     // MARK: Duel level row
 
     @ViewBuilder
@@ -944,7 +743,9 @@ extension BattleResultCardView {
                 }
             }
 
-            if xpConfig.leveledUp {
+            // Laid out from the start when this fight levels up, shown when the
+            // bar fills (`XPBarConfig.willLevelUp`) — the card never grows mid-ceremony.
+            if xpConfig.leveledUp || xpConfig.willLevelUp {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image("reward-level-up")
                         .resizable()
@@ -954,14 +755,15 @@ extension BattleResultCardView {
                         .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
-                .transition(.opacity)
+                .opacity(xpConfig.leveledUp ? 1 : 0)
+                .accessibilityHidden(!xpConfig.leveledUp)
             }
         }
         .accessibilityElement(children: .combine)
     }
 
     // MARK: - Animation Sequence (Motion Audit §2.12)
-    // Victory: flash gold → title slam (2.5→1.0) → particles → reward burst → counters → loot → CTAs
+    // Victory: flash gold → title → particles → reward burst → counters → loot → CTAs
     // Defeat:  flash red → title fade → shake + haptic → counters → CTAs (red glow)
-
+    // (BattleResultAnimations.swift)
 }

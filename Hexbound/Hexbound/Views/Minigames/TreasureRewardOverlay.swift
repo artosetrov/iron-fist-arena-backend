@@ -1,8 +1,11 @@
 import SwiftUI
 
 // MARK: - Treasure Reward Overlay
-// Rich reward modal for dungeon rush treasure rooms.
-// Features: scale bounce, count-up gold, coin particles, delayed continue button.
+// Reward card for dungeon rush treasure rooms (a dungeon reward card since
+// 2026-10-22, RewardCard.swift): the open chest in the treasure vault, the
+// gold counting up, the buff, CONTINUE once the count has landed.
+// Features: card bounce (the documented treasure-chest exception to the no-scale
+// rule), coin burst, count-up gold, delayed continue button.
 
 struct TreasureRewardOverlay: View {
     let gold: Int
@@ -13,90 +16,134 @@ struct TreasureRewardOverlay: View {
     // MARK: - Animation State
 
     @State private var appeared = false
-    @State private var modalScale: CGFloat = 0.7
+    @State private var cardScale: CGFloat = 0.85
     @State private var goldCount: Double = 0
     @State private var showBurst = false
     @State private var animationDone = false
     @State private var skipped = false
+    @State private var dragOffset: CGFloat = 0
 
     private let animationDuration: Double = 0.8
 
+    /// Past this many points a swipe down closes the card (as in `GameModal`).
+    private static var dismissThreshold: CGFloat { 110 }
+
+    // MARK: - Card
+
+    /// The gold decides the metal; a buff makes it at least silver.
+    private var tier: RewardCardTier {
+        RewardCardTier.best([RewardCardTier(gold: gold), buff == nil ? nil : .silver])
+    }
+
+    /// The chest that fits the haul: wood for small change, iron, then gold.
+    private var chestAsset: String {
+        switch tier {
+        case .iron, .bronze: "rush2-chest-wood-open"
+        case .silver: "rush2-chest-iron-open"
+        case .gold, .mythic: "rush2-chest-gold-open"
+        }
+    }
+
+    private var art: RewardCardArt {
+        var art = RewardCardArt.object(chestAsset, fill: 0.78)
+        art.backdrop = "bg-rush-treasure"
+        return art
+    }
+
     var body: some View {
-        GameModal(
-            accent: DarkFantasyTheme.gold,
-            // A tap beside the chest means "skip the count-up" while the
-            // animation runs, and only closes once it has finished — the
-            // reward must be on screen before it can be dismissed.
-            onBackdropTap: {
-                if animationDone { onDismiss() } else { skipAnimation() }
-            },
-            // Same reason: no swiping the reward away before it has shown.
-            dismissOnSwipeDown: animationDone,
-            // The chest bounce is the reward beat, not a generic entrance, so
-            // the frame scales with it.
-            cardScale: modalScale,
-            onDismiss: onDismiss
-        ) {
-            VStack(spacing: LayoutConstants.spaceLG) {
-                // Chest image with particle burst
-                ZStack {
-                    Image("rush-ui-treasure-chest")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .shadow(color: DarkFantasyTheme.goldGlow, radius: 24)
-                        .rewardBurst(isActive: $showBurst, style: .gold)
+        ZStack {
+            DarkFantasyTheme.bgModal
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                // A tap beside the card means "skip the count-up" while the
+                // animation runs, and only closes once it has finished — the
+                // reward must be on screen before it can be dismissed.
+                .onTapGesture {
+                    if animationDone { onDismiss() } else { skipAnimation() }
                 }
                 .accessibilityHidden(true)
 
-                Text("TREASURE!")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                VStack(spacing: LayoutConstants.spaceSM) {
-                    if gold > 0 {
-                        // Large gold amount — matches or exceeds top gold counter size
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image("icon-gold")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 36, height: 36)
-                            Text("+\(Int(goldCount)) GOLD")
-                                .font(DarkFantasyTheme.section)
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
-                                .monospacedDigit()
-                                .contentTransition(.numericText(value: goldCount))
-                        }
-                    }
-
-                    if let buff, let assetName = buffAssetName {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(assetName)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-                            Text(buff.name)
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.purple)
-                        }
-                    }
-                }
-
-                GoldDivider()
-
-                // Continue button — appears after animation or tap-to-skip
-                Button { onDismiss() } label: { Text("CONTINUE") }
-                    .buttonStyle(.primary)
-                    .accessibilityLabel("Continue")
-                    .opacity(animationDone ? 1 : 0)
-                    .animation(.easeIn(duration: 0.2), value: animationDone)
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .dungeon,
+                    tier: tier,
+                    art: art,
+                    width: width,
+                    artRatio: artRatio,
+                    header: {
+                        // The burst rises from the foot of the chest.
+                        RewardCardTitle(title: "TREASURE!")
+                            .rewardBurst(isActive: $showBurst, style: .gold)
+                    },
+                    content: { rewards },
+                    actions: { continueButton }
+                )
             }
+            // The chest bounce is the reward beat, not a generic entrance, so
+            // the card bounces with it (the documented treasure exception).
+            .scaleEffect(cardScale)
+            .offset(y: dragOffset)
+            // Same reason as the backdrop: no swiping the reward away before it
+            // has shown.
+            .gesture(dragGesture, including: animationDone ? .all : .subviews)
         }
+        .transition(.opacity)
         .onAppear {
             guard !appeared else { return }
             appeared = true
             startEntrance()
         }
+    }
+
+    // MARK: - Pieces
+
+    private var rewards: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            if gold > 0 {
+                RewardCardRow(icon: "icon-gold", value: "+\(Int(goldCount))", label: "Gold")
+            }
+
+            if let buff, let assetName = buffAssetName {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                        .accessibilityHidden(true)
+                    Text(buff.name)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.purple)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .padding(.vertical, LayoutConstants.spaceXS)
+    }
+
+    // Continue button — appears after animation or tap-to-skip
+    private var continueButton: some View {
+        Button { onDismiss() } label: {
+            Text("CONTINUE")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .accessibilityLabel("Continue")
+        .opacity(animationDone ? 1 : 0)
+        .allowsHitTesting(animationDone)
+        .animation(.easeIn(duration: 0.2), value: animationDone)
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                dragOffset = max(0, value.translation.height)
+            }
+            .onEnded { value in
+                if value.translation.height > Self.dismissThreshold {
+                    onDismiss()
+                }
+                withAnimation(MotionConstants.spring) { dragOffset = 0 }
+            }
     }
 
     // MARK: - Animation Sequence
@@ -105,13 +152,14 @@ struct TreasureRewardOverlay: View {
         SFXManager.shared.play(.chestOpen)
         HapticManager.medium()
 
-        // Phase 1: Scale bounce 0.7 → 1.2 → 1.0
+        // Phase 1: bounce in. Gentler than the old 0.7 → 1.2 → 1.0 of the
+        // small modal: the card is three times its size.
         withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) {
-            modalScale = 1.2
+            cardScale = 1.05
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
-                modalScale = 1.0
+                cardScale = 1.0
             }
         }
 
@@ -143,7 +191,7 @@ struct TreasureRewardOverlay: View {
         guard !animationDone else { return }
         skipped = true
         withAnimation(.easeOut(duration: 0.1)) {
-            modalScale = 1.0
+            cardScale = 1.0
             goldCount = Double(gold)
         }
         animationDone = true

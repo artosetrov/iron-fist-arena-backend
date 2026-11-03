@@ -3,6 +3,11 @@ import SwiftUI
 /// Gold Mine payout celebration: a Collect All haul, a bonus run, and — when
 /// the haul filled the expedition — the chest.
 ///
+/// Since 2026-10-22 it is a mine reward card (`RewardCard`): the haul stands in
+/// the mine's tunnel as the card's illustration, the card's metal follows the
+/// payout (an expedition chest makes it gold), the amounts and the chest sit in
+/// the card and the card grows to hold them.
+///
 /// The chest is opened by a tap and plays a short scene (approved exception
 /// to the opacity-only motion rule, like the Dungeon Rush treasure chest):
 /// it rattles, the lock gives and light leaks from the crack, the lid flies
@@ -46,6 +51,28 @@ struct MineClaimRewardView: View {
     private var chestWaiting: Bool { reward.chest != nil && stage == .closed }
     /// The chest is mid-scene: nothing closes the modal until it settles.
     private var chestPlaying: Bool { reward.chest != nil && stage != .closed && !chestDone }
+    /// The card is up while anything of it is; closing fades it out whole.
+    private var cardVisible: Bool { showHaul || showChest || showButton }
+
+    // MARK: Card
+
+    /// The payout decides the metal; an expedition chest makes it at least gold.
+    private var cardTier: RewardCardTier {
+        RewardCardTier.best([
+            RewardCardTier(
+                gold: reward.goldEarned + (reward.chest?.gold ?? 0),
+                gems: reward.gemsEarned + (reward.chest?.gems ?? 0)
+            ),
+            reward.chest == nil ? nil : .gold
+        ])
+    }
+
+    /// The haul itself — gold or gems, sized by the amount — in the mine
+    /// tunnel; a chest-only claim shows the full cart.
+    private var cardArt: RewardCardArt {
+        guard hasHaul else { return .object(MineRails.fullCart, fill: 0.5) }
+        return .headline(gold: reward.goldEarned, gems: reward.gemsEarned, xp: 0, items: [], hasConsumables: false)
+    }
 
     var body: some View {
         ZStack {
@@ -53,28 +80,24 @@ struct MineClaimRewardView: View {
                 .ignoresSafeArea()
                 .onTapGesture { primaryAction() }
 
-            VStack(spacing: LayoutConstants.spaceLG) {
-                if showHaul {
-                    haulBlock
-                        .transition(.opacity)
-                }
-                if showChest, let chest = reward.chest {
-                    chestBlock(chest)
-                        .transition(.opacity)
-                }
-                if showButton {
-                    Button(action: primaryAction) {
-                        Text(chestWaiting ? "OPEN CHEST" : "CONTINUE")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.primary)
-                    .padding(.horizontal, LayoutConstants.spaceLG)
-                    .opacity(chestPlaying ? 0 : 1)
-                    .disabled(chestPlaying)
-                    .transition(.opacity)
-                }
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: .mine,
+                    tier: cardTier,
+                    art: cardArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: {
+                        RewardCardTitle(
+                            title: reward.kind == .bonus ? "BONUS RUN" : "MINE HAUL",
+                            subtitle: reward.chest == nil ? nil : "Expedition complete"
+                        )
+                    },
+                    content: { cardContent },
+                    actions: { actionButton }
+                )
             }
-            .padding(LayoutConstants.spaceLG)
+            .opacity(cardVisible ? 1 : 0)
 
             if let start = fountainStart, let origin = anchors[.chest], let chest = reward.chest {
                 MineCoinFountain(
@@ -114,38 +137,55 @@ struct MineClaimRewardView: View {
         }
     }
 
-    // MARK: Haul
+    // MARK: Content
 
-    private var haulBlock: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Image(reward.kind == .bonus ? "icon-mine-bonus" : MineRails.fullCart)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 120, height: 104)
-                .accessibilityHidden(true)
-            Text(reward.kind == .bonus ? "BONUS RUN" : "MINE HAUL")
-                .font(DarkFantasyTheme.title)
-                .foregroundStyle(DarkFantasyTheme.gold)
-                .tracking(3)
-            if hasHaul, counted {
-                rewardRow(gold: reward.goldEarned > 0 ? shownGold : nil,
-                          gems: reward.gemsEarned > 0 ? shownGems : nil)
-                    .transition(.opacity)
+    /// Everything is laid out from the start and fades in, so the card keeps
+    /// its height as the beats land (only a chest arriving late grows it).
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            if hasHaul {
+                haulRows
+                    .opacity(showHaul && counted ? 1 : 0)
+                    .accessibilityHidden(!(showHaul && counted))
+            }
+            if let chest = reward.chest {
+                chestBlock(chest)
+                    .opacity(showChest ? 1 : 0)
+                    .allowsHitTesting(showChest)
+                    .accessibilityHidden(!showChest)
             }
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    private var haulRows: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            if reward.goldEarned > 0 {
+                RewardCardRow(icon: "icon-gold", value: "+\(shownGold)", label: "Gold",
+                              color: DarkFantasyTheme.goldBright)
+            }
+            if reward.gemsEarned > 0 {
+                RewardCardRow(icon: "icon-gems", value: "+\(shownGems)", label: "Gems",
+                              color: DarkFantasyTheme.cyan)
+            }
+        }
+    }
+
+    private var actionButton: some View {
+        Button(action: primaryAction) {
+            Text(chestWaiting ? "OPEN CHEST" : "CONTINUE")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .opacity(showButton && !chestPlaying ? 1 : 0)
+        .disabled(!showButton || chestPlaying)
+        .accessibilityHidden(!showButton)
     }
 
     // MARK: Chest
 
     private func chestBlock(_ chest: GoldMineExpeditionChest) -> some View {
+        // "Expedition complete" is the card's subtitle.
         VStack(spacing: LayoutConstants.spaceSM) {
-            Text("EXPEDITION COMPLETE")
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .tracking(2)
-
             Button(action: openChest) {
                 MineChestScene(
                     stage: stage,

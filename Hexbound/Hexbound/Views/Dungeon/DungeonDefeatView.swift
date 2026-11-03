@@ -31,6 +31,8 @@ struct DungeonDefeatView: View {
             }
         ]
 
+        // Reward card: the dungeon frame at the boss's level (dimmed — a loss),
+        // the boss that won standing on its lair.
         return BattleResultConfig(
             isVictory: false,
             title: "DEFEATED",
@@ -44,7 +46,10 @@ struct DungeonDefeatView: View {
             dungeonProgress: dungeonProgress,
             lootItems: [],
             onLootTap: nil,
-            buttons: buttons
+            buttons: buttons,
+            cardFamily: .dungeon,
+            cardTier: boss.map { RewardCardTier(level: $0.level) },
+            cardArt: RewardCardArt.dungeonBoss(boss, dungeonId: vm.dungeon?.id)
         )
     }
 }

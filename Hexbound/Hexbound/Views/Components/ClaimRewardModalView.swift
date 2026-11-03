@@ -7,9 +7,11 @@ import SwiftUI
 //   • Daily login, daily quests (individual + bonus)
 //   • Achievements, battle pass nodes
 //
-// Visual language mirrors BattleResultCardView (dimmed backdrop, spinning rays,
-// title slam, tick-up counters, loot cards, shimmer CTA) but is simpler —
-// no victory/defeat split, no XP bar, no rating, no stars.
+// Since 2026-10-22 the panel is a painted reward card (RewardCard.swift): the
+// frame says where the reward came from (`family`), its metal what it is worth
+// (`cardTier` — the richest of the window's own reading, the amounts and the
+// loot), the illustration shows the most valuable thing in it (`cardArt`).
+// Backdrop, rays, burst and the tick-up ceremony are unchanged.
 //
 // Usage:
 //   .claimRewardModal(config: $vm.claimRewardConfig)
@@ -32,6 +34,31 @@ struct ClaimRewardConfig: Equatable {
     // Dismiss callback (called when CONTINUE tapped)
     // Not part of Equatable — always treated as equal
     var onDismiss: (() -> Void)?
+
+    // Card (2026-10-22). Where the reward came from, and — when the window knows
+    // better than the amounts do (streak day, battle-pass level) — what it is worth,
+    // and what the illustration shows. Defaults: a tribute card, tier and art from
+    // the contents.
+    var family: RewardCardFamily = .tribute
+    var tier: RewardCardTier? = nil
+    var art: RewardCardArt? = nil
+
+    /// The richest reading of this reward: the window's own tier, the amounts, the loot.
+    var cardTier: RewardCardTier {
+        let loot: [RewardCardTier?] = lootItems.map { RewardCardTier(rarity: $0.rarity) }
+        return RewardCardTier.best([tier, RewardCardTier(gold: goldReward, gems: gemsReward, xp: xpReward)] + loot)
+    }
+
+    /// The illustration: the window's own, or the most valuable thing in the reward.
+    var cardArt: RewardCardArt {
+        art ?? .headline(
+            gold: goldReward,
+            gems: gemsReward,
+            xp: xpReward,
+            items: lootItems.map { (imageKey: $0.imageKey, rarity: $0.rarity) },
+            hasConsumables: lootItems.contains { $0.fallbackIcon == "cross.vial" }
+        )
+    }
 
     /// View identity for the modal: replacing the config with different
     /// numbers (an optimistic modal corrected by the server) restarts the
@@ -144,33 +171,27 @@ struct ClaimRewardModalView: View {
                 .animation(.easeIn(duration: 0.6), value: showCard)
                 .allowsHitTesting(false)
 
-            // Main card
-            ScrollView(.vertical, showsIndicators: false) {
-                cardContent
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.modalRadius))
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgPrimary,
-                    glowColor: DarkFantasyTheme.bgSecondary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
+            // The card
+            RewardCardStage { width, artRatio in
+                RewardCard(
+                    family: config.family,
+                    tier: config.cardTier,
+                    art: config.cardArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: {
+                        RewardCardTitle(
+                            title: config.title,
+                            subtitle: config.subtitle,
+                            color: accentColor,
+                            glow: titleGlowPulse
+                        )
+                        .opacity(showTitle ? 1 : 0)
+                    },
+                    content: { cardContent },
+                    actions: { continueButton }
                 )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .stroke(accentColor.opacity(0.5), lineWidth: 2)
-            )
-            .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
-            .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxHeight: UIScreen.main.bounds.height * 0.78)
+            }
             .opacity(showCard ? 1 : 0)
         }
         .onAppear {
@@ -183,64 +204,34 @@ struct ClaimRewardModalView: View {
     @ViewBuilder
     private var cardContent: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-
-            // Title
-            Text(config.title)
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(accentColor)
-                .shadow(
-                    color: accentColor.opacity(titleGlowPulse ? 0.6 : 0.2),
-                    radius: titleGlowPulse ? 20 : 8
-                )
-                .opacity(showTitle ? 1 : 0)
-                .padding(.top, LayoutConstants.spaceLG)
-
-            // Subtitle
-            if let subtitle = config.subtitle {
-                Text(subtitle)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .opacity(showTitle ? 1 : 0)
-            }
-
-            // Divider
-            GoldDivider()
-                .padding(.horizontal, LayoutConstants.spaceMD)
-                .opacity(showRewards ? 1 : 0)
-
-            // Rewards counters
             if hasRewards {
                 rewardsSection
                     .opacity(showRewards ? 1 : 0)
                     .offset(y: showRewards ? 0 : 10)
             }
-
-            // Loot cards
             if !config.lootItems.isEmpty {
                 lootSection
                     .opacity(showLoot ? 1 : 0)
             }
-
-            // Continue button
-            Button {
-                HapticManager.medium()
-                SFXManager.shared.play(.uiConfirm)
-                onDismiss()
-            } label: {
-                Text("CONTINUE")
-                    .font(DarkFantasyTheme.buttonLabel)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.primary)
-            .frame(height: 50)
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .opacity(showButton ? 1 : 0)
-            .offset(y: showButton ? 0 : 15)
-            .shimmer(color: DarkFantasyTheme.goldBright, duration: 2.5)
-            .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: showButton)
-
-            Spacer().frame(height: LayoutConstants.spaceMD)
         }
+    }
+
+    private var continueButton: some View {
+        Button {
+            HapticManager.medium()
+            SFXManager.shared.play(.uiConfirm)
+            onDismiss()
+        } label: {
+            Text("CONTINUE")
+                .font(DarkFantasyTheme.buttonLabel)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .frame(height: 50)
+        .opacity(showButton ? 1 : 0)
+        .offset(y: showButton ? 0 : 15)
+        .shimmer(color: DarkFantasyTheme.goldBright, duration: 2.5)
+        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: showButton)
     }
 
     // MARK: - Rewards
@@ -251,51 +242,22 @@ struct ClaimRewardModalView: View {
 
     @ViewBuilder
     private var rewardsSection: some View {
-        // All rewards on a single horizontal line, centered as one group.
-        HStack(alignment: .center, spacing: LayoutConstants.spaceLG) {
+        // One line per reward; the card grows with the list.
+        VStack(spacing: LayoutConstants.spaceXS) {
             if config.goldReward > 0 {
-                rewardItem(
-                    iconImage: "icon-gold",
-                    value: goldDisplay,
-                    color: DarkFantasyTheme.goldBright
-                )
+                RewardCardRow(icon: "icon-gold", value: "+\(goldDisplay)", label: "Gold",
+                              color: DarkFantasyTheme.goldBright)
             }
-
             if config.gemsReward > 0 {
-                rewardItem(
-                    iconImage: "icon-gems",
-                    value: gemsDisplay,
-                    color: DarkFantasyTheme.purple
-                )
+                RewardCardRow(icon: "icon-gems", value: "+\(gemsDisplay)", label: "Gems",
+                              color: DarkFantasyTheme.purple)
             }
-
             if config.xpReward > 0 {
-                rewardItem(
-                    iconImage: "reward-xp",
-                    value: xpDisplay,
-                    color: DarkFantasyTheme.xpRing
-                )
+                RewardCardRow(icon: "reward-xp", value: "+\(xpDisplay)", label: "XP",
+                              color: DarkFantasyTheme.xpRing)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, LayoutConstants.spaceMD)
-        .padding(.horizontal, LayoutConstants.spaceLG)
-    }
-
-    @ViewBuilder
-    private func rewardItem(iconImage: String, value: Int, color: Color) -> some View {
-        HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
-            Image(iconImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-
-            Text("+\(value)")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-        }
+        .padding(.vertical, LayoutConstants.spaceXS)
     }
 
     // MARK: - Loot
@@ -308,18 +270,27 @@ struct ClaimRewardModalView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
-            // Fixed-size loot tiles (96×96) matching inventory item size, centered.
-            // Uses the standard ItemCardView for single-source-of-truth rendering.
-            HStack(spacing: LayoutConstants.inventoryGap) {
-                ForEach(config.lootItems) { item in
-                    lootItemCard(item)
-                        .frame(width: LayoutConstants.itemCardSize, height: LayoutConstants.itemCardSize)
+            // Card-sized tiles, three to a row: the card grows a row at a time.
+            // (Plain stacks, not a lazy grid: the stage measures the card's ideal height.)
+            let rows = stride(from: 0, to: config.lootItems.count, by: Self.lootPerRow).map {
+                Array(config.lootItems[$0..<min($0 + Self.lootPerRow, config.lootItems.count)])
+            }
+            VStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        ForEach(row) { item in
+                            lootItemCard(item)
+                                .frame(width: Self.lootTile, height: Self.lootTile)
+                        }
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, LayoutConstants.cardPadding)
     }
+
+    private static var lootTile: CGFloat { RewardCardLayout.lootTile }
+    private static var lootPerRow: Int { RewardCardLayout.lootPerRow }
 
     @ViewBuilder
     private func lootItemCard(_ item: ClaimLootItem) -> some View {
@@ -479,6 +450,7 @@ extension ClaimRewardConfig {
         title: String,
         subtitle: String? = nil,
         contents: [OfferContent],
+        family: RewardCardFamily = .merchant,
         onDismiss: (() -> Void)? = nil
     ) -> ClaimRewardConfig {
         var gold = 0, gems = 0, xp = 0
@@ -524,7 +496,8 @@ extension ClaimRewardConfig {
             gemsReward: gems,
             xpReward: xp,
             lootItems: loot,
-            onDismiss: onDismiss
+            onDismiss: onDismiss,
+            family: family
         )
     }
 

@@ -53,10 +53,39 @@ extension PurchaseRevealContent {
     }
 }
 
+// MARK: - Card
+
+extension PurchaseRevealContent {
+    /// The card's metal: the pack's own tier (its shop art is `…-tier1` … `…-tier5`),
+    /// else what is in the box. Legendary shards make it at least gold.
+    var cardTier: RewardCardTier {
+        if let digit = artAsset.split(separator: "-").last.flatMap({ $0.hasPrefix("tier") ? Int($0.dropFirst(4)) : nil }),
+           let tier = RewardCardTier(rawValue: digit) {
+            return tier
+        }
+        let gold = rewards.filter { $0.kind == .gold }.reduce(0) { $0 + $1.quantity }
+        let gems = rewards.filter { $0.kind == .gems }.reduce(0) { $0 + $1.quantity }
+        let shards = rewards.contains { $0.kind == .legendaryShard }
+        return RewardCardTier.best([RewardCardTier(gold: gold, gems: gems), shards ? .gold : nil])
+    }
+
+    /// The gem packs keep their own painted tier art; everything else shows
+    /// the most valuable thing in the box, painted big.
+    var cardArt: RewardCardArt {
+        if artAsset.hasPrefix("shop-gems-tier") {
+            return .object(artAsset, fill: 0.6)
+        }
+        let gold = rewards.filter { $0.kind == .gold }.reduce(0) { $0 + $1.quantity }
+        let gems = rewards.filter { $0.kind == .gems }.reduce(0) { $0 + $1.quantity }
+        return .headline(gold: gold, gems: gems, xp: 0, items: [], hasConsumables: false)
+    }
+}
+
 // MARK: - Purchase Reward Reveal
 
-/// Full-screen "purchase complete" ceremony: the art lands with a burst, then
-/// each reward counts up in turn, then CONTINUE. Owns its animation state, so
+/// Full-screen "purchase complete" ceremony, on a merchant reward card since
+/// 2026-10-22 (`RewardCard`; metal = the pack's tier): the card lands with a
+/// burst, then each reward counts up in turn, then CONTINUE. Owns its animation state, so
 /// it lives in its own file (Hexbound/CLAUDE.md → Animated Overlays). Tap
 /// anywhere to skip to the end; Reduce Motion shows the end state at once.
 struct PurchaseRewardRevealView: View {
@@ -73,8 +102,6 @@ struct PurchaseRewardRevealView: View {
     @State private var skipped = false
     @State private var playedSound = false
 
-    private let artSize: CGFloat = 128
-
     init(content: PurchaseRevealContent, onDismiss: @escaping () -> Void) {
         self.content = content
         self.onDismiss = onDismiss
@@ -88,46 +115,22 @@ struct PurchaseRewardRevealView: View {
                 .ignoresSafeArea()
                 .accessibilityHidden(true)
 
-            VStack(spacing: LayoutConstants.spaceLG) {
-                Spacer(minLength: LayoutConstants.spaceLG)
-
-                artwork
-
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text("PURCHASE COMPLETE")
-                        .font(DarkFantasyTheme.title)
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .multilineTextAlignment(.center)
-                        .accessibilityAddTraits(.isHeader)
-                    Text("Added to your account")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                .opacity(showTitle ? 1 : 0)
-                .offset(y: showTitle ? 0 : LayoutConstants.spaceSM)
-
-                rewardList
-
-                if let note = content.note {
-                    Text(note)
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .opacity(showButton ? 1 : 0)
-                        .accessibilityHidden(!showButton)
-                }
-
-                Spacer(minLength: LayoutConstants.spaceLG)
-
-                Button("CONTINUE", action: onDismiss)
-                    .buttonStyle(.primary)
-                    .opacity(showButton ? 1 : 0)
-                    .allowsHitTesting(showButton)
-                    .accessibilityHidden(!showButton)
+            RewardCardStage { width, artRatio in
+                let metrics = RewardCardFrameMetrics.of(.merchant, content.cardTier)
+                let artHeight = width * (1 - metrics.insetL - metrics.insetR) * artRatio
+                RewardCard(
+                    family: .merchant,
+                    tier: content.cardTier,
+                    art: content.cardArt,
+                    width: width,
+                    artRatio: artRatio,
+                    header: { header(artHeight: artHeight) },
+                    content: { cardContent },
+                    actions: { continueButton }
+                )
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.bottom, LayoutConstants.spaceLG)
+            .opacity(showArt ? 1 : 0)
+            .offset(y: showArt ? 0 : LayoutConstants.spaceMS)
         }
         .contentShape(Rectangle())
         .onTapGesture { skipToEnd() }
@@ -137,36 +140,47 @@ struct PurchaseRewardRevealView: View {
 
     // MARK: - Pieces
 
-    private var artwork: some View {
-        ZStack {
-            // Glow is code, not paint (docs/08_prompts/ART_STYLE_GUIDE.md).
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [content.accent.opacity(DarkFantasyTheme.opacityMedium), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: artSize * 0.8
-                    )
-                )
-                .frame(width: artSize * 1.6, height: artSize * 1.6)
-                .opacity(showArt ? 1 : 0)
-
-            Image(content.artAsset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: artSize, height: artSize)
-                .opacity(showArt ? 1 : 0)
-                .offset(y: showArt ? 0 : LayoutConstants.spaceMS)
-
-            // Zero-size anchor: particles fly out from the art's centre.
-            RewardBurstView(style: content.burst, isActive: $burst, particleCount: content.particleCount)
-                .frame(width: 0, height: 0)
-        }
-        .frame(height: artSize * 1.3)
-        .accessibilityHidden(true)
+    private func header(artHeight: CGFloat) -> some View {
+        RewardCardTitle(title: "PURCHASE COMPLETE", subtitle: "Added to your account")
+            .opacity(showTitle ? 1 : 0)
+            .offset(y: showTitle ? 0 : LayoutConstants.spaceSM)
+            .overlay(alignment: .top) {
+                // Zero-size anchor at the middle of the card's illustration:
+                // particles fly out from the art.
+                RewardBurstView(style: content.burst, isActive: $burst, particleCount: content.particleCount)
+                    .frame(width: 0, height: 0)
+                    .offset(y: -(artHeight / 2) + RewardCardLayout.titleOverlap)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
     }
 
+    private var cardContent: some View {
+        VStack(spacing: LayoutConstants.spaceMS) {
+            rewardList
+
+            if let note = content.note {
+                Text(note)
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(showButton ? 1 : 0)
+                    .accessibilityHidden(!showButton)
+            }
+        }
+    }
+
+    private var continueButton: some View {
+        Button("CONTINUE", action: onDismiss)
+            .buttonStyle(.primary)
+            .opacity(showButton ? 1 : 0)
+            .allowsHitTesting(showButton)
+            .accessibilityHidden(!showButton)
+    }
+
+    /// One line per reward, counting up in turn. Every line is laid out from
+    /// the start (and fades in), so the card keeps its height as they land.
     private var rewardList: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceMS) {
             ForEach(Array(content.rewards.enumerated()), id: \.element.id) { index, reward in
@@ -194,25 +208,8 @@ struct PurchaseRewardRevealView: View {
             }
         }
         .fixedSize(horizontal: true, vertical: false)
-        .padding(.horizontal, LayoutConstants.spaceLG)
-        .padding(.vertical, LayoutConstants.spaceMD)
         .frame(maxWidth: .infinity)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: content.accent,
-                glowIntensity: 0.10,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .innerBorder(
-            cornerRadius: LayoutConstants.cardRadius - 2,
-            inset: 2,
-            color: content.accent.opacity(DarkFantasyTheme.opacityMild)
-        )
-        .cornerBrackets(color: content.accent.opacity(0.5), length: 14, thickness: 1.5)
-        .compositingGroup()
-        .opacity(showTitle ? 1 : 0)
+        .padding(.vertical, LayoutConstants.spaceXS)
     }
 
     // MARK: - Ceremony

@@ -217,6 +217,17 @@ Single source of truth for item cells. Contexts: `.inventory()`, `.shop()`, `.eq
 - Price: `CurrencyDisplay` with `.mini` (never SF Symbols)
 - Deprecated: `ShopItemCardView.swift`
 
+### Reward cards (every victory / reward window)
+Every window that pays the player or ends a fight is a painted card: `RewardCard` in `RewardCardStage` (`Views/Components/RewardCard.swift`, `RewardCardStyle.swift`). Never build a reward modal from a plain panel.
+- **Family = where it came from** (crest + corners + backdrop): `.arena`, `.dungeon`, `.fortune`, `.mine`, `.merchant`, `.tribute`, `.glory`, `.ascension`.
+- **Tier = what it is worth** (metal + stones, the hero-card ladder): pass the window's own reading (`RewardCardTier(level:)`, `(rankKey:)`, a streak day, a BP level) and lift it with `RewardCardTier.best([...])` over the loot rarities. `RewardCardTier(gold:gems:xp:)` only when nothing better is known.
+- **Art**: `.figure(boss-full)` for bosses, `.hero(skinKey:characterClass:)` for heroes and opponents (`mirrored: true` for enemies), `.object(asset)` for rewards; `RewardCardArt.headline(...)` picks the most valuable thing in a bundle.
+- Losses: same family and tier, `dimmed: true`, title in `DarkFantasyTheme.danger`.
+- The card is as tall as its content (the frame repeats its rail strip). Lay content out from the start and reveal it with opacity, so the stage does not jump between full and compact sizes mid-ceremony.
+- Too tall for the screen, `RewardCardStage` shrinks the illustration, then pins the card to the screen and scrolls everything above its buttons — the buttons always stay on screen. Never wrap a reward card in your own `ScrollView`; never make it grow in place (a combat log, a details list) — open a sheet instead.
+- CLAIMED! sources pass `family:` / `tier:` / `art:` on `ClaimRewardConfig`; shop builders use `ClaimRewardConfig.fromOfferContents(…, family:)`.
+- New frames or regenerated art: `docs/08_prompts/REWARD_CARD_FRAMES_PROMPTS.md`, then `python3 scripts/reward_card_frames.py <dir>` (regenerates `RewardCardFrameMetrics.swift` — never edit it by hand).
+
 ### CurrencyDisplay
 Always use for gold/gems display. Sizes: `.standard` (36px), `.compact` (14px), `.mini` (12px).
 - Types: `.both`, `.gold`, `.gems`. Never use SF Symbols for currency.

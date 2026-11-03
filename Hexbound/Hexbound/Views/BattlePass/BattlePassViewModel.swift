@@ -322,7 +322,10 @@ final class BattlePassViewModel {
             goldReward: goldReward,
             gemsReward: gemsReward,
             xpReward: xpReward,
-            lootItems: lootItems
+            lootItems: lootItems,
+            family: .glory,
+            // A hundred levels in five metals: 1–19 iron … 80+ mythic.
+            tier: RewardCardTier(rawValue: min(5, 1 + level / 20)) ?? .iron
         )
     }
 }
