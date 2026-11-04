@@ -150,14 +150,19 @@ struct TributeChestStage: View {
 
     var body: some View {
         GeometryReader { geo in
-            let side = max(120, min(geo.size.width * 0.6, geo.size.height - 170, 240))
+            // The chest takes what the header and the week panel leave:
+            // ~240 pt on a Pro Max, ~190 on a 6.1", ~100 on an SE.
+            let tagHeight: CGFloat = 66
+            let riseHeight = min(92, max(48, geo.size.height * 0.28))
+            let room = geo.size.height - riseHeight - tagHeight - 2 * LayoutConstants.spaceSM
+            let side = max(96, min(geo.size.width * 0.6, room, 240))
             VStack(spacing: LayoutConstants.spaceSM) {
                 risingReward
-                    .frame(height: 92, alignment: .bottom)
+                    .frame(height: riseHeight, alignment: .bottom)
                 chest(side: side)
                     .frame(width: side, height: side)
                 tag
-                    .frame(height: 66, alignment: .top)
+                    .frame(height: tagHeight, alignment: .top)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
@@ -222,7 +227,10 @@ struct TributeChestStage: View {
                 .accessibilityHint(Text(chestHint))
             }
             .overlay {
+                // Particles fly from the frame's origin: a zero-size frame
+                // puts that origin on the chest's centre.
                 RewardBurstView(style: TributeChestTier.isBonusDay(day) ? .epic : .gold, isActive: $burst)
+                    .frame(width: 0, height: 0)
                     .allowsHitTesting(false)
             }
         }

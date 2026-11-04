@@ -175,6 +175,10 @@ struct GuildHallDetailView: View {
                     ? "A warrior asks to raise a banner with you. Answer below."
                     : "\(asking) warriors ask to raise a banner with you. Answer below."
             }
+            if vm.friends.isEmpty {
+                if case .error = vm.loadState { return "The roll of banners is lost for a moment. Try again below." }
+                if vm.loadState != .loaded { return "Let me find the roll of banners…" }
+            }
             let foughtWait = vm.allySuggestions.isEmpty ? "" : " Warriors you fought wait below."
             if vm.friends.isEmpty {
                 return vm.allySuggestions.isEmpty
