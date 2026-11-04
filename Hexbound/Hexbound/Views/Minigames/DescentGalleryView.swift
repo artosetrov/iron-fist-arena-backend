@@ -35,7 +35,7 @@ struct DescentGalleryView: View {
 }
 
 enum DescentGalleryFixtures {
-    static let pageCount = 13
+    static let pageCount = 16
 
     static func page(_ i: Int) -> (snapshot: DescentSnapshot, banner: String?) {
         switch i {
@@ -51,24 +51,32 @@ enum DescentGalleryFixtures {
         case 10: return (snap(screen: "chest", current: 3, tale: "The lid gives. Coins spill across the stone.", extra: openChest), nil)
         case 11: return (snap(screen: "fork", current: 2, cleared: true, tale: "Two ways lead on.", map: walkMapBefore, extra: walkFork), nil)
         case 12: return (snap(screen: "chest", current: 3, tale: "An iron chest, banded and cold.", map: walkMapAfter, extra: chest), nil)
-        default: return (snap(screen: "depthCard", current: 0, tale: "The heat rises from below.", extra: ""), nil)
+        // The gates (9 Ossuary, 13 Warrens with the lantern, 14 Molten) and the depth cleared (15).
+        case 13: return (snap(screen: "depthCard", depth: 1, depthKey: "warrens", depthName: "The Shadow Warrens", guardian: "Lord of Shadows", current: 0,
+                              tale: "Your torch is the only light for a mile. Something down here hates it. Your lantern flares: **+1 torch**.", extra: ""), nil)
+        case 14: return (snap(screen: "depthCard", current: 0, tale: "The stone is hot underfoot. The Warden has held this gate for a thousand years.", extra: ""), nil)
+        case 15: return (snap(screen: "depthClear", depth: 0, depthKey: "ossuary", depthName: "The Ossuary", guardian: "The Bone King", current: 4, cleared: true,
+                              tale: "His death warms your blood: {++12% damage+} for the run. You catch your breath.", extra: depthClear), nil)
+        default: return (snap(screen: "depthCard", depth: 0, depthKey: "ossuary", depthName: "The Ossuary", guardian: "The Bone King", hero: freshHero, current: 0, bag: 0,
+                              tale: "The city's last lamp gutters out behind you. Down here, the dead get up again.", extra: ""), nil)
         }
     }
 
     private static let defaultHero = #"{"hp":412,"maxHp":540,"potions":2,"maxPotions":3,"torches":3,"maxTorches":5,"potionHeal":162,"dmgBonusPct":12,"cursedFights":0}"#
+    private static let freshHero = #"{"hp":540,"maxHp":540,"potions":3,"maxPotions":5,"torches":2,"maxTorches":5,"potionHeal":189,"dmgBonusPct":0,"cursedFights":0}"#
     private static let lowHero = #"{"hp":150,"maxHp":540,"potions":1,"maxPotions":3,"torches":2,"maxTorches":5,"potionHeal":162,"dmgBonusPct":0,"cursedFights":2}"#
 
     private static func snap(
-        screen: String, depth: Int = 2, depthKey: String = "molten", depthName: String = "The Molten Heart",
-        hero: String = DescentGalleryFixtures.defaultHero, current: Int, cleared: Bool = false, tale: String? = nil, map: String = #"{"rows":[],"startNext":[]}"#, extra: String
+        screen: String, depth: Int = 2, depthKey: String = "molten", depthName: String = "The Molten Heart", guardian: String = "Warden of the Depths",
+        hero: String = DescentGalleryFixtures.defaultHero, current: Int, cleared: Bool = false, bag: Int = 340, tale: String? = nil, map: String = #"{"rows":[],"startNext":[]}"#, extra: String
     ) -> DescentSnapshot {
         let taleJSON = tale.map { "\"\($0)\"" } ?? "null"
         let json = """
         {"runId":"gallery","seq":1,"screen":"\(screen)","depth":\(depth),"depthKey":"\(depthKey)","depthName":"\(depthName)",
-         "depthBlurb":"Rivers of fire under the old forges.","guardianName":"Warden of the Depths",
+         "depthBlurb":"Rivers of fire under the old forges.","guardianName":"\(guardian)",
          "hero":\(hero),
          "relics":[{"key":"shadowblade","name":"Shadowblade","desc":"Crits cut deeper.","icon":"rush2-relic-shadowblade"},{"key":"lantern","name":"Lantern","desc":"See one room further.","icon":"rush2-relic-lantern"}],
-         "bag":{"gold":340,"items":[]},"safe":{"gold":0,"items":[]},"xpEarned":420,
+         "bag":{"gold":\(bag),"items":[]},"safe":{"gold":0,"items":[]},"xpEarned":420,
          "stats":{"kills":3,"rooms":4,"chests":1},
          "progress":{"total":5,"current":\(current),"currentCleared":\(cleared)},
          "tale":\(taleJSON),
@@ -110,6 +118,8 @@ enum DescentGalleryFixtures {
     private static let fork = #""fork":{"lead":"Two ways lead on.","isBossGate":false,"options":[{"id":"n31","lane":0,"side":"Left","known":true,"type":"combat","typeName":"Monster","cue":"Claws scrape on stone.","fled":false,"revealed":false},{"id":"n32","lane":2,"side":"Right","known":false,"type":null,"typeName":null,"cue":"Only darkness, and a cold draft.","fled":false,"revealed":false}]}"#
 
     private static let angel = #""event":{"id":"angel","scene":"rush2-ev-angel","text":"A stone angel weeps light into a basin.","done":false,"resultText":null,"loot":[],"then":null,"choices":[{"i":0,"label":"Pray for strength","hint":"{++15% damage+} for the rest of the run.","icon":"rush2-relic-shadowblade","disabledReason":null},{"i":1,"label":"Pray for vigor","hint":"{++150 max HP+} and heal 150.","icon":"rush2-icon-potion","disabledReason":null}],"runes":null}"#
+
+    private static let depthClear = #""depthClear":{"nextDepthName":"The Shadow Warrens","bonusText":"+12% damage, 25% HP restored","nextDepthKey":"warrens","nextGuardianName":"Lord of Shadows","nextGuardianFace":"rush2-face-lordshadows","goldMult":1.4}"#
 
     private static let chest = #""chest":{"tier":"iron","name":"Iron chest","inspected":false,"opened":false,"loot":[]}"#
 
