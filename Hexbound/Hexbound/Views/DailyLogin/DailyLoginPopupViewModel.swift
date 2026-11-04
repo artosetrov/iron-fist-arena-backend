@@ -92,6 +92,16 @@ final class DailyLoginPopupViewModel {
         // snapshot survives the server pushing `loginData.currentDay` forward.
         justClaimedDay = currentDay
 
+        // Optimistic status: the streak grows (or restarts) on the tap, the
+        // way the server will write it (daily-login/claim: reset → 1, else +1).
+        loginData = DailyLoginData(
+            currentDay: (currentDay % 7) + 1,
+            streak: Self.streakResets(data) ? 1 : data.streak + 1,
+            totalClaims: data.totalClaims + 1,
+            lastClaimDate: ISO8601DateFormatter().string(from: Date()),
+            canClaim: false
+        )
+
         // Optimistic UI: show claimed state INSTANTLY
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             claimedDayBounce = currentDay
@@ -116,7 +126,7 @@ final class DailyLoginPopupViewModel {
             buildClaimRewardConfig(def: $0, premiumGems: 0, claimedDay: currentDay)
         }
         if let optimisticConfig {
-            claimRewardConfig = optimisticConfig
+            revealAfterChestOpens(optimisticConfig)
         }
 
         // Fire API in background — don't block UI
@@ -137,11 +147,11 @@ final class DailyLoginPopupViewModel {
                     // what was actually granted.
                     let grantedDay = claimResponse.currentDay == 1 ? 7 : claimResponse.currentDay - 1
                     justClaimedDay = grantedDay
-                    claimRewardConfig = buildClaimRewardConfig(
+                    replaceRewardConfig(buildClaimRewardConfig(
                         def: grantedDef,
                         premiumGems: claimResponse.premiumGemsAwarded,
                         claimedDay: grantedDay
-                    )
+                    ))
                 } else if claimResponse.premiumGemsAwarded > 0 {
                     appState.showToast(
                         "+\(claimResponse.premiumGemsAwarded) gems",
@@ -152,9 +162,11 @@ final class DailyLoginPopupViewModel {
             } else {
                 // Revert on failure (the service already showed the toast)
                 appState.revertRewardCredit(credit)
+                pendingRewardConfig = nil
                 if let optimisticConfig, claimRewardConfig == optimisticConfig {
                     claimRewardConfig = nil
                 }
+                loginData = data
                 hasClaimed = false
                 justClaimedDay = nil
                 didClaimHere = false
@@ -173,14 +185,57 @@ final class DailyLoginPopupViewModel {
     /// (lib/game/daily-login.ts): no previous claim, or ≥ 48 h since it,
     /// resets the cycle to day 1; otherwise `currentDay`.
     static func expectedClaimDay(_ data: DailyLoginData, now: Date = Date()) -> Int {
-        guard let raw = data.lastClaimDate else { return 1 }
+        streakResets(data, now: now) ? 1 : data.currentDay
+    }
+
+    /// The next claim restarts the cycle (and the streak): never claimed, or
+    /// ≥ 48 h since the last claim. An unreadable date never resets.
+    static func streakResets(_ data: DailyLoginData, now: Date = Date()) -> Bool {
+        guard let raw = data.lastClaimDate else { return true }
         let withFraction = ISO8601DateFormatter()
         withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let plain = ISO8601DateFormatter()
         guard let last = withFraction.date(from: raw) ?? plain.date(from: raw) else {
-            return data.currentDay
+            return false
         }
-        return now.timeIntervalSince(last) >= 48 * 60 * 60 ? 1 : data.currentDay
+        return now.timeIntervalSince(last) >= 48 * 60 * 60
+    }
+
+    // MARK: - Chest ceremony
+
+    /// The chest opens first (lid, rays, the reward rising); the reward card
+    /// follows once the lid is up.
+    static let chestOpenBeat: Duration = .milliseconds(900)
+
+    /// The reward card waiting for the chest to open.
+    private var pendingRewardConfig: ClaimRewardConfig?
+
+    private func revealAfterChestOpens(_ config: ClaimRewardConfig) {
+        pendingRewardConfig = config
+        Task { [weak self] in
+            try? await Task.sleep(for: Self.chestOpenBeat)
+            guard let self, let pending = self.pendingRewardConfig else { return }
+            self.pendingRewardConfig = nil
+            self.claimRewardConfig = pending
+        }
+    }
+
+    /// The server granted something else (streak reset): swap the card,
+    /// whether it is still waiting for the lid or already on screen.
+    private func replaceRewardConfig(_ config: ClaimRewardConfig) {
+        if pendingRewardConfig != nil {
+            pendingRewardConfig = config
+        } else {
+            claimRewardConfig = config
+        }
+    }
+
+    /// The player had a streak going and the next claim ends it.
+    var streakIsLost: Bool {
+        guard let data = loginData, data.canClaim, !hasClaimed, data.lastClaimDate != nil, data.streak >= 2 else {
+            return false
+        }
+        return Self.streakResets(data)
     }
 
     // MARK: - BUG-23 display helpers
@@ -194,7 +249,10 @@ final class DailyLoginPopupViewModel {
     /// being claimed (pre-claim) or just claimed (post-claim).
     var displayDay: Int {
         if let claimed = justClaimedDay { return claimed }
-        return loginData?.currentDay ?? 1
+        guard let data = loginData else { return 1 }
+        // Before the claim, show the chest the server will actually open:
+        // after a missed day that is day 1, not the stored pointer.
+        return data.canClaim ? Self.expectedClaimDay(data) : data.currentDay
     }
 
     /// Next day in the 7-day cycle (wraps from 7 → 1).

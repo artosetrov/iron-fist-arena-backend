@@ -26,7 +26,7 @@ struct DailyLoginRewardDef: Codable, Equatable {
     /// Matches `ConsumableType` enum on the backend, e.g. `"stamina_potion_small"`.
     let itemId: String?
 
-    /// Human-readable label authored on the server, e.g. `"150 Gold"` / `"1 S. Potion"`.
+    /// Human-readable label authored on the server, e.g. `"150 Gold"` / `"1 Stamina Potion"`.
     /// When present, this is the authoritative label. Client-side label
     /// synthesis is only allowed as a fallback for missing/unknown values.
     let displayName: String?
@@ -77,8 +77,9 @@ struct DailyLoginRewardDef: Codable, Equatable {
         "icon-gold":              "icon-gold",
         "icon-gems":              "icon-gems",
         "icon-stamina":           "icon-stamina",       // legacy
-        "icon-stamina-small":     "icon-stamina",
-        "icon-stamina-large":     "icon-stamina",
+        // Potions show the potion, not the stamina bolt (2026-11-04).
+        "icon-stamina-small":     "stamina_potion_small",
+        "icon-stamina-large":     "stamina_potion_large",
         "icon-hp-potion-small":   "health_potion_small",
         "icon-hp-potion-large":   "health_potion_large",
     ]
@@ -87,8 +88,8 @@ struct DailyLoginRewardDef: Codable, Equatable {
     /// missing. Kept as a complete enumeration so we never show `"1×"` for
     /// any consumable we already know about.
     private static let consumableLabelMap: [String: (singular: String, plural: String)] = [
-        "stamina_potion_small": ("S. Potion",  "S. Potions"),
-        "stamina_potion_large": ("L. Potion",  "L. Potions"),
+        "stamina_potion_small": ("Stamina Potion",  "Stamina Potions"),
+        "stamina_potion_large": ("Large Stamina Potion",  "Large Stamina Potions"),
         "health_potion_small":  ("HP Potion",  "HP Potions"),
         "health_potion_large":  ("HP Potion+", "HP Potions+"),
         // NOTE: extend as new consumables are introduced in daily login.

@@ -35,6 +35,7 @@
 		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
+		3694FAE3556A027C48582C6D /* DailyTributeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797A2107EBBC9858EF3F5A54 /* DailyTributeViews.swift */; };
 		0BE3C5E0FAB536974BC44084 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8825D55175E1FECF38EF971F /* AudioManager.swift */; };
 		0C2A7F9E1B5D3C8A9E7F4B2D /* AssetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2799E960A250F50D77C492 /* AssetManager.swift */; };
 		0C3250491FD7F972EAEF4C3A /* combat_death.wav in Resources */ = {isa = PBXBuildFile; fileRef = 25AF7FC3D763E133432195B8 /* combat_death.wav */; };
@@ -956,6 +957,7 @@
 		AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientManager.swift; sourceTree = "<group>"; };
 		AC84A62ED896D7BFE13A0591 /* DailyLoginPopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginPopupView.swift; sourceTree = "<group>"; };
 		AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginDetailView.swift; sourceTree = "<group>"; };
+		797A2107EBBC9858EF3F5A54 /* DailyTributeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTributeViews.swift; sourceTree = "<group>"; };
 		ACF33E718E8879D96022545A /* CardStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStyles.swift; sourceTree = "<group>"; };
 		AD40BDBCA20D23E4447ED1C6 /* BattlePassDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassDetailView.swift; sourceTree = "<group>"; };
 		AD555B870A9D9EA891464BF8 /* combat_heal_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_heal_2.wav; sourceTree = "<group>"; };
@@ -2082,6 +2084,7 @@
 			isa = PBXGroup;
 			children = (
 				AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */,
+				797A2107EBBC9858EF3F5A54 /* DailyTributeViews.swift */,
 				AC84A62ED896D7BFE13A0591 /* DailyLoginPopupView.swift */,
 				60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */,
 			);
@@ -2568,6 +2571,7 @@
 				5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */,
 				10E50C50C3B3FBD36E06DBB1 /* DailyLoginRewardDef.swift in Sources */,
 				0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */,
+				3694FAE3556A027C48582C6D /* DailyTributeViews.swift in Sources */,
 				2283DB5DD84EB4557630A37E /* DailyLoginPopupView.swift in Sources */,
 				0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */,
 				3C8A6DC65114A00F9500E380 /* DailyLoginService.swift in Sources */,
