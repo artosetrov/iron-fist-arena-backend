@@ -376,13 +376,10 @@ struct DescentCoinRain: View {
 struct DescentBanner: View {
     let text: String
 
-    @State private var landed = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         Group {
             if let asset = Self.stampAsset(for: text) {
-                stamp(asset)
+                DescentStampSlam(asset: asset)
             } else {
                 Text(text)
                     .font(DarkFantasyTheme.combatCalloutLarge)
@@ -399,12 +396,29 @@ struct DescentBanner: View {
         .accessibilityLabel(text)
     }
 
-    /// Slam overlay: the stamp drops from 1.45x onto the scene, a dark pool
-    /// behind it so it reads over any painting, and lands with a heavy thud.
-    /// On a short scene (a small phone, a tall panel) it shrinks to fit.
-    private func stamp(_ asset: String) -> some View {
+    static func stampAsset(for text: String) -> String? {
+        switch text.lowercased() {
+        case "slain": "rush2-stamp-slain"
+        case "guardian slain": "rush2-stamp-guardian-slain"
+        default: nil
+        }
+    }
+}
+
+/// Slam overlay for a painted stamp — the kill stamps (`DescentBanner`) and
+/// DEPTH CLEARED (`DescentDepthClearStage`): it drops from 1.45x onto the
+/// scene, a dark pool behind it so it reads over any painting, and lands with
+/// a heavy thud. On a short scene (a small phone, a tall panel) it shrinks to fit.
+struct DescentStampSlam: View {
+    let asset: String
+    var width: CGFloat = 300
+
+    @State private var landed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
         let down = landed || reduceMotion
-        return GeometryReader { geo in
+        GeometryReader { geo in
             ZStack {
                 Ellipse()
                     .fill(RadialGradient(
@@ -416,7 +430,7 @@ struct DescentBanner: View {
                 Image(asset)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: Self.stampWidth, maxHeight: max(geo.size.height - 2 * LayoutConstants.spaceLG, 60))
+                    .frame(maxWidth: width, maxHeight: max(geo.size.height - 2 * LayoutConstants.spaceLG, 60))
                     .rotationEffect(.degrees(-4))
                     .scaleEffect(down ? 1 : 1.45)
                     .opacity(down ? 1 : 0)
@@ -425,22 +439,13 @@ struct DescentBanner: View {
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .animation(MotionConstants.springBouncy, value: landed)
+        .allowsHitTesting(false)
         .onAppear {
             guard !landed else { return }
             DispatchQueue.main.async { landed = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                 HapticManager.heavy()
             }
-        }
-    }
-
-    static let stampWidth: CGFloat = 300
-
-    static func stampAsset(for text: String) -> String? {
-        switch text.lowercased() {
-        case "slain": "rush2-stamp-slain"
-        case "guardian slain": "rush2-stamp-guardian-slain"
-        default: nil
         }
     }
 }

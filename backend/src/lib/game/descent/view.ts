@@ -135,7 +135,16 @@ export interface DescentView {
     wares: Array<{ i: number; kind: 'potion' | 'torch' | 'relic'; name: string; desc: string; icon: string; price: number; sold: boolean; available: boolean }>
   } | null
   relicChoice: { loot: LootView[]; choices: RelicView[] } | null
-  depthClear: { nextDepthName: string; bonusText: string } | null
+  depthClear: {
+    nextDepthName: string
+    nextDepthKey: string
+    nextGuardianName: string
+    /** Asset key of the next guardian's face, for the "descend" medallion. */
+    nextGuardianFace: string
+    /** How much richer the next depth is, by its base gold (1 decimal). */
+    goldMult: number
+    bonusText: string
+  } | null
   result: {
     outcome: NonNullable<DescentState['outcome']>
     keptGold: number
@@ -248,15 +257,18 @@ function eventView(s: DescentState, r: EventRoom): NonNullable<DescentView['even
   }
 }
 
+/** 0.12 → 12 */
+function pct(share: number): number {
+  return Math.round(share * 100)
+}
+
 function taleFor(s: DescentState, fork: DescentView['fork']): string | null {
   const D = DEPTHS[s.depth]
   switch (s.screen) {
     case 'depthCard': {
+      // The guardian is named on the scene, under the depth's title.
       const bonus = s.depth > 0 && has(s, 'lantern') ? ' Your lantern flares: **+1 torch**.' : ''
-      const lead = s.depth === 0
-        ? 'You step past the last lamp of the city. The stairs end in a crypt.'
-        : 'The stair spirals down for a long time.'
-      return `${lead} Guardian ahead: **${MOBS[D.boss].name}**.${bonus}`
+      return `${D.blurb}${bonus}`
     }
     case 'fork': return fork?.lead ?? null
     case 'spoils': return s.room?.t === 'spoils' ? s.room.text : null
@@ -285,13 +297,14 @@ function taleFor(s: DescentState, fork: DescentView['fork']): string | null {
       return `"Coin from your bag, friend. You won't need it if you're dead." You have **${s.bag.gold}** gold.`
     case 'relic': return s.room?.t === 'relic' ? s.room.text : null
     case 'depthClear':
-      return 'The guardian\'s death warms your blood: **+12% damage** and you catch your breath. Go deeper for bigger treasure, or climb out now with everything you carry.'
+      return `His death warms your blood: {++${pct(DESCENT.GUARDIAN_DMG_BONUS)}% damage+} for the run. You catch your breath.`
     default: return null
   }
 }
 
 export function buildDescentView(runId: string, s: DescentState, fx: Fx[] = []): DescentView {
   const D = DEPTHS[s.depth]
+  const next = DEPTHS[s.depth + 1]
   const curR = currentRow(s)
   const reachable = new Set(s.screen === 'result' ? [] : nextIds(s))
   const fork = s.screen === 'fork' ? forkView(s) : null
@@ -386,9 +399,13 @@ export function buildDescentView(runId: string, s: DescentState, fx: Fx[] = []):
       }),
     } : null,
     relicChoice: r?.t === 'relic' ? { loot: lootView(r.loot), choices: r.choices.map(relicView) } : null,
-    depthClear: s.screen === 'depthClear' && DEPTHS[s.depth + 1] ? {
-      nextDepthName: DEPTHS[s.depth + 1].name,
-      bonusText: '+12% damage, 25% HP restored',
+    depthClear: s.screen === 'depthClear' && next ? {
+      nextDepthName: next.name,
+      nextDepthKey: next.key,
+      nextGuardianName: MOBS[next.boss].name,
+      nextGuardianFace: `rush2-face-${next.boss}`,
+      goldMult: Math.round((next.gold / D.gold) * 10) / 10,
+      bonusText: `+${pct(DESCENT.GUARDIAN_DMG_BONUS)}% damage, ${pct(DESCENT.GUARDIAN_HEAL)}% HP restored`,
     } : null,
     result: s.screen === 'result' && s.outcome ? {
       outcome: s.outcome,

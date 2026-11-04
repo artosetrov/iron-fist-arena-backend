@@ -10,8 +10,10 @@ struct DescentRunPanel: View {
     var body: some View {
         let s = snapshot
         switch s.screenKind {
-        case .depthCard, .depthClear:
-            tale(s)
+        case .depthCard:
+            tale(s, centered: true)
+        case .depthClear:
+            depthClearPanel(s)
         case .fork:
             forkPanel(s)
         case .combat:
@@ -36,10 +38,11 @@ struct DescentRunPanel: View {
 
     // MARK: Shared pieces
 
+    /// Under a title on the scene (a depth's gate, the way down) the tale is centred.
     @ViewBuilder
-    private func tale(_ s: DescentSnapshot) -> some View {
+    private func tale(_ s: DescentSnapshot, centered: Bool = false) -> some View {
         if let text = s.tale, !text.isEmpty {
-            DescentTale(text: text)
+            DescentTale(text: text, centered: centered)
         }
     }
 
@@ -361,6 +364,61 @@ struct DescentRunPanel: View {
         }
     }
 
+    // MARK: Depth cleared
+
+    /// Deeper or out, as two cards — they are the room's buttons. The way down
+    /// shows the next guardian's face and how much richer the gold is; the way
+    /// out, the bag that comes home whole. The card tapped stays lit while the
+    /// server answers; the other one greys.
+    @ViewBuilder
+    private func depthClearPanel(_ s: DescentSnapshot) -> some View {
+        tale(s, centered: true)
+        DescentChoiceCards {
+            DescentChoiceCard(
+                title: "Descend",
+                subtitle: Self.descendText(s.depthClear),
+                selected: vm.pendingAction == .descend,
+                disabled: vm.isBusy && vm.pendingAction != .descend,
+                accent: DarkFantasyTheme.glowEmber,
+                action: { vm.perform(.descend) }
+            ) {
+                DescentRowIcon(asset: s.depthClear?.nextGuardianFace ?? "rush2-node-guardian", size: Self.faceSize)
+            }
+            DescentChoiceCard(
+                title: "Climb out",
+                subtitle: Self.climbOutText(s.bag),
+                selected: vm.pendingAction == .escape,
+                disabled: vm.isBusy && vm.pendingAction != .escape,
+                accent: DarkFantasyTheme.gold,
+                action: { vm.perform(.escape) }
+            ) {
+                DescentRowIcon(asset: "rush2-icon-goldpouch", size: 50)
+            }
+        }
+        DescentRiskLine(text: "Fall below and half the bag is lost.")
+    }
+
+    /// The next guardian's face fills the medallion's well (`rush2-face-*` are discs).
+    private static let faceSize: CGFloat = 62
+
+    static func descendText(_ clear: DescentDepthClear?) -> String {
+        guard let clear else { return "Deeper, richer, deadlier." }
+        guard let mult = clear.goldMult, mult > 1 else { return "\(clear.nextDepthName)." }
+        let x = mult == mult.rounded() ? "\(Int(mult))" : String(format: "%.1f", mult)
+        return "\(clear.nextDepthName).\n**Gold ×\(x)**"
+    }
+
+    static func climbOutText(_ bag: DescentBag) -> String {
+        let n = bag.items.count
+        let items = n == 0 ? nil : "\(n) item\(n == 1 ? "" : "s")"
+        switch (bag.gold > 0, items) {
+        case (true, let items?): return "Keep all of it.\n**\(bag.gold) gold** + \(items)"
+        case (true, nil): return "Keep all of it.\n**\(bag.gold) gold**"
+        case (false, let items?): return "Keep all of it.\n**\(items)**"
+        case (false, nil): return "Walk out alive."
+        }
+    }
+
     // MARK: Relic
 
     @ViewBuilder
@@ -405,7 +463,7 @@ struct DescentRunActions: View {
         let s = snapshot
         switch s.screenKind {
         case .depthCard:
-            primary(s.depth == 0 ? "Light your torch" : "Descend") { vm.perform(.beginDepth) }
+            primary(s.depth == 0 ? "Light your torch" : "Descend", .beginDepth)
         case .fork:
             if s.fork != nil {
                 Button(enterTitle) { vm.enterSelected() }
@@ -417,40 +475,40 @@ struct DescentRunActions: View {
                 combatActions(s, combat: c)
             }
         case .spoils:
-            primary("Take it all") { vm.perform(.takeLoot) }
+            primary("Take it all", .takeLoot)
         case .chest:
             if let chest = s.chest {
                 if chest.opened {
-                    primary("Take it all") { vm.perform(.takeLoot) }
+                    primary("Take it all", .takeLoot)
                 } else {
-                    secondary("Leave it be") { vm.perform(.leave) }
+                    secondary("Leave it be", .leave)
                 }
             }
         case .event:
             if let event = s.event, event.done {
                 switch event.then ?? "continue" {
                 case "take_loot":
-                    primary("Take it") { vm.perform(.takeLoot) }
+                    primary("Take it", .takeLoot)
                 case "fight_now":
-                    primary("Fight!") { vm.perform(.fightNow) }
+                    primary("Fight!", .fightNow)
                 default:
-                    primary("Continue") { vm.perform(.proceed) }
+                    primary("Continue", .proceed)
                 }
             }
         case .camp:
             if s.camp?.done == true {
-                primary("Push on") { vm.perform(.proceed) }
-                secondary("Climb out with your loot") { vm.perform(.escape) }
+                primary("Push on", .proceed)
+                secondary("Climb out with your loot", .escape)
             }
         case .merchant:
-            secondary("Move on") { vm.perform(.proceed) }
+            secondary("Move on", .proceed)
         case .relic:
             if let pick = s.relicChoice, pick.choices.isEmpty {
-                primary("Take the spoils") { vm.perform(.takeRelic(nil)) }
+                primary("Take the spoils", .takeRelic(nil))
             }
         case .depthClear:
-            primary("Descend to depth \(DescentText.roman(s.depth + 2))") { vm.perform(.descend) }
-            secondary("Climb out · keep it all") { vm.perform(.escape) }
+            // Deeper or out are the panel's two cards (`DescentRunPanel`).
+            EmptyView()
         case .result:
             // The run's end is `DescentResultCard`, over this screen; this way out
             // shows for the beat before it fades in, and if a result screen ever
@@ -463,16 +521,19 @@ struct DescentRunActions: View {
         }
     }
 
-    private func primary(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
+    /// A button keeps its colour while its own action is on the way (`perform`
+    /// ignores taps meanwhile): a slow answer must not read as a dead, grey
+    /// button. Only the other ways on grey out.
+    private func primary(_ title: LocalizedStringKey, _ action: DescentAction) -> some View {
+        Button(title) { vm.perform(action) }
             .buttonStyle(.primary)
-            .disabled(vm.isBusy)
+            .disabled(vm.isBusy && vm.pendingAction != action)
     }
 
-    private func secondary(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
+    private func secondary(_ title: LocalizedStringKey, _ action: DescentAction) -> some View {
+        Button(title) { vm.perform(action) }
             .buttonStyle(.secondary)
-            .disabled(vm.isBusy)
+            .disabled(vm.isBusy && vm.pendingAction != action)
     }
 
     private var enterTitle: String {
@@ -563,7 +624,7 @@ struct DescentLootSummary: View {
             if gold > 0 || xp > 0 {
                 RewardCells(items: cells, isActive: counting)
                 if gold > 0 {
-                    riskLine
+                    DescentRiskLine(text: xp > 0 ? "Half the bag is lost if you fall. XP is kept." : "Half the bag is lost if you fall.")
                 }
             }
             ForEach(Array(others.enumerated()), id: \.offset) { _, entry in
@@ -571,27 +632,6 @@ struct DescentLootSummary: View {
             }
         }
         .onAppear(perform: capture)
-    }
-
-    private var riskLine: some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Circle()
-                .fill(DarkFantasyTheme.danger)
-                .frame(width: 7, height: 7)
-                .accessibilityHidden(true)
-            Group {
-                if xp > 0 {
-                    Text("Half the bag is lost if you fall. XP is kept.")
-                } else {
-                    Text("Half the bag is lost if you fall.")
-                }
-            }
-            .font(DarkFantasyTheme.body)
-            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-            .lineLimit(2)
-            .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private var cells: [RewardCell.Item] {
@@ -615,5 +655,25 @@ struct DescentLootSummary: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + countDelay) {
             counting = true
         }
+    }
+}
+
+/// What the bag risks, under loot and at the way down: a red dot and one plain line.
+struct DescentRiskLine: View {
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Circle()
+                .fill(DarkFantasyTheme.danger)
+                .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
