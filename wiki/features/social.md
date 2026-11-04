@@ -58,12 +58,12 @@ Players add friends, send direct messages, issue PvP challenges, and participate
 - `Hexbound/Hexbound/Views/Social/GuildHallAlliesTab.swift` — friend list + status
 - `Hexbound/Hexbound/Views/Social/GuildHallDuelsTab.swift` — challenge list
 - `Hexbound/Hexbound/Views/Social/GuildHallScrollsTab.swift` — DM conversation list + thread UI
-- `Hexbound/Hexbound/Views/Social/GuildHallChrome.swift` — hall header (`building-guild-hall`), pennant tabs with emblems and badges, section labels
+- `Hexbound/Hexbound/Views/Social/GuildHallChrome.swift` — hall header (`bg-guild-hall`, the interior), pennant tabs with emblems and badges, section labels
 - `Hexbound/Hexbound/Views/Social/GuildHallCards.swift` — `HeroFramedPortrait` (portrait in the `HeroCardTier` frame of the level), `AllyHeroCard`, parchment letters with wax seals
 
 ### The look (2026-11-04, canvas "A · Зал гильдии")
 
-- The hall header scrolls away; the pennant tabs pin under an opaque nav bar (`LazyVStack` pinned section header).
+- The hall header (the interior: banners, notice board, the Chronicler's ledger, the cold hearth) scrolls away; the pennant tabs pin under an opaque nav bar (`LazyVStack` pinned section header).
 - The Chronicler (`NPCSpeechBubble`, `npc-chronicler-face`) says one line about the open tab: banners raised, sealed scrolls, challenges on the door.
 - Allies are hero cards in a 3-column grid (frame by level, status light, class crest); the card opens the old row menu (profile, challenge, scroll, remove, block). Warriors from recent Arena fights sit under them with RAISE BANNER (= ally request).
 - Scrolls are letters on `rush2-map-parchment`, sealed with `rush2-map-seal` pressed with the sender's class crest: intact + gold count while unread, cracked once read. WRITE A SCROLL lists your allies, or opens the Leaderboard.

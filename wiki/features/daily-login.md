@@ -44,7 +44,7 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 ### Views
 
 - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift` — "A · chests of the week" (2026-11-04): DAY N OF 7 + streak pill over the treasure vault (`DescentBackdrop`, night grade), today's chest, the week of seven chests, OPEN THE CHEST / TO THE CASTLE, "Tomorrow: … · wooden chest"
-- `Hexbound/Hexbound/Views/DailyLogin/DailyTributeViews.swift` — `TributeChestStage` (rocks until tapped; opened: rays, burst, reward rises), `TributeWeekStrip`, `TributeStreakPill`, chest tiers (days 1–3 wood, 4–5 iron, 6–7 gold — `rush2-chest-*`, presentation only)
+- `Hexbound/Hexbound/Views/DailyLogin/DailyTributeViews.swift` — `TributeChestStage` (rocks until tapped; opened: rays, burst, reward rises), `TributeWeekStrip`, `TributeStreakPill`, chest tiers (days 1–3 wood, 4–5 iron, 6 gold — `rush2-chest-*`; day 7 the amethyst reliquary `tribute-chest-gem-*`; presentation only)
 - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift` — legacy, unused
 
 ### ViewModel

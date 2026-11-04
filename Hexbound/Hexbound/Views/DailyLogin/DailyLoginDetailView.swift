@@ -6,7 +6,7 @@ import SwiftUI
 ///   DAILY TRIBUTE · DAY N OF 7 · streak pill (close ✕ top-right)
 ///     → today's chest on the floor (`TributeChestStage`): tap or the CTA opens
 ///       it, the reward rises out, then the tribute reward card follows
-///     → THIS WEEK'S CHESTS: seven chests, wood → iron → gold, day 7 violet
+///     → THIS WEEK'S CHESTS: seven chests, wood → iron → gold → day 7's amethyst reliquary
 ///     → OPEN THE CHEST / TO THE CASTLE · "Tomorrow: … · wooden chest"
 ///
 /// Day numbers all come from `vm.displayDay` (BUG-23) — the title, the chest,

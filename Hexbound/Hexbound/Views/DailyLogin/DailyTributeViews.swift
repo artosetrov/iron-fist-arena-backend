@@ -2,17 +2,19 @@ import SwiftUI
 
 // MARK: - Chest tiers
 
-/// The tribute week climbs the Descent's chests (`rush2-chest-*`):
-/// days 1–3 wood, 4–5 iron, 6–7 gold. Purely presentational — what is inside
+/// The tribute week climbs the Descent's chests (`rush2-chest-*`): days 1–3
+/// wood, 4–5 iron, day 6 gold — and day 7 its own amethyst reliquary
+/// (`tribute-chest-gem-*`, 2026-11-04). Purely presentational — what is inside
 /// comes from the server's 7-day table.
 enum TributeChestTier {
-    case wood, iron, gold
+    case wood, iron, gold, amethyst
 
     init(day: Int) {
         switch day {
         case ..<4: self = .wood
         case 4..<6: self = .iron
-        default: self = .gold
+        case 6: self = .gold
+        default: self = .amethyst
         }
     }
 
@@ -21,6 +23,7 @@ enum TributeChestTier {
         case .wood: "rush2-chest-wood-closed"
         case .iron: "rush2-chest-iron-closed"
         case .gold: "rush2-chest-gold-closed"
+        case .amethyst: "tribute-chest-gem-closed"
         }
     }
 
@@ -29,6 +32,7 @@ enum TributeChestTier {
         case .wood: "rush2-chest-wood-open"
         case .iron: "rush2-chest-iron-open"
         case .gold: "rush2-chest-gold-open"
+        case .amethyst: "tribute-chest-gem-open"
         }
     }
 
@@ -38,11 +42,12 @@ enum TributeChestTier {
         case .wood: "wooden"
         case .iron: "iron"
         case .gold: "golden"
+        case .amethyst: "amethyst"
         }
     }
 
-    /// Day 7 closes the week: the gem chest, lit violet instead of gold.
-    static func isBonusDay(_ day: Int) -> Bool { day == 7 }
+    /// Day 7 closes the week: the amethyst chest, lit violet instead of gold.
+    static func isBonusDay(_ day: Int) -> Bool { TributeChestTier(day: day) == .amethyst }
 }
 
 // MARK: - Reward icon
@@ -365,7 +370,7 @@ enum TributeDayState {
 }
 
 /// Seven chests on a dashed trail: opened ones dim with a check, today's
-/// one ringed in gold, day 7 lit violet.
+/// one ringed in gold, day 7's amethyst chest lit violet.
 struct TributeWeekStrip: View {
     let rewards: [DailyReward]
     let displayDay: Int

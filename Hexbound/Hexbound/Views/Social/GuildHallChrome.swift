@@ -2,51 +2,45 @@ import SwiftUI
 
 // MARK: - Header
 
-/// The hall itself behind the title: `building-guild-hall`, dimmed into the
-/// night, fading into the screen. Scrolls away; the banner tabs stay.
+/// Inside the hall behind the title (`bg-guild-hall`, 2026-11-04): beams,
+/// banners, the notice board on the left, the Chronicler's ledger on the right,
+/// the cold hearth at the back. Dimmed under the title, fading into the
+/// screen. Scrolls away; the banner tabs stay.
 struct GuildHallHeader: View {
     var body: some View {
         OrnamentalTitle("GUILD HALL", subtitle: "Bonds forged in battle", accentColor: DarkFantasyTheme.gold)
-            .padding(.top, LayoutConstants.spaceXS)
+            .padding(.top, LayoutConstants.spaceSM)
             .frame(maxWidth: .infinity)
-            .frame(height: 176, alignment: .top)
+            .frame(height: 196, alignment: .top)
             .background {
-                ZStack {
-                    RadialGradient(
-                        colors: [DarkFantasyTheme.bgElevated.opacity(0.9), DarkFantasyTheme.bgPrimary.opacity(0)],
-                        center: UnitPoint(x: 0.5, y: 0.72),
-                        startRadius: 0,
-                        endRadius: 220
-                    )
-                    Image("building-guild-hall")
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .frame(width: 236)
-                        .brightness(-0.12)
-                        .saturation(0.9)
-                        .shadow(color: DarkFantasyTheme.glowWarm.opacity(0.18), radius: 18)
-                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 10, y: 6)
-                        .offset(y: 34)
-                    VStack(spacing: 0) {
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.bgPrimary.opacity(0.9), DarkFantasyTheme.bgPrimary.opacity(0)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 84)
-                        Spacer(minLength: 0)
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.bgPrimary.opacity(0), DarkFantasyTheme.bgPrimary],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 64)
+                Color.clear
+                    .overlay {
+                        Image("bg-guild-hall")
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                            .brightness(-0.1)
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .accessibilityHidden(true)
+                    .overlay {
+                        VStack(spacing: 0) {
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.bgPrimary.opacity(0.92), DarkFantasyTheme.bgPrimary.opacity(0.25)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .frame(height: 96)
+                            Spacer(minLength: 0)
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.bgPrimary.opacity(0), DarkFantasyTheme.bgPrimary],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .frame(height: 72)
+                        }
+                    }
+                    .overlay { DescentVignette(strength: 0.45) }
+                    .clipped()
+                    .accessibilityHidden(true)
             }
     }
 }
