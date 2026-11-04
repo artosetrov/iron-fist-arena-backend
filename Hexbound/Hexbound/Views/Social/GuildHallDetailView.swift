@@ -17,7 +17,6 @@ struct GuildHallDetailView: View {
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-            DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
 
             if let vm {
                 // Thread view is full-screen, replaces the tabs entirely
@@ -37,36 +36,31 @@ struct GuildHallDetailView: View {
                         Spacer()
                     }
                 } else {
-                    VStack(spacing: 0) {
-                        // Screen title — sticky
-                        OrnamentalTitle("GUILD HALL", subtitle: "Bonds forged in battle", accentColor: DarkFantasyTheme.gold)
-                            .padding(.top, LayoutConstants.spaceXS)
-                            .padding(.bottom, LayoutConstants.spaceXS)
+                    // The hall scrolls away; the banner tabs pin under the
+                    // nav bar (2026-11-04, canvas "A · Зал гильдии").
+                    ScrollView {
+                        LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            GuildHallHeader()
 
-                        // Tab Switcher — sticky
-                        TabSwitcher(
-                            tabs: GuildHallViewModel.Tab.allCases.map(\.rawValue),
-                            selectedIndex: Binding(
-                                get: { GuildHallViewModel.Tab.allCases.firstIndex(of: vm.selectedTab) ?? 0 },
-                                set: { newValue in
-                                    vm.selectedTab = GuildHallViewModel.Tab.allCases[newValue]
+                            Section {
+                                VStack(spacing: LayoutConstants.sectionGap) {
+                                    chroniclerLine(vm)
+                                        .padding(.horizontal, LayoutConstants.screenPadding)
+
+                                    switch vm.selectedTab {
+                                    case .allies: alliesTab(vm)
+                                    case .scrolls: scrollsTab(vm)
+                                    case .duels: duelsTab(vm)
+                                    }
+
+                                    Spacer().frame(height: LayoutConstants.spaceLG)
                                 }
-                            )
-                        )
-                        .accessibilityLabel("Guild Hall tabs")
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
-
-                        // Scrollable content
-                        ScrollView {
-                            VStack(spacing: LayoutConstants.sectionGap) {
-                                switch vm.selectedTab {
-                                case .allies: alliesTab(vm)
-                                case .scrolls: scrollsTab(vm)
-                                case .duels: duelsTab(vm)
-                                }
-
-                                Spacer().frame(height: LayoutConstants.spaceLG)
+                                .padding(.top, LayoutConstants.spaceSM)
+                            } header: {
+                                bannerTabs(vm)
+                                    .padding(.horizontal, LayoutConstants.screenPadding)
+                                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+                                    .background(DarkFantasyTheme.bgPrimary)
                             }
                         }
                     }
@@ -78,7 +72,10 @@ struct GuildHallDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .toolbarBackground(.hidden, for: .navigationBar)
+        // Opaque, in the screen's own colour: the hall header scrolls up
+        // beneath the bar, and nothing should show through behind the back button.
+        .toolbarBackground(DarkFantasyTheme.bgPrimary, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar(vm?.activeThreadCharacterId != nil ? .hidden : .visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -139,6 +136,71 @@ struct GuildHallDetailView: View {
     }
 
 
+    // MARK: - Banner tabs & the Chronicler
+
+    func bannerTabs(_ vm: GuildHallViewModel) -> some View {
+        let tabs = GuildHallViewModel.Tab.allCases
+        return GuildBannerTabs(
+            items: tabs.enumerated().map { index, tab in
+                GuildBannerTabs.Item(id: index, title: tab.rawValue, emblem: tab.emblem, badge: vm.badgeCount(for: tab))
+            },
+            selectedIndex: Binding(
+                get: { tabs.firstIndex(of: vm.selectedTab) ?? 0 },
+                set: { newValue in
+                    if tabs.indices.contains(newValue) {
+                        vm.selectedTab = tabs[newValue]
+                    }
+                }
+            )
+        )
+    }
+
+    /// The keeper of the guild roll says one thing about the open tab.
+    func chroniclerLine(_ vm: GuildHallViewModel) -> some View {
+        NPCSpeechBubble(
+            npcName: "The Chronicler",
+            message: chroniclerMessage(vm),
+            npcImageName: NPCSpeaker.chronicler.face,
+            messageId: vm.selectedTab.rawValue,
+            typewriterEnabled: false
+        )
+    }
+
+    func chroniclerMessage(_ vm: GuildHallViewModel) -> String {
+        switch vm.selectedTab {
+        case .allies:
+            let asking = vm.incomingRequests.count
+            if asking > 0 {
+                return asking == 1
+                    ? "A warrior asks to raise a banner with you. Answer below."
+                    : "\(asking) warriors ask to raise a banner with you. Answer below."
+            }
+            let foughtWait = vm.allySuggestions.isEmpty ? "" : " Warriors you fought wait below."
+            if vm.friends.isEmpty {
+                return vm.allySuggestions.isEmpty
+                    ? "No banners in this hall yet. Rivals from the Arena make the best allies."
+                    : "No banners in this hall yet.\(foughtWait)"
+            }
+            return "\(vm.friendCount) of \(vm.maxFriends) banners raised.\(foughtWait)"
+        case .scrolls:
+            let unread = vm.scrollsBadgeCount
+            if unread > 0 {
+                return unread == 1 ? "One scroll still sealed. The wax is warm." : "\(unread) scrolls still sealed. The wax is warm."
+            }
+            return vm.conversations.isEmpty
+                ? "No scrolls yet. Any warrior can be written to — ally or rival."
+                : "Every letter you have traded, kept under seal."
+        case .duels:
+            let calls = vm.duelsBadgeCount
+            if calls > 0 {
+                return calls == 1
+                    ? "A challenge is nailed to the door. You have a day to answer."
+                    : "\(calls) challenges are nailed to the door. You have a day to answer."
+            }
+            return "Call out an ally or a rival. The winner takes the rating."
+        }
+    }
+
     // MARK: - Helpers
 
     func characterAvatar(name: String, className: String? = nil, avatar: String? = nil) -> some View {
@@ -170,6 +232,27 @@ struct GuildHallDetailView: View {
         case .online: DarkFantasyTheme.success
         case .away: DarkFantasyTheme.stamina
         case .offline: DarkFantasyTheme.textTertiary
+        }
+    }
+}
+
+extension GuildHallViewModel.Tab {
+    /// The empty-state emblem that rides on the tab's banner.
+    var emblem: String {
+        switch self {
+        case .allies: "empty-allies"
+        case .scrolls: "empty-scrolls"
+        case .duels: "empty-duels"
+        }
+    }
+}
+
+extension GuildHallViewModel {
+    func badgeCount(for tab: Tab) -> Int {
+        switch tab {
+        case .allies: alliesBadgeCount
+        case .scrolls: scrollsBadgeCount
+        case .duels: duelsBadgeCount
         }
     }
 }
