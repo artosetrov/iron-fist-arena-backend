@@ -188,38 +188,169 @@ struct DescentFlowLayout: Layout {
     }
 }
 
-// MARK: - Title cards (depth card, depth cleared, result)
+// MARK: - A depth's gate
 
-struct DescentTitleCard: View {
-    let eyebrow: String
-    let title: String
-    let text: String?
-    var titleColor: Color = DarkFantasyTheme.textPrimary
+/// A depth's opening screen: its guardian waits in the gate at the top of the
+/// stairs, his eyes lit by code (`DescentGeometry.gateEyes` — the painting
+/// itself does not glow), and the depth's name rises under him with the
+/// guardian's own. The line to read is the panel's tale.
+struct DescentGateStage: View {
+    let depthKey: String
+    let roman: String
+    let name: String
+    let guardian: String
+    let isActive: Bool
+
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The guardian's head (the top third of the gate) stays on screen however
+    /// short the scene is.
+    private static let focusY: CGFloat = 0.3
 
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text(eyebrow.uppercased())
-                .font(DarkFantasyTheme.cardTitle)
-                .tracking(4)
-                .foregroundStyle(DarkFantasyTheme.gold)
-            Text(title.uppercased())
-                .font(DarkFantasyTheme.cinematicTitle)
-                .tracking(2)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(titleColor)
-                .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4, y: 2)
-                .shadow(color: titleColor.opacity(0.35), radius: 16)
-                .minimumScaleFactor(0.6)
-            if let text {
-                Text(DescentText.attributed(text, base: DarkFantasyTheme.textSecondary))
-                    .font(DarkFantasyTheme.tale)
-                    .multilineTextAlignment(.center)
-                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3)
-                    .padding(.horizontal, LayoutConstants.spaceLG)
+        let eyes = DescentGeometry.gateEyes[depthKey]
+        // A depth without a gate painting (a newer server) opens on its first fork.
+        let asset = eyes != nil ? "rush2-bg-\(depthKey)-gate" : "rush2-fork-\(depthKey)-1"
+        GeometryReader { geo in
+            let map = DescentSceneMapper(size: geo.size, focusY: Self.focusY)
+            ZStack {
+                DescentBackdrop(asset: asset, focusY: Self.focusY)
+                if let eyes {
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isActive)) { ctx in
+                        let t = ctx.date.timeIntervalSinceReferenceDate
+                        ZStack {
+                            ForEach(Array(eyes.enumerated()), id: \.offset) { i, eye in
+                                DescentEyeGlow(
+                                    diameter: eye.size * map.imageRect.width,
+                                    intensity: 0.72 + 0.28 * DescentMotion.wave(t, period: 1.7, phase: Double(i) * 0.15)
+                                )
+                                .position(map.point(CGPoint(x: eye.x, y: eye.y)))
+                            }
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
+                DescentVignette(strength: 0.5)
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.54),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.7), location: 0.77),
+                        .init(color: DarkFantasyTheme.bgAbyss.opacity(0.94), location: 1),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .allowsHitTesting(false)
+                title
+                    .padding(.bottom, LayoutConstants.spaceLG)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
+        // Next runloop: the first frame is drawn hidden, then the title rises.
+        .onAppear { DispatchQueue.main.async { shown = true } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Depth \(roman), \(name). Guardian: \(guardian).")
+    }
+
+    private var title: some View {
+        let ember = DarkFantasyTheme.glowEmber
+        return VStack(spacing: LayoutConstants.space2XS) {
+            Text("DEPTH \(roman)")
+                .font(DarkFantasyTheme.cardTitle)
+                .tracking(6)
+                .foregroundStyle(DarkFantasyTheme.gold)
+            Text(name.uppercased())
+                .font(DarkFantasyTheme.cinematicTitle)
+                .tracking(3)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4, y: 2)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 16)
+            HStack(spacing: LayoutConstants.spaceSM) {
+                LinearGradient(colors: [ember.opacity(0), ember.opacity(0.85)], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 22, height: 1)
+                Text("GUARDIAN · \(guardian.uppercased())")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(2.5)
+                    .foregroundStyle(ember)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                LinearGradient(colors: [ember.opacity(0.85), ember.opacity(0)], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 22, height: 1)
+            }
+            .padding(.top, LayoutConstants.space2XS)
+        }
         .padding(.horizontal, LayoutConstants.screenPadding)
-        .accessibilityElement(children: .combine)
+        .opacity(shown || reduceMotion ? 1 : 0)
+        .offset(y: shown || reduceMotion ? 0 : 10)
+        .animation(.easeOut(duration: 0.7).delay(0.25), value: shown)
+    }
+}
+
+/// An ember burning in a guardian's eye socket.
+struct DescentEyeGlow: View {
+    let diameter: CGFloat
+    /// 0…1, breathing with the timeline.
+    let intensity: Double
+
+    var body: some View {
+        Circle()
+            .fill(RadialGradient(
+                stops: [
+                    .init(color: DarkFantasyTheme.glowWarm.opacity(0.95), location: 0),
+                    .init(color: DarkFantasyTheme.glowEmber.opacity(0.5), location: 0.3),
+                    .init(color: DarkFantasyTheme.glowEmber.opacity(0), location: 0.7),
+                ],
+                center: .center, startRadius: 0, endRadius: diameter * 0.71
+            ))
+            .frame(width: diameter, height: diameter)
+            .opacity(intensity)
+    }
+}
+
+// MARK: - Depth cleared
+
+/// The guardian is dead: the arena he kept, DEPTH CLEARED slammed across it
+/// (a painted stamp, like the kill stamps) and the way down opening under it.
+/// The choice — deeper or out — is the panel's two cards.
+struct DescentDepthClearStage: View {
+    let depthKey: String
+    let roman: String
+
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// `rush2-stamp-depth-cleared` is 960 × 274.
+    private static let stampAspect: CGFloat = 960.0 / 274.0
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = min(geo.size.width - 2 * LayoutConstants.spaceLG, 340)
+            let lift: CGFloat = 18
+            ZStack {
+                DescentBackdrop(asset: "rush2-bg-\(depthKey)-arena", dim: 0.25)
+                DescentVignette()
+                DescentStampSlam(asset: "rush2-stamp-depth-cleared", width: width)
+                    .offset(y: -lift)
+                Text("THE WAY DOWN OPENS")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(5)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
+                    .opacity(shown || reduceMotion ? 1 : 0)
+                    .offset(y: shown || reduceMotion ? 0 : 8)
+                    .animation(.easeOut(duration: 0.5).delay(0.7), value: shown)
+                    .position(
+                        x: geo.size.width / 2,
+                        y: geo.size.height / 2 - lift + width / Self.stampAspect / 2 + LayoutConstants.spaceMD + 10
+                    )
+            }
+        }
+        // Next runloop: the first frame is drawn hidden, then the title rises.
+        .onAppear { DispatchQueue.main.async { shown = true } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Depth \(roman) cleared. The way down opens.")
     }
 }
 

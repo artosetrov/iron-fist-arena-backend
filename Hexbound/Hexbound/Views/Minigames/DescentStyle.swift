@@ -76,6 +76,14 @@ struct DescentArch: Equatable {
     let y1: CGFloat
 }
 
+/// A guardian's eye in a gate painting: its centre (0…1 of the painting) and
+/// how wide its glow is, as a share of the painting's width.
+struct DescentEye: Equatable {
+    let x: CGFloat
+    let y: CGFloat
+    let size: CGFloat
+}
+
 enum DescentGeometry {
     /// Aspect (width / height) of the scene paintings.
     static let sceneAspect: CGFloat = 1290.0 / 1747.0
@@ -107,6 +115,9 @@ enum DescentGeometry {
         "rush2-fork-molten-1": 0.252,
         "rush2-fork-molten-2": 0.236,
         "rush2-fork-molten-3": 0.249,
+        "rush2-bg-ossuary-gate": 0.359,
+        "rush2-bg-warrens-gate": 0.192,
+        "rush2-bg-molten-gate": 0.269,
         "rush2-ev-altar": 0.363,
         "rush2-ev-angel": 0.51,
         "rush2-ev-bridge": 0.339,
@@ -115,6 +126,15 @@ enum DescentGeometry {
         "rush2-ev-fountain": 0.444,
         "rush2-ev-runedoor": 0.445,
         "rush2-ev-troll": 0.326,
+    ]
+
+    /// The guardians' eyes in the gate paintings (`rush2-bg-<depth>-gate`, the
+    /// depth's opening screen), measured on the imageset's crop: the code lights
+    /// them, the painting does not glow. A depth listed here has a gate painting.
+    static let gateEyes: [String: [DescentEye]] = [
+        "ossuary": [DescentEye(x: 0.4785, y: 0.2732, size: 0.056), DescentEye(x: 0.5465, y: 0.2732, size: 0.056)],
+        "warrens": [DescentEye(x: 0.5026, y: 0.2383, size: 0.097)],
+        "molten": [DescentEye(x: 0.5208, y: 0.2457, size: 0.046), DescentEye(x: 0.5542, y: 0.2457, size: 0.046)],
     ]
 
     static let archTable: [String: [DescentArch]] = [
