@@ -221,4 +221,36 @@ describe('descent engine', () => {
     expect(runes.event!.runes!.every((r) => r.state === 'unknown')).toBe(true)
     expect(JSON.stringify(runes)).not.toContain('"trap":1')
   })
+
+  it('opens a depth on its own line and names what waits below a cleared one', async () => {
+    const first = buildDescentView('run', createRun(SCALE, mulberry32(3)))
+    expect(first.tale).toBe(DEPTHS[0].blurb)
+
+    let cleared = 0
+    for (let seed = 1; seed <= 80 && cleared < 6; seed++) {
+      const rng = mulberry32(seed)
+      let s = createRun(SCALE, rng)
+      let n = 0
+      for (let step = 0; step < 3000 && s.screen !== 'result'; step++) {
+        if (s.screen === 'depthClear') {
+          const view = buildDescentView('run', s)
+          const next = DEPTHS[s.depth + 1]
+          expect(view.depthClear).toEqual({
+            nextDepthName: next.name,
+            nextDepthKey: next.key,
+            nextGuardianName: expect.any(String),
+            nextGuardianFace: `rush2-face-${next.boss}`,
+            goldMult: 1.4,
+            bonusText: '+12% damage, 25% HP restored',
+          })
+          expect(view.tale).toContain('{++12% damage+}')
+          cleared++
+        }
+        const res = applyAction(s, botAction(s, rng), rng)
+        await resolvePendingLoot(res.state, async () => fakeItem(n++))
+        s = res.state
+      }
+    }
+    expect(cleared).toBeGreaterThan(0)
+  })
 })

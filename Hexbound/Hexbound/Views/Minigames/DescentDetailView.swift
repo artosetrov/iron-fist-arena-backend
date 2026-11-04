@@ -517,11 +517,13 @@ struct DescentRunView: View {  // TEMPORARY internal for the sim gallery
         let s = snapshot
         switch s.screenKind {
         case .depthCard:
-            ZStack {
-                DescentBackdrop(asset: "rush2-fork-\(s.depthKey)-1", dim: 0.35)
-                DescentVignette()
-                DescentTitleCard(eyebrow: "Depth \(s.depthRoman)", title: s.depthName, text: s.depthBlurb)
-            }
+            DescentGateStage(
+                depthKey: s.depthKey,
+                roman: s.depthRoman,
+                name: s.depthName,
+                guardian: s.guardianName,
+                isActive: isActive && !vm.showMap && !vm.showBag
+            )
         case .fork:
             if let fork = s.fork {
                 DescentForkScene(
@@ -566,16 +568,7 @@ struct DescentRunView: View {  // TEMPORARY internal for the sim gallery
                 DescentVignette()
             }
         case .depthClear:
-            ZStack {
-                DescentBackdrop(asset: "rush2-bg-\(s.depthKey)-arena", dim: 0.3)
-                DescentVignette()
-                DescentTitleCard(
-                    eyebrow: "Depth \(s.depthRoman) cleared",
-                    title: "The way down opens",
-                    text: "Below waits \(s.depthClear?.nextDepthName ?? "the next depth"). Your bag holds **\(s.bag.gold)** gold at risk.",
-                    titleColor: DarkFantasyTheme.goldBright
-                )
-            }
+            DescentDepthClearStage(depthKey: s.depthKey, roman: s.depthRoman)
         case .result:
             // The room the result card fades in over (`DescentResultCard`).
             DescentBackdrop(

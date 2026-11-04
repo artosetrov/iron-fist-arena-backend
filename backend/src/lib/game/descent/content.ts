@@ -104,6 +104,7 @@ export const TRAIT_SHORT: Record<TraitKey, string> = {
 export interface DepthDef {
   key: DepthKey
   name: string
+  /** The line on the depth's opening screen, under its guardian in the gate. */
   blurb: string
   mobs: MobKey[]
   elite: MobKey
@@ -122,21 +123,21 @@ export interface DepthDef {
 export const DEPTHS: DepthDef[] = [
   {
     key: 'ossuary', name: 'The Ossuary',
-    blurb: 'Bones of forgotten kings line the walls. Nothing down here stays dead for long.',
+    blurb: 'The city\'s last lamp gutters out behind you. Down here, the dead get up again.',
     mobs: ['skeleton', 'ghoul', 'undead', 'rat'], elite: 'plague', boss: 'boneking', rows: 4, dark: 0.3,
     hp: 270, dmg: 60, gold: 45, xp: 30, bossHp: 640, bossDmg: 78,
     chests: [['wood', 70], ['iron', 25], ['gold', 5]],
   },
   {
     key: 'warrens', name: 'The Shadow Warrens',
-    blurb: 'Tunnels dug by things that hate the light. Every torch you carry matters here.',
+    blurb: 'Your torch is the only light for a mile. Something down here hates it.',
     mobs: ['troll', 'imp', 'bandit', 'goblin'], elite: 'assassin', boss: 'lordshadows', rows: 5, dark: 0.42,
     hp: 330, dmg: 72, gold: 65, xp: 45, bossHp: 720, bossDmg: 80,
     chests: [['wood', 30], ['iron', 50], ['gold', 20]],
   },
   {
     key: 'molten', name: 'The Molten Heart',
-    blurb: 'The rock itself glows. The Warden has kept this gate for a thousand years.',
+    blurb: 'The stone is hot underfoot. The Warden has held this gate for a thousand years.',
     mobs: ['sprite', 'brute', 'golem'], elite: 'juggernaut', boss: 'warden', rows: 5, dark: 0.5,
     // Guardian III: +15% HP (900 → 1035) and +11% damage (90 → 100), decided 2026-10-16.
     hp: 390, dmg: 82, gold: 90, xp: 65, bossHp: 1035, bossDmg: 100,

@@ -62,10 +62,6 @@ struct HexboundApp: App {
                 }
                 }
             }
-            .environment(appState)
-            .environment(cache)
-            .environment(pushService)
-            .environment(\.bootStage, bootStage)
             // ── Root overlay stack ───────────────────────────────────────
             // Each `.overlay` is its own stacking context, so a `.zIndex`
             // written inside one is compared against nothing. The order
@@ -155,6 +151,17 @@ struct HexboundApp: App {
                         .transition(.opacity)
                 }
             }
+            // The environment goes on AFTER the overlays, so every overlay
+            // inherits it too: an `.environment` written above an `.overlay`
+            // reaches only the content it wraps. The reward cards
+            // (`RewardCard` → `AvatarImageView`, `CachedAssetImage`) read
+            // `GameDataCache`, and the root ceremonies that draw them — level
+            // up, rank up, claimed rewards — crashed with "No Observable
+            // object of type GameDataCache found" while it sat above them.
+            .environment(appState)
+            .environment(cache)
+            .environment(pushService)
+            .environment(\.bootStage, bootStage)
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
             .animation(.easeInOut(duration: 0.3), value: appState.isForgingHero)
             .animation(.easeInOut(duration: 0.3), value: appState.isBossRevealing)
