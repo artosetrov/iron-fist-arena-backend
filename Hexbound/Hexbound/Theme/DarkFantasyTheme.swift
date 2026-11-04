@@ -277,6 +277,11 @@ enum DarkFantasyTheme {
     static let mineCounterTop = Color(hex: 0x3B3127)
     static let mineCounterBottom = Color(hex: 0x211B15)
     static let mineCounterEdge = Color(hex: 0x8B6914)
+    /// Parchment (2026-11-04): ink on `rush2-map-parchment` — the Guild Hall's letters.
+    static let parchmentInk = Color(hex: 0x2A1A0C)
+    static let parchmentInkSoft = Color(hex: 0x5A3A1E)
+    /// The paper showing through a cracked wax seal.
+    static let parchmentPaper = Color(hex: 0xF4E3C3)
 
     // MARK: - VFX Glow Colors
 

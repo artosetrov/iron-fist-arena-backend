@@ -70,6 +70,15 @@ struct DailyReward {
     let assetIcon: String?
     let label: String
     let description: String
+    /// Mechanics, for compact displays (the week of chests shows "150" / "×2"
+    /// under an icon, not the full label).
+    var kind: String = "gold"
+    var amount: Int = 0
+
+    /// "150" for currencies, "×2" for consumables.
+    var compactAmount: String {
+        kind == "consumable" ? "×\(amount)" : "\(amount)"
+    }
 }
 
 extension DailyReward {
@@ -100,7 +109,9 @@ extension DailyReward {
                 icon: "",                       // legacy — use assetIcon
                 assetIcon: def.assetName,
                 label: def.resolvedLabel,
-                description: def.resolvedLabel  // single-line descriptor for now
+                description: def.resolvedLabel,  // single-line descriptor for now
+                kind: def.type,
+                amount: def.amount
             )
         }
     }
