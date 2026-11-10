@@ -331,6 +331,13 @@ struct DescentRelicChoice: Decodable, Equatable {
 struct DescentDepthClear: Decodable, Equatable {
     let nextDepthName: String
     let bonusText: String
+    /// What waits below, for the "Descend" card; older servers omit these.
+    let nextDepthKey: String?
+    let nextGuardianName: String?
+    /// Asset of the next guardian's face (`rush2-face-<boss>`).
+    let nextGuardianFace: String?
+    /// How much richer the next depth is (1.4 → "Gold ×1.4").
+    let goldMult: Double?
 }
 
 struct DescentResult: Decodable, Equatable {

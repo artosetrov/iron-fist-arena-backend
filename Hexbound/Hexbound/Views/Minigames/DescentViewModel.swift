@@ -77,6 +77,9 @@ final class DescentViewModel {
     var snapshot: DescentSnapshot?
     var staminaCost = 30
     var isBusy = false
+    /// The action on its way to the server: its button or card stays lit while
+    /// the others grey out (`DescentRunActions`, the depth-cleared cards).
+    private(set) var pendingAction: DescentAction?
     var isStarting = false
     /// A fight round (strike, brace, potion) is on its way to the server — the dice tumble meanwhile.
     private(set) var isRollingRound = false
@@ -204,6 +207,7 @@ final class DescentViewModel {
         guard !isBusy, snapshot != nil else { return }
         if action != .strike { autoNotice = nil }
         isBusy = true
+        pendingAction = action
         Task { await send(action) }
     }
 
@@ -261,6 +265,7 @@ final class DescentViewModel {
         isRollingRound = action == .strike || action == .brace || action == .potion
         defer {
             isBusy = false
+            pendingAction = nil
             isRollingRound = false
         }
         guard let snap = snapshot else { return }

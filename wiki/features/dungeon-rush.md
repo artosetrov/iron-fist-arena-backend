@@ -62,8 +62,21 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
     The room is held back until the figure arrives and the server has answered; the map then shows the room for a
     beat (its token and name — a dark passage's room too) and closes. A tap skips the walk; with Reduce Motion the
     figure is simply there. Solid ink on the map is where the hero has been, dotted is the way ahead.
-- **Art:** `Assets.xcassets/Descent/rush2-*` (82 imagesets, @1x/@2x/@3x). Door arch boxes in
-  `DescentGeometry.archTable` are measured on the exact crop the imagesets keep — re-measure if a fork is regenerated.
+  - *A depth's gate* (`DescentGateStage`, 2026-11-04): the depth opens on its guardian waiting in the gate at the
+    top of the stairs (`rush2-bg-<depth>-gate`, prompts in `docs/08_prompts/DESCENT_GATES_PROMPTS.md`). His eyes
+    are lit by code at the points in `DescentGeometry.gateEyes` — the painting does not glow. DEPTH I · THE OSSUARY ·
+    GUARDIAN · THE BONE KING rise in under him; the panel reads the depth's own line (`DEPTHS[].blurb`, the server's
+    tale) over LIGHT YOUR TORCH / DESCEND.
+  - *Depth cleared* (`DescentDepthClearStage`): DEPTH CLEARED (`rush2-stamp-depth-cleared`, bone letters on a torn
+    crimson banner — the third painted word) slams across the guardian's arena, THE WAY DOWN OPENS under it. The
+    choice is two cards instead of buttons: DESCEND with the next guardian's face (`rush2-face-<boss>`, named by the
+    server in `depthClear.nextGuardianFace`) and how much richer the gold is (`goldMult` → "Gold ×1.4"), CLIMB OUT
+    with the bag that comes home whole; the risk line under them.
+  - *Waiting on the server*: the button or card just tapped keeps its colour (`DescentViewModel.pendingAction`) and
+    only the other ways on grey out, so a slow answer no longer looks like a dead grey button.
+- **Art:** `Assets.xcassets/Descent/rush2-*` (90 imagesets, @1x/@2x/@3x). Door arch boxes in
+  `DescentGeometry.archTable` and the gates' eyes in `DescentGeometry.gateEyes` are measured on the exact crop the
+  imagesets keep — re-measure if a fork or a gate is regenerated.
 - **Economy:** gold `× 0.3 × level × CHA × premium`, XP `× 0.75 × level`; loot is real catalog items picked at drop
   time on the global rarity table (R14.1); 30 stamina per descent.
 

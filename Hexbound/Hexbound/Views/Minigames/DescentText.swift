@@ -73,13 +73,16 @@ enum DescentText {
 struct DescentTale: View {
     let text: String
     var base: Color = DarkFantasyTheme.textPrimary
+    /// Under a title on the scene (a depth's gate, the way down): centred.
+    var centered = false
 
     var body: some View {
         Text(DescentText.attributed(text, base: base))
             .font(DarkFantasyTheme.tale)
             .lineSpacing(2)
+            .multilineTextAlignment(centered ? .center : .leading)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
             .accessibilityLabel(DescentText.plain(text))
     }
 }
