@@ -241,7 +241,7 @@ export interface DailyLoginRewardDef {
   type: 'gold' | 'gems' | 'consumable';
   amount: number;
   itemId?: string;
-  /** Human label shown in the UI, e.g. "150 Gold" or "1 S. Potion". */
+  /** Human label shown in the UI, e.g. "150 Gold" or "1 Stamina Potion" — spelled out, no abbreviations. */
   displayName: string;
   /** Asset key for the UI icon (see xcassets / admin panel preview map). */
   displayIcon:
@@ -256,11 +256,11 @@ export interface DailyLoginRewardDef {
 // --- Daily login rewards (Economy v2 — reduced gold days to prevent passive > active income) ---
 export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
   { type: 'gold',       amount: 150, displayName: '150 Gold',    displayIcon: 'icon-gold' },                                                     // Day 1 (was 200)
-  { type: 'consumable', amount: 1,   displayName: '1 S. Potion', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },             // Day 2
+  { type: 'consumable', amount: 1,   displayName: '1 Stamina Potion', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },             // Day 2
   { type: 'gold',       amount: 300, displayName: '300 Gold',    displayIcon: 'icon-gold' },                                                     // Day 3 (was 500)
-  { type: 'consumable', amount: 2,   displayName: '2 S. Potions', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },            // Day 4
+  { type: 'consumable', amount: 2,   displayName: '2 Stamina Potions', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },            // Day 4
   { type: 'gold',       amount: 500, displayName: '500 Gold',    displayIcon: 'icon-gold' },                                                     // Day 5 (was 1000)
-  { type: 'consumable', amount: 1,   displayName: '1 L. Potion', displayIcon: 'icon-stamina-large', itemId: 'stamina_potion_large' },             // Day 6
+  { type: 'consumable', amount: 1,   displayName: '1 Large Stamina Potion', displayIcon: 'icon-stamina-large', itemId: 'stamina_potion_large' },             // Day 6
   { type: 'gems',       amount: 25,  displayName: '25 Gems',     displayIcon: 'icon-gems' },                                                     // Day 7
 ] as const;
 
