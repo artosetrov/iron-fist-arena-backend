@@ -218,13 +218,14 @@ struct FortuneTableDetailView: View {
             )
             .padding(.top, LayoutConstants.spaceLG)
 
+            // Straight dagger (2026-11-04): the art used to be drawn at an
+            // angle and a −15° turn left it 20° off the top slot.
             Image("fortune-pointer")
                 .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 80)
-                .rotationEffect(.degrees(-15))
+                .interpolation(.high)
+                .frame(width: 34, height: 92)
                 .depthShadow(.card)
-                .offset(y: -LayoutConstants.spaceSM)
+                .offset(y: -LayoutConstants.spaceXS)
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
