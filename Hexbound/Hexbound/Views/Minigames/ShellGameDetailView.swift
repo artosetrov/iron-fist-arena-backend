@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Shell Game — variant A "stage" (2026-11-04): Finch stands behind his
+/// table, the cups sit on it, one dock at the bottom carries the bet and the
+/// action. No scroll and no result modal: the outcome is said on the stage.
 struct ShellGameDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var vm: ShellGameViewModel?
@@ -14,26 +17,22 @@ struct ShellGameDetailView: View {
     @State private var shakeOffset: CGFloat = 0
     @State private var lossFlashOpacity: Double = 0
 
-    // Cup glow pulse (guessing phase)
-    @State private var cupGlowActive = false
-
-    // Result modal
-    @State private var showResultModal = false
+    @State private var showRules = false
+    /// Stake of the round on the table (the bet may change after it).
+    @State private var lastStake = 0
 
     // Game phases
     enum GamePhase { case idle, revealing, shuffling, guessing, result }
     @State private var gamePhase: GamePhase = .idle
     @State private var revealedCup: Int? = nil
 
-    var statusText: String {
-        switch gamePhase {
-        case .idle:      return "PLACE YOUR BET"
-        case .revealing: return "WATCH CLOSELY!"
-        case .shuffling: return "FOLLOW THE CUP..."
-        case .guessing:  return "PICK A CUP!"
-        case .result:    return ""
-        }
-    }
+    /// `bg-shell-game` is 1920 × 3440; its table's back edge sits 25.46 % down.
+    private static let bgHeightPerWidth: CGFloat = 3440.0 / 1920.0
+    private static let tableEdge: CGFloat = 0.2546
+    /// `tavern-npc-trickster` is 434 × 825.
+    private static let finchAspect: CGFloat = 434.0 / 825.0
+    /// How far a cup slides during the shuffle.
+    private static let shuffleStep: CGFloat = 96
 
     var body: some View {
         Group {
@@ -43,13 +42,12 @@ struct ShellGameDetailView: View {
                 }
             } else if let vm {
                 mainContent(vm)
-                    .transaction { $0.animation = nil }
             } else {
                 HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             }
         }
-        .background(backgroundLayer.ignoresSafeArea())
+        .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
@@ -61,6 +59,19 @@ struct ShellGameDetailView: View {
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                MinigameGoldPill(gold: vm?.gold ?? appState.currentCharacter?.gold ?? 0)
+            }
+        }
+        .sheet(isPresented: $showRules) {
+            MinigameInfoSheet(
+                title: "HOW TO PLAY",
+                rows: [(label: "Find the ball", value: "×2 your bet"), (label: "Wrong cup", value: "bet lost")],
+                notes: [
+                    "Finch shows you the ball, then shuffles the three cups. Tap the cup you think hides it.",
+                    "The server decides where the ball ends up; the shuffle on screen is only a show."
+                ]
+            )
         }
         .contextualHint(shellHint)
         .onAppear {
@@ -80,52 +91,27 @@ struct ShellGameDetailView: View {
         }
     }
 
-    // MARK: - Background
-
-    private var backgroundLayer: some View {
-        ZStack {
-            DarkFantasyTheme.bgPrimary
-
-            Image("bg-shell-game")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .opacity(DarkFantasyTheme.opacityHeavy)
-
-            LinearGradient(
-                colors: [
-                    DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityMedium),
-                    Color.clear,
-                    DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityDense)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-    }
-
-    // MARK: - Main Content (ZStack pattern — like Fortune Wheel)
+    // MARK: - Main Content (stage + dock, no scroll)
 
     @ViewBuilder
     private func mainContent(_ vm: ShellGameViewModel) -> some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             VStack(spacing: 0) {
-                // Scrollable content: quest banner + payouts + cups
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: LayoutConstants.spaceSM) {
-                        // Payout info card
-                        payoutSection()
+                stage(vm)
 
-                        // Active quest banner (below payouts)
-                        ActiveQuestBanner(questTypes: ["shell_game_play"])
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-
-                        // Cups stage — moved up, no status text header
-                        cupsSection(vm)
-
-                        // Spacer for NPC widget clearance (matches npcAvatarSize)
-                        Spacer().frame(height: LayoutConstants.npcAvatarSize)
-                    }
-                }
+                MinigameBetDock(
+                    bets: ShellGameViewModel.bets,
+                    selectedBet: Binding(get: { vm.selectedBet }, set: { vm.selectedBet = $0 }),
+                    gold: vm.gold,
+                    isLocked: gamePhase != .idle && gamePhase != .result,
+                    ctaTitle: ctaText,
+                    ctaEnabled: ctaEnabled(vm),
+                    remainingText: "\(vm.playsRemaining) of \(vm.playsLimit) games left",
+                    remainingIsEmpty: vm.playsRemaining == 0,
+                    infoTitle: "How to play",
+                    onInfo: { showRules = true },
+                    onCTA: { ctaTapped(vm) }
+                )
             }
 
             // Loss flash overlay
@@ -135,396 +121,260 @@ struct ShellGameDetailView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-            // NPC Widget — fixed at bottom
-            npcWidget(vm)
-
-            // Result Modal overlay
-            if showResultModal, let result = vm.result {
-                resultModal(vm, result: result)
-            }
+            RewardBurstView(style: .claim, isActive: $showWinBurst)
+                .frame(height: 0) // Overlay effect, no layout space
+                .allowsHitTesting(false)
         }
         .offset(x: shakeOffset)
     }
 
-    // MARK: - Payout Section
+    // MARK: - Stage
 
-    private func payoutSection() -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            payoutPill(
-                icon: "shell_ball",
-                label: "×2",
-                subtitle: "FIND IT",
-                color: DarkFantasyTheme.goldBright
-            )
-            payoutPill(
-                icon: "shell_cup",
-                label: "MISS",
-                subtitle: "WRONG",
-                color: DarkFantasyTheme.danger
-            )
-        }
-        .padding(LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+    /// The tavern wall, Finch behind his table, the table drawn once more
+    /// over his legs (the same picture, masked from the table's edge down, so
+    /// the seam is invisible), the cups on top.
+    private func stage(_ vm: ShellGameViewModel) -> some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let tableY = h * 0.56
+            let bgW = w * 1.44
+            let bgH = bgW * Self.bgHeightPerWidth
+            let bgTop = tableY - Self.tableEdge * bgH
+            let finchH = h * 0.75
+            let finchW = finchH * Self.finchAspect
+            let finchTop = tableY - finchH * 0.6
+            let cup = min(104, (w - LayoutConstants.screenPadding * 2 - LayoutConstants.spaceMD * 2) / 3 - 8)
+            let cupsTop = tableY + LayoutConstants.spaceLG
+            let rowHeight: CGFloat = 56
+
+            ZStack(alignment: .topLeading) {
+                tableScene
+                    .frame(width: bgW, height: bgH)
+                    .position(x: w / 2, y: bgTop + bgH / 2)
+
+                LinearGradient(
+                    colors: [DarkFantasyTheme.bgPrimary, DarkFantasyTheme.bgPrimary.opacity(0)],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
+                .frame(width: w, height: 110)
+                .position(x: w / 2, y: bgTop + 55)
+                .allowsHitTesting(false)
 
-    private func payoutPill(icon: String, label: String, subtitle: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            Image(icon)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                Image("tavern-npc-trickster")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: finchW, height: finchH)
+                    .position(x: w * 0.70, y: finchTop + finchH / 2)
+                    .accessibilityHidden(true)
 
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(color)
+                // The table again, from its edge down — it hides Finch's legs.
+                tableScene
+                    .frame(width: bgW, height: bgH)
+                    .mask(alignment: .top) {
+                        VStack(spacing: 0) {
+                            Color.clear.frame(height: max(0, tableY - bgTop))
+                            Color.black
+                        }
+                    }
+                    .position(x: w / 2, y: bgTop + bgH / 2)
+                    .allowsHitTesting(false)
 
-            Text(subtitle)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(0.5)
+                LinearGradient(
+                    colors: [Color.clear, DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque)],
+                    startPoint: UnitPoint(x: 0.5, y: 0.45),
+                    endPoint: .bottom
+                )
+                .frame(width: w, height: h - tableY)
+                .position(x: w / 2, y: tableY + (h - tableY) / 2)
+                .allowsHitTesting(false)
+
+                cupsRow(vm, cup: cup)
+                    .frame(width: w)
+                    .position(x: w / 2, y: cupsTop + cup * 0.6)
+
+                MinigameSpeechBubble(text: bubbleText(vm))
+                    .frame(width: min(w * 0.46, 200), alignment: .leading)
+                    .padding(.leading, LayoutConstants.screenPadding)
+                    .padding(.top, LayoutConstants.spaceMD)
+                    .zIndex(3)
+
+                bottomRow(vm)
+                    .frame(width: w, height: rowHeight)
+                    .position(x: w / 2, y: h - LayoutConstants.spaceMD - rowHeight / 2)
+            }
+            .frame(width: w, height: h)
+            .clipped()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, LayoutConstants.spaceXS)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(color.opacity(DarkFantasyTheme.opacitySoft))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(color.opacity(DarkFantasyTheme.opacityMild), lineWidth: 1)
-        )
     }
 
-    // MARK: - Cups Section
+    private var tableScene: some View {
+        Image("bg-shell-game")
+            .resizable()
+            .interpolation(.high)
+            .opacity(DarkFantasyTheme.opacityOpaque)
+            .accessibilityHidden(true)
+    }
+
+    /// Finch narrates the round; between rounds he says his piece.
+    private func bubbleText(_ vm: ShellGameViewModel) -> String {
+        switch gamePhase {
+        case .revealing: return "Watch closely — it's under this one."
+        case .shuffling: return "Follow the cup, friend…"
+        case .guessing:  return "So? Pick a cup."
+        case .idle, .result: return vm.npcSpeech
+        }
+    }
 
     @ViewBuilder
-    private func cupsSection(_ vm: ShellGameViewModel) -> some View {
-        ZStack {
-            HStack(spacing: LayoutConstants.spaceLG) {
-                ForEach(vm.cups, id: \.self) { cup in
-                    cupView(cup: cup, vm: vm)
-                        .offset(x: cupXOffsets[cup])
-                        .animation(.spring(response: 0.4, dampingFraction: 0.65), value: cupXOffsets[cup])
-                }
+    private func bottomRow(_ vm: ShellGameViewModel) -> some View {
+        if gamePhase == .result, let result = vm.result {
+            let isWin = result == "win"
+            MinigameResultPlaque(
+                isWin: isWin,
+                badge: "×2",
+                amount: isWin ? vm.winAmount : lastStake,
+                caption: isWin ? "sharp eyes — the gold is yours" : "wrong cup — Finch keeps it"
+            )
+        } else {
+            MinigameStagePill {
+                Image("icon-gold")
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+                Text("Find the ball — win")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                Text((vm.selectedBet * 2).formatted())
+                    .font(DarkFantasyTheme.cardTitle)
+                    .monospacedDigit()
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
+            .accessibilityElement(children: .combine)
+            .transition(.opacity)
+        }
+    }
+
+    // MARK: - Cups
+
+    private func cupsRow(_ vm: ShellGameViewModel, cup: CGFloat) -> some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            ForEach(vm.cups, id: \.self) { index in
+                cupView(index, vm: vm, cup: cup)
+                    .offset(x: cupXOffsets[index])
+                    .animation(.spring(response: 0.4, dampingFraction: 0.65), value: cupXOffsets[index])
             }
         }
-        .frame(height: 170)
-        .padding(.top, LayoutConstants.spaceLG)
     }
 
-    // MARK: - Cup View
-
     @ViewBuilder
-    private func cupView(cup: Int, vm: ShellGameViewModel) -> some View {
-        let isWinner = vm.winningCup == cup
-        let showBall = (gamePhase == .revealing && revealedCup == cup) ||
+    private func cupView(_ index: Int, vm: ShellGameViewModel, cup: CGFloat) -> some View {
+        let isWinner = vm.winningCup == index
+        let showBall = (gamePhase == .revealing && revealedCup == index) ||
                        (gamePhase == .result && isWinner)
+        let cupHeight = cup * 256.0 / 240.0
+        let ball = cup * 0.54
 
         // The whole game is three image-only buttons; without labels VoiceOver
         // announced "Button, Button, Button" (fixed 2026-10-14).
         Button {
             if gamePhase == .guessing {
-                Task { await pickCup(cup, vm: vm) }
+                Task { await pickCup(index, vm: vm) }
             }
         } label: {
             ZStack(alignment: .bottom) {
-                // Ball — visible before shuffle (reveal) and after guess (result)
+                // Shadow on the table
+                Ellipse()
+                    .fill(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy))
+                    .frame(width: cup * 0.88, height: 16)
+                    .offset(y: 6)
+
+                // Pickable: a gold ring on the table under each cup (static, no idle glow)
+                if gamePhase == .guessing {
+                    Ellipse()
+                        .stroke(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityOpaque), lineWidth: 2)
+                        .frame(width: cup * 0.96, height: 22)
+                        .offset(y: 8)
+                        .transition(.opacity)
+                }
+
+                // Ball — visible before the shuffle (reveal) and after the guess (result)
                 if showBall {
                     Image("shell_ball")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 60, height: 60)
-                        .transition(.scale(scale: 0.4).combined(with: .opacity))
+                        .frame(width: ball, height: ball)
+                        .transition(.opacity)
                 }
 
-                // Cup image with lift animation
+                // Cup with lift animation
                 Image("shell_cup")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 90, height: 90)
-                    .offset(y: cupLiftOffsets[cup])
-                    .animation(.spring(response: 0.38, dampingFraction: 0.62), value: cupLiftOffsets[cup])
+                    .frame(width: cup, height: cupHeight)
+                    .depthShadow(.elevated)
+                    .offset(y: cupLiftOffsets[index])
+                    .animation(.spring(response: 0.38, dampingFraction: 0.62), value: cupLiftOffsets[index])
             }
-            .frame(width: 110, height: 130)
+            .frame(width: cup + 8, height: cupHeight + 12)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Cup \(cup + 1)")
-        .accessibilityValue(showBall ? "Golden ball" : "")
+        .accessibilityLabel("Cup \(index + 1)")
+        .accessibilityValue(showBall ? "Ball" : "")
         .accessibilityHint(gamePhase == .guessing ? "Double tap to pick this cup" : "")
-        .accessibilityAddTraits(.isButton)
         // NOTE: use allowsHitTesting instead of .disabled — .disabled auto-dims
         // the button and makes the cup look semi-transparent in idle/shuffle phases.
         .allowsHitTesting(gamePhase == .guessing)
-        // Pulsing gold glow when cups are pickable
-        .shadow(
-            color: gamePhase == .guessing
-                ? DarkFantasyTheme.gold.opacity(cupGlowActive ? 0.7 : 0.15)
-                : Color.clear,
-            radius: gamePhase == .guessing ? (cupGlowActive ? 16 : 6) : 0
-        )
-        .animation(.easeInOut(duration: 1.0), value: cupGlowActive)
-        .onChange(of: gamePhase) { _, newPhase in
-            if newPhase == .guessing {
-                cupGlowActive = false
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    cupGlowActive = true
-                }
-            } else {
-                cupGlowActive = false
-            }
-        }
     }
 
-    // MARK: - NPC Widget (fixed bottom — like Fortune Wheel)
+    // MARK: - CTA
 
-    private func npcWidget(_ vm: ShellGameViewModel) -> some View {
-        NPCGuideWidget(
-            npcTitle: "FINCH",
-            onDismiss: { /* no dismiss on shell game */ },
-            npcImageName: NPCSpeaker.finch.portrait,
-            plainMessage: vm.npcSpeech,
-            wheelContent: AnyView(shellWagerSection(vm)),
-            overlapCardPx: 8
-        )
-    }
-
-    // MARK: - Wager Section (inside NPC Widget wheelContent)
-
-    @ViewBuilder
-    private func shellWagerSection(_ vm: ShellGameViewModel) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            // Plays row — badge + currency (mirrors Fortune Wheel spins row)
-            HStack {
-                // Plays badge
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "cup.and.saucer.fill")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                    Text("\(vm.playsRemaining)/\(vm.playsLimit)")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                }
-                .foregroundStyle(vm.playsRemaining > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(
-                    Capsule()
-                        .fill(DarkFantasyTheme.bgTertiary)
-                        .overlay(
-                            Capsule()
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
-
-                Spacer()
-
-                // Currency Display
-                CurrencyDisplay(
-                    gold: vm.gold,
-                    gems: appState.currentCharacter?.gems ?? 0,
-                    size: .standard,
-                    animated: true
-                )
-            }
-
-            // Bet buttons (5 options — Oswald 18, tracking 2)
-            HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(ShellGameViewModel.bets, id: \.self) { bet in
-                    let isSelected = vm.selectedBet == bet
-                    let canAfford = vm.gold >= bet
-
-                    Button {
-                        guard !vm.isPlaying else { return }
-                        HapticManager.light()
-                        SFXManager.shared.play(.uiTap)
-                        vm.selectedBet = bet
-                    } label: {
-                        Text("\(bet)")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .foregroundStyle(
-                                isSelected
-                                    ? DarkFantasyTheme.textOnGold
-                                    : canAfford
-                                        ? DarkFantasyTheme.textPrimary
-                                        : DarkFantasyTheme.textTertiary
-                            )
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 34)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .fill(
-                                        isSelected
-                                            ? DarkFantasyTheme.goldGradient
-                                            : LinearGradient(colors: [DarkFantasyTheme.bgTertiary], startPoint: .top, endPoint: .bottom)
-                                    )
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .stroke(
-                                        isSelected
-                                            ? DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityHeavy)
-                                            : DarkFantasyTheme.borderSubtle,
-                                        lineWidth: isSelected ? 1.5 : 1
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(vm.isPlaying || !canAfford)
-                    .opacity(canAfford ? 1 : DarkFantasyTheme.opacityStrong)
-                }
-            }
-
-            // Gold Divider before CTA (per Figma State=Wheel pattern)
-            GoldDivider()
-
-            // START CTA — Primary button with ornamental styling
-            if gamePhase == .result, vm.result == "lose" {
-                Button {
-                    dismissModal(vm)
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Image("ui-dice")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-                        Text("PLAY AGAIN")
-                    }
-                    .font(DarkFantasyTheme.cardTitle)
-                    .tracking(1)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightMD)
-                }
-                .buttonStyle(.danger)
-            } else {
-                Button {
-                    if gamePhase == .idle {
-                        guard vm.canPlay else { return }
-                        HapticManager.heavy()
-                        SFXManager.shared.play(.uiConfirm)
-                        Task { await startPressed(vm: vm) }
-                    } else if gamePhase == .result {
-                        dismissModal(vm)
-                    }
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: ctaIcon)
-                            .font(DarkFantasyTheme.cardTitle.bold())
-                        Text(ctaText(vm))
-                    }
-                    .font(DarkFantasyTheme.cardTitle)
-                    .tracking(1)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightMD)
-                }
-                .buttonStyle(.primary)
-                .disabled(!ctaEnabled)
-            }
-        }
-    }
-
-    // MARK: - CTA State
-
-    private var ctaIcon: String {
+    private var ctaText: String {
         switch gamePhase {
-        case .idle:      return "dice.fill"
-        case .revealing: return "eye.fill"
-        case .shuffling: return "eye.fill"
-        case .guessing:  return "hand.tap.fill"
-        case .result:    return "dice.fill"
+        case .idle:                  return "PLAY"
+        case .revealing, .shuffling: return "WATCH…"
+        case .guessing:              return "PICK A CUP"
+        case .result:                return "PLAY AGAIN"
         }
     }
 
-    private func ctaText(_ vm: ShellGameViewModel) -> String {
+    private func ctaEnabled(_ vm: ShellGameViewModel) -> Bool {
+        switch gamePhase {
+        case .idle:   return vm.canPlay
+        case .result: return vm.gold >= vm.selectedBet && vm.playsRemaining > 0
+        default:      return false
+        }
+    }
+
+    private func ctaTapped(_ vm: ShellGameViewModel) {
         switch gamePhase {
         case .idle:
-            return "START — \(vm.selectedBet) GOLD"
-        case .revealing, .shuffling:
-            return "WATCH THE CUPS..."
-        case .guessing:
-            return "PICK A CUP!"
+            guard vm.canPlay else { return }
+            HapticManager.heavy()
+            SFXManager.shared.play(.uiConfirm)
+            Task { await startPressed(vm: vm) }
         case .result:
-            return "PLAY AGAIN"
-        }
-    }
-
-    private var ctaEnabled: Bool {
-        switch gamePhase {
-        case .idle:
-            return vm?.canPlay ?? false
-        case .result:
-            return true
+            // Straight into the next round with the bet on the dock.
+            HapticManager.heavy()
+            SFXManager.shared.play(.uiConfirm)
+            resetGame(vm: vm)
+            Task {
+                try? await Task.sleep(for: .seconds(0.35))
+                guard vm.canPlay else { return }
+                await startPressed(vm: vm)
+            }
         default:
-            return false
+            break
         }
-    }
-
-    // MARK: - Result Modal (ornamental — matches Fortune Wheel)
-
-    @ViewBuilder
-    /// `isWin` is computed in the signature rather than as a `let` in the body:
-    /// a statement before the view expression forces an explicit `return`, and
-    /// that silently turns the ViewBuilder off for the whole function.
-    private func resultModal(_ vm: ShellGameViewModel, result: String) -> some View {
-        resultModal(vm, isWin: result == "win")
-    }
-
-    private func resultModal(_ vm: ShellGameViewModel, isWin: Bool) -> some View {
-        // A full-screen fortune card with its own backdrop (no GameModal).
-        ZStack {
-            MinigameResultModal(
-                isWin: isWin,
-                title: resultTitle(vm),
-                amountText: resultAmountText(vm),
-                winnings: isWin ? vm.winAmount : 0,
-                onContinue: { dismissModal(vm) }
-            ) {
-                Image(isWin ? "shell_ball" : "shell_cup")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            }
-
-            if isWin {
-                RewardBurstView(style: .claim, isActive: $showWinBurst)
-                    .frame(height: 0) // Overlay effect, no layout space
-                    .allowsHitTesting(false)
-            }
-        }
-        .opacity(showResultModal ? 1 : 0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
-    }
-
-    private func resultTitle(_ vm: ShellGameViewModel) -> String {
-        guard let result = vm.result else { return "" }
-        if result == "lose" { return "WRONG CUP!" }
-        return "YOU WIN!"
-    }
-
-    private func resultAmountText(_ vm: ShellGameViewModel) -> String {
-        guard let result = vm.result else { return "" }
-        if result == "win" {
-            return "+\(vm.winAmount.formatted()) Gold (×2)"
-        } else {
-            return "-\(vm.selectedBet.formatted()) Gold"
-        }
-    }
-
-    private func dismissModal(_ vm: ShellGameViewModel) {
-        showResultModal = false
-        resetGame(vm: vm)
     }
 
     // MARK: - Actions
 
     private func startPressed(vm: ShellGameViewModel) async {
+        lastStake = vm.selectedBet
         // Start session on server -> get reveal cup
         let revealCup = await vm.startGame()
         guard let revealCup else { return }
@@ -553,10 +403,9 @@ struct ShellGameDetailView: View {
             var cup2 = Int.random(in: 0..<3)
             while cup2 == cup1 { cup2 = Int.random(in: 0..<3) }
 
-            let offset: CGFloat = 100
             withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
-                cupXOffsets[cup1] = offset
-                cupXOffsets[cup2] = -offset
+                cupXOffsets[cup1] = Self.shuffleStep
+                cupXOffsets[cup2] = -Self.shuffleStep
             }
             try? await Task.sleep(for: .seconds(0.45))
 
@@ -568,7 +417,9 @@ struct ShellGameDetailView: View {
         }
 
         // Ready for user to pick
-        gamePhase = .guessing
+        withAnimation(MotionConstants.smooth) {
+            gamePhase = .guessing
+        }
     }
 
     private func pickCup(_ cup: Int, vm: ShellGameViewModel) async {
@@ -582,26 +433,21 @@ struct ShellGameDetailView: View {
             }
         }
 
-        withAnimation(MotionConstants.smooth) {
-            gamePhase = .result
-        }
-
         // NPC speech update
         vm.onResultComplete()
 
-        // Win / Loss feedback
+        withAnimation(MotionConstants.springBouncy) {
+            gamePhase = .result
+        }
+
+        // Win / Loss feedback, said on the stage
         if vm.result == "win" {
             HapticManager.success()
-            // Show modal after short delay
-            try? await Task.sleep(for: .seconds(0.8))
+            SFXManager.shared.play(.coinsJingle)
             showWinBurst = true
-            showResultModal = true
         } else {
             HapticManager.error()
             triggerLossShake()
-            // Show modal after shake
-            try? await Task.sleep(for: .seconds(0.6))
-            showResultModal = true
         }
     }
 
@@ -648,7 +494,6 @@ struct ShellGameDetailView: View {
             cupXOffsets = [0, 0, 0]
             revealedCup = nil
             gamePhase = .idle
-            cupGlowActive = false
             showWinBurst = false
             shakeOffset = 0
             lossFlashOpacity = 0

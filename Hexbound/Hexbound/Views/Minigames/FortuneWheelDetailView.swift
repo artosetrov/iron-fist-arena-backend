@@ -10,9 +10,18 @@ struct FortuneWheelDetailView: View {
     /// Painted slot the last spin stopped on — outlined once the wheel rests.
     @State private var landedSlot: Int?
 
-    // Result modal
+    /// The last spin's outcome, said on the stage until the next spin
+    /// (variant A, 2026-11-04 — no modal for every spin).
+    @State private var stageResult: FortuneWheelViewModel.SpinResult?
+    /// Stake of the spin `stageResult` belongs to (the bet may change after).
+    @State private var lastStake = 0
+    /// Big wins — ×3, ×5, a Treasury share — still get the reward card.
     @State private var showResultModal = false
-    @State private var resultScale: CGFloat = 0.5
+    @State private var showOdds = false
+
+    /// `tavern-npc-fortuna` is 521 × 790; the straight `fortune-pointer` 57 × 156.
+    private static let fortunaAspect: CGFloat = 521.0 / 790.0
+    private static let pointerAspect: CGFloat = 57.0 / 156.0
 
     var body: some View {
         Group {
@@ -22,7 +31,6 @@ struct FortuneWheelDetailView: View {
                 }
             } else if let vm, !vm.isLoading {
                 mainContent(vm)
-                    .transaction { $0.animation = nil }
             } else {
                 HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
@@ -40,6 +48,12 @@ struct FortuneWheelDetailView: View {
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                MinigameGoldPill(gold: vm?.gold ?? appState.currentCharacter?.gold ?? 0)
+            }
+        }
+        .sheet(isPresented: $showOdds) {
+            oddsSheet
         }
         .onAppear {
             AmbientManager.shared.setZone(.tavern)
@@ -80,438 +94,185 @@ struct FortuneWheelDetailView: View {
         }
     }
 
-    // MARK: - Main Content
+    // MARK: - Main Content (stage + dock, no scroll)
 
     @ViewBuilder
     private func mainContent(_ vm: FortuneWheelViewModel) -> some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             VStack(spacing: 0) {
-                // Scrollable content: payouts + divider + wheel
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: LayoutConstants.spaceSM) {
-                        // Treasury jackpot + the way to Fortune's Table
-                        fortuneHeader(vm)
+                stage(vm)
 
-                        // Payouts — ABOVE wheel (per Figma)
-                        payoutSection(vm)
-
-                        // Gold divider between payouts and wheel (per Figma)
-                        GoldDivider()
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-
-                        // The Wheel
-                        wheelSection(vm)
-
-                        // Spacer for NPC widget clearance (matches npcAvatarSize)
-                        Spacer().frame(height: LayoutConstants.npcAvatarSize)
-                    }
-                }
+                MinigameBetDock(
+                    bets: FortuneWheelViewModel.bets,
+                    selectedBet: Binding(get: { vm.selectedBet }, set: { vm.selectedBet = $0 }),
+                    gold: vm.gold,
+                    isLocked: vm.isSpinning,
+                    ctaTitle: vm.isSpinning ? "SPINNING…" : (stageResult == nil ? "SPIN" : "SPIN AGAIN"),
+                    ctaEnabled: vm.canSpin,
+                    remainingText: "\(vm.spinsRemaining) of \(vm.spinsLimit) spins left",
+                    remainingIsEmpty: vm.spinsRemaining == 0,
+                    infoTitle: "Odds",
+                    onInfo: { showOdds = true },
+                    onCTA: { spinTapped(vm) }
+                )
             }
 
-            // NPC Widget — fixed at bottom
-            npcWidget(vm)
-
-            // Result Modal overlay
             if showResultModal, let result = vm.result {
                 resultModal(vm, result: result)
             }
         }
     }
 
-    // MARK: - Treasury + Fortune's Table entry
+    // MARK: - Stage
 
-    private func fortuneHeader(_ vm: FortuneWheelViewModel) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            // Hidden until the server reports a Treasury (older backends don't).
-            if vm.treasury != nil {
-                treasuryPanel(vm)
-            }
-            tableEntry(wide: vm.treasury == nil)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceXS)
-    }
-
-    /// Fortuna's Treasury — every bet feeds it, the x5 sector pays it out.
-    private func treasuryPanel(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-            Text("FORTUNA'S TREASURY")
-                .font(DarkFantasyTheme.body)
-                .tracking(1)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            HStack(spacing: LayoutConstants.spaceXS) {
-                Image("icon-gold")
-                    .resizable()
-                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-                NumberTickUpText(
-                    value: vm.treasury ?? 0,
-                    color: DarkFantasyTheme.goldBright,
-                    font: DarkFantasyTheme.section
-                )
-            }
-            if let share = vm.treasuryShareForSelectedBet {
-                Text("x5 adds \(share.formatted()) at this bet")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.info)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(LayoutConstants.spaceMS)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.info.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
-                )
-        )
-        .depthShadow(.card)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Fortuna's Treasury \(vm.treasury ?? 0) gold. Paid on the x5 sector.")
-    }
-
-    /// The table game: play against the tavern regulars for one shared pot.
-    private func tableEntry(wide: Bool) -> some View {
-        Button {
-            HapticManager.light()
-            SFXManager.shared.play(.uiTap)
-            appState.mainPath.append(AppRoute.fortuneTable)
-        } label: {
-            VStack(spacing: LayoutConstants.space2XS) {
-                Image(systemName: "person.3.fill")
-                    .font(DarkFantasyTheme.iconMedium)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                Text("FORTUNE'S TABLE")
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                Text("Winner takes the pot")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: wide ? .infinity : 128, maxHeight: .infinity)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .stroke(DarkFantasyTheme.gold, lineWidth: 1.5)
-                    )
-            )
-            .depthShadow(.card)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Fortune's Table. Play against the regulars, winner takes the pot.")
-    }
-
-    // MARK: - Payout Section (above wheel — Figma: Speech Card Payout Pill)
-
-    private func payoutSection(_ vm: FortuneWheelViewModel) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            payoutPill(asset: "reward-gold", label: "x1.5", count: 3, color: DarkFantasyTheme.goldBright)
-            payoutPill(asset: "reward-loot", label: "x2", count: 1, color: DarkFantasyTheme.goldBright)
-            payoutPill(asset: "reward-level-up", label: "x3", count: 1, color: DarkFantasyTheme.purple)
-            payoutPill(asset: "neck_emerald", label: "x5", count: 1, color: DarkFantasyTheme.info)
-        }
-        .padding(LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
-                )
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
-    /// Figma: PayoutPill — flat color tint bg + color border, Inter fonts
-    private func payoutPill(asset: String, label: String, count: Int, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            Image(asset)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(color)
-
-            Text("\(count) sector\(count > 1 ? "s" : "")")
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(0.5)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, LayoutConstants.spaceXS)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(color.opacity(DarkFantasyTheme.opacitySoft))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(color.opacity(DarkFantasyTheme.opacityMild), lineWidth: 1)
-        )
-    }
-
-    // MARK: - Wheel Section
-
-    private func wheelSection(_ vm: FortuneWheelViewModel) -> some View {
+    /// Fortuna stands behind her wheel, her line by her head, the dagger
+    /// straight down into the top slot, Fortune's Table and the Treasury
+    /// under the wheel — or, after a spin, what it paid.
+    private func stage(_ vm: FortuneWheelViewModel) -> some View {
         GeometryReader { geo in
-            // Figma: fortune-wheel-face size-[401px] on 393px screen (left: -5px, full-bleed)
-            let wheelSize = geo.size.width + 30 // Bigger wheel, centered
-            let glowSize = wheelSize + 40
+            let w = geo.size.width
+            let h = geo.size.height
+            let rowHeight: CGFloat = 56
+            let gap = LayoutConstants.spaceMD
+            let wheel = max(200, min(w - 40, h - rowHeight - gap * 2 - h * 0.16))
+            let wheelTop = h - rowHeight - gap * 2 - wheel
+            let fortunaH = wheel * 0.88
+            let fortunaW = fortunaH * Self.fortunaAspect
+            let fortunaTop = max(0, wheelTop - fortunaH * 0.36)
+            let pointerH = wheel * 0.34
+            let pointerW = pointerH * Self.pointerAspect
+            let tipY = wheelTop + wheel * 0.15
 
-            ZStack {
-                // Outer glow
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild),
-                                DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMicro),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: wheelSize * 0.2,
-                            endRadius: glowSize / 2
-                        )
-                    )
-                    .frame(width: glowSize, height: glowSize)
+            ZStack(alignment: .topLeading) {
+                Image("tavern-npc-fortuna")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: fortunaW, height: fortunaH)
+                    .position(x: w + LayoutConstants.spaceMS - fortunaW / 2, y: fortunaTop + fortunaH / 2)
+                    .accessibilityHidden(true)
 
-                // Wheel with sectors + asset icons
                 FortuneWheelView(
                     sectors: vm.sectors,
                     rotation: wheelRotation,
                     highlightedSlot: isAnimating ? nil : landedSlot
                 )
-                .frame(width: wheelSize, height: wheelSize)
+                .frame(width: wheel, height: wheel)
+                .depthShadow(.modal)
+                .position(x: w / 2, y: wheelTop + wheel / 2)
+                .accessibilityLabel("Fortune wheel")
 
-                // Center ornament
-                wheelCenter(vm)
+                // The dagger points straight down into the top slot.
+                Image("fortune-pointer")
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: pointerW, height: pointerH)
+                    .depthShadow(.elevated)
+                    .position(x: w / 2, y: tipY - pointerH / 2)
+                    .accessibilityHidden(true)
 
-                // Pointer (top) — asset-based dagger
-                VStack {
-                    Image("fortune-pointer")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 96, height: 120)
-                        .rotationEffect(.degrees(-15))
-                        .shadow(color: DarkFantasyTheme.gold, radius: 10)
-                        .offset(y: -2)
-                    Spacer()
+                // Over the dagger, never under it.
+                MinigameSpeechBubble(text: vm.npcSpeech)
+                    .frame(width: min(w * 0.56, 240), alignment: .leading)
+                    .padding(.leading, LayoutConstants.screenPadding)
+                    .padding(.top, max(LayoutConstants.spaceSM, fortunaTop + LayoutConstants.spaceMD))
+                    .zIndex(3)
+
+                bottomRow(vm)
+                    .frame(width: w, height: rowHeight)
+                    .position(x: w / 2, y: h - gap - rowHeight / 2)
+            }
+            .frame(width: w, height: h)
+        }
+    }
+
+    @ViewBuilder
+    private func bottomRow(_ vm: FortuneWheelViewModel) -> some View {
+        if let result = stageResult, !isAnimating {
+            MinigameResultPlaque(
+                isWin: result.won,
+                badge: result.multiplier == 1.5 ? "×1.5" : "×\(Int(result.multiplier))",
+                amount: result.won ? result.winAmount : lastStake,
+                caption: result.won
+                    ? (result.jackpotShare > 0
+                        ? "incl. \(result.jackpotShare.formatted()) from the Treasury"
+                        : "gold, straight to your purse")
+                    : "the wheel keeps your stake"
+            )
+        } else {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                tablePill
+                if let treasury = vm.treasury {
+                    treasuryPill(vm, treasury: treasury)
                 }
-                .frame(height: wheelSize)
             }
-            .position(x: geo.size.width / 2, y: (wheelSize + 20) / 2)
-        }
-        .aspectRatio(0.95, contentMode: .fit)
-    }
-
-    // MARK: - Wheel Center
-
-    private func wheelCenter(_ vm: FortuneWheelViewModel) -> some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [DarkFantasyTheme.bgSecondary, DarkFantasyTheme.bgAbyss],
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 26
-                    )
-                )
-                .frame(width: 52, height: 52)
-            Circle()
-                .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
-                .frame(width: 52, height: 52)
-            Circle()
-                .stroke(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
-                .frame(width: 44, height: 44)
-
-            // Show result multiplier or default icon
-            if let result = vm.result, !isAnimating {
-                Image(vm.sectors[result.sectorIndex].sectorAsset)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(
-                        width: result.won ? LayoutConstants.iconXL : LayoutConstants.iconLG,
-                        height: result.won ? LayoutConstants.iconXL : LayoutConstants.iconLG
-                    )
-                    .opacity(resultScale < 1 ? 0 : 1)
-                    .animation(.easeOut(duration: 0.3), value: resultScale)
-            } else {
-                Image("icon-gems")
-                    .resizable()
-                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-            }
+            .transition(.opacity)
         }
     }
 
-    // MARK: - NPC Widget (fixed bottom) — uses NPCGuideWidget State=Wheel
+    /// The table game: play against the regulars for one shared pot.
+    private var tablePill: some View {
+        Button {
+            HapticManager.light()
+            SFXManager.shared.play(.uiTap)
+            appState.mainPath.append(AppRoute.fortuneTable)
+        } label: {
+            MinigameStagePill {
+                Image(systemName: "person.3.fill")
+                    .font(DarkFantasyTheme.body)
+                Text("FORTUNE'S TABLE")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+            }
+            .foregroundStyle(DarkFantasyTheme.goldBright)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Fortune's Table. Play against the regulars, winner takes the pot.")
+    }
 
-    private func npcWidget(_ vm: FortuneWheelViewModel) -> some View {
-        NPCGuideWidget(
-            npcTitle: "LADY FORTUNA",
-            onDismiss: { /* no dismiss on fortune wheel */ },
-            npcImageName: NPCSpeaker.fortuna.portrait,
-            plainMessage: vm.npcSpeech,
-            wheelContent: AnyView(wheelWagerSection(vm)),
-            overlapCardPx: 8
+    /// Fortuna's Treasury — every bet feeds it, the ×5 slot pays a share of it.
+    private func treasuryPill(_ vm: FortuneWheelViewModel, treasury: Int) -> some View {
+        MinigameStagePill(accent: DarkFantasyTheme.info) {
+            Image("icon-gold")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+            VStack(alignment: .leading, spacing: 0) {
+                NumberTickUpText(value: treasury, color: DarkFantasyTheme.goldBright, font: DarkFantasyTheme.cardTitle)
+                if let share = vm.treasuryShareForSelectedBet {
+                    Text("+\(share.formatted()) on ×5")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.info)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Fortuna's Treasury \(treasury) gold. The ×5 slot adds a share of it.")
+    }
+
+    // MARK: - Odds
+
+    private var oddsSheet: some View {
+        MinigameInfoSheet(
+            title: "ODDS",
+            rows: (vm?.odds ?? []).map { (label: $0.displayLabel, value: $0.displayPercent) },
+            notes: [
+                "Every bet adds 2% to Fortuna's Treasury. Landing on ×5 also pays a share of it: a 1,000 bet takes a fifth, smaller bets less.",
+                "The odds come from the server and are the same on every spin."
+            ]
         )
     }
 
-    // MARK: - Wager Section (inside NPC Widget wheelContent)
-
-    /// Figma: State=Wheel → Wager Section
-    /// Spins badge + bet buttons + SPIN CTA
-    @ViewBuilder
-    private func wheelWagerSection(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            // Spins row — Figma: Spins Badge + Currency Display
-            HStack {
-                // Spins badge — Figma: capsule, bgTertiary fill, borderSubtle stroke, Inter Bold 11
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "arrow.trianglehead.2.counterclockwise.rotate.90")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                    Text("\(vm.spinsRemaining)/\(vm.spinsLimit)")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                }
-                .foregroundStyle(vm.spinsRemaining > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(
-                    Capsule()
-                        .fill(DarkFantasyTheme.bgTertiary)
-                        .overlay(
-                            Capsule()
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
-
-                Spacer()
-
-                // Currency Display — Figma: Gold + Gems (Standard size)
-                CurrencyDisplay(
-                    gold: vm.gold,
-                    gems: appState.currentCharacter?.gems ?? 0,
-                    size: .standard,
-                    animated: true
-                )
-            }
-
-            // Bet buttons — Figma: 5× Wager Button (Oswald 18, letterSpacing 2)
-            HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(FortuneWheelViewModel.bets, id: \.self) { bet in
-                    let isSelected = vm.selectedBet == bet
-                    let canAfford = vm.gold >= bet
-
-                    Button {
-                        guard !vm.isSpinning else { return }
-                        HapticManager.light()
-                        SFXManager.shared.play(.uiTap)
-                        vm.selectedBet = bet
-                    } label: {
-                        Text("\(bet)")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(2)
-                            .foregroundStyle(
-                                isSelected
-                                    ? DarkFantasyTheme.textOnGold
-                                    : canAfford
-                                        ? DarkFantasyTheme.textPrimary
-                                        : DarkFantasyTheme.textTertiary
-                            )
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 34)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .fill(
-                                        isSelected
-                                            ? DarkFantasyTheme.goldGradient
-                                            : LinearGradient(colors: [DarkFantasyTheme.bgTertiary], startPoint: .top, endPoint: .bottom)
-                                    )
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .stroke(
-                                        isSelected
-                                            ? DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityHeavy)
-                                            : DarkFantasyTheme.borderSubtle,
-                                        lineWidth: isSelected ? 1.5 : 1
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(vm.isSpinning || !canAfford)
-                    .opacity(canAfford ? 1 : DarkFantasyTheme.opacityStrong)
-                }
-            }
-
-            // Odds disclosure — App Store 3.1.1. Server-published, never hardcoded.
-            if !vm.odds.isEmpty {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("Odds")
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    ForEach(vm.odds) { odd in
-                        Text("\(odd.displayLabel) \(odd.displayPercent)")
-                            .foregroundStyle(odd.multiplier == 0 ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textSecondary)
-                    }
-                }
-                .font(DarkFantasyTheme.body)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Odds: " + vm.odds.map { "\($0.displayLabel) \($0.displayPercent)" }.joined(separator: ", "))
-            }
-
-            // Gold Divider before SPIN button (per Figma State=Wheel)
-            GoldDivider()
-
-            // SPIN CTA — Figma: Button/Primary instance, Oswald 18, textOnGold, borderOrnament stroke
-            Button {
-                guard vm.canSpin else { return }
-                HapticManager.heavy()
-                SFXManager.shared.play(.uiConfirm)
-                Task {
-                    await performSpin(vm)
-                }
-            } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "hurricane")
-                        .font(DarkFantasyTheme.cardTitle.bold())
-                    Text(vm.isSpinning ? "SPINNING..." : "SPIN — \(vm.selectedBet) GOLD")
-                }
-                .font(DarkFantasyTheme.cardTitle)
-                .tracking(1)
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightMD)
-            }
-            .buttonStyle(.primary)
-            .disabled(!vm.canSpin)
-        }
-    }
-
-    // MARK: - Result Modal
+    // MARK: - Result card (big wins only)
 
     @ViewBuilder
     private func resultModal(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> some View {
         // A full-screen fortune card with its own backdrop (no GameModal);
-        // its metal follows the sector: ×1.5 bronze … ×5 or the Treasury mythic.
+        // its metal follows the sector: ×3 gold, ×5 or the Treasury mythic.
         MinigameResultModal(
             isWin: result.won,
             title: resultTitle(result),
@@ -522,7 +283,7 @@ struct FortuneWheelDetailView: View {
                 : result.jackpotShare > 0 || result.multiplier >= 5 ? .mythic
                 : result.multiplier >= 3 ? .gold
                 : result.multiplier >= 2 ? .silver : .bronze,
-            onContinue: { dismissModal(vm) }
+            onContinue: { showResultModal = false }
         ) {
             Image(vm.sectors[result.sectorIndex].sectorAsset)
                 .resizable()
@@ -545,18 +306,21 @@ struct FortuneWheelDetailView: View {
         } else if result.won {
             return "+\(result.winAmount.formatted()) Gold (\(vm.sectors[result.sectorIndex].label))"
         } else {
-            return "-\(vm.selectedBet.formatted()) Gold"
+            return "-\(lastStake.formatted()) Gold"
         }
     }
 
-    private func dismissModal(_ vm: FortuneWheelViewModel) {
-        showResultModal = false
-        vm.reset()
+    // MARK: - Spin
+
+    private func spinTapped(_ vm: FortuneWheelViewModel) {
+        guard vm.canSpin else { return }
+        HapticManager.heavy()
+        SFXManager.shared.play(.uiConfirm)
+        Task { await performSpin(vm) }
     }
 
-    // MARK: - Spin Animation
-
     private func performSpin(_ vm: FortuneWheelViewModel) async {
+        let stake = vm.selectedBet
         guard let spinResult = await vm.spin() else { return }
 
         // Land on the painted slot that shows the server's sector, from
@@ -572,25 +336,26 @@ struct FortuneWheelDetailView: View {
         if delta < 0 { delta += 360.0 }
         let fullSpins = Double(Int.random(in: 5...8)) * 360.0
 
+        withAnimation(MotionConstants.smooth) { stageResult = nil }
         isAnimating = true
         showResultModal = false
-        resultScale = 0.5
         landedSlot = slot
+        lastStake = stake
 
         wheelRotation += fullSpins + delta
 
-        // Wait for animation to complete
+        // Wait for the wheel to stop
         try? await Task.sleep(for: .seconds(4.2))
 
-        // Show result in center
         isAnimating = false
-        resultScale = 1.0
-
         vm.onAnimationComplete()
+        withAnimation(MotionConstants.springBouncy) { stageResult = spinResult }
 
-        // Small delay then show modal
-        try? await Task.sleep(for: .seconds(0.5))
-        showResultModal = true
+        // Big wins still get the reward card.
+        if spinResult.won, spinResult.multiplier >= 3 || spinResult.jackpotShare > 0 {
+            try? await Task.sleep(for: .seconds(0.6))
+            showResultModal = true
+        }
     }
 }
 

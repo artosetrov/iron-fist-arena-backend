@@ -303,6 +303,7 @@
 		867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FAD6A83C84EAD299CC19411 /* CharacterDisplay.swift */; };
 		87FA8B563EB81FEDE4364E89 /* StanceSelectorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */; };
 		88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */; };
+		0CB371DDCF8C322DB289DD03 /* MinigameStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9249EEBC7C7044215B565F /* MinigameStage.swift */; };
 		55B64C4B9DC775E12399A8EE /* MinigameResultModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */; };
 		88b74c3356af45f15cf5c792 /* CombatColdOpenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = d60c75bd38e27a687e9b77fb /* CombatColdOpenView.swift */; };
 		89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */; };
@@ -869,6 +870,7 @@
 		8C776DC088952BD8D62F5E7F /* hit_magical_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical_3.wav; sourceTree = "<group>"; };
 		8CC572483AAC29065E209C11 /* MineBackdrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineBackdrop.swift; sourceTree = "<group>"; };
 		8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashDetailView.swift; sourceTree = "<group>"; };
+		5C9249EEBC7C7044215B565F /* MinigameStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameStage.swift; sourceTree = "<group>"; };
 		02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameResultModal.swift; sourceTree = "<group>"; };
 		8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue_2.wav; sourceTree = "<group>"; };
 		8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellGameDetailView.swift; sourceTree = "<group>"; };
@@ -1868,6 +1870,7 @@
 				C8812C4317B938859A4087AC /* ShellGameViewModel.swift */,
 				8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */,
 				02EDFDDC713AE10F6441AE47 /* MinigameResultModal.swift */,
+				5C9249EEBC7C7044215B565F /* MinigameStage.swift */,
 				48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */,
 				D7B837363250403614BE1A4F /* TavernDetailView.swift */,
 				B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */,
@@ -2765,6 +2768,7 @@
 				A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */,
 				88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */,
 				55B64C4B9DC775E12399A8EE /* MinigameResultModal.swift in Sources */,
+				0CB371DDCF8C322DB289DD03 /* MinigameStage.swift in Sources */,
 				BB059983409468DCAA68CB7D /* StashService.swift in Sources */,
 				2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */,
 				7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */,
