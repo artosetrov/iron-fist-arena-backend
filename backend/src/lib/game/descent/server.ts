@@ -5,6 +5,7 @@
 import type { Prisma } from '@prisma/client'
 import { chaGoldBonus, levelScaledReward } from '../balance'
 import { claimPreviewedLoot, previewLootDrop, type LootResponseItem, type PreviewedLoot } from '../loot'
+import type { ItemPowerContext } from '../item-balance'
 import { grantRewardEntries } from '../reward-grants'
 import { DESCENT } from './content'
 import type { BagEntry, DescentState, Effect, FightKind, RunScale } from './engine'
@@ -48,8 +49,9 @@ export async function previewBagEntry(
   tx: Prisma.TransactionClient,
   characterId: string,
   level: number,
+  powerCtx: ItemPowerContext,
 ): Promise<BagEntry | null> {
-  return toBagEntry(await previewLootDrop(tx, characterId, level))
+  return toBagEntry(await previewLootDrop(tx, characterId, level, powerCtx))
 }
 
 export interface AppliedEffects {

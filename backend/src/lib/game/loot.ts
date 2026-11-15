@@ -33,7 +33,12 @@ import { PrismaClient, CharacterClass, Prisma } from '@prisma/client';
  * takes this type so the whole loot pipeline can run inside one transaction.
  */
 type PrismaLike = PrismaClient | Prisma.TransactionClient;
-import { getDropTuningConfig, calculateItemPowerScore } from './item-balance';
+import {
+  getDropTuningConfig,
+  itemPowerScoreWith,
+  loadItemPowerContext,
+  type ItemPowerContext,
+} from './item-balance';
 import { rollItemStats } from './item-stats';
 import { effectiveGearLevel } from './gear-level';
 import { CLASS_COMPAT } from './class-compat';
@@ -241,6 +246,7 @@ async function pickRelevantCatalogItem(
   playerLevel: number,
   characterClass: CharacterClass,
   equippedPowerBySlot: Record<string, number>,
+  powerCtx: ItemPowerContext,
 ) {
   const levelCap = playerLevel + 2;
   const compatClasses = CLASS_COMPAT[characterClass] ?? [characterClass];
@@ -307,11 +313,12 @@ async function pickRelevantCatalogItem(
         passing.push(c);
         continue;
       }
-      const candidatePower = await calculateItemPowerScore(
+      const candidatePower = itemPowerScoreWith(
+        powerCtx,
         (c.baseStats as Record<string, number>) ?? {},
-        c.rarity as Rarity,
+        c.rarity,
         0,
-        c.itemType as ItemType,
+        c.itemType,
       );
       if (candidatePower >= GEAR_AWARE_ALPHA * equippedPower) {
         passing.push(c);
@@ -466,6 +473,7 @@ export async function persistLoot(
   characterId: string,
   drop: DroppedItem,
   playerLevel: number,
+  powerCtx: ItemPowerContext,
 ): Promise<LootResponseItem | null> {
   // Fetch character with class + trashLootStreak + equipped items so we can
   // apply the relevance filters. One query with includes vs N queries later.
@@ -502,11 +510,12 @@ export async function persistLoot(
   // means "anything passes" in the gear-aware filter).
   const equippedPowerBySlot: Record<string, number> = {};
   for (const eq of character.equipment) {
-    const power = await calculateItemPowerScore(
+    const power = itemPowerScoreWith(
+      powerCtx,
       (eq.item.baseStats as Record<string, number>) ?? {},
-      eq.item.rarity as Rarity,
+      eq.item.rarity,
       eq.upgradeLevel,
-      eq.item.itemType as ItemType,
+      eq.item.itemType,
     );
     // Multiple items in one slot should never happen but be defensive.
     equippedPowerBySlot[eq.item.itemType] = Math.max(
@@ -529,6 +538,7 @@ export async function persistLoot(
     effectiveGearLevel(playerLevel, character.prestigeLevel),
     character.class,
     equippedPowerBySlot,
+    powerCtx,
   );
 
   if (!catalogItem) {
@@ -604,6 +614,12 @@ export async function rollAndPersistLoot(
   const drop = await rollDropChance(playerLevel, difficulty, luk);
   if (!drop) return null;
 
+  // Config + item balance profiles are read through the global client, so
+  // they are loaded here, before the transaction holds a connection. Reading
+  // them inside it starved the pool past the transaction timeout (P2028 on
+  // /pvp/match/complete, 2026-11-15). Inside the callback: tx queries only.
+  const powerCtx = await loadItemPowerContext();
+
   // Narrow PrismaClient here (not PrismaLike) because $transaction is only
   // on the full client. All helpers below accept PrismaLike so they work
   // with the tx client inside the callback.
@@ -624,7 +640,7 @@ export async function rollAndPersistLoot(
 
     // --- Try to grant an actual item first ---
     if (!inventoryFull) {
-      const item = await persistLoot(tx, characterId, drop, playerLevel);
+      const item = await persistLoot(tx, characterId, drop, playerLevel, powerCtx);
       if (item) {
         // Accepted drop → reset streak (only write if we actually need to,
         // to avoid unnecessary row-version bumps on the hot path)
@@ -670,7 +686,7 @@ export async function rollAndPersistLoot(
       sell_price: 0,
       shard: { tier, amount: shardAmount },
     };
-  });
+  }, { maxWait: 5_000, timeout: 10_000 });
 }
 
 // =============================================================================
@@ -708,6 +724,7 @@ export async function previewLootDrop(
   prisma: PrismaLike,
   characterId: string,
   playerLevel: number,
+  powerCtx: ItemPowerContext,
 ): Promise<PreviewedLoot | null> {
   const character = await prisma.character.findUnique({
     where: { id: characterId },
@@ -729,11 +746,12 @@ export async function previewLootDrop(
 
   const equippedPowerBySlot: Record<string, number> = {};
   for (const eq of character.equipment) {
-    const power = await calculateItemPowerScore(
+    const power = itemPowerScoreWith(
+      powerCtx,
       (eq.item.baseStats as Record<string, number>) ?? {},
-      eq.item.rarity as Rarity,
+      eq.item.rarity,
       eq.upgradeLevel,
-      eq.item.itemType as ItemType,
+      eq.item.itemType,
     );
     equippedPowerBySlot[eq.item.itemType] = Math.max(equippedPowerBySlot[eq.item.itemType] ?? 0, power);
   }
@@ -747,6 +765,7 @@ export async function previewLootDrop(
     effectiveGearLevel(playerLevel, character.prestigeLevel),
     character.class,
     equippedPowerBySlot,
+    powerCtx,
   );
 
   if (catalogItem) {
