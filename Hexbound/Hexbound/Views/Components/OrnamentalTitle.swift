@@ -86,17 +86,22 @@ struct OrnamentalSectionHeader: View {
                     .frame(width: 4, height: 4)
                     .rotationEffect(.degrees(45))
 
+                // One line, never broken mid-word ("ADVENTURER'S BUNDL / ES").
+                // No scale factor: text stays at the 16pt floor.
                 Text(title)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(accentColor)
                     .tracking(2)
                     .textCase(.uppercase)
+                    .lineLimit(1)
 
                 Rectangle()
                     .fill(accentColor.opacity(0.5))
                     .frame(width: 4, height: 4)
                     .rotationEffect(.degrees(45))
             }
+            // The flexible side lines give way first; the title keeps its width.
+            .layoutPriority(1)
 
             // Right line
             Rectangle()
