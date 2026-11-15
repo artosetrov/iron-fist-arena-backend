@@ -41,17 +41,28 @@ extension GuildHallDetailView {
                 action: { appState.mainPath.append(AppRoute.leaderboard) }
             )
         } else {
-            ForEach(vm.conversations) { convo in
-                conversationRow(convo, vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
+            VStack(spacing: LayoutConstants.spaceMS) {
+                GuildSectionLabel(
+                    title: "LETTERS",
+                    trailing: vm.scrollsBadgeCount > 0 ? "\(vm.scrollsBadgeCount) unopened" : nil
+                )
+                ForEach(Array(vm.conversations.enumerated()), id: \.element.id) { index, convo in
+                    conversationRow(convo, vm: vm, tilt: Self.letterTilts[index % Self.letterTilts.count])
+                }
             }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+            writeScrollFooter(vm)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, LayoutConstants.spaceSM)
         }
     }
 
-    func conversationRow(_ convo: Conversation, vm: GuildHallViewModel) -> some View {
-        let hasUnread = convo.unreadCount > 0
+    /// Letters lie a little askew, as if dropped on the table.
+    static var letterTilts: [Double] { [-0.6, 0.5, -0.3, 0.4] }
 
-        return Button {
+    func conversationRow(_ convo: Conversation, vm: GuildHallViewModel, tilt: Double = 0) -> some View {
+        Button {
             Task {
                 await vm.openThread(
                     characterId: convo.otherCharacter.id,
@@ -61,63 +72,65 @@ extension GuildHallDetailView {
                 )
             }
         } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                // Avatar — use real skin asset if available, otherwise letter fallback
-                if let avatarKey = convo.otherCharacter.avatar {
-                    AvatarImageView(
-                        skinKey: avatarKey,
-                        characterClass: convo.otherCharacter.classEnum,
-                        size: 40
-                    )
-                } else {
-                    characterAvatar(
-                        name: convo.otherCharacter.characterName,
-                        className: convo.otherCharacter.characterClass
-                    )
+            GuildLetterRow(
+                name: convo.otherCharacter.characterName,
+                characterClass: convo.otherCharacter.classEnum,
+                line: convo.lastMessage.content,
+                when: formatMessageTime(convo.lastMessage.createdAt),
+                unread: convo.unreadCount,
+                tilt: tilt
+            )
+        }
+        .buttonStyle(GuildPressStyle())
+    }
+
+    /// Anyone can be written to (backend only refuses blocked pairs): allies
+    /// straight from a list, anyone else from the Leaderboard.
+    @ViewBuilder
+    func writeScrollFooter(_ vm: GuildHallViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            EmptyStateArt(asset: "empty-scrolls", size: 96)
+                .opacity(0.85)
+
+            Text("A scroll reaches any warrior — an ally or a rival.")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                .multilineTextAlignment(.center)
+
+            if vm.friends.isEmpty {
+                Button {
+                    appState.mainPath.append(AppRoute.leaderboard)
+                } label: {
+                    Text("Write a Scroll")
                 }
-
-                // Info
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    HStack {
-                        Text(convo.otherCharacter.characterName)
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .lineLimit(1)
-
-                        Spacer()
-
-                        if hasUnread {
-                            Text("\(convo.unreadCount)")
-                                .font(DarkFantasyTheme.body.weight(.semibold))
-                                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                                .padding(.horizontal, LayoutConstants.spaceSM)
-                                .padding(.vertical, LayoutConstants.space2XS)
-                                .background(DarkFantasyTheme.gold)
-                                .clipShape(Capsule())
+                .buttonStyle(.secondary)
+            } else {
+                Menu {
+                    Section("Your allies") {
+                        ForEach(vm.friends) { friend in
+                            Button(friend.characterName) {
+                                Task {
+                                    await vm.openThread(
+                                        characterId: friend.id,
+                                        characterName: friend.characterName,
+                                        avatar: friend.avatar,
+                                        characterClass: friend.characterClass
+                                    )
+                                }
+                            }
                         }
                     }
-
-                    Text(convo.lastMessage.content)
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textTertiary)
-                        .lineLimit(1)
+                    Button("Find a warrior on the Leaderboard") {
+                        appState.mainPath.append(AppRoute.leaderboard)
+                    }
+                } label: {
+                    Text("Write a Scroll")
                 }
+                .menuStyle(.button)
+                .buttonStyle(.secondary)
+                .menuIndicator(.hidden)
             }
-            .padding(LayoutConstants.spaceSM)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: hasUnread ? DarkFantasyTheme.gold.opacity(0.04) : DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.cardRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
-            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(hasUnread ? 0.1 : 0.15))
-            .cornerBrackets(color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(0.3), length: 10, thickness: 1)
-            .cardShadow()
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Thread View (ChatGPT-style)

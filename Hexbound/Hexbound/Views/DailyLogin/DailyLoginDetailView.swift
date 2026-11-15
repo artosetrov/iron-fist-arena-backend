@@ -1,22 +1,21 @@
 import SwiftUI
 
-/// Daily Login — Variant B layout (shipped from Figma/HTML prototype 2026-04-10).
+/// Daily Tribute — "A · chests of the week" (canvas 2026-11-04).
 ///
-/// Composition:
-///   modalHeader → streak header → weekly progress bar
-///     → HERO `ItemCardView(.preview)` + title/subtitle
-///     → horizontal 7-day strip using `ItemCardView(.battlePass)` per node
-///     → CTA (`Button.primary` claim / `.neutral` claimed)
-///     → footer caption ("Come back tomorrow…" + TO THE CASTLE)
+/// Composition, top to bottom, over the Descent's treasure vault at night:
+///   DAILY TRIBUTE · DAY N OF 7 · streak pill (close ✕ top-right)
+///     → today's chest on the floor (`TributeChestStage`): tap or the CTA opens
+///       it, the reward rises out, then the tribute reward card follows
+///     → THIS WEEK'S CHESTS: seven chests, wood → iron → gold → day 7's amethyst reliquary
+///     → OPEN THE CHEST / TO THE CASTLE · "Tomorrow: … · wooden chest"
 ///
-/// ItemCardView is the **single** item-visual everywhere in this screen:
-/// hero uses `.preview` context, day strip uses `.battlePass` context —
-/// same component as inventory, shop, loot, and battle pass (reusability #1 rule).
+/// Day numbers all come from `vm.displayDay` (BUG-23) — the title, the chest,
+/// the week and the reward card always agree. Rewards are server-authored
+/// (`GameConfig.dailyLoginRewards`); the chest tiers are presentation only.
 struct DailyLoginDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: DailyLoginPopupViewModel?
-    // glowRotation removed — ItemCardView.battlePass(.claimable) handles gold glow natively
 
     // BUG-53: single dismissal path. Routes through AppState's modal queue so
     // any queued modal (e.g. pending .levelUp) gets its turn after close, and
@@ -29,34 +28,21 @@ struct DailyLoginDetailView: View {
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-
-            // Ambient glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [DarkFantasyTheme.gold.opacity(0.06), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 200
-                    )
-                )
-                .frame(width: 400, height: 400)
-                .offset(y: -60)
+            vault
 
             if let vm {
-                Group {
-                    if vm.isLoading {
-                        HexPulseLoader(.compact)
-                            .tint(DarkFantasyTheme.gold)
-                    } else if vm.loginData == nil {
-                        ErrorStateView.loadFailed {
-                            Task { await vm.loadData() }
-                        }
-                    } else if let data = vm.loginData {
-                        content(data: data, vm: vm)
+                if vm.isLoading {
+                    HexPulseLoader(.compact)
+                        .tint(DarkFantasyTheme.gold)
+                        .transaction { $0.animation = nil }
+                } else if let data = vm.loginData {
+                    content(data: data, vm: vm)
+                } else {
+                    ErrorStateView.loadFailed {
+                        Task { await vm.loadData() }
                     }
+                    .transaction { $0.animation = nil }
                 }
-                .transaction { $0.animation = nil }
             }
         }
         .claimRewardModal(config: Binding(
@@ -72,289 +58,178 @@ struct DailyLoginDetailView: View {
         }
     }
 
-    // MARK: - Main Content
+    // MARK: - Backdrop
+
+    /// The treasure vault under the Descent's night grade, a pool of warm
+    /// light where the chest stands, the bottom fading into the panel.
+    private var vault: some View {
+        ZStack {
+            DescentBackdrop(
+                asset: "rush2-bg-treasure",
+                dim: 0.05,
+                focusY: 0.55,
+                lights: [DescentLight(center: CGPoint(x: 0.5, y: 0.62), radius: 0.62, strength: 0.55)]
+            )
+            DescentVignette(strength: 0.55)
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [DarkFantasyTheme.bgAbyss.opacity(0.85), DarkFantasyTheme.bgAbyss.opacity(0)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 220)
+                Spacer(minLength: 0)
+                LinearGradient(
+                    colors: [DarkFantasyTheme.bgPrimary.opacity(0), DarkFantasyTheme.bgPrimary],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 360)
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+
+    // MARK: - Content
 
     @ViewBuilder
     private func content(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                modalHeader()
-
-                streakHeader(data: data)
-                    .padding(.top, LayoutConstants.spaceSM)
-
-                progressBar(vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceLG)
-
-                heroBlock(vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceXL)
-
-                dayStrip(data: data, vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceLG)
-
-                claimSection(vm: vm)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceLG)
-
-                footerCaption(vm: vm)
-                    .padding(.top, LayoutConstants.spaceMD)
-                    .padding(.bottom, LayoutConstants.space2XL)
-            }
-        }
-    }
-
-    // MARK: - Modal Header
-
-    @ViewBuilder
-    private func modalHeader() -> some View {
-        HStack {
-            Spacer()
-            Text("DAILY LOGIN")
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-            Spacer()
-        }
-        .overlay(alignment: .trailing) {
-            Button {
-                close()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(DarkFantasyTheme.title)
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-            .accessibilityLabel("Close daily rewards")
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceMD)
-    }
-
-    // MARK: - Streak Header
-
-    @ViewBuilder
-    private func streakHeader(data: DailyLoginData) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            Text("Day \(data.streak) Streak")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Text("Keep your streak for bonus rewards!")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
-    }
-
-    // MARK: - Progress Bar
-
-    @ViewBuilder
-    private func progressBar(vm: DailyLoginPopupViewModel) -> some View {
-        // BUG-23: progress and label both read from vm helpers — `claimedCount`
-        // only advances after a successful claim, `displayDay` stays glued to
-        // the cell being shown. Previously both derived from `data.currentDay`,
-        // which flipped to tomorrow the instant the server advanced its pointer.
-        let progress = max(0, min(1, Double(vm.claimedCount) / 7.0))
-
-        VStack(spacing: LayoutConstants.spaceXS) {
-            HStack {
-                Text("Weekly Progress")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                Spacer()
-                Text("\(vm.displayDay)/7")
-                    .font(DarkFantasyTheme.body.bold())
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                        .fill(DarkFantasyTheme.bgTertiary)
-
-                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                        .fill(
-                            LinearGradient(
-                                colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geo.size.width * max(0, min(1, progress)))
-                        .shadow(color: DarkFantasyTheme.goldGlow, radius: 8, x: 0, y: 0)
-                }
-            }
-            .frame(height: LayoutConstants.spaceSM)
-        }
-    }
-
-    // MARK: - Hero Block (ItemCardView + labels)
-
-    @ViewBuilder
-    private func heroBlock(vm: DailyLoginPopupViewModel) -> some View {
-        // BUG-23: hero lookup follows vm.displayDay. With the old
-        // `data.currentDay` lookup, the instant the server advanced to the
-        // next day, the hero card flipped to tomorrow's reward mid-animation.
         let rewards = DailyReward.rewards(from: cache)
         let today = rewards.first(where: { $0.day == vm.displayDay })
 
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // HERO ItemCardView — single source of truth for item visuals
-            if let reward = today {
-                ItemCardView(
-                    rarity: dayRarity(reward.day),
-                    imageKey: reward.assetIcon,
-                    imageUrl: nil,
-                    fallbackIcon: "gift.fill",
-                    context: .preview,
-                    onTap: {}
-                )
-                .frame(width: 168, height: 168)
-                .allowsHitTesting(false)
-                .opacity(vm.hasClaimed ? 0.55 : 1)
-                .overlay {
-                    if vm.hasClaimed {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                                .fill(DarkFantasyTheme.bgAbyss.opacity(0.35))
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(DarkFantasyTheme.cinematicTitle)
-                                .foregroundStyle(DarkFantasyTheme.success)
-                                .shadow(color: DarkFantasyTheme.success.opacity(0.6), radius: 12)
-                        }
-                    }
-                }
-                .shadow(
-                    color: DarkFantasyTheme.rarityGlow(for: dayRarity(reward.day)),
-                    radius: 18
-                )
-            }
+        VStack(spacing: 0) {
+            header(data: data, vm: vm)
+                .padding(.top, LayoutConstants.spaceSM)
+                .transaction { $0.animation = nil }
 
-            // Hero label + title + subtitle (mirrors HTML prototype .hero-wrap)
-            VStack(spacing: LayoutConstants.space2XS) {
-                Text("TODAY'S REWARD")
-                    .font(DarkFantasyTheme.body.bold())
+            TributeChestStage(
+                day: vm.displayDay,
+                reward: today,
+                isOpen: vm.hasClaimed,
+                isBusy: vm.isClaiming,
+                onOpen: { Task { await vm.claimReward() } }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            weekPanel(rewards: rewards, vm: vm)
+                .transaction { $0.animation = nil }
+        }
+    }
+
+    // MARK: - Header
+
+    private func header(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text("DAILY TRIBUTE")
+                .font(DarkFantasyTheme.buttonLabelCompact)
+                .tracking(4)
+                .foregroundStyle(DarkFantasyTheme.gold)
+
+            Text("DAY \(vm.displayDay) OF 7")
+                .font(DarkFantasyTheme.cinematicTitle)
+                .tracking(2)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 8, y: 2)
+                .accessibilityAddTraits(.isHeader)
+
+            TributeStreakPill(text: streakLine(data: data, vm: vm), isLost: vm.streakIsLost)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, LayoutConstants.spaceLG)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                close()
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.closeButton)
+            .accessibilityLabel("Close daily tribute")
+            .padding(.trailing, LayoutConstants.screenPadding)
+        }
+    }
+
+    /// One line, one meaning: how long the streak is and what keeps it.
+    private func streakLine(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> String {
+        if vm.hasClaimed {
+            return data.streak <= 1
+                ? "Streak started · come back tomorrow"
+                : "\(data.streak)-day streak · come back tomorrow"
+        }
+        if vm.streakIsLost {
+            return "Streak lost · a new one starts today"
+        }
+        if data.streak == 0 || DailyLoginPopupViewModel.streakResets(data) {
+            return "Open today's chest to start a streak"
+        }
+        return "\(data.streak)-day streak · keep it lit"
+    }
+
+    // MARK: - Week panel
+
+    private func weekPanel(rewards: [DailyReward], vm: DailyLoginPopupViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceMS) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("THIS WEEK'S CHESTS")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
                     .tracking(2)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-                Text(vm.hasClaimed ? "Claimed!" : (today?.label ?? "Reward").uppercased())
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(
-                        vm.hasClaimed ? DarkFantasyTheme.success : DarkFantasyTheme.goldBright
-                    )
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Text("Day \(vm.displayDay) · Next reward tomorrow")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Spacer()
+                Text("\(vm.claimedCount)/7 opened")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
+            .accessibilityElement(children: .combine)
+
+            TributeWeekStrip(rewards: rewards, displayDay: vm.displayDay, hasClaimed: vm.hasClaimed)
+
+            cta(vm: vm)
+                .padding(.top, LayoutConstants.space2XS)
+
+            tomorrowLine(vm: vm)
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceMS)
+        .padding(.bottom, LayoutConstants.spaceMD)
+        .background(alignment: .top) {
+            DarkFantasyTheme.bgPrimary
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(LinearGradient(
+                            colors: [DarkFantasyTheme.gold.opacity(0), DarkFantasyTheme.goldDim.opacity(0.6), DarkFantasyTheme.gold.opacity(0)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(height: 1)
+                }
+                .ignoresSafeArea(edges: .bottom)
+        }
     }
 
-    // MARK: - Day Strip (horizontal 7-node — unified ItemCardView)
-
     @ViewBuilder
-    private func dayStrip(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> some View {
-        let rewards = DailyReward.rewards(from: cache)
-
-        HStack(spacing: LayoutConstants.spaceXS) {
-            ForEach(rewards, id: \.day) { reward in
-                dayNode(reward: reward, data: data, vm: vm)
-            }
-        }
-    }
-
-    // MARK: - Day Node (unified ItemCardView — same component as inventory/shop/BP)
-
-    @ViewBuilder
-    private func dayNode(
-        reward: DailyReward,
-        data: DailyLoginData,
-        vm: DailyLoginPopupViewModel
-    ) -> some View {
-        // BUG-23: pivot the whole claimed/current/locked state machine on
-        // vm.displayDay instead of data.currentDay. Previously, after claiming
-        // day 1, data.currentDay jumped to 2, which made day 1 look like "past"
-        // AND day 2 simultaneously look "already claimed" — the player saw
-        // the strip skip two slots at once.
-        let displayDay = vm.displayDay
-        let effectiveCanClaim = data.canClaim && !vm.hasClaimed
-        let isCurrentDay = reward.day == displayDay && effectiveCanClaim
-        let isClaimed = reward.day < displayDay || (reward.day == displayDay && !effectiveCanClaim)
-        let bounce = vm.claimedDayBounce == reward.day
-
-        // Map daily login states → BPRewardState for ItemCardView rendering:
-        // .claimed  → success border + checkmark badge
-        // .claimable → gold border + glow
-        // .locked   → dim + rarity border
-        let bpState: BPRewardState = isClaimed ? .claimed
-            : isCurrentDay ? .claimable
-            : .locked
-
-        VStack(spacing: LayoutConstants.space2XS) {
-            // Unified item card — rarity gradient, corner accents, state border
-            // all come from ItemCardView automatically, matching inventory/shop/BP.
-            ItemCardView(
-                rarity: dayRarity(reward.day),
-                imageKey: reward.assetIcon,
-                imageUrl: nil,
-                fallbackIcon: "gift.fill",
-                context: .battlePass(state: bpState, track: "daily"),
-                onTap: {}
-            )
-            .aspectRatio(1, contentMode: .fit)
-            .allowsHitTesting(false)
-            .opacity(bounce ? 0.85 : 1)
-            .animation(.spring(response: 0.35, dampingFraction: 0.55), value: bounce)
-
-            // Day label
-            Text("D\(reward.day)")
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(
-                    isCurrentDay ? DarkFantasyTheme.goldBright :
-                    isClaimed ? DarkFantasyTheme.success.opacity(0.7) :
-                    DarkFantasyTheme.textTertiary
-                )
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Claim Section
-
-    @ViewBuilder
-    private func claimSection(vm: DailyLoginPopupViewModel) -> some View {
+    private func cta(vm: DailyLoginPopupViewModel) -> some View {
         if vm.hasClaimed {
             Button {
                 close()
             } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "checkmark")
-                        .font(DarkFantasyTheme.body.bold())
-                    Text("REWARD CLAIMED")
-                }
+                Text("TO THE CASTLE")
             }
-            .buttonStyle(.neutral)
-            .disabled(true)
-            .opacity(0.6)
+            .buttonStyle(.secondary)
         } else {
             Button {
-                HapticManager.success()
                 Task { await vm.claimReward() }
             } label: {
                 if vm.isClaiming {
                     HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
-                    Text("CLAIM REWARD")
+                    Text("OPEN THE CHEST")
                 }
             }
             .buttonStyle(.primary)
@@ -362,80 +237,22 @@ struct DailyLoginDetailView: View {
         }
     }
 
-    // MARK: - Footer Caption
-
     @ViewBuilder
-    private func footerCaption(vm: DailyLoginPopupViewModel) -> some View {
-        if let nextReward = vm.nextDayReward {
-            if vm.hasClaimed {
-                VStack(spacing: LayoutConstants.spaceMD) {
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        Text("Come back tomorrow for")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            rewardIcon(nextReward, size: 16)
-                            Text(nextReward.label)
-                        }
-                        .font(DarkFantasyTheme.body.weight(.bold))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-
-                    Button {
-                        close()
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceSM) {
-                            Image(systemName: "building.columns.fill")
-                                .font(DarkFantasyTheme.body.bold())
-                            Text("TO THE CASTLE")
-                        }
-                    }
-                    .buttonStyle(.primary)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                }
-            } else {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("Tomorrow:")
-                    rewardIcon(nextReward, size: 14)
-                    Text(nextReward.label)
-                }
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
+    private func tomorrowLine(vm: DailyLoginPopupViewModel) -> some View {
+        if let next = vm.nextDayReward {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Text("Tomorrow:")
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                TributeRewardIcon(reward: next, size: LayoutConstants.iconSM + 2)
+                Text(next.label)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                Text("· \(TributeChestTier(day: next.day).adjective) chest")
+                    .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
             }
-        }
-    }
-
-    // MARK: - Reward Icon Helper (asset-first, placeholder fallback)
-
-    @ViewBuilder
-    private func rewardIcon(_ reward: DailyReward, size: CGFloat) -> some View {
-        if let assetName = reward.assetIcon, UIImage(named: assetName) != nil {
-            Image(assetName)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            AssetPlaceholderView(systemIcon: "gift.fill")
-                .frame(width: size, height: size)
-        }
-    }
-
-    // MARK: - Day → Rarity mapping
-    //
-    // Visual progression across the 7-day week. Maps nicely to a bp-node
-    // strip where the premium day 7 gets the legendary treatment via
-    // `ItemCardView`'s rarityColor + rarityGlow shadow.
-    //
-    // This is purely presentational — the actual reward value comes from
-    // `GameConfig.dailyLoginRewards` and is server-authored.
-    private func dayRarity(_ day: Int) -> ItemRarity {
-        switch day {
-        case 1, 2:  return .common
-        case 3:     return .uncommon
-        case 4, 5:  return .rare
-        case 6:     return .epic
-        default:    return .legendary  // day 7 bonus
+            .font(DarkFantasyTheme.body)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .accessibilityElement(children: .combine)
         }
     }
 }

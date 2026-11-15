@@ -4,7 +4,7 @@
  * See `fortune-table.ts` for the rules.
  */
 import type { Prisma, PrismaClient } from '@prisma/client'
-import { claimPreviewedLoot, previewLootDrop, type LootResponseItem } from './loot'
+import { claimPreviewedLoot, loadLootRollContext, previewLootDrop, type LootResponseItem, type LootRollContext } from './loot'
 import {
   FORTUNE_TABLE, asRoundSecret, chestItemChance, drawWinner, payoutFor, playerStake, potOf, seatsAt,
   type FortuneRoundSecret, type FortuneSeat,
@@ -109,7 +109,11 @@ export function roundView(row: FortuneRoundRow, nowMs: number) {
  */
 export async function settleRound(
   tx: Prisma.TransactionClient,
-  args: { roundId: string; characterId: string; userId: string; level: number; nowMs: number },
+  args: {
+    roundId: string; characterId: string; userId: string; level: number; nowMs: number
+    /** Load with loadLootRollContext() before opening the transaction. */
+    lootCtx: LootRollContext
+  },
 ): Promise<boolean> {
   const locked = await tx.$queryRaw<{ id: string }[]>`
     SELECT id FROM "minigame_sessions" WHERE id = ${args.roundId} FOR UPDATE
@@ -134,7 +138,7 @@ export async function settleRound(
     await tx.$queryRaw`SELECT id FROM "users" WHERE id = ${args.userId} FOR UPDATE`
     await tx.user.update({ where: { id: args.userId }, data: { gold: { increment: draw.payout } } })
     if (draw.chestHasItem) {
-      const preview = await previewLootDrop(tx, args.characterId, args.level)
+      const preview = await previewLootDrop(tx, args.characterId, args.level, args.lootCtx)
       if (preview) chest = await claimPreviewedLoot(tx, args.characterId, [preview])
     }
   }
@@ -173,6 +177,8 @@ export async function settleAllDueRounds(db: PrismaClient, nowMs: number, limit 
     take: limit,
   })
   let settled = 0
+  if (due.length === 0) return settled
+  const lootCtx = await loadLootRollContext()
   for (const r of due) {
     if (!r.character) continue
     const done = await db.$transaction((tx) => settleRound(tx, {
@@ -181,6 +187,7 @@ export async function settleAllDueRounds(db: PrismaClient, nowMs: number, limit 
       userId: r.character.userId,
       level: r.character.level,
       nowMs,
+      lootCtx,
     }))
     if (done) settled++
   }
@@ -202,10 +209,12 @@ export async function settleDueRounds(
     select: { id: true },
     take: 5,
   })
+  if (due.length === 0) return
+  const lootCtx = await loadLootRollContext()
   for (const r of due) {
     // Read Committed + the row lock in settleRound: a second caller waits on
     // the lock, then sees the round settled and does nothing.
-    await db.$transaction((tx) => settleRound(tx, { ...args, roundId: r.id }))
+    await db.$transaction((tx) => settleRound(tx, { ...args, roundId: r.id, lootCtx }))
   }
 }
 

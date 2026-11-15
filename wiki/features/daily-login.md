@@ -14,8 +14,8 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 ## Entry points
 
 - **iOS screens:**
-  - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift` — auto-shown modal on first session of the day
-  - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift` — full calendar view (viewable any time)
+  - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift` — the Daily Tribute: root overlay (`AppState.showDailyLoginPopup`, BUG-53), auto-shown on the first session of the day and from the hub tile
+  - `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift` — legacy modal, not mounted anywhere
 - **Player action:** None (auto-triggers on launch) OR Hub → Daily Login calendar
 
 ## Backend
@@ -43,8 +43,9 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 
 ### Views
 
-- `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift` — celebration modal, single-day focus
-- `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift` — full calendar grid
+- `Hexbound/Hexbound/Views/DailyLogin/DailyLoginDetailView.swift` — "A · chests of the week" (2026-11-04): DAY N OF 7 + streak pill over the treasure vault (`DescentBackdrop`, night grade), today's chest, the week of seven chests, OPEN THE CHEST / TO THE CASTLE, "Tomorrow: … · wooden chest"
+- `Hexbound/Hexbound/Views/DailyLogin/DailyTributeViews.swift` — `TributeChestStage` (rocks until tapped; opened: rays, burst, reward rises), `TributeWeekStrip`, `TributeStreakPill`, chest tiers (days 1–3 wood, 4–5 iron, 6 gold — `rush2-chest-*`; day 7 the amethyst reliquary `tribute-chest-gem-*`; presentation only)
+- `Hexbound/Hexbound/Views/DailyLogin/DailyLoginPopupView.swift` — legacy, unused
 
 ### ViewModel
 
@@ -74,6 +75,9 @@ On first launch of each new game-day, players see a popup awarding the day's rew
 - **Streak break.** Skipping a day resets position to 1 (not to 0) — verify in `daily-login.ts`.
 - **Popup gating.** Show popup ONLY on first session of the day. `GameDataCache.dailyLogin.todayClaimed` must gate re-display.
 - **Claim idempotency.** `POST /claim` must be safe on double-tap — server returns same payload if already claimed today.
+- **One day number.** Title, chest, week and reward card all read `vm.displayDay`. Before the claim it is the day the server will grant (`expectedClaimDay`: after a missed day that is day 1, not the stored pointer).
+- **Chest first, card second.** The tribute reward card opens `DailyLoginPopupViewModel.chestOpenBeat` (0.9 s) after the tap, so the lid, rays and rising reward play first. A server-side swap (streak reset) replaces the waiting card.
+- **Labels are spelled out.** "1 Stamina Potion", not "1 S. Potion" (`balance.ts` + the iOS fallback). If admin overrides `daily_login_rewards`, fix the names there too. Potions show `stamina_potion_*`, not the stamina bolt.
 - **Calendar length.** Live admin/config today is a 7-day reward cycle. Keep docs/UI aligned with the 7-entry editor unless the backend/admin surface is widened together.
 
 ## Tests / fixtures

@@ -188,11 +188,11 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | Day | Type | Amount | Display name | Display icon | Item ID |
 |-----|------|--------|--------------|--------------|---------|
 | 1 | gold | 150 | 150 Gold | `icon-gold` | — |
-| 2 | consumable | 1 | 1 S. Potion | `icon-stamina-small` | stamina_potion_small |
+| 2 | consumable | 1 | 1 Stamina Potion | `icon-stamina-small` | stamina_potion_small |
 | 3 | gold | 300 | 300 Gold | `icon-gold` | — |
-| 4 | consumable | 2 | 2 S. Potions | `icon-stamina-small` | stamina_potion_small |
+| 4 | consumable | 2 | 2 Stamina Potions | `icon-stamina-small` | stamina_potion_small |
 | 5 | gold | 500 | 500 Gold | `icon-gold` | — |
-| 6 | consumable | 1 | 1 L. Potion | `icon-stamina-large` | stamina_potion_large |
+| 6 | consumable | 1 | 1 Large Stamina Potion | `icon-stamina-large` | stamina_potion_large |
 | 7 | gems | 25 | 25 Gems | `icon-gems` | — |
 
 ## IAP products

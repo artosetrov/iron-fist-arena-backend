@@ -628,21 +628,33 @@ export async function POST(req: NextRequest) {
       ? BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR
       : BATTLE_PASS.BP_XP_PER_PVP
 
+    // The match row, rating and gold are committed above. From here on a
+    // failing side effect is logged and skipped, never a 500: on 2026-11-15
+    // a loot transaction timed out (P2028) after a won fight had already been
+    // paid, and the client showed "Match failed" with no result screen.
+    const afterCommit = <T,>(label: string, work: Promise<T>, fallback: T): Promise<T> =>
+      work.catch((error) => {
+        console.error(`pvp match/complete ${label} (match ${match.id}):`, error)
+        return fallback
+      })
+
     const [levelUpResult, , , lootItem, durabilityResult] = await Promise.all([
-      applyLevelUp(prisma, attacker.id),
-      isPvp && defender ? applyLevelUp(prisma, defender.id) : Promise.resolve(null),
-      (async () => {
+      afterCommit('level-up', applyLevelUp(prisma, attacker.id), null),
+      isPvp && defender
+        ? afterCommit('defender level-up', applyLevelUp(prisma, defender.id), null)
+        : Promise.resolve(null),
+      afterCommit('progress', (async () => {
         await Promise.all([
           attackerWon ? updateDailyQuestProgress(prisma, attacker.id, questKey) : Promise.resolve(),
           attackerWon && !isDungeonBoss ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
           attackerWon && isDungeonBoss ? updateWeeklyChallengeProgress(prisma, attacker.id, 'dungeons_complete') : Promise.resolve(),
           awardBattlePassXp(prisma, attacker.id, bpXpGrant),
         ])
-      })(),
+      })(), undefined),
       lootKey
-        ? rollAndPersistLoot(prisma, attacker.id, attacker.level, lootKey, attacker.luk)
+        ? afterCommit('loot', rollAndPersistLoot(prisma, attacker.id, attacker.level, lootKey, attacker.luk), null)
         : Promise.resolve(null),
-      degradeEquipment(prisma, attacker.id),
+      afterCommit('durability', degradeEquipment(prisma, attacker.id), { degraded: [], anyBroken: false }),
       (async () => {
         try {
           // PvP / bot achievements track pvp_wins + rank tiers. Dungeons have

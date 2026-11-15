@@ -277,6 +277,17 @@ enum DarkFantasyTheme {
     static let mineCounterTop = Color(hex: 0x3B3127)
     static let mineCounterBottom = Color(hex: 0x211B15)
     static let mineCounterEdge = Color(hex: 0x8B6914)
+    /// Parchment (2026-11-04): ink on `rush2-map-parchment` — the Guild Hall's letters.
+    static let parchmentInk = Color(hex: 0x2A1A0C)
+    static let parchmentInkSoft = Color(hex: 0x5A3A1E)
+    /// The paper showing through a cracked wax seal.
+    static let parchmentPaper = Color(hex: 0xF4E3C3)
+    /// Inked display title (2026-11-15): the Descent's depth names in Pirata One —
+    /// cream at the top of the letters down to antique gold, under an ink outline.
+    static let titleEnamelTop = Color(hex: 0xFFF6E0)
+    static let titleEnamelMid = Color(hex: 0xF1DDB0)
+    static let titleEnamelBottom = Color(hex: 0xB8975E)
+    static let titleInk = Color(hex: 0x0B0806)
 
     // MARK: - VFX Glow Colors
 
@@ -484,6 +495,8 @@ enum DarkFantasyTheme {
 
     // Oswald — titles, hero names, cinematic text, section headers, button labels
     static let cinematicTitle = Font.custom("Oswald-Regular", size: 40)
+    /// A depth's name on the Descent's gate screen: hand-drawn gothic (Pirata One, OFL), Art's pick 2026-11-15.
+    static let depthTitle = Font.custom("PirataOne-Regular", size: 58)
     static let bossNameHero = Font.custom("Oswald-Regular", size: 52)       // Boss name on the pre-fight intro
     static let bossBackdropTitle = Font.custom("Oswald-Regular", size: 120) // Faded giant name behind a boss (decorative)
     static let combatCallout = Font.custom("Oswald-Regular", size: 48)      // DODGE / MISS combat callouts

@@ -205,32 +205,110 @@ export async function calculateItemPowerScore(
   upgradeLevel: number = 0,
   itemType?: ItemType,
 ): Promise<number> {
-  const [powerWeights, rarityMults, upgradeMult] = await Promise.all([
+  const [powerWeights, rarityMults, upgradeMult] = await loadPowerConfigs()
+
+  // Item type power weight — use module-level cache (no DB hit on repeated calls)
+  const typePowerWeights: Record<string, number> = {}
+  if (itemType) {
+    const profile = await getItemBalanceProfile(itemType)
+    if (profile) typePowerWeights[itemType] = profile.powerWeight
+  }
+
+  return itemPowerScoreWith(
+    { powerWeights, rarityMults, upgradeMult, typePowerWeights },
+    baseStats,
+    rarity,
+    upgradeLevel,
+    itemType,
+  )
+}
+
+function loadPowerConfigs(): Promise<[Record<string, number>, Record<string, number>, number]> {
+  return Promise.all([
     getGameConfig<Record<string, number>>('item_balance.power_stat_weights', DEFAULT_POWER_STAT_WEIGHTS),
     getGameConfig<Record<string, number>>('item_balance.power_rarity_multipliers', DEFAULT_RARITY_MULTIPLIERS),
     getGameConfig<number>('item_balance.power_upgrade_multiplier', 0.05),
   ])
+}
 
-  // Weighted stat sum
+/**
+ * Everything the power score reads from config and item balance profiles,
+ * loaded up front so the score itself is plain arithmetic.
+ *
+ * Why this exists: the loot pipeline scores every equipped item and every
+ * candidate inside an interactive transaction. `calculateItemPowerScore`
+ * reads config and profiles through the global Prisma client, not the
+ * transaction, so on a cold cache those reads queue for a pool connection
+ * while the transaction holds one. On 2026-11-15 that wait outlived the
+ * 5 s transaction timeout and /pvp/match/complete died with P2028
+ * ("Transaction not found") on a won fight. Load this before opening the
+ * transaction and score with `itemPowerScoreWith` inside it.
+ */
+export interface ItemPowerContext {
+  powerWeights: Record<string, number>
+  rarityMults: Record<string, number>
+  upgradeMult: number
+  /** itemType → powerWeight; a type without a profile scores at 1.0. */
+  typePowerWeights: Record<string, number>
+}
+
+export async function loadItemPowerContext(): Promise<ItemPowerContext> {
+  const [powerWeights, rarityMults, upgradeMult] = await loadPowerConfigs()
+
+  // One query refreshes every profile when any known type is stale, instead
+  // of one query per type as the per-item cache would do.
+  const now = Date.now()
+  const knownTypes = Object.keys(DEFAULT_ITEM_TYPE_WEIGHTS)
+  const stale = knownTypes.some((t) => {
+    const hit = _itemBalanceProfileCache.get(t)
+    return !hit || hit.expiresAt <= now
+  })
+  if (stale) {
+    try {
+      const rows = await prisma.itemBalanceProfile.findMany({
+        select: { itemType: true, powerWeight: true, statWeights: true },
+      })
+      for (const row of rows) {
+        const fallbackWeights = DEFAULT_ITEM_TYPE_WEIGHTS[row.itemType] ?? { str: 1.0 }
+        _itemBalanceProfileCache.set(row.itemType, {
+          powerWeight: sanitizePowerWeight(row.powerWeight),
+          statWeights: sanitizeStatWeights(row.statWeights, fallbackWeights),
+          expiresAt: now + ITEM_BALANCE_PROFILE_CACHE_TTL_MS,
+        })
+      }
+    } catch {
+      // Same as getItemBalanceProfile: fall back to whatever is cached / 1.0.
+    }
+  }
+
+  // Expired entries are left out, like getItemBalanceProfile drops them: a
+  // profile deleted in admin (or a failed refresh) scores at 1.0, not at its
+  // last cached weight forever.
+  const typePowerWeights: Record<string, number> = {}
+  for (const [itemType, profile] of _itemBalanceProfileCache) {
+    if (profile.expiresAt > now) typePowerWeights[itemType] = profile.powerWeight
+  }
+  return { powerWeights, rarityMults, upgradeMult, typePowerWeights }
+}
+
+/**
+ * Power = sum(stat * weight) * rarityMult * (1 + upgradeLevel * upgradeMult) * itemTypePowerWeight
+ * Synchronous, no I/O — safe inside a transaction.
+ */
+export function itemPowerScoreWith(
+  ctx: ItemPowerContext,
+  baseStats: Record<string, number>,
+  rarity: string,
+  upgradeLevel: number = 0,
+  itemType?: string,
+): number {
   let statSum = 0
   for (const [stat, value] of Object.entries(baseStats)) {
-    const weight = powerWeights[stat] ?? 0.5
-    statSum += value * weight
+    statSum += value * (ctx.powerWeights[stat] ?? 0.5)
   }
-
-  // Rarity multiplier
-  const rarityMult = rarityMults[rarity] ?? 1.0
-
-  // Upgrade bonus
-  const upgradeBonus = 1 + upgradeLevel * upgradeMult
-
-  // Item type power weight — use module-level cache (no DB hit on repeated calls)
-  let typePowerWeight = 1.0
-  if (itemType) {
-    const profile = await getItemBalanceProfile(itemType)
-    if (profile) typePowerWeight = profile.powerWeight
-  }
-
+  const rarityMult = ctx.rarityMults[rarity] ?? 1.0
+  const upgradeBonus = 1 + upgradeLevel * ctx.upgradeMult
+  const typePowerWeight = itemType ? (ctx.typePowerWeights[itemType] ?? 1.0) : 1.0
   return Math.round(statSum * rarityMult * upgradeBonus * typePowerWeight)
 }
 

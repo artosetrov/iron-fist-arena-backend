@@ -65,8 +65,9 @@ in the project, unrouted, and the v1 routes ignore descent runs (`dungeonId: { n
   - *A depth's gate* (`DescentGateStage`, 2026-11-04): the depth opens on its guardian waiting in the gate at the
     top of the stairs (`rush2-bg-<depth>-gate`, prompts in `docs/08_prompts/DESCENT_GATES_PROMPTS.md`). His eyes
     are lit by code at the points in `DescentGeometry.gateEyes` — the painting does not glow. DEPTH I · THE OSSUARY ·
-    GUARDIAN · THE BONE KING rise in under him; the panel reads the depth's own line (`DEPTHS[].blurb`, the server's
-    tale) over LIGHT YOUR TORCH / DESCEND.
+    GUARDIAN · THE BONE KING rise in under him; the depth's name is a game title (`DescentInkedTitle`: Pirata One,
+    cream-to-gold enamel, ink outline — Art's pick of six on 2026-11-15). The panel reads the depth's own line
+    (`DEPTHS[].blurb`, the server's tale) over LIGHT YOUR TORCH / DESCEND.
   - *Depth cleared* (`DescentDepthClearStage`): DEPTH CLEARED (`rush2-stamp-depth-cleared`, bone letters on a torn
     crimson banner — the third painted word) slams across the guardian's arena, THE WAY DOWN OPENS under it. The
     choice is two cards instead of buttons: DESCEND with the next guardian's face (`rush2-face-<boss>`, named by the

@@ -23,7 +23,11 @@ struct FriendEntry: Codable, Identifiable {
     let level: Int
     let pvpRating: Int
     let avatar: String
-    let lastActiveAt: Date?
+    /// ISO-8601 string, as the backend sends it (Prisma DateTime). Kept as a
+    /// String on purpose: APIClient has no date strategy, so a `Date` here
+    /// failed the whole friends list as soon as one ally had been active —
+    /// the "Failed to load allies" panel (2026-11-04).
+    let lastActiveAt: String?
 
     // CodingKeys needed only for "class" → characterClass mapping.
     // All other keys are camelCase from backend — match Swift property names directly.
@@ -35,8 +39,10 @@ struct FriendEntry: Codable, Identifiable {
         case origin, level, pvpRating, avatar, lastActiveAt
     }
 
+    var lastActiveDate: Date? { SocialDate.parse(lastActiveAt) }
+
     var onlineStatus: OnlineStatus {
-        guard let lastActive = lastActiveAt else { return .offline }
+        guard let lastActive = lastActiveDate else { return .offline }
         let elapsed = Date().timeIntervalSince(lastActive)
         if elapsed < 5 * 60 { return .online }
         if elapsed < 30 * 60 { return .away }
@@ -44,7 +50,7 @@ struct FriendEntry: Codable, Identifiable {
     }
 
     var lastSeenText: String? {
-        guard let lastActive = lastActiveAt else { return nil }
+        guard let lastActive = lastActiveDate else { return nil }
         let elapsed = Date().timeIntervalSince(lastActive)
         if elapsed < 60 { return "Just now" }
         if elapsed < 3600 { return "\(Int(elapsed / 60))m ago" }
@@ -67,6 +73,22 @@ enum OnlineStatus {
     case online, away, offline
 }
 
+/// Backend timestamps arrive as ISO-8601 strings, with or without
+/// fractional seconds (`2026-11-04T16:20:11.512Z`).
+enum SocialDate {
+    private static let withFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let plain = ISO8601DateFormatter()
+
+    static func parse(_ raw: String?) -> Date? {
+        guard let raw, !raw.isEmpty else { return nil }
+        return withFraction.date(from: raw) ?? plain.date(from: raw)
+    }
+}
+
 // MARK: - Friend Request
 
 struct FriendRequest: Codable, Identifiable {
@@ -78,7 +100,8 @@ struct FriendRequest: Codable, Identifiable {
     let level: Int
     let pvpRating: Int
     let avatar: String
-    let requestedAt: Date
+    /// ISO-8601 string — see `FriendEntry.lastActiveAt`.
+    let requestedAt: String
 
     var classEnum: CharacterClass {
         CharacterClass(rawValue: characterClass) ?? .warrior
