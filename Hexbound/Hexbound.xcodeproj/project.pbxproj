@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		1877FA6305FD5ACC8B79793C /* DiceCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */; };
 		773F108CBDC5C58CAB39A2AA /* DiceDieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8B3CE48144F0CED031CB818 /* DiceDieView.swift */; };
+		D0B13ED737DB69465E16B8CB /* DiceCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91571D5F570A9F313A38F8D7 /* DiceCube.swift */; };
+		7CC904F646B779E40E2DCA80 /* DiceThrowLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F422778A9158187EA78453 /* DiceThrowLibrary.swift */; };
+		295BD84DD9EC8DF5931EED3B /* DiceFaceArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2278457005080EA31D01462 /* DiceFaceArt.swift */; };
+		15F57E1D4F377449BC91D69D /* DiceTableMat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4CE777C1FFE7AF17DCCB68 /* DiceTableMat.swift */; };
+		C668E68EE0B5C1F16CF25811 /* DiceTableScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = E220B73A23FD5AAD73AECB4A /* DiceTableScene.swift */; };
+		50C4881F74B1A68769F83354 /* DiceTable3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADCD5E8DA259D9690F7D860 /* DiceTable3DView.swift */; };
 		CA48618361B369AF64192986 /* DiceBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */; };
 		838579400D919B311E37EBC5 /* DiceBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */; };
 		68FDB398B76CC5E9FC7DE124 /* DiceTabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AAABFA3807BD05AEE92BD9 /* DiceTabViewModel.swift */; };
@@ -408,6 +414,13 @@
 		AD41D37DCCD627BDB0085647 /* combat_block_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = B6D065AB078ABF21D519E164 /* combat_block_3.wav */; };
 		AE77EBD74CC46B9302B05F64 /* magic_spark.wav in Resources */ = {isa = PBXBuildFile; fileRef = C050067D9218FEA233BB9C11 /* magic_spark.wav */; };
 		AEF2DE25A9A38E438380D2A3 /* combat_block_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = F592F13EECE15960B2811748 /* combat_block_4.wav */; };
+		073C8BE7B1E5D305039502E4 /* dice_hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = 77D25B1502B32CD132510C50 /* dice_hit.wav */; };
+		01181E37FC3C87613E04046E /* dice_hit_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 90A61B83D88862AAE4D9467B /* dice_hit_2.wav */; };
+		0155BD2457D6B661017ADAEF /* dice_hit_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3DD5E1CC1395CB61CD771EDB /* dice_hit_3.wav */; };
+		3164E7965A67DC115BA6D61A /* dice_hit_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3EC0EDFCE51E2530010389FA /* dice_hit_4.wav */; };
+		9AFB5D6127B1516ACA153D4B /* dice_shake.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5E38E4D7BA56DBA59B00329A /* dice_shake.wav */; };
+		8714B6795825303B304881EA /* dice_shake_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = CAA2F0851A5ED74678E5D7D1 /* dice_shake_2.wav */; };
+		0A1C5B80694920DCE0F0D621 /* dice_shake_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 34952AAA7C4ECAD312634859 /* dice_shake_3.wav */; };
 		AFFACC4C6E727EEE5445B08C /* door_creak_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2030DE65D1FAA604E54302E1 /* door_creak_2.wav */; };
 		B04BEBB9317A3E55FD2BE9B0 /* chest_open_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = C90D3504B00DA790533F8352 /* chest_open_3.wav */; };
 		B087DB96B48D7A164C4DBCD2 /* GuestGateCTA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8A1598BE7C2DB7C86ED031 /* GuestGateCTA.swift */; };
@@ -597,6 +610,12 @@
 /* Begin PBXFileReference section */
 		791E23AD4C70D6725D134F33 /* DiceCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceCombatModels.swift; sourceTree = "<group>"; };
 		B8B3CE48144F0CED031CB818 /* DiceDieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceDieView.swift; sourceTree = "<group>"; };
+		91571D5F570A9F313A38F8D7 /* DiceCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceCube.swift; sourceTree = "<group>"; };
+		44F422778A9158187EA78453 /* DiceThrowLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceThrowLibrary.swift; sourceTree = "<group>"; };
+		F2278457005080EA31D01462 /* DiceFaceArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceFaceArt.swift; sourceTree = "<group>"; };
+		2C4CE777C1FFE7AF17DCCB68 /* DiceTableMat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTableMat.swift; sourceTree = "<group>"; };
+		E220B73A23FD5AAD73AECB4A /* DiceTableScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTableScene.swift; sourceTree = "<group>"; };
+		9ADCD5E8DA259D9690F7D860 /* DiceTable3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTable3DView.swift; sourceTree = "<group>"; };
 		8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceBattleViewModel.swift; sourceTree = "<group>"; };
 		53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceBattleView.swift; sourceTree = "<group>"; };
 		02AAABFA3807BD05AEE92BD9 /* DiceTabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceTabViewModel.swift; sourceTree = "<group>"; };
@@ -1120,6 +1139,13 @@
 		F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VictoryParticlesView.swift; sourceTree = "<group>"; };
 		F4CAF60AABBE26D01F453568 /* MatchHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchHistory.swift; sourceTree = "<group>"; };
 		F592F13EECE15960B2811748 /* combat_block_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_block_4.wav; sourceTree = "<group>"; };
+		77D25B1502B32CD132510C50 /* dice_hit.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_hit.wav; sourceTree = "<group>"; };
+		90A61B83D88862AAE4D9467B /* dice_hit_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_hit_2.wav; sourceTree = "<group>"; };
+		3DD5E1CC1395CB61CD771EDB /* dice_hit_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_hit_3.wav; sourceTree = "<group>"; };
+		3EC0EDFCE51E2530010389FA /* dice_hit_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_hit_4.wav; sourceTree = "<group>"; };
+		5E38E4D7BA56DBA59B00329A /* dice_shake.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_shake.wav; sourceTree = "<group>"; };
+		CAA2F0851A5ED74678E5D7D1 /* dice_shake_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_shake_2.wav; sourceTree = "<group>"; };
+		34952AAA7C4ECAD312634859 /* dice_shake_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dice_shake_3.wav; sourceTree = "<group>"; };
 		F75CA9D35E636EEAE32C1C4A /* SupabaseAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthClient.swift; sourceTree = "<group>"; };
 		F7A5811B35D2599327C7F9CE /* CharacterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterService.swift; sourceTree = "<group>"; };
 		F88E05D11E0E6EBFE2A7FFBE /* amb_thunder_distant.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_thunder_distant.wav; sourceTree = "<group>"; };
@@ -1362,6 +1388,13 @@
 				566F557D757FC32D5E7F9F97 /* chest_close_2.wav */,
 				C90D3504B00DA790533F8352 /* chest_open_3.wav */,
 				F592F13EECE15960B2811748 /* combat_block_4.wav */,
+				77D25B1502B32CD132510C50 /* dice_hit.wav */,
+				90A61B83D88862AAE4D9467B /* dice_hit_2.wav */,
+				3DD5E1CC1395CB61CD771EDB /* dice_hit_3.wav */,
+				3EC0EDFCE51E2530010389FA /* dice_hit_4.wav */,
+				5E38E4D7BA56DBA59B00329A /* dice_shake.wav */,
+				CAA2F0851A5ED74678E5D7D1 /* dice_shake_2.wav */,
+				34952AAA7C4ECAD312634859 /* dice_shake_3.wav */,
 				BFEC262932E55B761AE0D804 /* combat_buff.wav */,
 				9AF8ADC51BB174F8BA5545E1 /* combat_dodge_3.wav */,
 				102DDCA43AACFE5B2DA110AF /* combat_miss_3.wav */,
@@ -1633,12 +1666,26 @@
 			path = Leaderboard;
 			sourceTree = "<group>";
 		};
+		161A8D0D1DB08F319A815E36 /* Table3D */ = {
+			isa = PBXGroup;
+			children = (
+				91571D5F570A9F313A38F8D7 /* DiceCube.swift */,
+				44F422778A9158187EA78453 /* DiceThrowLibrary.swift */,
+				F2278457005080EA31D01462 /* DiceFaceArt.swift */,
+				2C4CE777C1FFE7AF17DCCB68 /* DiceTableMat.swift */,
+				E220B73A23FD5AAD73AECB4A /* DiceTableScene.swift */,
+				9ADCD5E8DA259D9690F7D860 /* DiceTable3DView.swift */,
+			);
+			path = Table3D;
+			sourceTree = "<group>";
+		};
 		D9446D6A2357A1D202C2B05E /* Dice */ = {
 			isa = PBXGroup;
 			children = (
 				B8B3CE48144F0CED031CB818 /* DiceDieView.swift */,
 				8618CAA2253A835C52D80CB6 /* DiceBattleViewModel.swift */,
 				53FD6B4B6E7031B6B2A02939 /* DiceBattleView.swift */,
+				161A8D0D1DB08F319A815E36 /* Table3D */,
 			);
 			path = Dice;
 			sourceTree = "<group>";
@@ -2371,6 +2418,13 @@
 				4402F9246B80EE080DD69B73 /* chest_close_2.wav in Resources */,
 				B04BEBB9317A3E55FD2BE9B0 /* chest_open_3.wav in Resources */,
 				AEF2DE25A9A38E438380D2A3 /* combat_block_4.wav in Resources */,
+				073C8BE7B1E5D305039502E4 /* dice_hit.wav in Resources */,
+				01181E37FC3C87613E04046E /* dice_hit_2.wav in Resources */,
+				0155BD2457D6B661017ADAEF /* dice_hit_3.wav in Resources */,
+				3164E7965A67DC115BA6D61A /* dice_hit_4.wav in Resources */,
+				9AFB5D6127B1516ACA153D4B /* dice_shake.wav in Resources */,
+				8714B6795825303B304881EA /* dice_shake_2.wav in Resources */,
+				0A1C5B80694920DCE0F0D621 /* dice_shake_3.wav in Resources */,
 				8281E05D2AF0FB9BAA88513A /* combat_buff.wav in Resources */,
 				F65BC8C3CB2266B39AEB122C /* combat_dodge_3.wav in Resources */,
 				4B0AA65687EFCC41D5095FA2 /* combat_miss_3.wav in Resources */,
@@ -2541,6 +2595,12 @@
 				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
 				1877FA6305FD5ACC8B79793C /* DiceCombatModels.swift in Sources */,
 				773F108CBDC5C58CAB39A2AA /* DiceDieView.swift in Sources */,
+				D0B13ED737DB69465E16B8CB /* DiceCube.swift in Sources */,
+				7CC904F646B779E40E2DCA80 /* DiceThrowLibrary.swift in Sources */,
+				295BD84DD9EC8DF5931EED3B /* DiceFaceArt.swift in Sources */,
+				15F57E1D4F377449BC91D69D /* DiceTableMat.swift in Sources */,
+				C668E68EE0B5C1F16CF25811 /* DiceTableScene.swift in Sources */,
+				50C4881F74B1A68769F83354 /* DiceTable3DView.swift in Sources */,
 				CA48618361B369AF64192986 /* DiceBattleViewModel.swift in Sources */,
 				838579400D919B311E37EBC5 /* DiceBattleView.swift in Sources */,
 				68FDB398B76CC5E9FC7DE124 /* DiceTabViewModel.swift in Sources */,

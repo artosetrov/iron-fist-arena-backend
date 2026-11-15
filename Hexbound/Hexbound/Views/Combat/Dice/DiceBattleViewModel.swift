@@ -12,6 +12,11 @@
 //    both strikes, runes) → next round's dice tumble in.
 //  The server is authoritative for every number; this VM only animates.
 //
+//  3D table (DICE_3D_THROW.md): when the screen shows DiceTableScene the
+//  dice are thrown by the player at round start, rerolls hop, set faces turn
+//  over and strikes lunge on the table — the same server faces, just staged
+//  in 3D. Without a table (Reduce Motion) the 2D lanes tumble as before.
+//
 
 import Foundation
 import SwiftUI
@@ -83,6 +88,15 @@ final class DiceBattleViewModel {
     var sheetDie: DiceKind?
     var endWon: Bool?
 
+    /// The dice wait in the tray for the player's throw (3D table only).
+    var awaitingThrow = false
+    /// The defender's table — the mat under the 3D dice.
+    var tableMat: DiceTableMat
+    /// 3D table unless Reduce Motion is on (then the 2D lanes).
+    let prefers3DTable: Bool
+    /// The 3D table while it is on screen; nil = 2D lanes.
+    @ObservationIgnored weak var table: DiceTableScene?
+
     var finalCombatData: CombatData?
     private(set) var stats = (dealt: 0, taken: 0, spent: 0)
 
@@ -132,6 +146,9 @@ final class DiceBattleViewModel {
         self.playerMaxHp = attackerMaxHp
         self.enemyHp = defenderMaxHp
         self.enemyMaxHp = defenderMaxHp
+        self.prefers3DTable = !UIAccessibility.isReduceMotionEnabled
+        self.tableMat = DiceTableMat.resolve(serverKey: nil, opponentType: opponentType,
+                                             defenderClass: defenderProfile?.characterClass)
     }
 
     // MARK: - Derived
@@ -227,6 +244,8 @@ final class DiceBattleViewModel {
             matchId = res.matchId
             attackerProfile = FighterProfile(snapshot: res.attacker)
             defenderProfile = FighterProfile(snapshot: res.defender)
+            tableMat = DiceTableMat.resolve(serverKey: res.diceTable, opponentType: opponentType,
+                                            defenderClass: defenderProfile?.characterClass)
             runeInfo = Dictionary((res.runeInfo ?? []).map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
             apply(dice, syncHp: true)
             SFXManager.shared.play(.battleStart)
@@ -259,6 +278,10 @@ final class DiceBattleViewModel {
         chipP = Chip(text: "…", style: .wait)
         chipO = Chip(text: "…", style: .wait)
         hint = ""
+        if let table {
+            await throwOnTable(table, roll: roll)
+            return
+        }
         var slots: [Slot] = [.od, .pd, .oa, .pa]
         if roll.o.a2 != nil { slots.append(.oa2) }
         shown = roll
@@ -275,6 +298,47 @@ final class DiceBattleViewModel {
         if let m = match, m.omen {
             HapticManager.heavy()
             banner = Banner(title: "OMEN", subtitle: "Every block breaks")
+        }
+    }
+
+    /// 3D: the player throws (or AUTO / the idle timeout throws for them),
+    /// the dice land on the server's faces and slide into their slots.
+    private func throwOnTable(_ table: DiceTableScene, roll: DiceRollView) async {
+        shown = roll
+        tumbling = []
+        table.refreshFaces { faceRunes($0) }
+        awaitingThrow = true
+        let throwHint = "Hold your dice, shake them and flick them up the table."
+        hint = autoMode ? "" : throwHint
+        await table.throwRound(roll: roll, auto: autoMode)
+        awaitingThrow = false
+        if hint == throwHint { hint = "" }
+        if Task.isCancelled { return }
+        if let m = match, m.omen {
+            HapticManager.heavy()
+            banner = Banner(title: "OMEN", subtitle: "Every block breaks")
+        }
+    }
+
+    func attachTable(_ scene: DiceTableScene) { table = scene }
+
+    func detachTable(_ scene: DiceTableScene) {
+        if table === scene { table = nil }
+    }
+
+    /// A die on the 3D table was tapped.
+    func tapTableDie(_ slot: Slot) {
+        switch slot {
+        case .pa: tapDie(.attack)
+        case .pd: tapDie(.guardDie)
+        case .oa, .oa2, .od:
+            guard phase.isDeciding, let f = face(slot) else { return }
+            HapticManager.selection()
+            if let r = rune(runeKey(slot)) {
+                hint = "Their rune \(r.name): \(r.desc)."
+            } else {
+                hint = "Their \(slot == .od ? "guard" : "attack") die shows \(DiceZone.of(face: f).label.lowercased())."
+            }
         }
     }
 
@@ -329,6 +393,7 @@ final class DiceBattleViewModel {
     func toggleAuto() {
         autoMode.toggle()
         HapticManager.selection()
+        if autoMode, awaitingThrow { table?.throwNow() }
         if autoMode, phase.isDeciding { runAuto() }
     }
 
@@ -356,14 +421,27 @@ final class DiceBattleViewModel {
         let kind: DiceKind = action.die == "a" ? .attack : .guardDie
         flowTask = Task { [weak self] in
             guard let self else { return }
-            if action.type == "reroll" { self.tumbling.insert(slot) }
+            let table = self.table
+            if action.type == "reroll" {
+                // 3D: the die jumps now; its face is fixed in the air once the server answers.
+                if let table { table.beginHop(slot) } else { self.tumbling.insert(slot) }
+            }
             do {
                 let res: DiceActResponse = try await APIClient.shared.post(
                     APIEndpoints.pvpDiceAct,
                     body: DiceActRequest(matchId: self.matchId, round: self.round, action: action)
                 )
                 self.stats.spent += action.type == "reroll" ? self.rerollCost : self.setFaceCost
-                try? await Task.sleep(for: .seconds(action.type == "reroll" && !self.reduceMotion ? 0.4 : 0.05))
+                let newFace = action.die == "a" ? res.dice.roll.p.a : res.dice.roll.p.d
+                if let table {
+                    if action.type == "reroll" {
+                        await table.landHop(slot, face: newFace)
+                    } else {
+                        await table.setFace(slot, face: newFace)
+                    }
+                } else {
+                    try? await Task.sleep(for: .seconds(action.type == "reroll" && !self.reduceMotion ? 0.4 : 0.05))
+                }
                 self.apply(res.dice, syncHp: false)
                 self.shown = res.dice.roll
                 self.tumbling.remove(slot)
@@ -381,6 +459,9 @@ final class DiceBattleViewModel {
                     self.resumeTimer()
                 }
             } catch {
+                if let table, action.type == "reroll" {
+                    await table.landHop(slot, face: self.face(slot) ?? 0)
+                }
                 self.tumbling.remove(slot)
                 self.phase = .decide
                 self.resumeTimer()
@@ -441,7 +522,13 @@ final class DiceBattleViewModel {
                 guard let action = e.action, let face = e.face else { break }
                 let slot: Slot = action.die == "a" ? .oa : .od
                 hint = "\(enemyName) \(action.type == "reroll" ? "rerolls" : "sets") the \(action.die == "a" ? "attack" : "guard") die!"
-                if action.type == "reroll" {
+                if let table {
+                    if action.type == "reroll" {
+                        await table.reroll(slot, face: face)
+                    } else {
+                        await table.setFace(slot, face: face)
+                    }
+                } else if action.type == "reroll" {
                     tumbling.insert(slot)
                     try? await Task.sleep(for: .seconds(0.5 * sm))
                 }
@@ -504,6 +591,7 @@ final class DiceBattleViewModel {
         }
 
         lunging = slot
+        if let table { Task { await table.lunge(from: slot, outcome: out) } }
         withAnimation(.easeOut(duration: 0.15 * sm)) {
             if mine { playerSlideX = 40 } else { enemySlideX = -40 }
         }
@@ -673,7 +761,10 @@ final class DiceBattleViewModel {
         shown = s
     }
 
-    private func pulse(_ slot: Slot) { pulses[slot, default: 0] += 1 }
+    private func pulse(_ slot: Slot) {
+        pulses[slot, default: 0] += 1
+        table?.pulse(slot)
+    }
 
     private func setChip(_ mine: Bool, _ chip: Chip) {
         withAnimation(.easeOut(duration: 0.15)) { if mine { chipP = chip } else { chipO = chip } }

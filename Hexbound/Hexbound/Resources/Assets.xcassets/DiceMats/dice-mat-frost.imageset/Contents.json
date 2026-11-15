@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "dice-mat-frost.jpg",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "dice-mat-frost@2x.jpg",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "dice-mat-frost@3x.jpg",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

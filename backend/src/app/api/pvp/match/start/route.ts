@@ -16,6 +16,7 @@ import { randomUUID } from 'crypto'
 import { sameOwner, selfFarmResponse } from '@/lib/game/pvp-opponent'
 import { createDiceState, publicView, rollRound } from '@/lib/game/dice'
 import { botDiceLoadout, emptyLoadout, loadDiceLoadout, runeInfoFor } from '@/lib/game/dice-loadout'
+import { diceTableFor } from '@/lib/game/dice-tables'
 import { deriveCombatSeed } from '@/lib/game/combat-seed'
 import {
   applyArtifactStatBoosts, applyRushBuffs, effectiveHp, generateRushEnemy, isCombatRoom,
@@ -465,6 +466,12 @@ export async function POST(req: NextRequest) {
       actives: { p1: [], p2: [] },
       dice: publicView(diceState),
       rune_info: runeInfoFor(loadoutP, loadoutO),
+      // The duel is fought on the defender's table (DICE_3D_THROW.md §7).
+      dice_table: diceTableFor({
+        opponentType,
+        defenderClass: defenderStats.class,
+        rushRoomType: isRush ? rushRoom?.type ?? null : null,
+      }),
     })
   } catch (error) {
     if (error instanceof Error) {

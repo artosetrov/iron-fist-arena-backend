@@ -1,0 +1,12 @@
+{
+  "name": "hexbound-dice-throws",
+  "private": true,
+  "description": "Bakes the 3D dice throw library for the iOS dice table (docs/06_game_systems/DICE_3D_THROW.md).",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.mjs"
+  },
+  "dependencies": {
+    "cannon-es": "0.20.0"
+  }
+}

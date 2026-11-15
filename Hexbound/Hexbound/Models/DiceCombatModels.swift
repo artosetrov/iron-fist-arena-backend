@@ -5,7 +5,7 @@
 //  Dice combat — DTOs for the round-based duel and the Hero → Dice tab.
 //  Spec: docs/06_game_systems/DICE_RUNES_DESIGN.md
 //
-//    POST /api/pvp/match/start      — begin a match, round 1 already rolled (`dice`)
+//    POST /api/pvp/match/start      — begin a match, round 1 already rolled (`dice`), `dice_table`
 //    POST /api/pvp/dice/act         — spend Focus: reroll a die (2) or set a face (4)
 //    POST /api/pvp/dice/resolve     — clash; returns ordered events + next round
 //    POST /api/pvp/match/complete   — unchanged (CombatData)
@@ -206,6 +206,8 @@ struct DiceMatchStartResponse: Decodable, Sendable {
     let defender: InteractiveCharacterSnapshot
     let dice: DiceMatchView?
     let runeInfo: [DiceRuneInfo]?
+    /// The defender's table for the 3D dice (`DiceTableMat` raw value); nil on older servers.
+    let diceTable: String?
 }
 
 struct DiceActRequest: Encodable, Sendable {

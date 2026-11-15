@@ -443,6 +443,9 @@ struct DuelFighterCard: View {
     /// Peak-verdict framing (Phase 4). `nil` for middle outcomes and any
     /// non-reveal phase — keeps the default look.
     var outcomeRole: OutcomeRole? = nil
+    /// Explicit tile edge — the dice screen grows the portraits into
+    /// whatever height the 3D table doesn't need. nil = 130 / compact 80.
+    var tileSizeOverride: CGFloat? = nil
 
     private var borderColor: Color {
         side == .player ? DarkFantasyTheme.success : DarkFantasyTheme.danger
@@ -458,7 +461,7 @@ struct DuelFighterCard: View {
     /// through aspectRatio's `.fit` proposal and producing portrait
     /// (taller-than-wide) tiles in summary on some devices. Matches
     /// the classic combat header sizing in `CombatDetailView`.
-    private var tileSize: CGFloat { compact ? 80 : 130 }
+    private var tileSize: CGFloat { tileSizeOverride ?? (compact ? 80 : 130) }
 
     var body: some View {
         // Compact duel header (combat v3.1 — 2026-05-03 Variant B):
