@@ -243,16 +243,37 @@ struct WelcomeView: View {
             .padding(.top, LayoutConstants.spaceXS)
             .launchReveal(step: 3, hidden: isBooting)
 
-            Text("Osetrov Design")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .multilineTextAlignment(.center)
-                .launchReveal(step: 4, hidden: isBooting)
+            VStack(spacing: LayoutConstants.spaceSM) {
+                legalNotice
+
+                Text("Osetrov Design")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .multilineTextAlignment(.center)
+            }
+            .launchReveal(step: 4, hidden: isBooting)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.bottom, LayoutConstants.authBottomInset)
         .allowsHitTesting(!isBooting)
         .accessibilityHidden(isBooting)
+    }
+
+    // MARK: - Legal notice
+
+    /// Clickwrap notice: every way in from this screen (PLAY as a guest,
+    /// Apple, Google, email) accepts the Terms and the Privacy Policy. Guests
+    /// never see another consent step, so it has to be stated here.
+    /// `LocalizedStringKey` renders the markdown links; they open in Safari.
+    private var legalNotice: some View {
+        Text(LocalizedStringKey(
+            "By continuing, you agree to our [Terms of Service](\(AppConstants.termsURL)) and [Privacy Policy](\(AppConstants.privacyURL))."
+        ))
+        .font(DarkFantasyTheme.body)
+        .foregroundStyle(DarkFantasyTheme.textTertiary)
+        .tint(DarkFantasyTheme.gold)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
