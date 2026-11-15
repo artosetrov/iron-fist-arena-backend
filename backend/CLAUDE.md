@@ -53,6 +53,12 @@ Pattern: `$transaction(async (tx) => { ... })` with `Serializable` isolation.
 
 Applies to: shop offers, consumables, PvP stamina, minigame bets, any resource limit check.
 
+## Inside an Interactive Transaction: tx Queries Only (CRITICAL)
+
+Inside `prisma.$transaction(async (tx) => …)` never call anything that reads through the global `prisma` client — `getGameConfig*`, `get*Config()`, `calculateItemPowerScore`, cache-backed helpers. On a cold cache those reads queue for a pool connection while the transaction holds one, the transaction outlives its timeout and the next `tx` query fails with **P2028 "Transaction not found"**.
+
+Load config before opening the transaction and pass it in. For item power use `loadItemPowerContext()` outside + `itemPowerScoreWith(ctx, …)` inside (`rollAndPersistLoot`). `previewLootDrop` also rolls rarity, so it takes `loadLootRollContext()` (power + drop tuning + rarity distribution) — the Descent act route and Fortune's Table `settleRound` load it before the transaction. Post-commit side effects in a route must not turn a committed result into a 500 — catch, log, answer with what was committed (see `/pvp/match/complete`).
+
 ## Atomic Increments (CRITICAL)
 
 **All counter increments MUST use atomic SQL**, not read-then-write.

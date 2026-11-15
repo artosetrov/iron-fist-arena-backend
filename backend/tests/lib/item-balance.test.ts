@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const prismaMock = vi.hoisted(() => ({
   itemBalanceProfile: {
     findFirst: vi.fn(),
+    findMany: vi.fn(),
   },
 }))
 
@@ -27,6 +28,8 @@ import {
   getUpgradeProtectionCost,
   getUpgradeSuccessChance,
   invalidateItemBalanceProfileCache,
+  itemPowerScoreWith,
+  loadItemPowerContext,
 } from '../../src/lib/game/item-balance'
 import { getUpgradeChancesConfig } from '../../src/lib/game/live-config'
 import { GEM_COSTS, UPGRADE_CHANCES } from '../../src/lib/game/balance'
@@ -107,6 +110,78 @@ describe('item-balance.ts', () => {
 // to read the same config key with DIFFERENT fallbacks (v2 25/15 vs v3
 // 30/20), so with the key unseeded the UI advertised one chance and the
 // server rolled another.
+// The loot pipeline scores gear inside an interactive transaction. The score
+// must be pure arithmetic there: config/profile reads through the global
+// client starved the pool past the tx timeout (P2028, 2026-11-15).
+describe('item power context — no I/O while scoring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    invalidateItemBalanceProfileCache()
+    configMock.getGameConfig.mockImplementation(async (_key: string, fallback: unknown) => fallback)
+    configMock.getGameConfigs.mockImplementation(async (defaults: Record<string, unknown>) => defaults)
+  })
+
+  it('loads every profile in one query and scores like calculateItemPowerScore', async () => {
+    prismaMock.itemBalanceProfile.findMany.mockResolvedValueOnce([
+      { itemType: 'weapon', powerWeight: 2, statWeights: { str: 1 } },
+      { itemType: 'ring', powerWeight: 0.5, statWeights: { luk: 1 } },
+    ])
+
+    const ctx = await loadItemPowerContext()
+    expect(prismaMock.itemBalanceProfile.findMany).toHaveBeenCalledTimes(1)
+
+    // Scoring with the context touches neither prisma nor config.
+    prismaMock.itemBalanceProfile.findFirst.mockClear()
+    configMock.getGameConfig.mockClear()
+    const weapon = itemPowerScoreWith(ctx, { str: 10, agi: 4 }, 'rare', 3, 'weapon')
+    const ring = itemPowerScoreWith(ctx, { luk: 8 }, 'epic', 0, 'ring')
+    const unprofiled = itemPowerScoreWith(ctx, { str: 10 }, 'common', 0, 'boots')
+    expect(prismaMock.itemBalanceProfile.findFirst).not.toHaveBeenCalled()
+    expect(configMock.getGameConfig).not.toHaveBeenCalled()
+
+    // Same numbers as the async path (which reads the cache the load filled).
+    expect(weapon).toBe(await calculateItemPowerScore({ str: 10, agi: 4 }, 'rare', 3, 'weapon'))
+    expect(ring).toBe(await calculateItemPowerScore({ luk: 8 }, 'epic', 0, 'ring'))
+    // (10 str × 1.0) × common 1.0 × no upgrade × no profile 1.0
+    expect(unprofiled).toBe(10)
+  })
+
+  it('does not query again while the profiles are fresh', async () => {
+    const all = ['weapon', 'helmet', 'chest', 'gloves', 'legs', 'boots', 'accessory', 'amulet', 'belt', 'relic', 'necklace', 'ring']
+    prismaMock.itemBalanceProfile.findMany.mockResolvedValue(
+      all.map((itemType) => ({ itemType, powerWeight: 1, statWeights: { str: 1 } })),
+    )
+    await loadItemPowerContext()
+    await loadItemPowerContext()
+    expect(prismaMock.itemBalanceProfile.findMany).toHaveBeenCalledTimes(1)
+  })
+
+  it('still scores when the profile query fails', async () => {
+    prismaMock.itemBalanceProfile.findMany.mockRejectedValueOnce(new Error('pool timeout'))
+    const ctx = await loadItemPowerContext()
+    expect(itemPowerScoreWith(ctx, { str: 10 }, 'common', 0, 'weapon')).toBe(10)
+  })
+
+  it('drops an expired profile instead of keeping its last weight', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      prismaMock.itemBalanceProfile.findMany.mockResolvedValueOnce([
+        { itemType: 'weapon', powerWeight: 3, statWeights: { str: 1 } },
+      ])
+      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+      expect(itemPowerScoreWith(await loadItemPowerContext(), { str: 10 }, 'common', 0, 'weapon')).toBe(30)
+
+      // An hour later the refresh fails: getItemBalanceProfile would answer
+      // null (weight 1.0), so the context must not keep the stale 3.0.
+      prismaMock.itemBalanceProfile.findMany.mockRejectedValueOnce(new Error('pool timeout'))
+      vi.setSystemTime(new Date('2030-01-01T01:00:00Z'))
+      expect(itemPowerScoreWith(await loadItemPowerContext(), { str: 10 }, 'common', 0, 'weapon')).toBe(10)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
 describe('upgrade config has one source', () => {
   beforeEach(() => {
     vi.clearAllMocks()
