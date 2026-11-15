@@ -161,6 +161,25 @@ describe('item power context — no I/O while scoring', () => {
     const ctx = await loadItemPowerContext()
     expect(itemPowerScoreWith(ctx, { str: 10 }, 'common', 0, 'weapon')).toBe(10)
   })
+
+  it('drops an expired profile instead of keeping its last weight', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      prismaMock.itemBalanceProfile.findMany.mockResolvedValueOnce([
+        { itemType: 'weapon', powerWeight: 3, statWeights: { str: 1 } },
+      ])
+      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+      expect(itemPowerScoreWith(await loadItemPowerContext(), { str: 10 }, 'common', 0, 'weapon')).toBe(30)
+
+      // An hour later the refresh fails: getItemBalanceProfile would answer
+      // null (weight 1.0), so the context must not keep the stale 3.0.
+      prismaMock.itemBalanceProfile.findMany.mockRejectedValueOnce(new Error('pool timeout'))
+      vi.setSystemTime(new Date('2030-01-01T01:00:00Z'))
+      expect(itemPowerScoreWith(await loadItemPowerContext(), { str: 10 }, 'common', 0, 'weapon')).toBe(10)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('upgrade config has one source', () => {

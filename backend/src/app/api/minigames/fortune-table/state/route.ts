@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { FORTUNE_TABLE } from '@/lib/game/fortune-table'
 import { FORTUNE_TABLE_GAME, roundView, settleRound } from '@/lib/game/fortune-table-server'
-import { loadItemPowerContext } from '@/lib/game/item-balance'
+import { loadLootRollContext } from '@/lib/game/loot'
 
 /**
  * Poll a round: who has sat down so far. Once the lobby is over the first
@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
       // Row lock inside settleRound makes this idempotent under concurrent polls.
       // The chest's loot preview scores gear inside the transaction; its config
       // reads go through the global client, so they are loaded first.
-      const powerCtx = await loadItemPowerContext()
+      const lootCtx = await loadLootRollContext()
       await prisma.$transaction(
-        (tx) => settleRound(tx, { roundId, characterId, userId: user.id, level: character.level, nowMs: now, powerCtx }),
+        (tx) => settleRound(tx, { roundId, characterId, userId: user.id, level: character.level, nowMs: now, lootCtx }),
       )
       row = await prisma.minigameSession.findUnique({ where: { id: roundId } })
       if (!row) return NextResponse.json({ error: 'Round not found', code: 'NOT_FOUND' }, { status: 404 })

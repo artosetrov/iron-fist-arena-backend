@@ -12,7 +12,7 @@ import {
   type Action, type CampChoice, type DescentState,
 } from '@/lib/game/descent/engine'
 import { applyDescentEffects, previewBagEntry, serializeState, type AppliedEffects } from '@/lib/game/descent/server'
-import { loadItemPowerContext } from '@/lib/game/item-balance'
+import { loadLootRollContext } from '@/lib/game/loot'
 import { buildDescentView } from '@/lib/game/descent/view'
 
 class StaleRunError extends Error {
@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
     })
     if (!character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
 
-    // Loaded before the transaction: the loot preview scores gear inside it,
-    // and these reads go through the global client (see ItemPowerContext).
-    const powerCtx = await loadItemPowerContext()
+    // Loaded before the transaction: the loot preview rolls rarity and scores
+    // gear inside it, and that config goes through the global client.
+    const lootCtx = await loadLootRollContext()
 
     const result = await prisma.$transaction(async (tx) => {
       const locked = await lockDungeonRunForUpdate(tx, runId)
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       if (current.seq !== seq) throw new StaleRunError(current)
 
       const { state, fx, effects } = applyAction(current, action, Math.random)
-      await resolvePendingLoot(state, () => previewBagEntry(tx, characterId, character.level, powerCtx))
+      await resolvePendingLoot(state, () => previewBagEntry(tx, characterId, character.level, lootCtx))
       const applied = await applyDescentEffects(tx, { userId: user.id, characterId, effects })
 
       if (applied.ended) {

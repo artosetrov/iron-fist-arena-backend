@@ -185,8 +185,23 @@ function shardColumnForTier(tier: LootShardTier): 'shardsCommon' | 'shardsRare' 
  * the pity bump is then applied on top as a flat tier shift.
  */
 async function rollRarity(playerLevel: number, trashStreak: number): Promise<Rarity> {
-  const dropTuning = await getDropTuningConfig();
-  const rarityDist = await getRarityDistributionConfig();
+  const [dropTuning, rarityDist] = await Promise.all([
+    getDropTuningConfig(),
+    getRarityDistributionConfig(),
+  ]);
+  return rollRarityWith(dropTuning, rarityDist, playerLevel, trashStreak);
+}
+
+type DropTuning = Awaited<ReturnType<typeof getDropTuningConfig>>;
+type RarityDistribution = Awaited<ReturnType<typeof getRarityDistributionConfig>>;
+
+/** Same roll as `rollRarity`, from configs loaded up front. No I/O. */
+function rollRarityWith(
+  dropTuning: DropTuning,
+  rarityDist: RarityDistribution,
+  playerLevel: number,
+  trashStreak: number,
+): Rarity {
   const levelBonus = Math.max(0, (playerLevel - 1) * dropTuning.levelRarityBonusPerLevel);
   const distribution = dropTuning.levelRarityBonusDistribution;
 
@@ -717,15 +732,37 @@ export type PreviewedLoot =
   | { kind: 'shard'; tier: LootShardTier; amount: number; rarity: string };
 
 /**
+ * Everything `previewLootDrop` reads from config: item power plus the rarity
+ * roll. It runs inside transactions (the Descent act, Fortune's Table
+ * settling), and these reads go through the global client, so load this
+ * before opening the transaction. See backend/CLAUDE.md, "tx queries only".
+ */
+export interface LootRollContext extends ItemPowerContext {
+  dropTuning: DropTuning;
+  rarityDist: RarityDistribution;
+}
+
+export async function loadLootRollContext(): Promise<LootRollContext> {
+  const [power, dropTuning, rarityDist] = await Promise.all([
+    loadItemPowerContext(),
+    getDropTuningConfig(),
+    getRarityDistributionConfig(),
+  ]);
+  return { ...power, dropTuning, rarityDist };
+}
+
+/**
  * Choose a drop for the character without writing an inventory row.
  * Updates trashLootStreak exactly like rollAndPersistLoot would.
+ * Only `prisma` queries inside; config comes from `ctx` (loadLootRollContext).
  */
 export async function previewLootDrop(
   prisma: PrismaLike,
   characterId: string,
   playerLevel: number,
-  powerCtx: ItemPowerContext,
+  ctx: LootRollContext,
 ): Promise<PreviewedLoot | null> {
+  const powerCtx = ctx;
   const character = await prisma.character.findUnique({
     where: { id: characterId },
     select: {
@@ -756,7 +793,7 @@ export async function previewLootDrop(
     equippedPowerBySlot[eq.item.itemType] = Math.max(equippedPowerBySlot[eq.item.itemType] ?? 0, power);
   }
 
-  const baseRarity = await rollRarity(playerLevel, 0);
+  const baseRarity = rollRarityWith(ctx.dropTuning, ctx.rarityDist, playerLevel, 0);
   const effectiveRarity = bumpRarity(baseRarity, pityBumpForStreak(character.trashLootStreak));
   const catalogItem = await pickRelevantCatalogItem(
     prisma,

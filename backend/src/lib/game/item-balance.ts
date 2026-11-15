@@ -281,9 +281,12 @@ export async function loadItemPowerContext(): Promise<ItemPowerContext> {
     }
   }
 
+  // Expired entries are left out, like getItemBalanceProfile drops them: a
+  // profile deleted in admin (or a failed refresh) scores at 1.0, not at its
+  // last cached weight forever.
   const typePowerWeights: Record<string, number> = {}
   for (const [itemType, profile] of _itemBalanceProfileCache) {
-    typePowerWeights[itemType] = profile.powerWeight
+    if (profile.expiresAt > now) typePowerWeights[itemType] = profile.powerWeight
   }
   return { powerWeights, rarityMults, upgradeMult, typePowerWeights }
 }
