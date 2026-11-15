@@ -439,6 +439,7 @@
 		BB1794D1566D65412E637056 /* combat_dodge.wav in Resources */ = {isa = PBXBuildFile; fileRef = C10815D64808175EC684D5F0 /* combat_dodge.wav */; };
 		BB1A2528D18F09D8FCCDB7FD /* combat_poison_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = C6510197C08DA850651889FD /* combat_poison_4.wav */; };
 		BBB8B9E8F57D0BF54124F9BE /* Cinzel-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */; };
+		8F0977045407AC94C914BE2A /* PirataOne-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4A10ED3E1167EE413F7D7DCA /* PirataOne-Regular.ttf */; };
 		BBC6BB5227401094D31E5273 /* LeaderboardEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E188C114F17088F505906852 /* LeaderboardEntry.swift */; };
 		BDD8F81548BE5D0FB56E6B47 /* torch_ignite.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3C9D6BD0038D1CB7CE959C81 /* torch_ignite.wav */; };
 		BF8B5691ACE23B193D4EB076 /* LeaderboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B93532AFD12F5E4A34B4A8 /* LeaderboardViewModel.swift */; };
@@ -984,6 +985,7 @@
 		B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowHPPotionBanner.swift; sourceTree = "<group>"; };
 		B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCatalogView.swift; sourceTree = "<group>"; };
 		B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cinzel-Bold.ttf"; sourceTree = "<group>"; };
+		4A10ED3E1167EE413F7D7DCA /* PirataOne-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PirataOne-Regular.ttf"; sourceTree = "<group>"; };
 		B698D5CED6FEC43EB2AD372F /* door_creak.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = door_creak.wav; sourceTree = "<group>"; };
 		B6D065AB078ABF21D519E164 /* combat_block_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_block_3.wav; sourceTree = "<group>"; };
 		B78C08ED37B1F1173273C580 /* dungeon_enter_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dungeon_enter_2.wav; sourceTree = "<group>"; };
@@ -1535,6 +1537,7 @@
 				B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */,
 				AB9A6B1D0F6FECA30FCAD7F3 /* Inter-Regular.ttf */,
 				FDAE41BCB1FB2232906E8C39 /* Oswald-Regular.ttf */,
+				4A10ED3E1167EE413F7D7DCA /* PirataOne-Regular.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -2332,6 +2335,7 @@
 				921CAA9BEBB39497D275B487 /* battle_victory.wav in Resources */,
 				FF720FAABC1734C818B30FCE /* battle-combat.mp3 in Resources */,
 				BBB8B9E8F57D0BF54124F9BE /* Cinzel-Bold.ttf in Resources */,
+				8F0977045407AC94C914BE2A /* PirataOne-Regular.ttf in Resources */,
 				95A2C5527E0D38C558367AB0 /* combat_block.wav in Resources */,
 				4AADE1A9F8C2F50C2825D496 /* combat_block_2.wav in Resources */,
 				AD41D37DCCD627BDB0085647 /* combat_block_3.wav in Resources */,

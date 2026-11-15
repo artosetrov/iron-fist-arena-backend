@@ -448,6 +448,9 @@ Hexbound стремится к **мрачной красоте**:
 |-------|---|---|---|
 | **Oswald** | Заголовки, кнопки, акценты | Bold (700) | UPPERCASE always |
 | **Inter** | Тело, подписи, описания | Regular (400), Medium (500) | Title case or lowercase |
+| **Pirata One** | Названия глубин Спуска (`DarkFantasyTheme.depthTitle`, `DescentInkedTitle`) | Regular — рисованная готика, OFL | UPPERCASE |
+
+> ⚠️ Расхождение (2026-11-15): в приложение вшит только `Oswald-Regular.ttf`, поэтому все заголовки на Oswald рисуются в 400, а не в 700, как сказано выше.
 
 ### 5.2 Масштаб типографики (Type Scale)
 
@@ -456,6 +459,7 @@ Hexbound стремится к **мрачной красоте**:
 | Hero | 64pt | Oswald Bold | Редко (intro, cinematic screens) |
 | Celebration | 44pt | Oswald Bold | Victory/defeat screens, big announcements |
 | Cinematic | 40pt | Oswald Bold | Large title sections |
+| Depth title | 58pt | Pirata One | Название глубины на экране входа: кремово-золотой градиент, чернильная обводка, тень — кодом; длинное ужимается до 0.6 |
 | Screen | 28pt | Oswald Bold | Screen main title, section dividers |
 | Section | 22pt | Oswald Bold | Card section titles, subsections |
 | Heading | 18pt | Oswald Bold | Card title, button text |
