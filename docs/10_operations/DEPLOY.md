@@ -40,7 +40,7 @@ prisma generate && next build
 - `SUPABASE_JWT_SECRET`
 - `CORS_ORIGINS`
 - `NEXT_PUBLIC_APP_URL`
-- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — shared rate limiting (without them each lambda keeps its own in-memory counters)
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — shared rate limiting (without them each lambda keeps its own in-memory counters). The Upstash integration from the Vercel Marketplace injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` instead; `shared-kv.ts` reads either pair.
 - `BOT_TICKET_SECRET` — HMAC for bot-match tickets
 - `INTERACTIVE_COMBAT_V1` — interactive combat flag
 - **IAP:** `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`, `APPLE_IAP_ENVIRONMENT`, `APPLE_BUNDLE_ID` — `/verify-receipt` **rejects every purchase in production** when these are missing. `APPLE_IAP_ENVIRONMENT` (`production` by default) only picks the environment asked first; a 404 there is retried in the other one. That is how App Review and TestFlight purchases (sandbox, production-signed build) succeed. Production logs mark them `Sandbox transaction … accepted in production`.

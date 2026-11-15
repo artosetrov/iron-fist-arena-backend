@@ -34,7 +34,7 @@ function getErrorMessage(error: unknown): string {
  * Android tokens inert until an actual FCM transport is shipped.
  *
  * APNS integration:
- * - Requires APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_PATH env vars
+ * - Requires APNS_KEY_ID, APNS_TEAM_ID, APNS_AUTH_KEY env vars (see the APNs transport block below)
  * - Uses HTTP/2 to api.push.apple.com (production) or api.sandbox.push.apple.com
  * - Falls back to logging in dev mode when env vars are not set
  */
