@@ -8,8 +8,10 @@ export function getSharedRedis(): Redis | null {
     return redisClient
   }
 
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  // UPSTASH_* when the store is wired by hand; KV_REST_API_* is what the
+  // Upstash integration from the Vercel Marketplace injects.
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN
 
   if (!url || !token) {
     if (process.env.NODE_ENV === 'production' && !warnedAboutMissingRedis) {
