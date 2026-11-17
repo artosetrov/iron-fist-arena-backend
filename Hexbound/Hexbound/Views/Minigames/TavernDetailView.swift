@@ -23,6 +23,11 @@ private enum TavernHostID: String {
         case .chest, .rush, .mine: true
         }
     }
+
+    /// The host stands in the hall, dimmed, under a COMING SOON plate, and
+    /// does not open anything. The plate never names the game: the build is
+    /// rated without simulated gambling.
+    var isComingSoon: Bool { !isShipped }
 }
 
 private struct TavernHost: Identifiable {
@@ -38,10 +43,8 @@ private struct TavernHost: Identifiable {
 
     /// Hosts on the floor. The Shell Game and the Fortune Wheel are wagering
     /// games the store build does not ship (`AppConstants.gamblingMinigamesEnabled`):
-    /// their hosts, plates and props are left out of the hall.
-    static let all: [TavernHost] = allHosts.filter { $0.id.isShipped }
-
-    private static let allHosts: [TavernHost] = [
+    /// their hosts stay in the hall as COMING SOON (`TavernHostID.isComingSoon`).
+    static let all: [TavernHost] = [
         TavernHost(
             id: .chest,
             title: "SHARED CHEST",
@@ -106,10 +109,8 @@ private struct TavernLayer: Identifiable {
 
     /// Back to front: whatever stands lower on the floor is nearer the camera and covers what is behind.
     /// Props sit in front of their host, so a host never hides their own table, wheel or cart.
-    /// Hosts the build does not ship are left out together with their props.
-    static let all: [TavernLayer] = allLayers.filter { $0.host.isShipped }
-
-    private static let allLayers: [TavernLayer] = [
+    /// Hosts the build does not ship stay, dimmed, with their props.
+    static let all: [TavernLayer] = [
         TavernLayer(asset: "tavern-npc-keeper", host: .chest,
                     frame: CGRect(x: 548, y: 672, width: 389, height: 346), feet: nil),
         TavernLayer(asset: "tavern-npc-trickster", host: .shell,
@@ -334,6 +335,7 @@ struct TavernDetailView: View {
     @ViewBuilder
     private func layerView(_ layer: TavernLayer, layout: TavernSceneLayout) -> some View {
         let isLit = litHost == layer.host
+        let isComingSoon = layer.host.isComingSoon
         let box = layer.frame
 
         if let feet = layer.feet {
@@ -353,6 +355,13 @@ struct TavernDetailView: View {
             .resizable()
             .interpolation(.high)
             .frame(width: box.width * layout.scale, height: box.height * layout.scale)
+            // COMING SOON: the figure and their prop sit back in the gloom.
+            .if(isComingSoon) { view in
+                view
+                    .grayscale(0.85)
+                    .brightness(-0.25)
+                    .opacity(0.75)
+            }
             // Glow only while pressed (tap-only glow rule); no shadow pass at rest.
             .if(isLit) { view in
                 view
@@ -368,12 +377,16 @@ struct TavernDetailView: View {
     private func pressGesture(_ layout: TavernSceneLayout) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($touchedHost) { value, state, _ in
-                state = isTap(value) ? hostID(at: layout.background(value.startLocation)) : nil
+                // A COMING SOON host still catches the touch (so it never falls
+                // through to the host behind) but does not light up.
+                let id = isTap(value) ? hostID(at: layout.background(value.startLocation)) : nil
+                state = id?.isComingSoon == true ? nil : id
             }
             .onEnded { value in
                 guard isTap(value),
                       let id = hostID(at: layout.background(value.startLocation)),
                       hostID(at: layout.background(value.location)) == id,
+                      !id.isComingSoon,
                       let host = TavernHost.with(id) else { return }
                 open(host)
             }
@@ -409,7 +422,39 @@ struct TavernDetailView: View {
 
     // MARK: - Plates
 
+    @ViewBuilder
     private func plate(_ host: TavernHost) -> some View {
+        if host.id.isComingSoon {
+            comingSoonPlate
+        } else {
+            openPlate(host)
+        }
+    }
+
+    /// Same plate shape, muted, not a button.
+    private var comingSoonPlate: some View {
+        Text("COMING SOON")
+            .font(DarkFantasyTheme.buttonLabelCompact)
+            .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+            .depthShadow(.panel)
+            .padding(LayoutConstants.spaceSM)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Coming soon")
+    }
+
+    private func openPlate(_ host: TavernHost) -> some View {
         let isPressed = litHost == host.id
         return Button {
             open(host)
