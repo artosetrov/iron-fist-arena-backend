@@ -8,6 +8,7 @@ import { getBattlePassConfig } from '@/lib/game/live-config'
 import { grantRewardEntries } from '@/lib/game/reward-grants'
 import { QUEST_META, type QuestMetaMap } from '@/lib/game/daily-quest-meta'
 import { DAILY_BONUS_REWARD } from '@/lib/game/daily-quests'
+import { isQuestTypeOffered } from '@/lib/game/gambling'
 
 type QuestPoolEntry = {
   questType: QuestType
@@ -49,7 +50,13 @@ function isQuestType(value: string): value is QuestType {
   return value in QUEST_META
 }
 
+/** Quest pool minus quests that need a game the store build does not ship. */
 async function getQuestPool(): Promise<QuestPoolEntry[]> {
+  const pool = await getConfiguredQuestPool()
+  return pool.filter((entry) => isQuestTypeOffered(entry.questType))
+}
+
+async function getConfiguredQuestPool(): Promise<QuestPoolEntry[]> {
   try {
     const defs = await prisma.questDefinition.findMany({ where: { active: true } })
     if (defs.length > 0) {

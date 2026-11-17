@@ -120,6 +120,27 @@ enum AppConstants {
     static let eulaURL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
     static let supportURL = "https://hexboundapp.com/support"
 
+    // MARK: - Store compliance
+
+    /// Wagering minigames: the Shell Game, the Fortune Wheel and Fortune's
+    /// Table (gold bets, a 5% table tithe).
+    ///
+    /// App Review refused 1.0.2 (2026-11-16, guideline 2.3.6): an app rated
+    /// for simulated gambling must come from an organization account, and
+    /// ours is an individual one. Until the account is an organization the
+    /// store build ships WITHOUT these games and the age rating says
+    /// Simulated Gambling: None.
+    ///
+    /// This is a compile-time constant on purpose, never a server flag:
+    /// switching reviewed content back on remotely is a hidden feature
+    /// (guideline 2.3.1). Re-enabling takes a new build with `true` here,
+    /// `GAMBLING_MINIGAMES_ENABLED=true` on the backend, and an honest
+    /// rating, submitted from the organization account.
+    static let gamblingMinigamesEnabled = false
+
+    /// Routes that open a wagering game.
+    static let gamblingRoutes: Set<AppRoute> = [.shellGame, .fortuneWheel, .fortuneTable]
+
     // MARK: - Observability
 
     /// Sentry project DSN, or nil when crash reporting is intentionally off.

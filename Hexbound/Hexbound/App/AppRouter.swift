@@ -117,6 +117,15 @@ extension AppRoute {
     /// campaign tool. Only supports routes that can be opened without extra
     /// typed payload like character IDs.
     static func pushDeepLink(from rawRoute: String) -> AppRoute? {
+        guard let route = parsePushDeepLink(rawRoute) else { return nil }
+        // A push can never open a game the build does not ship.
+        if !AppConstants.gamblingMinigamesEnabled, AppConstants.gamblingRoutes.contains(route) {
+            return .tavern
+        }
+        return route
+    }
+
+    private static func parsePushDeepLink(_ rawRoute: String) -> AppRoute? {
         let normalized = rawRoute
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
@@ -228,9 +237,14 @@ struct MainRouterView: View {
         // Minigames
         case .tavern: TavernDetailView()
         case .stash: StashDetailView()
-        case .shellGame: ShellGameDetailView()
-        case .fortuneWheel: FortuneWheelDetailView()
-        case .fortuneTable: FortuneTableDetailView()
+        // Not reachable from the store build (AppConstants.gamblingMinigamesEnabled);
+        // a stray route lands in the tavern instead.
+        case .shellGame:
+            if AppConstants.gamblingMinigamesEnabled { ShellGameDetailView() } else { TavernDetailView() }
+        case .fortuneWheel:
+            if AppConstants.gamblingMinigamesEnabled { FortuneWheelDetailView() } else { TavernDetailView() }
+        case .fortuneTable:
+            if AppConstants.gamblingMinigamesEnabled { FortuneTableDetailView() } else { TavernDetailView() }
         case .goldMine: GoldMineDetailView()
         // 2026-10-17: Dungeon Rush v2 "The Descent" replaces the 12-room rush (v1 views stay for reference).
         case .dungeonRush: DescentDetailView()

@@ -158,7 +158,9 @@ struct DailyQuestsDetailView: View {
         case "consumable_use", "item_upgrade":
             return .hero
         case "shell_game_play":
-            return .shellGame
+            // The store build ships without the Shell Game; the server stops
+            // issuing this quest too (backend lib/game/gambling.ts).
+            return AppConstants.gamblingMinigamesEnabled ? .shellGame : nil
         case "gold_mine_collect":
             return .goldMine
         default:

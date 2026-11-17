@@ -1,5 +1,6 @@
 import type { ConsumableType, PrismaClient } from '@prisma/client'
 import { logTutorialEvent } from './tutorial-analytics'
+import { GAMBLING_MINIGAMES_ENABLED, GAMBLING_TUTORIAL_QUEST_IDS } from './gambling'
 
 /**
  * Tutorial & Onboarding — constants, quest definitions, and helper functions.
@@ -179,7 +180,7 @@ export type ReferralQualificationExecutor = {
 // Player-facing copy is English (the game is English-only). The iOS client
 // keeps the same lines locally because they carry NPC voice-over — change
 // both together (Hexbound/Views/Hub/HubView.swift questNpcMessage/questTitle).
-export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
+const ALL_TUTORIAL_QUESTS: TutorialQuestDef[] = [
   {
     id: 'equip_gear',
     unlockLevel: 1,
@@ -237,6 +238,14 @@ export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
     rewards: { gold: 500 },
   },
 ]
+
+/**
+ * Tutorial quests offered to players. "Try Your Luck" sends the player to the
+ * Shell Game, which the store build does not ship (see lib/game/gambling.ts).
+ */
+export const TUTORIAL_QUESTS: TutorialQuestDef[] = ALL_TUTORIAL_QUESTS.filter(
+  (quest) => GAMBLING_MINIGAMES_ENABLED || !GAMBLING_TUTORIAL_QUEST_IDS.has(quest.id),
+)
 
 // ── Helper: update tutorial quest progress (fire-and-forget) ─────────
 /**
