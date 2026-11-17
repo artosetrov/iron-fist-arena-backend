@@ -259,14 +259,7 @@ struct DescentGateStage: View {
                 .font(DarkFantasyTheme.cardTitle)
                 .tracking(6)
                 .foregroundStyle(DarkFantasyTheme.gold)
-            Text(name.uppercased())
-                .font(DarkFantasyTheme.cinematicTitle)
-                .tracking(3)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4, y: 2)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 16)
+            DescentInkedTitle(text: name.uppercased())
             HStack(spacing: LayoutConstants.spaceSM) {
                 LinearGradient(colors: [ember.opacity(0), ember.opacity(0.85)], startPoint: .leading, endPoint: .trailing)
                     .frame(width: 22, height: 1)
@@ -285,6 +278,33 @@ struct DescentGateStage: View {
         .opacity(shown || reduceMotion ? 1 : 0)
         .offset(y: shown || reduceMotion ? 0 : 10)
         .animation(.easeOut(duration: 0.7).delay(0.25), value: shown)
+    }
+}
+
+/// A depth's name as a game title: hand-drawn gothic (`DarkFantasyTheme.depthTitle`,
+/// Pirata One), cream fading to antique gold down the letters, an ink outline and
+/// a deep shadow — all code, the canvas "Descent run screen", row "Шрифт названий
+/// глубин", variant F. The longest name (THE SHADOW WARRENS) shrinks to fit a line.
+struct DescentInkedTitle: View {
+    let text: String
+
+    var body: some View {
+        let ink = DarkFantasyTheme.titleInk
+        Text(text)
+            .font(DarkFantasyTheme.depthTitle)
+            .tracking(1)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .foregroundStyle(LinearGradient(
+                colors: [DarkFantasyTheme.titleEnamelTop, DarkFantasyTheme.titleEnamelMid, DarkFantasyTheme.titleEnamelBottom],
+                startPoint: .top, endPoint: .bottom
+            ))
+            // The outline: the letters' own shape, stamped in ink on four sides.
+            .shadow(color: ink, radius: 0, x: 1.5, y: 0)
+            .shadow(color: ink, radius: 0, x: -1.5, y: 0)
+            .shadow(color: ink, radius: 0, x: 0, y: 1.5)
+            .shadow(color: ink, radius: 0, x: 0, y: -1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 7, y: 4)
     }
 }
 
