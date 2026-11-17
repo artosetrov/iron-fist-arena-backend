@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "tavern-coin.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "tavern-coin@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "tavern-coin@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "images": [
+    {
+      "filename": "tavern-spider.png",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "tavern-spider@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "tavern-spider@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

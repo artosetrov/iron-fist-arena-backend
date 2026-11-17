@@ -428,6 +428,7 @@
 		B4DFB73CEDA0651E014246FB /* dungeon_door_close_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2CA09FFED80BD238E20EE3E4 /* dungeon_door_close_2.wav */; };
 		B6409E22684C75EBCEB5ADB0 /* amb_cave_drip.wav in Resources */ = {isa = PBXBuildFile; fileRef = 68AB362E67BF4A3BC3868DFD /* amb_cave_drip.wav */; };
 		B68B5E43109FCCF9BCEB258D /* TavernDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B837363250403614BE1A4F /* TavernDetailView.swift */; };
+		919C452E7E6518C91561FEDE /* TavernSceneLife.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CEB729334DA5EAC0A8ED31 /* TavernSceneLife.swift */; };
 		B68B74F158D762184A676AAB /* merchant_greet.wav in Resources */ = {isa = PBXBuildFile; fileRef = D269D22916F1CEDA9ED0476F /* merchant_greet.wav */; };
 		B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */; };
 		09CF41A0A4D2AB4DC8CCDFF0 /* DungeonTrailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D24752064BCC860F6A68472 /* DungeonTrailView.swift */; };
@@ -1060,6 +1061,7 @@
 		D676FF4D263CD89706EC11CB /* CelebrationBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationBannerView.swift; sourceTree = "<group>"; };
 		D6E64D0FCA19E4DC795606E0 /* dungeon_boss_appear_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dungeon_boss_appear_3.wav; sourceTree = "<group>"; };
 		D7B837363250403614BE1A4F /* TavernDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavernDetailView.swift; sourceTree = "<group>"; };
+		A1CEB729334DA5EAC0A8ED31 /* TavernSceneLife.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavernSceneLife.swift; sourceTree = "<group>"; };
 		D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardService.swift; sourceTree = "<group>"; };
 		D840F788B95D762912F675DD /* combat_shield_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_shield_2.wav; sourceTree = "<group>"; };
 		D8AE825199A7B4BC8DAACDA3 /* crowd_roar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = crowd_roar.wav; sourceTree = "<group>"; };
@@ -1873,6 +1875,7 @@
 				5C9249EEBC7C7044215B565F /* MinigameStage.swift */,
 				48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */,
 				D7B837363250403614BE1A4F /* TavernDetailView.swift */,
+				A1CEB729334DA5EAC0A8ED31 /* TavernSceneLife.swift */,
 				B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */,
 			);
 			path = Minigames;
@@ -2800,6 +2803,7 @@
 				38CBB3719646591CA3E97AFE /* TabSwitcher.swift in Sources */,
 				02202F303EB938D9AAD66758 /* TierBadge.swift in Sources */,
 				B68B5E43109FCCF9BCEB258D /* TavernDetailView.swift in Sources */,
+				919C452E7E6518C91561FEDE /* TavernSceneLife.swift in Sources */,
 				8551746B878E380FFA688A43 /* CelebrationBannerView.swift in Sources */,
 				38A8AC4DDA2330F3FF73B117 /* InlineFeedback.swift in Sources */,
 				F20220F2C416CD8228A76FBA /* ToastOverlayView.swift in Sources */,

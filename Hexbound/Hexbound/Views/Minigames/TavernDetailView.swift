@@ -1,49 +1,50 @@
 import SwiftUI
-import UIKit
 
 // MARK: - Tavern Scene Data
 //
-// The tavern is one illustrated hall (`bg-tavern`, 1536×2752 px) with every host
-// and their prop as a separate layer on top of it. All coordinates below are in
-// background pixels; `TavernSceneLayout` maps them to the screen.
-// Source of truth for the numbers: `User/Tavern/placement.json`
-// (art pack and pipeline: TAVERN_SCENE_ART_PACK_2026-10-16).
+// The tavern is one painted hall (`bg-tavern`, 1536×2752 px) with every host
+// painted into it: the shared table (Trickster, Veteran, Miner), Fortuna's corner
+// with the game's own Wheel of Fortune behind her, the hero's stash corner and
+// the barkeep behind the bar. Everything that moves lives in `TavernSceneLife.swift`.
+// All coordinates are background pixels; `TavernSceneLayout` maps them to the screen.
 
-private enum TavernScene {
-    static let size = CGSize(width: 1536, height: 2752)
-}
+// MARK: - COMING SOON hosts
 
-private enum TavernHostID: String {
-    case chest, shell, wheel, rush, mine
-
-    /// False for the wagering games while the store build ships without them.
-    var isShipped: Bool {
+/// The store build ships without the wagering games (`AppConstants.gamblingMinigamesEnabled`,
+/// App Review 2.3.6). Their hosts stay in the painting and keep their idle life, but the
+/// corner sits in shadow, a tap gives no reaction and opens nothing, and the plate reads
+/// COMING SOON without naming the game.
+private extension TavernTapTarget {
+    var isComingSoon: Bool {
         switch self {
-        case .shell, .wheel: AppConstants.gamblingMinigamesEnabled
-        case .chest, .rush, .mine: true
+        case .shell, .wheel: !AppConstants.gamblingMinigamesEnabled
+        case .chest, .rush, .mine, .keeper: false
         }
     }
+}
 
-    /// The host stands in the hall, dimmed, under a COMING SOON plate, and
-    /// does not open anything. The plate never names the game: the build is
-    /// rated without simulated gambling.
-    var isComingSoon: Bool { !isShipped }
+/// Shadow over a COMING SOON corner: an ellipse in background pixels.
+private struct TavernComingSoonShade {
+    let center: CGPoint
+    let radii: CGSize
+
+    static let all: [TavernComingSoonShade] = AppConstants.gamblingMinigamesEnabled ? [] : [
+        // The Trickster at the left end of the shared table.
+        TavernComingSoonShade(center: CGPoint(x: 390, y: 1820), radii: CGSize(width: 250, height: 320)),
+        // Fortuna, her table and the wheel behind her.
+        TavernComingSoonShade(center: CGPoint(x: 1205, y: 1100), radii: CGSize(width: 260, height: 420)),
+    ]
 }
 
 private struct TavernHost: Identifiable {
-    let id: TavernHostID
+    let id: TavernTapTarget
     let title: String
     let hint: String
     let accent: Color
     let route: AppRoute
     /// Centre of the name plate.
     let plate: CGPoint
-    /// Tappable areas painted into the background itself (the chest on the bar, the cellar door).
-    let hotspots: [CGRect]
 
-    /// Hosts on the floor. The Shell Game and the Fortune Wheel are wagering
-    /// games the store build does not ship (`AppConstants.gamblingMinigamesEnabled`):
-    /// their hosts stay in the hall as COMING SOON (`TavernHostID.isComingSoon`).
     static let all: [TavernHost] = [
         TavernHost(
             id: .chest,
@@ -51,8 +52,7 @@ private struct TavernHost: Identifiable {
             hint: "Opens the chest shared by all your heroes.",
             accent: DarkFantasyTheme.gold,
             route: .stash,
-            plate: CGPoint(x: 760, y: 1112),
-            hotspots: [CGRect(x: 1010, y: 750, width: 330, height: 310)]
+            plate: CGPoint(x: 270, y: 1470)
         ),
         TavernHost(
             id: .shell,
@@ -60,17 +60,7 @@ private struct TavernHost: Identifiable {
             hint: "Bet gold, find the ball. Double or nothing.",
             accent: DarkFantasyTheme.gold,
             route: .shellGame,
-            plate: CGPoint(x: 395, y: 1560),
-            hotspots: []
-        ),
-        TavernHost(
-            id: .wheel,
-            title: "FORTUNE WHEEL",
-            hint: "Spin for the Treasury, or take a seat at her table.",
-            accent: DarkFantasyTheme.purple,
-            route: .fortuneWheel,
-            plate: CGPoint(x: 1150, y: 1690),
-            hotspots: []
+            plate: CGPoint(x: 345, y: 2150)
         ),
         TavernHost(
             id: .rush,
@@ -78,8 +68,7 @@ private struct TavernHost: Identifiable {
             hint: "Endless waves. How far can you go?",
             accent: DarkFantasyTheme.danger,
             route: .dungeonRush,
-            plate: CGPoint(x: 530, y: 2440),
-            hotspots: [CGRect(x: 20, y: 1620, width: 310, height: 720)]
+            plate: CGPoint(x: 765, y: 2098)
         ),
         TavernHost(
             id: .mine,
@@ -87,47 +76,51 @@ private struct TavernHost: Identifiable {
             hint: "Collect your gold. Catch bonus drops.",
             accent: DarkFantasyTheme.gold,
             route: .goldMine,
-            plate: CGPoint(x: 1110, y: 2420),
-            hotspots: []
+            plate: CGPoint(x: 1180, y: 2150)
+        ),
+        TavernHost(
+            id: .wheel,
+            title: "FORTUNE WHEEL",
+            hint: "Spin for the Treasury, or take a seat at her table.",
+            accent: DarkFantasyTheme.purple,
+            route: .fortuneWheel,
+            // On Fortuna's tablecloth, under the ball: at y 1600 the plate covered the Miner's helmet.
+            plate: CGPoint(x: 1120, y: 1470)
         ),
     ]
 
-    static func with(_ id: TavernHostID) -> TavernHost? {
+    static func with(_ id: TavernTapTarget) -> TavernHost? {
         all.first { $0.id == id }
     }
 }
 
-/// One picture on top of the background: a host or the prop that belongs to them.
-private struct TavernLayer: Identifiable {
-    let asset: String
-    let host: TavernHostID
-    let frame: CGRect
-    /// Centre of the contact shadow under a standing figure (drawn in code, never baked).
-    let feet: CGPoint?
+/// Tappable area of the painting: an ellipse in background pixels.
+private struct TavernHitArea {
+    let target: TavernTapTarget
+    let center: CGPoint
+    let radii: CGSize
 
-    var id: String { asset }
+    func contains(_ p: CGPoint) -> Bool {
+        let dx = (p.x - center.x) / radii.width
+        let dy = (p.y - center.y) / radii.height
+        return dx * dx + dy * dy <= 1
+    }
 
-    /// Back to front: whatever stands lower on the floor is nearer the camera and covers what is behind.
-    /// Props sit in front of their host, so a host never hides their own table, wheel or cart.
-    /// Hosts the build does not ship stay, dimmed, with their props.
-    static let all: [TavernLayer] = [
-        TavernLayer(asset: "tavern-npc-keeper", host: .chest,
-                    frame: CGRect(x: 548, y: 672, width: 389, height: 346), feet: nil),
-        TavernLayer(asset: "tavern-npc-trickster", host: .shell,
-                    frame: CGRect(x: 168, y: 905, width: 434, height: 825), feet: CGPoint(x: 395, y: 1730)),
-        TavernLayer(asset: "tavern-prop-table", host: .shell,
-                    frame: CGRect(x: 380, y: 1300, width: 440, height: 530), feet: nil),
-        TavernLayer(asset: "tavern-npc-fortuna", host: .wheel,
-                    frame: CGRect(x: 992, y: 1070, width: 521, height: 790), feet: CGPoint(x: 1230, y: 1860)),
-        TavernLayer(asset: "tavern-prop-wheel", host: .wheel,
-                    frame: CGRect(x: 840, y: 1230, width: 320, height: 660), feet: nil),
-        TavernLayer(asset: "tavern-npc-warden", host: .rush,
-                    frame: CGRect(x: 295, y: 1780, width: 498, height: 895), feet: CGPoint(x: 530, y: 2675)),
-        TavernLayer(asset: "tavern-npc-foreman", host: .mine,
-                    frame: CGRect(x: 833, y: 1719, width: 530, height: 936), feet: CGPoint(x: 1120, y: 2655)),
-        TavernLayer(asset: "tavern-prop-cart", host: .mine,
-                    frame: CGRect(x: 1160, y: 2040, width: 376, height: 712), feet: nil),
+    /// First match wins: the wheel and the barkeep sit above the people around them.
+    static let all: [TavernHitArea] = [
+        TavernHitArea(target: .wheel, center: CGPoint(x: 1232, y: 935), radii: CGSize(width: 160, height: 160)),
+        TavernHitArea(target: .wheel, center: CGPoint(x: 1180, y: 1260), radii: CGSize(width: 190, height: 230)),
+        TavernHitArea(target: .keeper, center: CGPoint(x: 590, y: 880), radii: CGSize(width: 110, height: 170)),
+        TavernHitArea(target: .chest, center: CGPoint(x: 220, y: 860), radii: CGSize(width: 160, height: 240)),
+        TavernHitArea(target: .chest, center: CGPoint(x: 290, y: 1450), radii: CGSize(width: 210, height: 150)),
+        TavernHitArea(target: .shell, center: CGPoint(x: 390, y: 1820), radii: CGSize(width: 230, height: 290)),
+        TavernHitArea(target: .rush, center: CGPoint(x: 790, y: 1800), radii: CGSize(width: 165, height: 260)),
+        TavernHitArea(target: .mine, center: CGPoint(x: 1210, y: 1820), radii: CGSize(width: 200, height: 290)),
     ]
+
+    static func target(at p: CGPoint) -> TavernTapTarget? {
+        all.first { $0.contains(p) }?.target
+    }
 }
 
 /// Cover-fits the background into the container (like `scaledToFill`) and maps
@@ -140,11 +133,11 @@ private struct TavernSceneLayout {
 
     init(container: CGSize) {
         let s = max(
-            container.width / TavernScene.size.width,
-            container.height / TavernScene.size.height
+            container.width / TavernSceneArt.size.width,
+            container.height / TavernSceneArt.size.height
         )
         scale = s
-        sceneSize = CGSize(width: TavernScene.size.width * s, height: TavernScene.size.height * s)
+        sceneSize = CGSize(width: TavernSceneArt.size.width * s, height: TavernSceneArt.size.height * s)
         origin = CGPoint(
             x: (container.width - sceneSize.width) / 2,
             y: (container.height - sceneSize.height) / 2
@@ -174,65 +167,34 @@ private struct TavernSceneLayout {
     }
 }
 
-/// Coarse alpha map of a layer, so a tap on a transparent margin falls through
-/// to whatever is behind it instead of opening the wrong host.
-private struct TavernAlphaMask: Sendable {
-    let width: Int
-    let height: Int
-    let alpha: [UInt8]
-
-    /// `unit` is the point inside the layer, 0…1 on both axes.
-    func isOpaque(at unit: CGPoint) -> Bool {
-        let x = min(width - 1, max(0, Int(unit.x * CGFloat(width))))
-        let y = min(height - 1, max(0, Int(unit.y * CGFloat(height))))
-        return alpha[y * width + x] > 60
-    }
-
-    /// Draws the asset into a small RGBA buffer and keeps the alpha channel.
-    /// `UIImage(named:)` is thread-safe; call this off the main thread.
-    static func load(asset: String, width: Int = 96) -> TavernAlphaMask? {
-        guard let cg = UIImage(named: asset)?.cgImage, cg.width > 0 else { return nil }
-        let height = max(1, Int((CGFloat(cg.height) / CGFloat(cg.width) * CGFloat(width)).rounded()))
-        var rgba = [UInt8](repeating: 0, count: width * height * 4)
-        let drawn: Bool = rgba.withUnsafeMutableBytes { buffer in
-            guard let context = CGContext(
-                data: buffer.baseAddress,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: width * 4,
-                space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            ) else { return false }
-            context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
-            return true
-        }
-        guard drawn else { return nil }
-        let alpha = stride(from: 3, to: rgba.count, by: 4).map { rgba[$0] }
-        return TavernAlphaMask(width: width, height: height, alpha: alpha)
-    }
-}
-
 // MARK: - Tavern Detail View
 
 struct TavernDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Number of items currently stored in the Shared Chest.
     /// `nil` while loading (the plate shows the title alone).
     @State private var stashItemCount: Int?
 
-    /// Alpha maps of the layers, keyed by asset name. Empty until they load;
-    /// until then a tap uses the layer's box.
-    @State private var masks: [String: TavernAlphaMask] = [:]
+    /// Scene clock and schedules for blinks, coin, wheel, glints and light.
+    @State private var life = TavernLife()
+    /// The scene only animates while it is on screen (NavigationStack keeps it alive underneath).
+    @State private var isOnScreen = false
 
-    /// Host under the finger. Resets by itself when the touch ends or is cancelled.
-    @GestureState private var touchedHost: TavernHostID?
-    /// Host being opened: stays lit while the next screen pushes in.
-    @State private var openingHost: TavernHostID?
+    /// Target under the finger. Resets by itself when the touch ends or is cancelled.
+    @GestureState private var touchedTarget: TavernTapTarget?
+    /// Host being opened: stays lit while their reaction plays and the next screen pushes in.
+    @State private var openingHost: TavernTapTarget?
 
-    /// Lights up the host, their prop and their plate.
-    private var litHost: TavernHostID? { touchedHost ?? openingHost }
+    /// Lights up the plate and the warm press glow.
+    private var litTarget: TavernTapTarget? { touchedTarget ?? openingHost }
+
+    /// Barkeep's recorded line (NPC voice manifest, speaker `tavern`). While the store build
+    /// ships without the wagering games he talks about the mine instead (also recorded).
+    private static let keeperLine = AppConstants.gamblingMinigamesEnabled
+        ? "They gamble for gold at the tavern — give it a try!"
+        : "The mine earns gold while you sleep. Start mining."
 
     // MARK: - Aggregated currency totals (account-wide)
 
@@ -261,9 +223,21 @@ struct TavernDetailView: View {
                 DarkFantasyTheme.bgAbyss
 
                 if !layout.isEmpty {
-                    scene(layout)
+                    TimelineView(.animation(minimumInterval: TavernLifeTiming.frameInterval, paused: !isOnScreen)) { timeline in
+                        let t = timeline.date.timeIntervalSinceReferenceDate - life.epoch
+                        let frame = life.frame(at: t, reduceMotion: reduceMotion)
+                        scene(layout, frame: frame)
+                    }
+                    .frame(width: layout.sceneSize.width, height: layout.sceneSize.height)
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+
+                    // One touch surface for the whole room, outside the rasterised scene.
+                    Color.clear
+                        .contentShape(Rectangle())
                         .frame(width: layout.sceneSize.width, height: layout.sceneSize.height)
+                        .gesture(pressGesture(layout))
                         .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        .accessibilityHidden(true)
 
                     ForEach(TavernHost.all) { host in
                         plate(host)
@@ -293,14 +267,13 @@ struct TavernDetailView: View {
         .task {
             await loadStashCount()
         }
-        .task {
-            await loadMasks()
-        }
         .onAppear {
             openingHost = nil
+            isOnScreen = true
             AmbientManager.shared.setZone(.tavern)
         }
         .onDisappear {
+            isOnScreen = false
             AmbientManager.shared.setZone(.hub)
         }
     }
@@ -311,84 +284,163 @@ struct TavernDetailView: View {
     /// where the background is cropped at the sides.
     private static let plateEdgeInset: CGFloat = 80
 
-    private func scene(_ layout: TavernSceneLayout) -> some View {
+    /// Back to front: painting (hands and hanging props removed) → hanging props and the spider →
+    /// wheel → Fortuna's head in front of it → blinks → hands → coin → candle light (additive,
+    /// so it also falls on everything that moves) → effects.
+    private func scene(_ layout: TavernSceneLayout, frame: TavernLifeFrame) -> some View {
         ZStack(alignment: .topLeading) {
             Image("bg-tavern")
                 .resizable()
                 .interpolation(.high)
                 .frame(width: layout.sceneSize.width, height: layout.sceneSize.height)
 
-            ForEach(TavernLayer.all) { layer in
-                layerView(layer, layout: layout)
+            ForEach(TavernPart.props, id: \.self) { part in
+                partView(part, pose: frame.parts[part] ?? .rest, layout)
             }
 
-            // One touch surface for the whole room: the hit test reads the layers' alpha,
-            // so a host's transparent margin never steals a tap from the one behind.
-            Color.clear
-                .contentShape(Rectangle())
+            if let spider = frame.spider {
+                spiderView(spider, layout)
+            }
+
+            wheel(layout, frame: frame)
+
+            sprite("tavern-fortuna-front", TavernSceneArt.fortunaFront, layout)
+
+            ForEach(TavernBlinker.allCases, id: \.self) { host in
+                if let rect = TavernSceneArt.blinks[host] {
+                    sprite(TavernSceneArt.blinkAsset(host), rect, layout)
+                        .opacity(frame.blink[host] ?? 0)
+                }
+            }
+
+            ForEach(TavernPart.hands, id: \.self) { part in
+                partView(part, pose: frame.parts[part] ?? .rest, layout)
+            }
+
+            coin(layout, frame: frame)
+
+            ForEach(TavernLightZoneID.allCases, id: \.self) { zone in
+                if let rect = TavernSceneArt.lightZones[zone] {
+                    sprite(TavernSceneArt.lightAsset(zone), rect, layout)
+                        .opacity(frame.light[zone] ?? 0)
+                        .blendMode(.plusLighter)
+                }
+            }
+
+            // COMING SOON corners sit in shadow, after the candle light so it cannot lift them.
+            ForEach(TavernComingSoonShade.all.indices, id: \.self) { index in
+                comingSoonShade(TavernComingSoonShade.all[index], layout)
+            }
+
+            TavernEffectsCanvas(frame: frame, scale: layout.scale, pressed: litTarget)
                 .frame(width: layout.sceneSize.width, height: layout.sceneSize.height)
-                .gesture(pressGesture(layout))
         }
+        .frame(width: layout.sceneSize.width, height: layout.sceneSize.height, alignment: .topLeading)
+        .drawingGroup()
+        .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    @ViewBuilder
-    private func layerView(_ layer: TavernLayer, layout: TavernSceneLayout) -> some View {
-        let isLit = litHost == layer.host
-        let isComingSoon = layer.host.isComingSoon
-        let box = layer.frame
-
-        if let feet = layer.feet {
-            Ellipse()
-                .fill(
-                    EllipticalGradient(
-                        colors: [DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy), .clear],
-                        center: .center
-                    )
+    private func comingSoonShade(_ shade: TavernComingSoonShade, _ layout: TavernSceneLayout) -> some View {
+        Ellipse()
+            .fill(
+                EllipticalGradient(
+                    colors: [
+                        DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy),
+                        DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityStrong),
+                        .clear
+                    ],
+                    center: .center
                 )
-                .frame(width: box.width * 0.72 * layout.scale, height: box.width * 0.16 * layout.scale)
-                .position(layout.local(CGPoint(x: feet.x, y: feet.y - 8)))
-                .allowsHitTesting(false)
-        }
+            )
+            .frame(width: shade.radii.width * 2 * layout.scale, height: shade.radii.height * 2 * layout.scale)
+            .position(layout.local(shade.center))
+    }
 
-        Image(layer.asset)
+    private func sprite(_ asset: String, _ rect: CGRect, _ layout: TavernSceneLayout) -> some View {
+        Image(asset)
             .resizable()
             .interpolation(.high)
-            .frame(width: box.width * layout.scale, height: box.height * layout.scale)
-            // COMING SOON: the figure and their prop sit back in the gloom.
-            .if(isComingSoon) { view in
-                view
-                    .grayscale(0.85)
-                    .brightness(-0.25)
-                    .opacity(0.75)
-            }
-            // Glow only while pressed (tap-only glow rule); no shadow pass at rest.
-            .if(isLit) { view in
-                view
-                    .shadow(color: DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityHeavy), radius: 2)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), radius: 10)
-            }
-            .position(layout.local(CGPoint(x: box.midX, y: box.midY)))
-            .allowsHitTesting(false)
+            .frame(width: rect.width * layout.scale, height: rect.height * layout.scale)
+            .position(layout.local(CGPoint(x: rect.midX, y: rect.midY)))
+    }
+
+    /// A piece of the painting turned about its pivot (wrist, elbow or hanging point) and nudged.
+    private func partView(_ part: TavernPart, pose: TavernPose, _ layout: TavernSceneLayout) -> some View {
+        let art = TavernSceneArt.part(part)
+        return Image(art.asset)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: art.frame.width * layout.scale, height: art.frame.height * layout.scale)
+            .rotationEffect(.radians(pose.angle), anchor: art.anchor)
+            .offset(x: pose.dx * layout.scale, y: pose.dy * layout.scale)
+            .position(layout.local(CGPoint(x: art.frame.midX, y: art.frame.midY)))
+    }
+
+    /// The spider on its thread; the silk itself is drawn by the effects canvas.
+    private func spiderView(_ spider: TavernSpiderState, _ layout: TavernSceneLayout) -> some View {
+        let size = TavernSceneArt.spiderSize
+        let inset = TavernSceneArt.spiderThreadInset
+        return Image("tavern-spider")
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size.width * layout.scale, height: size.height * layout.scale)
+            .rotationEffect(.radians(spider.angle), anchor: UnitPoint(x: 0.5, y: inset / size.height))
+            .opacity(spider.alpha)
+            .position(layout.local(CGPoint(x: spider.hang.x, y: spider.hang.y - inset + size.height / 2)))
+    }
+
+    /// The minigame's own wheel face and pointer, hung on the painted wall mount.
+    private func wheel(_ layout: TavernSceneLayout, frame: TavernLifeFrame) -> some View {
+        let r = TavernSceneArt.wheelRadius * layout.scale
+        let center = layout.local(TavernSceneArt.wheelCenter)
+        let pointer = TavernSceneArt.pointerSize
+        return ZStack {
+            Image("fortune-wheel-face")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: r * 2, height: r * 2)
+                .rotationEffect(.radians(frame.wheelAngle))
+                .position(center)
+
+            Image("fortune-pointer")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: pointer.width * layout.scale, height: pointer.height * layout.scale)
+                // pivot near the tip, so the pointer flicks against the pegs
+                .rotationEffect(.radians(frame.pointerTilt), anchor: UnitPoint(x: 0.5, y: 0.68))
+                .position(x: center.x, y: center.y - r + (6 - pointer.height * 0.18) * layout.scale)
+        }
+    }
+
+    /// The Trickster's coin: rides on his fist, and his flick throws it up now and then
+    /// (rotation, never scale).
+    private func coin(_ layout: TavernSceneLayout, frame: TavernLifeFrame) -> some View {
+        let size = TavernSceneArt.coinSize * layout.scale
+        return Image("tavern-coin")
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size, height: size)
+            .rotation3DEffect(.degrees(frame.coinTurnDegrees), axis: (x: 1, y: 0, z: 0))
+            .position(layout.local(frame.coinCenter))
     }
 
     // MARK: - Touch
 
     private func pressGesture(_ layout: TavernSceneLayout) -> some Gesture {
         DragGesture(minimumDistance: 0)
-            .updating($touchedHost) { value, state, _ in
-                // A COMING SOON host still catches the touch (so it never falls
-                // through to the host behind) but does not light up.
-                let id = isTap(value) ? hostID(at: layout.background(value.startLocation)) : nil
-                state = id?.isComingSoon == true ? nil : id
+            .updating($touchedTarget) { value, state, _ in
+                // A COMING SOON host still catches the touch but never lights up.
+                let target = isTap(value) ? TavernHitArea.target(at: layout.background(value.startLocation)) : nil
+                state = target?.isComingSoon == true ? nil : target
             }
             .onEnded { value in
-                guard isTap(value),
-                      let id = hostID(at: layout.background(value.startLocation)),
-                      hostID(at: layout.background(value.location)) == id,
-                      !id.isComingSoon,
-                      let host = TavernHost.with(id) else { return }
-                open(host)
+                guard isTap(value) else { return }
+                // The spider runs back up its thread; the tap goes no further.
+                if life.scareSpider(at: layout.background(value.location), time: life.now()) { return }
+                guard let target = TavernHitArea.target(at: layout.background(value.startLocation)),
+                      TavernHitArea.target(at: layout.background(value.location)) == target else { return }
+                tap(target)
             }
     }
 
@@ -397,27 +449,28 @@ struct TavernDetailView: View {
         hypot(value.translation.width, value.translation.height) <= LayoutConstants.spaceMS
     }
 
-    /// Top layer first. Uses the alpha map when it has loaded, the layer's box until then,
-    /// and finally the hotspots painted into the background.
-    private func hostID(at point: CGPoint) -> TavernHostID? {
-        for layer in TavernLayer.all.reversed() where layer.frame.contains(point) {
-            guard let mask = masks[layer.asset] else { return layer.host }
-            let unit = CGPoint(
-                x: (point.x - layer.frame.minX) / layer.frame.width,
-                y: (point.y - layer.frame.minY) / layer.frame.height
-            )
-            if mask.isOpaque(at: unit) { return layer.host }
-        }
-        return TavernHost.all.first { host in
-            host.hotspots.contains { $0.contains(point) }
-        }?.id
-    }
+    /// The host reacts first (wink, coin toss, wheel spin…), then their section opens.
+    private func tap(_ target: TavernTapTarget) {
+        // COMING SOON: no reaction (no coin toss, no wheel spin) and nothing opens.
+        guard !target.isComingSoon else { return }
+        life.react(to: target, at: life.now())
 
-    private func open(_ host: TavernHost) {
+        guard let host = TavernHost.with(target) else {
+            // The barkeep has no section: a glint on his tankard and his voiced line.
+            SFXManager.shared.play(.uiTap)
+            NPCVoice.shared.speak(Self.keeperLine)
+            return
+        }
+        guard openingHost == nil else { return }
         openingHost = host.id
         SFXManager.shared.play(.uiTap)
         HapticManager.light()
-        appState.mainPath.append(host.route)
+
+        let lead = reduceMotion ? 0 : TavernLifeTiming.reactionLead
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(lead))
+            appState.mainPath.append(host.route)
+        }
     }
 
     // MARK: - Plates
@@ -431,7 +484,7 @@ struct TavernDetailView: View {
         }
     }
 
-    /// Same plate shape, muted, not a button.
+    /// Same plate shape, muted, not a button; never names the game.
     private var comingSoonPlate: some View {
         Text("COMING SOON")
             .font(DarkFantasyTheme.buttonLabelCompact)
@@ -455,9 +508,9 @@ struct TavernDetailView: View {
     }
 
     private func openPlate(_ host: TavernHost) -> some View {
-        let isPressed = litHost == host.id
+        let isPressed = litTarget == host.id
         return Button {
-            open(host)
+            tap(host.id)
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Text(host.title)
@@ -549,21 +602,5 @@ struct TavernDetailView: View {
         if let response = await service.loadStash().value {
             stashItemCount = response.usedSlots
         }
-    }
-
-    /// Builds the alpha maps off the main thread (image decode never runs in a tap handler).
-    private func loadMasks() async {
-        guard masks.isEmpty else { return }
-        let assets = TavernLayer.all.map(\.asset)
-        let loaded = await Task.detached(priority: .utility) { () -> [String: TavernAlphaMask] in
-            var result: [String: TavernAlphaMask] = [:]
-            for asset in assets {
-                if let mask = TavernAlphaMask.load(asset: asset) {
-                    result[asset] = mask
-                }
-            }
-            return result
-        }.value
-        masks = loaded
     }
 }
