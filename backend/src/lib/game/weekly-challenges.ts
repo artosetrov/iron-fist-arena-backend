@@ -23,6 +23,7 @@
 
 import type { QuestType } from '@prisma/client'
 import { BP_WEEKLY } from './balance'
+import { GAMBLING_MINIGAMES_ENABLED } from './gambling'
 
 // -----------------------------------------------------------------------------
 // Challenge pool
@@ -108,7 +109,9 @@ export const WEEKLY_CHALLENGE_POOL: readonly WeeklyChallengeTemplate[] = [
     goalType: 'shell_game_play',
     minTarget: 5,
     maxTarget: 10,
-    weight: 6,
+    // Never offered while the store build ships without the Shell Game
+    // (see lib/game/gambling.ts). Weight 0, not removed: historical rows.
+    weight: GAMBLING_MINIGAMES_ENABLED ? 6 : 0,
     label: 'Lucky Hand',
     description: 'Play Shell Game {target} times',
   },

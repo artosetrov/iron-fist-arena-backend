@@ -13,6 +13,7 @@ import {
   normalizeReferralCode,
 } from '@/lib/game/tutorial'
 import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
+import { GAMBLING_MINIGAMES_ENABLED, GAMBLING_TUTORIAL_QUEST_IDS } from '@/lib/game/gambling'
 
 /**
  * GET /api/tutorial?character_id=xxx
@@ -64,7 +65,11 @@ export async function GET(req: NextRequest) {
       isPrestige: character.prestigeLevel > 0,
       referralCode: character.referralCode,
       unlockedBuildings,
-      quests: character.tutorialQuests,
+      // A "Try Your Luck" row created before the store build dropped the
+      // Shell Game would point at a game the app no longer has.
+      quests: character.tutorialQuests.filter(
+        (quest) => GAMBLING_MINIGAMES_ENABLED || !GAMBLING_TUTORIAL_QUEST_IDS.has(quest.questId),
+      ),
       availableQuests: availableQuests.map((q) => ({
         id: q.id,
         title: q.title,

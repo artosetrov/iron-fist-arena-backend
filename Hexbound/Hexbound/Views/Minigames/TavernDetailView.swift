@@ -15,6 +15,14 @@ private enum TavernScene {
 
 private enum TavernHostID: String {
     case chest, shell, wheel, rush, mine
+
+    /// False for the wagering games while the store build ships without them.
+    var isShipped: Bool {
+        switch self {
+        case .shell, .wheel: AppConstants.gamblingMinigamesEnabled
+        case .chest, .rush, .mine: true
+        }
+    }
 }
 
 private struct TavernHost: Identifiable {
@@ -28,7 +36,12 @@ private struct TavernHost: Identifiable {
     /// Tappable areas painted into the background itself (the chest on the bar, the cellar door).
     let hotspots: [CGRect]
 
-    static let all: [TavernHost] = [
+    /// Hosts on the floor. The Shell Game and the Fortune Wheel are wagering
+    /// games the store build does not ship (`AppConstants.gamblingMinigamesEnabled`):
+    /// their hosts, plates and props are left out of the hall.
+    static let all: [TavernHost] = allHosts.filter { $0.id.isShipped }
+
+    private static let allHosts: [TavernHost] = [
         TavernHost(
             id: .chest,
             title: "SHARED CHEST",
@@ -93,7 +106,10 @@ private struct TavernLayer: Identifiable {
 
     /// Back to front: whatever stands lower on the floor is nearer the camera and covers what is behind.
     /// Props sit in front of their host, so a host never hides their own table, wheel or cart.
-    static let all: [TavernLayer] = [
+    /// Hosts the build does not ship are left out together with their props.
+    static let all: [TavernLayer] = allLayers.filter { $0.host.isShipped }
+
+    private static let allLayers: [TavernLayer] = [
         TavernLayer(asset: "tavern-npc-keeper", host: .chest,
                     frame: CGRect(x: 548, y: 672, width: 389, height: 346), feet: nil),
         TavernLayer(asset: "tavern-npc-trickster", host: .shell,
