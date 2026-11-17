@@ -10,6 +10,10 @@
 //  then a one-line hint and AUTO / FIGHT. Tap one of your dice to spend
 //  Focus (reroll 2, set a face 4) in a bottom sheet.
 //
+//  3D table (DICE_3D_THROW.md): unless Reduce Motion is on, the lanes are a
+//  RealityKit table (DiceTable3DView) the player throws the dice onto. It is
+//  sized to the width; the portraits take the height it leaves.
+//
 
 import SwiftUI
 
@@ -39,7 +43,8 @@ struct DiceBattleView: View {
     var body: some View {
         GeometryReader { geo in
             let compact = geo.size.height < 760
-            let stageHeight = bossStageHeight(geo.size)
+            let table3D = vm.prefers3DTable ? table3DLayout(geo.size, boss: boss != nil, compact: compact) : nil
+            let stageHeight = table3D?.stage ?? bossStageHeight(geo.size)
             ZStack(alignment: .top) {
                 DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
@@ -47,23 +52,28 @@ struct DiceBattleView: View {
                     if let boss {
                         bossHeader(boss, stageHeight: stageHeight)
                     } else {
-                        duelHeader(compact: compact)
+                        duelHeader(compact: compact, portrait: table3D?.portrait)
                     }
                     roundStrip
-                    DiceTableView(
-                        vm: vm,
-                        dieSize: dieSize(geo.size, header: boss != nil
-                                         ? stageHeight + Self.playerStripHeight + LayoutConstants.spaceSM
-                                         : (compact ? 172 : 236)),
-                        hideEndCard: boss != nil && vm.endWon == true
-                    )
+                    if let table3D {
+                        DiceTable3DView(vm: vm, hideEndCard: boss != nil && vm.endWon == true)
+                            .frame(height: table3D.table)
+                    } else {
+                        DiceTableView(
+                            vm: vm,
+                            dieSize: dieSize(geo.size, header: boss != nil
+                                             ? stageHeight + Self.playerStripHeight + LayoutConstants.spaceSM
+                                             : (compact ? 172 : 236)),
+                            hideEndCard: boss != nil && vm.endWon == true
+                        )
+                    }
                     hintLine
                     bottomBar
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.vertical, LayoutConstants.spaceSM)
 
-                if case .intro = vm.phase {
+                if case .intro = vm.phase, !vm.awaitingThrow {
                     ConnectingPillStrip(label: "Connecting · rolling the dice")
                         .padding(.top, LayoutConstants.spaceMD)
                         .transition(.opacity)
@@ -132,9 +142,39 @@ struct DiceBattleView: View {
         return max(64, min(112, byHeight, byWidth))
     }
 
+    // MARK: - 3D table layout
+
+    private struct Table3DLayout {
+        let table: CGFloat
+        let portrait: CGFloat?
+        let stage: CGFloat?
+    }
+
+    /// Table height ≈ width × aspect (the scene frames the felt to fit);
+    /// portraits (or the boss stage) get the rest, within their limits, and
+    /// whatever is left over goes back to the table.
+    private static let tableAspect: CGFloat = 1.3
+
+    private func table3DLayout(_ size: CGSize, boss: Bool, compact: Bool) -> Table3DLayout {
+        let gap = compact ? LayoutConstants.spaceSM : LayoutConstants.spaceMS
+        let chrome = 2 * LayoutConstants.spaceSM + 4 * gap + 20 + 36 + LayoutConstants.buttonHeightLG
+        let width = size.width - 2 * LayoutConstants.screenPadding
+        let available = size.height - chrome
+        let ideal = width * Self.tableAspect
+        if boss {
+            let reserved = Self.playerStripHeight + LayoutConstants.spaceSM
+            let stage = max(130, min(250, available - reserved - ideal))
+            return Table3DLayout(table: max(220, available - reserved - stage), portrait: nil, stage: stage)
+        }
+        // Name, class line, HP bar and Focus pips under each portrait.
+        let rows: CGFloat = 88
+        let portrait = max(84, min(176, available - ideal - rows))
+        return Table3DLayout(table: max(220, available - rows - portrait), portrait: portrait, stage: nil)
+    }
+
     // MARK: - Header
 
-    private func duelHeader(compact: Bool) -> some View {
+    private func duelHeader(compact: Bool, portrait: CGFloat? = nil) -> some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
             VStack(spacing: LayoutConstants.spaceXS) {
                 DuelFighterCard(
@@ -145,7 +185,8 @@ struct DiceBattleView: View {
                     slideX: vm.playerSlideX,
                     flash: vm.playerFlash,
                     popups: vm.damagePopups.filter { !$0.onDefender },
-                    compact: compact
+                    compact: compact && portrait == nil,
+                    tileSizeOverride: portrait
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .player, bounds: $0)]
@@ -163,7 +204,8 @@ struct DiceBattleView: View {
                     slideX: vm.enemySlideX,
                     flash: vm.enemyFlash,
                     popups: vm.damagePopups.filter { $0.onDefender },
-                    compact: compact
+                    compact: compact && portrait == nil,
+                    tileSizeOverride: portrait
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
@@ -364,6 +406,7 @@ struct DiceBattleView: View {
     }
 
     private var phaseLabel: String {
+        if vm.awaitingThrow { return "YOUR THROW" }
         switch vm.phase {
         case .intro: return "ROLLING…"
         case .decide: return vm.hasActed ? "LOCKED IN" : "YOUR MOVE"
@@ -450,8 +493,8 @@ struct DiceTableView: View {
             .padding(.horizontal, LayoutConstants.spaceSM)
 
             if !hideEndCard {
-                if case .ending = vm.phase { endCard }
-                if case .completing = vm.phase { endCard }
+                if case .ending = vm.phase { DiceEndCard(vm: vm) }
+                if case .completing = vm.phase { DiceEndCard(vm: vm) }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -592,8 +635,13 @@ struct DiceTableView: View {
         }
         .frame(minHeight: 44)
     }
+}
 
-    private var endCard: some View {
+/// VICTORY / DEFEAT over the dice table (2D lanes and 3D table).
+struct DiceEndCard: View {
+    @Bindable var vm: DiceBattleViewModel
+
+    var body: some View {
         let won = vm.endWon == true
         return ZStack {
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)

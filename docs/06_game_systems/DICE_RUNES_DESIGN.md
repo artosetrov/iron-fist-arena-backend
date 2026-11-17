@@ -2,6 +2,7 @@
 
 > Статус: **DRAFT**, 2026-10-14. Автор сессии: Claude по запросу Art.
 > Связано: `COMBAT_V2_DESIGN.md` (бой на кубиках), `SKILL_TREE_DESIGN_V2.md` (дерево талантов), промпты арта — `docs/08_prompts/DICE_RUNES_PROMPTS.md`.
+> 3D-стол и бросок костей: `DICE_3D_THROW.md`.
 > Прототипы: «Бой на костях» (механика) и «Hexbound Dice Duel» (мобильный экран боя) — артефакты в Claude.
 
 ---

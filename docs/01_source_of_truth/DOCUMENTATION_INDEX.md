@@ -75,6 +75,7 @@ Deep dives into specific game mechanics, formulas, and balance constants.
 | **Combat System** | `docs/06_game_systems/COMBAT.md` | Turn-based PvP combat flow, attack/defense calculations, crit/dodge, status effects, seeded RNG for reproducibility |
 | **Combat v2 Design (draft)** | `docs/06_game_systems/COMBAT_V2_DESIGN.md` | Proposal: zone matrix as a real mind game, ghost/bot zone policies, boss scripts (telegraph/phases/enrage), /pvp/strike contract additions; numbers from `scripts/zone_matrix_sim.py` |
 | **Dice & Runes (draft)** | `docs/06_game_systems/DICE_RUNES_DESIGN.md` | Dice combat build layer: 2 dice × 6 faces, runes socketed into faces, unlocked in the talent tree (keystones → path runes, ultimates → great runes, +4 lesser rune nodes per class), profile Dice tab, data model and API |
+| **3D dice throw** | `docs/06_game_systems/DICE_3D_THROW.md` | 3D dice table (RealityKit): hold · shake · flick, server face via cube-symmetry correction, baked throws (`scripts/dice-throws`), defender's table (`dice_table`), files and QA checklist |
 | **Balance Constants** | `docs/06_game_systems/BALANCE_CONSTANTS.md` | All tunable game constants (damage base multipliers, XP thresholds, stat scaling, cooldown durations, stamina costs) |
 | **Progression & Leveling** | `docs/06_game_systems/PROGRESSION.md` | Level progression curve (XP per level), stat point allocation, skill unlock levels, prestige system, passive tree tier costs |
 

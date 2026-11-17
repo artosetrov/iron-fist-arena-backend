@@ -59,6 +59,7 @@ Creates a new live match row (`pvp_matches` with `status = in_progress`) and ret
 
 - **Body**: `{ opponent_id: string, ticket_id: string }`
 - **Response**: `{ match_id, attacker_hp, defender_hp, max_rounds, actives: InteractiveActiveSlotSnapshot[], opponent_actives: InteractiveActiveSlotSnapshot[] }`
+- **Dice combat fields**: `dice` (public match view, round 1 rolled), `rune_info`, and `dice_table` — the defender's table key for the 3D dice (`tavern | warrior | rogue | mage | tank | arena | dungeon | dragon | frost | royal`, see `docs/06_game_systems/DICE_3D_THROW.md` §7).
 
 #### `POST /pvp/strike`
 

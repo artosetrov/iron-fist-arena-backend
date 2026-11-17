@@ -117,6 +117,10 @@ enum SFX: String, CaseIterable {
     case chestClose = "chest_close"
     case goldMine = "gold_mine"
 
+    // Dice table (3D throw)
+    case diceHit = "dice_hit"              // A die lands / knocks a die or the rim
+    case diceShake = "dice_shake"          // Dice rattling in the hand
+
     var filename: String { rawValue + ".wav" }
 
     /// Number of available sound files for this SFX (1 = no variations).
@@ -157,6 +161,8 @@ enum SFX: String, CaseIterable {
         case .footstepWood:     return 3  // footstep_wood + _2, _3
         case .pickaxeHit:       return 3  // pickaxe_hit + _2, _3
         case .doorCreak:        return 2  // door_creak + _2
+        case .diceHit:          return 4  // dice_hit + _2.._4
+        case .diceShake:        return 3  // dice_shake + _2, _3
         default:                return 1
         }
     }
@@ -334,6 +340,10 @@ enum SFX: String, CaseIterable {
             return { HapticManager.light() }
         case .goldMine:
             return { HapticManager.medium() }
+
+        // Dice table — DiceTableScene fires its own haptics by impact strength
+        case .diceHit, .diceShake:
+            return nil
         }
     }
 
